@@ -20,11 +20,11 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      console.error('LOVABLE_API_KEY is not configured');
+    const GOOGLE_API_KEY = Deno.env.get("GOOGLE_API_KEY");
+    if (!GOOGLE_API_KEY) {
+      console.error('GOOGLE_API_KEY is not configured');
       return new Response(
-        JSON.stringify({ error: 'AI 서비스 설정이 필요합니다.' }), 
+        JSON.stringify({ error: 'AI 서비스 설정이 필요합니다.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -45,7 +45,7 @@ serve(async (req) => {
 
     console.log('Analyzing records:', recordsText.substring(0, 200));
 
-    const systemPrompt = `당신은 감정과 은유를 시각화하는 예술가입니다. 주어진 신앙 기록의 감정적 핵심을 포착하여 시각적 은유로 변환하세요.
+    const promptText = `당신은 감정과 은유를 시각화하는 예술가입니다. 주어진 신앙 기록의 감정적 핵심을 포착하여 시각적 은유로 변환하세요.
 
 핵심 원칙:
 1. **감정 분석**: 기록에서 동사와 감정 키워드를 파악하세요 (예: 붙들다→보호, 빛→희망, 목자→돌봄)
@@ -62,49 +62,52 @@ serve(async (req) => {
 - 추상적이거나 모호한 표현
 
 응답은 반드시 한국어로, 50자 이내의 구체적인 장면 묘사만 제공하세요.
-예: "큰 손이 작은 손을 감싸 쥐는 클로즈업, 따뜻한 황금빛, 보호와 안정감"`;
+예: "큰 손이 작은 손을 감싸 쥐는 클로즈업, 따뜻한 황금빛, 보호와 안정감"
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: `다음 신앙 기록들을 분석하여 배경 이미지 프롬프트를 생성해주세요:\n\n${recordsText}` }
-        ],
-      }),
-    });
+다음 신앙 기록들을 분석하여 배경 이미지 프롬프트를 생성해주세요:
+
+${recordsText}`;
+
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_API_KEY}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{
+              text: promptText
+            }]
+          }],
+          generationConfig: {
+            temperature: 0.9,
+            maxOutputTokens: 500,
+          }
+        }),
+      }
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('AI API error:', response.status, errorText);
-      
+      console.error('Gemini API error:', response.status, errorText);
+
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }), 
+          JSON.stringify({ error: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' }),
           { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
-      
-      if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: 'AI 크레딧이 부족합니다. Lovable 워크스페이스에서 크레딧을 추가해주세요.' }), 
-          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
-      
+
       return new Response(
-        JSON.stringify({ error: 'AI 분석 중 오류가 발생했습니다.' }), 
+        JSON.stringify({ error: 'AI 분석 중 오류가 발생했습니다.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     const data = await response.json();
-    const prompt = data.choices?.[0]?.message?.content?.trim() || '';
+    const prompt = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
     
     console.log('Generated prompt:', prompt);
 
