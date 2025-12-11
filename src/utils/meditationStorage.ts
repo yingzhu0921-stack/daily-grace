@@ -121,8 +121,15 @@ export async function toggleApply(id: string) {
   const i = all.findIndex(n => n.id === id);
   if (i < 0) throw new Error('묵상을 찾을 수 없습니다');
   const checked = !all[i].applyChecked;
+
+  // applications 배열이 있으면 모든 항목을 체크/해제
+  const updatedApplications = all[i].applications
+    ? all[i].applications!.map(item => ({ ...item, checked }))
+    : undefined;
+
   all[i] = {
     ...all[i],
+    applications: updatedApplications,
     applyChecked: checked,
     applyCheckedAt: checked ? new Date().toISOString() : null,
     updatedAt: new Date().toISOString(),
@@ -134,6 +141,7 @@ export async function toggleApply(id: string) {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
       const { error } = await supabase.from('meditation_notes').update({
+        applications: all[i].applications ? JSON.stringify(all[i].applications) : null,
         apply_checked: all[i].applyChecked,
         apply_checked_at: all[i].applyCheckedAt,
         updated_at: all[i].updatedAt,
