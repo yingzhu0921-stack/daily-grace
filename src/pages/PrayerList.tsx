@@ -1,15 +1,18 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { list, toggleAnswered, remove } from '@/utils/prayerStorage';
+import { list, toggleAnswered, remove, update } from '@/utils/prayerStorage';
 import type { PrayerNote } from '@/types/prayer';
 import { AnswerButton } from '@/components/AnswerButton';
 import { ChevronLeft } from 'lucide-react';
 import { SwipeableItem } from '@/components/SwipeableItem';
+import { PrayerResponseModal } from '@/components/PrayerResponseModal';
 import { toast } from 'sonner';
 
 export default function PrayerList() {
   const navigate = useNavigate();
   const [items, setItems] = useState<PrayerNote[]>([]);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedPrayer, setSelectedPrayer] = useState<PrayerNote | null>(null);
 
   const refresh = () => setItems(list());
   useEffect(() => { refresh(); }, []);
@@ -18,6 +21,33 @@ export default function PrayerList() {
     remove(id);
     refresh();
     toast.success('기도 제목이 삭제되었습니다');
+  };
+
+  const handleAnswerClick = async (prayer: PrayerNote) => {
+    if (prayer.answered) {
+      // 이미 응답된 경우: 응답 취소
+      await toggleAnswered(prayer.id);
+      refresh();
+      toast.success('응답이 취소되었습니다');
+    } else {
+      // 응답 모달 열기
+      setSelectedPrayer(prayer);
+      setModalOpen(true);
+    }
+  };
+
+  const handleSaveResponse = async (responseText: string) => {
+    if (!selectedPrayer) return;
+
+    await update(selectedPrayer.id, {
+      answered: true,
+      answeredAt: new Date().toISOString(),
+      answeredDetail: responseText,
+    });
+
+    refresh();
+    toast.success('기도 응답이 기록되었습니다');
+    setSelectedPrayer(null);
   };
 
 
@@ -82,7 +112,7 @@ export default function PrayerList() {
 
                   <AnswerButton
                     answered={p.answered}
-                    onToggle={() => { toggleAnswered(p.id); refresh(); }}
+                    onToggle={() => handleAnswerClick(p)}
                   />
                 </div>
               </div>
@@ -90,6 +120,17 @@ export default function PrayerList() {
           ))}
         </div>
       </div>
+
+      <PrayerResponseModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedPrayer(null);
+        }}
+        onSave={handleSaveResponse}
+        initialResponse={selectedPrayer?.answeredDetail || ''}
+        prayerTitle={selectedPrayer?.title || ''}
+      />
     </div>
   );
 }
