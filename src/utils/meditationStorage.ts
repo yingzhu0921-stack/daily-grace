@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { ApplicationItem } from '@/types/meditation';
 
 export type MeditationNote = {
   id: string;
@@ -6,6 +7,7 @@ export type MeditationNote = {
   passage: string;
   content: string;
   application: string;
+  applications?: ApplicationItem[];
   applyChecked?: boolean;
   applyCheckedAt?: string | null;
   createdAt: string;
@@ -43,6 +45,7 @@ export async function create(note: Omit<MeditationNote,'id'|'createdAt'|'updated
         passage: saved.passage || '',
         content: saved.content,
         application: saved.application || '',
+        applications: saved.applications ? JSON.stringify(saved.applications) : null,
         apply_checked: saved.applyChecked || false,
         apply_checked_at: saved.applyCheckedAt || null,
         full_text: saved.fullText || '',
@@ -77,6 +80,7 @@ export async function update(id: string, patch: Partial<MeditationNote>) {
         passage: all[i].passage || '',
         content: all[i].content,
         application: all[i].application || '',
+        applications: all[i].applications ? JSON.stringify(all[i].applications) : null,
         apply_checked: all[i].applyChecked || false,
         apply_checked_at: all[i].applyCheckedAt || null,
         full_text: all[i].fullText || '',

@@ -46,19 +46,25 @@ const MeditationView = () => {
     }
   }, [id, navigate]);
 
-  const handleCheckChange = (checked: boolean) => {
+  const handleCheckChange = (index: number, checked: boolean) => {
     if (!note || !id) return;
+
+    // applications 배열 업데이트
+    const updatedApplications = note.applications && note.applications.length > 0
+      ? note.applications.map((item, i) => i === index ? { ...item, checked } : item)
+      : [{ text: note.application || '', checked }];
 
     if (checked) {
       setShowReminderModal(true);
     }
 
     update(id, {
+      applications: updatedApplications,
       applyChecked: checked,
       applyCheckedAt: checked ? new Date().toISOString() : null
     });
 
-    setNote({ ...note, applyChecked: checked, applyCheckedAt: checked ? new Date().toISOString() : undefined });
+    setNote({ ...note, applications: updatedApplications, applyChecked: checked, applyCheckedAt: checked ? new Date().toISOString() : undefined });
 
     toast({
       title: checked ? "적용을 완료로 표시했어요" : "적용 완료를 해제했어요",

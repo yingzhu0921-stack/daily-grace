@@ -7,6 +7,7 @@ import { get, update } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { ApplicationItem } from '@/types/meditation';
 
 const MeditationEdit = () => {
   const navigate = useNavigate();
@@ -15,7 +16,7 @@ const MeditationEdit = () => {
   const [title, setTitle] = useState('');
   const [passage, setPassage] = useState('');
   const [content, setContent] = useState('');
-  const [application, setApplication] = useState('');
+  const [application, setApplication] = useState<string | string[] | ApplicationItem[]>('');
   const [hasContent, setHasContent] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
 
@@ -26,7 +27,8 @@ const MeditationEdit = () => {
         setTitle(note.title || '');
         setPassage(note.passage || '');
         setContent(note.content || '');
-        setApplication(note.application || '');
+        // applications 배열이 있으면 사용, 없으면 application 문자열 사용
+        setApplication(note.applications || note.application || '');
         setHasContent(true);
       } else {
         toast({
@@ -38,7 +40,7 @@ const MeditationEdit = () => {
     }
   }, [id, navigate]);
 
-  const handleContentChange = (newTitle: string, newPassage: string, newContent: string, newApplication: string) => {
+  const handleContentChange = (newTitle: string, newPassage: string, newContent: string, newApplication: string | string[] | ApplicationItem[]) => {
     setTitle(newTitle);
     setPassage(newPassage);
     setContent(newContent);
@@ -49,7 +51,21 @@ const MeditationEdit = () => {
   const handleComplete = () => {
     if (!id) return;
 
-    if (!title.trim() && !passage.trim() && !content.trim() && !application.trim()) {
+    // ApplicationItem[] 형식을 문자열로 변환
+    const getApplicationText = (app: string | string[] | ApplicationItem[]): string => {
+      if (typeof app === 'string') return app;
+      if (Array.isArray(app)) {
+        return app
+          .map((item) => typeof item === 'string' ? item : item.text)
+          .filter((text) => text.trim())
+          .join('\n');
+      }
+      return '';
+    };
+
+    const applicationText = getApplicationText(application);
+
+    if (!title.trim() && !passage.trim() && !content.trim() && !applicationText.trim()) {
       toast({
         title: "내용을 입력해주세요",
         description: "최소 한 섹션 이상 작성해야 합니다.",
@@ -57,13 +73,29 @@ const MeditationEdit = () => {
       return;
     }
 
-    const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${application}`;
+    const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${applicationText}`;
+
+    // ApplicationItem[] 배열 추출
+    const getApplicationsArray = (app: string | string[] | ApplicationItem[]): ApplicationItem[] => {
+      if (Array.isArray(app)) {
+        return app
+          .map((item) => typeof item === 'string' ? { text: item, checked: false } : item)
+          .filter((item) => item.text.trim());
+      }
+      if (typeof app === 'string' && app.trim()) {
+        return [{ text: app, checked: false }];
+      }
+      return [];
+    };
+
+    const applicationsArray = getApplicationsArray(application);
 
     update(id, {
       title: title.trim(),
       passage: passage.trim(),
       content: content.trim(),
-      application: application.trim(),
+      application: applicationText.trim(),
+      applications: applicationsArray,
       fullText
     });
     

@@ -11,7 +11,7 @@ import { meditationSchema } from '@/utils/validation';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
-import { ApplicationItem } from '@/components/MultiApplicationInput';
+import { ApplicationItem } from '@/types/meditation';
 
 const MeditationNew = () => {
   const navigate = useNavigate();
@@ -90,12 +90,28 @@ const MeditationNew = () => {
 
     const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${applicationText}`;
 
+    // ApplicationItem[] 배열 추출
+    const getApplicationsArray = (app: string | string[] | ApplicationItem[]): ApplicationItem[] => {
+      if (Array.isArray(app)) {
+        return app
+          .map((item) => typeof item === 'string' ? { text: item, checked: false } : item)
+          .filter((item) => item.text.trim());
+      }
+      if (typeof app === 'string' && app.trim()) {
+        return [{ text: app, checked: false }];
+      }
+      return [];
+    };
+
+    const applicationsArray = getApplicationsArray(application);
+
     // 즉시 저장 (Optimistic UI)
     const newNote = await create({
       title: title.trim(),
       passage: passage.trim(),
       content: content.trim(),
       application: applicationText.trim(),
+      applications: applicationsArray, // 배열 형태로 저장
       applyChecked: false,
       fullText
     });

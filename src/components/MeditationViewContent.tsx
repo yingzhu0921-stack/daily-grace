@@ -4,13 +4,20 @@ import { MeditationNote } from '@/types/meditation';
 
 interface MeditationViewContentProps {
   note: MeditationNote;
-  onCheckChange: (checked: boolean) => void;
+  onCheckChange: (index: number, checked: boolean) => void;
 }
 
 export const MeditationViewContent: React.FC<MeditationViewContentProps> = ({
   note,
   onCheckChange
 }) => {
+  // applications 배열이 있으면 사용, 없으면 application 문자열을 배열로 변환
+  const displayApplications = note.applications && note.applications.length > 0
+    ? note.applications
+    : note.application
+      ? [{ text: note.application, checked: note.applyChecked || false }]
+      : [];
+
   return (
     <div className="flex-1 overflow-auto px-5 py-6 pb-32">
       {/* 제목 섹션 */}
@@ -44,17 +51,30 @@ export const MeditationViewContent: React.FC<MeditationViewContentProps> = ({
       )}
 
       {/* 적용 섹션 */}
-      {note.application && (
+      {displayApplications.length > 0 && (
         <section className="mb-8">
-          <div className="mb-2 flex items-center gap-2">
-            <Checkbox
-              checked={note.applyChecked}
-              onCheckedChange={onCheckChange}
-            />
-            <h2 className="text-sm text-[#9B9B9B]">적용</h2>
-          </div>
-          <div className="whitespace-pre-wrap text-base leading-[1.8] text-[#2E2E2E]">
-            {note.application}
+          <h2 className="mb-4 text-sm text-[#9B9B9B]">적용</h2>
+          <div className="space-y-3">
+            {displayApplications.map((item, index) => (
+              <div key={index} className="flex gap-3 items-start">
+                <div className="pt-1">
+                  <Checkbox
+                    checked={item.checked}
+                    onCheckedChange={(checked) => onCheckChange(index, checked as boolean)}
+                    className="w-5 h-5 rounded-md"
+                    style={{
+                      borderColor: item.checked ? '#7DB87D' : undefined,
+                      backgroundColor: item.checked ? '#7DB87D' : undefined,
+                    }}
+                  />
+                </div>
+                <div className={`flex-1 text-base leading-[1.8] ${
+                  item.checked ? 'text-[#ACACAC] line-through' : 'text-[#2E2E2E]'
+                }`}>
+                  {item.text}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
       )}
