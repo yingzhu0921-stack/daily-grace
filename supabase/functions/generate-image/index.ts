@@ -8,6 +8,26 @@ const corsHeaders = {
   'Access-Control-Max-Age': '86400',
 };
 
+// Retry helper function with exponential backoff
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+  for (let i = 0; i < maxRetries; i++) {
+    const response = await fetch(url, options);
+
+    if (response.ok || response.status !== 429) {
+      return response;
+    }
+
+    // If rate limited and not last attempt, wait and retry
+    if (i < maxRetries - 1) {
+      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s, 4s
+      console.log(`Rate limited, retrying in ${waitTime}ms...`);
+      await new Promise(resolve => setTimeout(resolve, waitTime));
+    }
+  }
+
+  return fetch(url, options); // Return final attempt
+}
+
 const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour
 const MAX_REQUESTS_PER_HOUR = 10;
 const rateLimit = new Map<string, { count: number; resetAt: number }>();
@@ -109,7 +129,7 @@ serve(async (req) => {
 
       console.log('Expanding prompt for scene:', userScene, 'with style:', styleDesc);
 
-      const expandResponse = await fetch(
+      const expandResponse = await fetchWithRetry(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: 'POST',
@@ -201,7 +221,7 @@ serve(async (req) => {
       if (prompt && prompt.trim()) {
         console.log('Translating Korean prompt to English:', prompt);
 
-        const translateResponse = await fetch(
+        const translateResponse = await fetchWithRetry(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_API_KEY}`,
           {
             method: 'POST',
@@ -253,7 +273,7 @@ serve(async (req) => {
 
       console.log('Generating image with ratio:', ratio, 'Final English prompt:', finalPrompt);
 
-      const response = await fetch(
+      const response = await fetchWithRetry(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: 'POST',
