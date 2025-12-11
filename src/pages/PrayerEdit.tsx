@@ -29,7 +29,13 @@ export default function PrayerEdit() {
 
     // URL 파라미터에 showAnswered=true가 있으면 자동으로 체크
     const showAnswered = searchParams.get('showAnswered') === 'true';
-    setAnswered(showAnswered || found.answered || false);
+    console.log('showAnswered param:', showAnswered);
+    console.log('found.answered:', found.answered);
+
+    // showAnswered가 true이거나 기존에 answered가 true면 체크
+    const shouldBeAnswered = showAnswered || found.answered || false;
+    console.log('Setting answered to:', shouldBeAnswered);
+    setAnswered(shouldBeAnswered);
     setAnsweredDetail((found as any).answeredDetail || '')
   }, [id, navigate, searchParams]);
 
