@@ -19,7 +19,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 5)
 
     // If rate limited and not last attempt, wait and retry
     if (i < maxRetries - 1) {
-      const waitTime = Math.pow(2, i) * 2000; // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+      const waitTime = Math.pow(2, i) * 5000; // Exponential backoff: 5s, 10s, 20s, 40s, 80s
       console.log(`Rate limited (attempt ${i + 1}/${maxRetries}), retrying in ${waitTime / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }

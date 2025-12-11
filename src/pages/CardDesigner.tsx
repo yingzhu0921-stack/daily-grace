@@ -173,6 +173,8 @@ export default function Designer() {
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [isExpandingPrompt, setIsExpandingPrompt] = useState(false);
   const [showMoveHint, setShowMoveHint] = useState(true);
+  const [lastGenerateTime, setLastGenerateTime] = useState<number>(0);
+  const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [recordSelectorOpen, setRecordSelectorOpen] = useState(false);
   const [availableRecords, setAvailableRecords] = useState<any[]>([]);
@@ -713,6 +715,19 @@ export default function Designer() {
   const expandPrompt = async () => {
     console.log('🚀 expandPrompt called', { bgPrompt, selectedStyle, user: !!user });
 
+    // 쿨다운 체크
+    const now = Date.now();
+    const timeSinceLastGenerate = now - lastGenerateTime;
+    const COOLDOWN_MS = 10000; // 10초 쿨다운
+
+    if (timeSinceLastGenerate < COOLDOWN_MS) {
+      const remainingSeconds = Math.ceil((COOLDOWN_MS - timeSinceLastGenerate) / 1000);
+      toast.error('잠시만 기다려주세요', {
+        description: `${remainingSeconds}초 후에 다시 시도해주세요.`
+      });
+      return;
+    }
+
     // 로그인 체크
     if (!user) {
       console.log('❌ No user, showing login modal');
@@ -727,6 +742,7 @@ export default function Designer() {
       return;
     }
 
+    setLastGenerateTime(now);
     setIsExpandingPrompt(true);
     try {
       // 유효한 세션 가져오기 (서버 검증)
@@ -764,6 +780,15 @@ export default function Designer() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
         console.error('❌ generate-image API error:', response.status, errorData);
+
+        if (response.status === 429) {
+          toast.error('API 요청 한도 초과', {
+            description: 'Google API 사용량 제한에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+            duration: 5000,
+          });
+          return;
+        }
+
         throw new Error(errorData.error || '프롬프트 확장 실패');
       }
 
@@ -780,6 +805,19 @@ export default function Designer() {
   };
 
   const generateBackground = async () => {
+    // 쿨다운 체크
+    const now = Date.now();
+    const timeSinceLastGenerate = now - lastGenerateTime;
+    const COOLDOWN_MS = 10000; // 10초 쿨다운
+
+    if (timeSinceLastGenerate < COOLDOWN_MS) {
+      const remainingSeconds = Math.ceil((COOLDOWN_MS - timeSinceLastGenerate) / 1000);
+      toast.error('잠시만 기다려주세요', {
+        description: `${remainingSeconds}초 후에 다시 시도해주세요.`
+      });
+      return;
+    }
+
     // 로그인 체크
     if (!user) {
       toast.error('로그인이 필요한 기능입니다', {
@@ -793,6 +831,7 @@ export default function Designer() {
       return;
     }
 
+    setLastGenerateTime(now);
     setIsGenerating(true);
     try {
       // 유효한 세션 가져오기 (서버 검증)
@@ -823,6 +862,15 @@ export default function Designer() {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('API error:', errorData);
+
+        if (response.status === 429) {
+          toast.error('API 요청 한도 초과', {
+            description: 'Google API 사용량 제한에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+            duration: 5000,
+          });
+          return;
+        }
+
         throw new Error(errorData.error || '이미지 생성 실패');
       }
       
