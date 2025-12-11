@@ -68,6 +68,7 @@ const MeditationView = () => {
 
     toast({
       title: checked ? "적용을 완료로 표시했어요" : "적용 완료를 해제했어요",
+      duration: 2000, // 2초
     });
   };
 
@@ -96,6 +97,7 @@ const MeditationView = () => {
       navigator.clipboard.writeText(shareText);
       toast({
         title: "전체 내용이 복사되었어요!",
+        duration: 2000, // 2초
       });
     }
   };
@@ -110,6 +112,7 @@ const MeditationView = () => {
     remove(note.id);
     toast({
       title: "묵상이 삭제되었습니다",
+      duration: 2000, // 2초
     });
     navigate('/meditation');
   };
@@ -196,7 +199,7 @@ const MeditationView = () => {
           <div className="px-6 pb-6 space-y-3">
             <Button
               onClick={() => {
-                toast({ title: "알림이 설정되었습니다" });
+                toast({ title: "알림이 설정되었습니다", duration: 2000 });
                 setShowReminderModal(false);
               }}
               className="w-full h-12 bg-[#7DB87D] hover:bg-[#6da76d] text-white rounded-xl text-[15px] font-medium"

@@ -120,6 +120,7 @@ const MeditationNew = () => {
     toast({
       title: "저장 완료!",
       description: "클라우드에 백업되었습니다.",
+      duration: 2000, // 2초
     });
 
     // 저장된 노트 ID 저장하고 알림 모달 표시

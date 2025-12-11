@@ -102,6 +102,7 @@ const MeditationEdit = () => {
     toast({
       title: "저장 완료!",
       description: "클라우드에 백업되었습니다.",
+      duration: 2000, // 2초
     });
     navigate(`/meditation/${id}`, { replace: true });
   };
