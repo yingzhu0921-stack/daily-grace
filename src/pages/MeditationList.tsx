@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { list, toggleApply, remove, type MeditationNote } from '@/utils/meditationStorage';
+import { list, remove, update, type MeditationNote } from '@/utils/meditationStorage';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { SwipeableItem } from '@/components/SwipeableItem';
@@ -39,12 +39,6 @@ const MeditationList = () => {
       setSearchParams({});
     }, 300);
   }, [searchParams, setSearchParams]);
-
-  const onToggle = (e: React.ChangeEvent<HTMLInputElement>, id: string) => {
-    e.stopPropagation();
-    toggleApply(id);
-    refresh();
-  };
 
   const handleDelete = (id: string) => {
     remove(id);
@@ -113,29 +107,41 @@ const MeditationList = () => {
                       {n.content}
                     </div>
                   )}
-                  <div className="text-[13px] text-[#8A8A8A] line-clamp-1 whitespace-pre-wrap">
-                    적용: {
-                      n.applications && n.applications.length > 0
-                        ? n.applications.map(item => item.text).filter(text => text.trim()).join(', ')
-                        : n.application || '—'
-                    }
-                  </div>
+                  {/* 적용 항목들 */}
+                  {(n.applications && n.applications.length > 0 ? n.applications : n.application ? [{ text: n.application, checked: n.applyChecked || false }] : []).length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="text-[12px] text-[#9B9B9B] mb-1">적용</div>
+                      {(n.applications && n.applications.length > 0 ? n.applications : n.application ? [{ text: n.application, checked: n.applyChecked || false }] : []).map((item, idx) => (
+                        <label
+                          key={idx}
+                          className="flex items-start gap-2 text-[13px] text-[#5A5A5A] cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={item.checked}
+                            onChange={(e) => {
+                              e.stopPropagation();
+                              const updatedApplications = (n.applications && n.applications.length > 0 ? n.applications : [{ text: n.application || '', checked: n.applyChecked || false }]).map((app, i) =>
+                                i === idx ? { ...app, checked: e.target.checked } : app
+                              );
+                              update(n.id, {
+                                applications: updatedApplications,
+                                applyChecked: updatedApplications.some(app => app.checked)
+                              });
+                              refresh();
+                            }}
+                            className="w-4 h-4 mt-0.5 cursor-pointer flex-shrink-0"
+                          />
+                          <span className={item.checked ? 'line-through text-[#ACACAC]' : ''}>{item.text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
                   <div className="mt-2 flex items-center justify-between">
                     <div className="text-[12px] text-[#999]">
                       {format(new Date(n.createdAt), 'yyyy.MM.dd HH:mm', { locale: ko })}
                     </div>
-                    <label
-                      className="shrink-0 flex items-center gap-1.5 text-[12px] text-[#666]"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!n.applyChecked}
-                        onChange={(e) => onToggle(e, n.id)}
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                      적용
-                    </label>
                   </div>
                 </div>
               </button>
