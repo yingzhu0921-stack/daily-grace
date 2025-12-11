@@ -20,10 +20,8 @@ export function PrayerResponseModal({
   const [response, setResponse] = useState(initialResponse);
 
   const handleSave = () => {
-    if (response.trim()) {
-      onSave(response);
-      onClose();
-    }
+    onSave(response.trim());
+    onClose();
   };
 
   return (
@@ -70,12 +68,12 @@ export function PrayerResponseModal({
 
               <div>
                 <label className="block text-sm font-medium text-[#8B8B8B] mb-2">
-                  응답 내용
+                  응답 내용 <span className="text-[#BDBDBD] text-xs">(선택사항)</span>
                 </label>
                 <textarea
                   value={response}
                   onChange={(e) => setResponse(e.target.value)}
-                  placeholder="하나님께서 어떻게 응답하셨나요?"
+                  placeholder="하나님께서 어떻게 응답하셨나요? (입력하지 않아도 됩니다)"
                   className="w-full h-40 px-4 py-3 rounded-xl border border-[#E3E2E0] focus:border-[#A57DB8] focus:ring-2 focus:ring-[#A57DB8]/20 outline-none resize-none text-[15px] text-[#2E2E2E] placeholder:text-[#BDBDBD]"
                   autoFocus
                 />
@@ -92,8 +90,7 @@ export function PrayerResponseModal({
               </button>
               <button
                 onClick={handleSave}
-                disabled={!response.trim()}
-                className="flex-1 h-11 rounded-xl bg-[#A57DB8] hover:bg-[#956daa] disabled:bg-[#E3E2E0] disabled:text-[#BDBDBD] text-white font-medium transition-colors"
+                className="flex-1 h-11 rounded-xl bg-[#A57DB8] hover:bg-[#956daa] text-white font-medium transition-colors"
               >
                 저장
               </button>
