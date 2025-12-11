@@ -56,44 +56,47 @@ export default function DiaryView() {
   return (
     <div className="min-h-screen bg-[#FAF9F7]">
       <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
-        <button 
+        <button
           onClick={() => navigate("/diary")}
           className="p-2 -ml-2"
         >
           <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
         </button>
-        
+
         <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">일기</h1>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => navigate(`/diary/${id}/edit`)}
-            className="p-2"
-          >
-            <Edit2 className="w-5 h-5 text-[#2E2E2E]" />
-          </button>
-          <button
-            onClick={handleShare}
-            className="p-2"
-          >
-            <Share2 className="w-5 h-5 text-[#2E2E2E]" />
-          </button>
-          <button
-            onClick={del}
-            className="p-2"
-          >
-            <Trash2 className="w-5 h-5 text-[#EF4444]" />
-          </button>
-        </div>
+        <div className="w-10" />
       </header>
 
       <div className="px-5 py-6 pb-24">
-        <div className="rounded-2xl bg-white border border-[#F0EFED] shadow-sm px-5 py-5">
+        <div className="rounded-2xl bg-white border border-[#F0EFED] shadow-sm p-5">
           <div className="text-sm text-[#8B8B8B] mb-4">
             {new Date(diary.createdAt).toLocaleDateString("ko-KR")}
           </div>
-          <div className="whitespace-pre-wrap text-[15px] leading-7 text-[#2E2E2E]">
+          <div className="whitespace-pre-wrap text-[15px] leading-7 text-[#2E2E2E] mb-6">
             {diary.content}
+          </div>
+
+          <div className="flex gap-2 pt-4 border-t border-[#F0EFED]">
+            <button
+              onClick={() => navigate(`/diary/${id}/edit`)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Edit2 className="w-4 h-4" />
+              수정하기
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors"
+            >
+              공유하기
+            </button>
+            <button
+              onClick={del}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
+            >
+              삭제하기
+            </button>
           </div>
         </div>
       </div>

@@ -1,18 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ChevronLeft, MoreVertical, Share2, Trash2, Bell } from 'lucide-react';
+import { ChevronLeft, Edit2, Share2, Trash2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MeditationViewContent } from '@/components/MeditationViewContent';
 import { get, update, remove } from '@/utils/meditationStorage';
 import { MeditationNote } from '@/types/meditation';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -137,40 +131,37 @@ const MeditationView = () => {
         </button>
         
         <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">Q.T</h1>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="p-2 -mr-2">
-              <MoreVertical className="w-5 h-5 text-[#2E2E2E]" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleShare}>
-              <Share2 className="mr-2 h-4 w-4" />
-              공유하기
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleDelete} className="text-red-500">
-              <Trash2 className="mr-2 h-4 w-4" />
-              삭제하기
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+        <div className="w-10" />
       </header>
 
       {/* 본문 */}
-      <main className="flex-1 overflow-auto px-5 py-6 pb-32">
+      <main className="flex-1 overflow-auto px-5 py-6 pb-24">
         <MeditationViewContent note={note} onCheckChange={handleCheckChange} />
-      </main>
 
-      {/* 하단 고정 바 */}
-      <footer className="fixed bottom-0 left-0 right-0 z-50 flex items-center gap-3 border-t border-[#F0EFED] bg-[#FAF9F7] px-5 py-4">
-        <Button
-          onClick={handleEdit}
-          className="flex-1 h-11 rounded-full bg-[#7DB87D] hover:bg-[#6da76d] text-white text-sm font-medium"
-        >
-          수정
-        </Button>
-      </footer>
+        {/* 버튼 영역 */}
+        <div className="flex gap-2 pt-6 mt-6 border-t border-[#F0EFED]">
+          <button
+            onClick={handleEdit}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"
+          >
+            <Edit2 className="w-4 h-4" />
+            수정하기
+          </button>
+          <button
+            onClick={handleShare}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors"
+          >
+            공유하기
+          </button>
+          <button
+            onClick={handleDelete}
+            className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
+          >
+            삭제하기
+          </button>
+        </div>
+      </main>
 
       {/* 삭제 확인 다이얼로그 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

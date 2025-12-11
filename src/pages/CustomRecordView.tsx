@@ -209,35 +209,16 @@ const CustomRecordView = () => {
           >
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
-          
+
           <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">
             {category.name}
           </h1>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`/custom/${categoryId}/edit/${recordId}`)}
-              className="p-2"
-            >
-              <Edit2 className="w-5 h-5 text-[#2E2E2E]" />
-            </button>
-            <button
-              onClick={handleShare}
-              className="p-2"
-            >
-              <Share2 className="w-5 h-5 text-[#2E2E2E]" />
-            </button>
-            <button
-              onClick={handleDelete}
-              className="p-2"
-            >
-              <Trash2 className="w-5 h-5 text-[#EF4444]" />
-            </button>
-          </div>
+          <div className="w-10" />
         </header>
 
         {/* 콘텐츠 */}
-        <main className="px-5 py-6 pb-32 max-w-[680px] mx-auto">
+        <main className="px-5 py-6 pb-24 max-w-[680px] mx-auto">
           {fields.includes('title') && record.title && (
             <section className="mb-12">
               <h2 className="mb-2 text-sm text-[#9B9B9B]">제목</h2>
@@ -326,8 +307,31 @@ const CustomRecordView = () => {
             </section>
           )}
 
+          {/* 버튼 영역 */}
+          <div className="flex gap-2 pt-6 mt-6 border-t border-[#F0EFED]">
+            <button
+              onClick={() => navigate(`/custom/${categoryId}/edit/${recordId}`)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Edit2 className="w-4 h-4" />
+              수정하기
+            </button>
+            <button
+              onClick={handleShare}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors"
+            >
+              공유하기
+            </button>
+            <button
+              onClick={handleDelete}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
+            >
+              삭제하기
+            </button>
+          </div>
+
           {/* 작성 일시 */}
-          <div className="pt-6 border-t border-[#F0EFED] text-center">
+          <div className="pt-4 text-center">
             <p className="text-sm text-[#999]">
               {format(new Date(record.createdAt), 'yyyy년 MM월 dd일 HH:mm', { locale: ko })}
             </p>
