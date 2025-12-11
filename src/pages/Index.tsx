@@ -31,6 +31,14 @@ const IndexNew = () => {
   const [recentRecords, setRecentRecords] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // 온보딩 체크
+  useEffect(() => {
+    const onboardingCompleted = localStorage.getItem('onboarding_completed');
+    if (!onboardingCompleted) {
+      navigate('/onboarding', { replace: true });
+    }
+  }, [navigate]);
+
   // 기본 카테고리
   const defaultCategories = [
     { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
