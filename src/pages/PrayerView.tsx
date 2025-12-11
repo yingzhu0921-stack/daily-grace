@@ -41,18 +41,22 @@ export default function PrayerView() {
 
   const handleShare = async () => {
     if (!note) return;
-    
+
     const parts: string[] = [];
     const date = new Date(note.createdAt).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '');
-    
+
     parts.push(date);
     parts.push('기도\n');
-    
+
     if (note.title?.trim()) parts.push(`기도 제목: ${note.title}`);
     if (note.content?.trim()) parts.push(`기도 내용: ${note.content}`);
-    
+    if (note.answered && note.answeredDetail?.trim()) {
+      parts.push(`\n✓ 응답됨 (${new Date(note.answeredAt!).toLocaleDateString('ko-KR').replace(/\. /g, '.').replace(/\.$/, '')})`);
+      parts.push(`응답 내용: ${note.answeredDetail}`);
+    }
+
     const text = parts.join('\n\n');
-    
+
     if (navigator.share) {
       try {
         await navigator.share({ text });
@@ -109,6 +113,18 @@ export default function PrayerView() {
           <div className="text-[15px] leading-relaxed text-[#5A5A5A] mb-6 whitespace-pre-wrap">
             {note.content}
           </div>
+
+          {note.answered && note.answeredDetail && (
+            <div className="mb-6 p-4 rounded-xl bg-[#F8F5FB] border border-[#E8DEF5]">
+              <div className="text-sm font-medium text-[#A57DB8] mb-2 flex items-center gap-1.5">
+                <Check className="w-4 h-4" />
+                응답 내용 / 간증
+              </div>
+              <div className="text-[15px] leading-relaxed text-[#5A5A5A] whitespace-pre-wrap">
+                {note.answeredDetail}
+              </div>
+            </div>
+          )}
 
           <div className="flex gap-2 pt-4 border-t border-[#F0EFED]">
             <button 

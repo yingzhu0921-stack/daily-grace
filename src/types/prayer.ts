@@ -4,6 +4,7 @@ export type PrayerNote = {
   content: string;
   answered: boolean;
   answeredAt: string | null;
+  answeredDetail?: string;
   createdAt: string;
   updatedAt: string;
 };

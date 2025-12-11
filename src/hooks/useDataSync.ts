@@ -55,6 +55,7 @@ export function useDataSync() {
         content: p.content,
         answered: p.answered || false,
         answeredAt: p.answered_at,
+        answeredDetail: p.answered_detail || undefined,
         createdAt: p.created_at,
         updatedAt: p.updated_at,
       })) || [];

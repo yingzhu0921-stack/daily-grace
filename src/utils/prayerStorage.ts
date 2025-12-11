@@ -50,6 +50,7 @@ export async function create(note: Omit<PrayerNote, 'id' | 'createdAt' | 'update
         content: saved.content,
         answered: saved.answered || false,
         answered_at: saved.answeredAt || null,
+        answered_detail: saved.answeredDetail || null,
         date: saved.createdAt.split('T')[0],
       });
       if (error) console.error('❌ Supabase 저장 실패:', error);
@@ -78,6 +79,7 @@ export async function update(id: string, patch: Partial<PrayerNote>) {
         content: all[idx].content,
         answered: all[idx].answered || false,
         answered_at: all[idx].answeredAt || null,
+        answered_detail: all[idx].answeredDetail || null,
         updated_at: all[idx].updatedAt,
       }).eq('id', id).eq('user_id', user.id);
       if (error) console.error('❌ Supabase 업데이트 실패:', error);
@@ -109,6 +111,7 @@ export async function toggleAnswered(id: string) {
       const { error } = await supabase.from('prayer_notes').update({
         answered: all[idx].answered,
         answered_at: all[idx].answeredAt,
+        answered_detail: all[idx].answeredDetail || null,
         updated_at: all[idx].updatedAt,
       }).eq('id', id).eq('user_id', user.id);
       if (error) console.error('❌ Supabase 업데이트 실패:', error);
