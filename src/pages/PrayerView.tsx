@@ -27,9 +27,17 @@ export default function PrayerView() {
 
   const handleToggleAnswered = async () => {
     if (!id) return;
+
+    // 응답됨으로 표시하려는 경우 수정 페이지로 이동
+    if (!note?.answered) {
+      navigate(`/prayer/${id}/edit`);
+      return;
+    }
+
+    // 이미 응답됨인 경우 토글 (해제)
     const updated = await toggleAnswered(id);
     setNote(updated);
-    toast.success(updated.answered ? '응답됨으로 표시했습니다' : '응답 표시를 해제했습니다');
+    toast.success('응답 표시를 해제했습니다');
   };
 
   const handleDelete = () => {
