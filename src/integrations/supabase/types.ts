@@ -18,41 +18,38 @@ export type Database = {
         Row: {
           active_days: number[] | null
           color: string
-          created_at: string
+          created_at: string | null
           description: string | null
-          fields: Json
-          icon: string | null
+          fields: Json | null
           id: string
           include_in_goal: boolean | null
           name: string
-          updated_at: string
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           active_days?: number[] | null
           color: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
-          fields?: Json
-          icon?: string | null
+          fields?: Json | null
           id?: string
           include_in_goal?: boolean | null
           name: string
-          updated_at?: string
-          user_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           active_days?: number[] | null
           color?: string
-          created_at?: string
+          created_at?: string | null
           description?: string | null
-          fields?: Json
-          icon?: string | null
+          fields?: Json | null
           id?: string
           include_in_goal?: boolean | null
           name?: string
-          updated_at?: string
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -97,203 +94,123 @@ export type Database = {
       diary_entries: {
         Row: {
           content: string
-          created_at: string
-          date: string
+          created_at: string | null
           id: string
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           content: string
-          created_at?: string
-          date: string
+          created_at?: string | null
           id?: string
-          user_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           content?: string
-          created_at?: string
-          date?: string
+          created_at?: string | null
           id?: string
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "diary_entries_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       gratitude_entries: {
         Row: {
-          created_at: string
-          date: string
+          content: string
+          created_at: string | null
           id: string
-          items: string[]
-          user_id: string
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
-          created_at?: string
-          date: string
+          content: string
+          created_at?: string | null
           id?: string
-          items: string[]
-          user_id: string
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
-          date?: string
+          content?: string
+          created_at?: string | null
           id?: string
-          items?: string[]
-          user_id?: string
+          updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "gratitude_entries_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       meditation_notes: {
         Row: {
           application: string | null
           apply_checked: boolean | null
-          apply_checked_at: string | null
           content: string
-          created_at: string
-          date: string
-          full_text: string | null
+          created_at: string | null
           id: string
           passage: string | null
-          title: string
-          updated_at: string
-          user_id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           application?: string | null
           apply_checked?: boolean | null
-          apply_checked_at?: string | null
           content: string
-          created_at?: string
-          date: string
-          full_text?: string | null
+          created_at?: string | null
           id?: string
           passage?: string | null
-          title: string
-          updated_at?: string
-          user_id: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           application?: string | null
           apply_checked?: boolean | null
-          apply_checked_at?: string | null
           content?: string
-          created_at?: string
-          date?: string
-          full_text?: string | null
+          created_at?: string | null
           id?: string
           passage?: string | null
-          title?: string
-          updated_at?: string
-          user_id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: [
-          {
-            foreignKeyName: "meditation_notes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       prayer_notes: {
         Row: {
           answered: boolean | null
           answered_at: string | null
+          answered_detail: string | null
           content: string
-          created_at: string
+          created_at: string | null
           date: string
           id: string
-          title: string
-          updated_at: string
-          user_id: string
+          title: string | null
+          updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           answered?: boolean | null
           answered_at?: string | null
+          answered_detail?: string | null
           content: string
-          created_at?: string
-          date: string
-          id?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          answered?: boolean | null
-          answered_at?: string | null
-          content?: string
-          created_at?: string
+          created_at?: string | null
           date?: string
           id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "prayer_notes_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      profiles: {
-        Row: {
-          created_at: string
-          display_name: string | null
-          id: string
-        }
-        Insert: {
-          created_at?: string
-          display_name?: string | null
-          id: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
-          created_at?: string
-          display_name?: string | null
+          answered?: boolean | null
+          answered_at?: string | null
+          answered_detail?: string | null
+          content?: string
+          created_at?: string | null
+          date?: string
           id?: string
-        }
-        Relationships: []
-      }
-      verse_cards: {
-        Row: {
-          card_data: Json
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          card_data: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          card_data?: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
+          title?: string | null
+          updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
