@@ -182,11 +182,64 @@ const CustomRecordList = () => {
                       {record.content}
                     </div>
                   )}
-                  {record.application && (
+                  {/* 적용 항목들 */}
+                  {record.application && Array.isArray(record.application) && record.application.filter(item => item && item.trim()).length > 0 && (
+                    <div className="mt-2 space-y-1.5">
+                      <div className="text-[12px] text-[#9B9B9B] mb-1">적용</div>
+                      {record.application.filter(item => item && item.trim()).map((item, idx) => {
+                        const isChecked = Array.isArray(record.applyChecked)
+                          ? record.applyChecked[idx] || false
+                          : typeof record.applyChecked === 'object' && record.applyChecked !== null
+                          ? record.applyChecked[idx] || false
+                          : false;
+
+                        return (
+                          <label
+                            key={idx}
+                            className="flex items-start gap-2 text-[13px] text-[#5A5A5A] cursor-pointer"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                e.stopPropagation();
+                                const saved = localStorage.getItem('custom_records');
+                                if (saved) {
+                                  const allRecords: CustomRecord[] = JSON.parse(saved);
+                                  const updatedRecords = allRecords.map(r => {
+                                    if (r.id === record.id) {
+                                      const currentChecked = r.applyChecked || {};
+                                      const newChecked = Array.isArray(currentChecked)
+                                        ? [...currentChecked]
+                                        : { ...currentChecked };
+
+                                      if (Array.isArray(newChecked)) {
+                                        newChecked[idx] = e.target.checked;
+                                      } else {
+                                        newChecked[idx] = e.target.checked;
+                                      }
+
+                                      return { ...r, applyChecked: newChecked };
+                                    }
+                                    return r;
+                                  });
+                                  localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
+                                  refresh();
+                                }
+                              }}
+                              className="w-4 h-4 mt-0.5 cursor-pointer flex-shrink-0"
+                            />
+                            <span className={isChecked ? 'line-through text-[#ACACAC]' : ''}>{item}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {/* 단일 적용 (하위 호환성) */}
+                  {record.application && typeof record.application === 'string' && record.application.trim() && (
                     <div className="text-[13px] text-[#8A8A8A] line-clamp-1 whitespace-pre-wrap">
-                      적용: {Array.isArray(record.application)
-                        ? record.application.filter(item => item && item.trim()).join(', ')
-                        : record.application}
+                      적용: {record.application}
                     </div>
                   )}
                   <div className="mt-2 flex items-center justify-between">
