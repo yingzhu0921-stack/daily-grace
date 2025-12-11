@@ -4,7 +4,6 @@ export type Category = {
   id: string;
   name: string;
   color: string;
-  icon?: string;
   description?: string;
   includeInGoal?: boolean;
   activeDays?: number[];
@@ -30,7 +29,6 @@ export async function list(): Promise<Category[]> {
     user_id: cat.user_id,
     name: cat.name,
     color: cat.color,
-    icon: cat.icon || undefined,
     description: cat.description || undefined,
     includeInGoal: cat.include_in_goal,
     activeDays: cat.active_days,
@@ -49,7 +47,6 @@ export async function create(category: Omit<Category, 'id' | 'createdAt' | 'upda
     user_id: user.id,
     name: category.name,
     color: category.color,
-    icon: category.icon || null,
     description: category.description || null,
     include_in_goal: category.includeInGoal ?? true,
     active_days: category.activeDays || [0,1,2,3,4,5,6],
@@ -74,7 +71,6 @@ export async function create(category: Omit<Category, 'id' | 'createdAt' | 'upda
     id: data.id,
     name: data.name,
     color: data.color,
-    icon: data.icon || undefined,
     description: data.description || undefined,
     includeInGoal: data.include_in_goal,
     activeDays: data.active_days,
@@ -134,7 +130,6 @@ export async function update(id: string, patch: Partial<Category>): Promise<Cate
   const updateData: any = {};
   if (patch.name !== undefined) updateData.name = patch.name;
   if (patch.color !== undefined) updateData.color = patch.color;
-  if (patch.icon !== undefined) updateData.icon = patch.icon;
   if (patch.description !== undefined) updateData.description = patch.description;
   if (patch.includeInGoal !== undefined) updateData.include_in_goal = patch.includeInGoal;
   if (patch.activeDays !== undefined) updateData.active_days = patch.activeDays;
@@ -154,7 +149,6 @@ export async function update(id: string, patch: Partial<Category>): Promise<Cate
     id: data.id,
     name: data.name,
     color: data.color,
-    icon: data.icon || undefined,
     description: data.description || undefined,
     includeInGoal: data.include_in_goal,
     activeDays: data.active_days,
