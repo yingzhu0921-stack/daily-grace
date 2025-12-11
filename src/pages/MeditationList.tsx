@@ -114,7 +114,11 @@ const MeditationList = () => {
                     </div>
                   )}
                   <div className="text-[13px] text-[#8A8A8A] line-clamp-1 whitespace-pre-wrap">
-                    적용: {n.application || '—'}
+                    적용: {
+                      n.applications && n.applications.length > 0
+                        ? n.applications.map(item => item.text).filter(text => text.trim()).join(', ')
+                        : n.application || '—'
+                    }
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <div className="text-[12px] text-[#999]">
