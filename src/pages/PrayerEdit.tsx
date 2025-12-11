@@ -17,6 +17,11 @@ export default function PrayerEdit() {
   const [answered, setAnswered] = useState(false);
   const [answeredDetail, setAnsweredDetail] = useState('');
 
+  // Debug: Monitor answered state changes
+  useEffect(() => {
+    console.log('>>> answered state changed to:', answered);
+  }, [answered]);
+
   useEffect(() => {
     if (!id) return;
     const found = get(id);
@@ -29,14 +34,21 @@ export default function PrayerEdit() {
 
     // URL 파라미터에 showAnswered=true가 있으면 자동으로 체크
     const showAnswered = searchParams.get('showAnswered') === 'true';
+    console.log('=== PrayerEdit Debug ===');
+    console.log('searchParams.get("showAnswered"):', searchParams.get('showAnswered'));
     console.log('showAnswered param:', showAnswered);
     console.log('found.answered:', found.answered);
+    console.log('found.answeredDetail:', (found as any).answeredDetail);
 
     // showAnswered가 true이거나 기존에 answered가 true면 체크
     const shouldBeAnswered = showAnswered || found.answered || false;
-    console.log('Setting answered to:', shouldBeAnswered);
+    console.log('shouldBeAnswered calculated:', shouldBeAnswered);
+
     setAnswered(shouldBeAnswered);
-    setAnsweredDetail((found as any).answeredDetail || '')
+    setAnsweredDetail((found as any).answeredDetail || '');
+
+    console.log('After setState - answered should be:', shouldBeAnswered);
+    console.log('========================');
   }, [id, navigate, searchParams]);
 
   const canSave = content.trim().length > 0;
