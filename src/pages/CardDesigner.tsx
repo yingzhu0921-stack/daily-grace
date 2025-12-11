@@ -730,15 +730,8 @@ export default function Designer() {
 
     // 로그인 체크
     if (!user) {
-      console.log('❌ No user, showing login modal');
-      toast.error('로그인이 필요한 기능입니다', {
-        description: '프롬프트를 생성하려면 먼저 로그인해주세요.',
-        action: {
-          label: '로그인',
-          onClick: () => setShowLoginModal(true)
-        }
-      });
-      setShowLoginModal(true);
+      console.log('❌ No user, redirecting to auth');
+      navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
       return;
     }
 
@@ -751,7 +744,7 @@ export default function Designer() {
       if (sessionError || !session) {
         console.error('❌ Session error:', sessionError);
         toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        setShowLoginModal(true);
+        navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
         setIsExpandingPrompt(false);
         return;
       }
@@ -820,14 +813,7 @@ export default function Designer() {
 
     // 로그인 체크
     if (!user) {
-      toast.error('로그인이 필요한 기능입니다', {
-        description: '배경 이미지를 생성하려면 먼저 로그인해주세요.',
-        action: {
-          label: '로그인',
-          onClick: () => setShowLoginModal(true)
-        }
-      });
-      setShowLoginModal(true);
+      navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
       return;
     }
 
@@ -840,7 +826,7 @@ export default function Designer() {
       if (sessionError || !session) {
         console.error('Session error:', sessionError);
         toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        setShowLoginModal(true);
+        navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
         setIsGenerating(false);
         return;
       }
