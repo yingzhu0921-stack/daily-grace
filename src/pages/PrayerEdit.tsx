@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { get, update } from '@/utils/prayerStorage';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -11,16 +11,10 @@ import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
 export default function PrayerEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
-  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [answered, setAnswered] = useState(false);
   const [answeredDetail, setAnsweredDetail] = useState('');
-
-  // Debug: Monitor answered state changes
-  useEffect(() => {
-    console.log('>>> answered state changed to:', answered);
-  }, [answered]);
 
   useEffect(() => {
     if (!id) return;
@@ -31,25 +25,9 @@ export default function PrayerEdit() {
       return;
     }
     setContent(found.content);
-
-    // URL 파라미터에 showAnswered=true가 있으면 자동으로 체크
-    const showAnswered = searchParams.get('showAnswered') === 'true';
-    console.log('=== PrayerEdit Debug ===');
-    console.log('searchParams.get("showAnswered"):', searchParams.get('showAnswered'));
-    console.log('showAnswered param:', showAnswered);
-    console.log('found.answered:', found.answered);
-    console.log('found.answeredDetail:', (found as any).answeredDetail);
-
-    // showAnswered가 true이거나 기존에 answered가 true면 체크
-    const shouldBeAnswered = showAnswered || found.answered || false;
-    console.log('shouldBeAnswered calculated:', shouldBeAnswered);
-
-    setAnswered(shouldBeAnswered);
+    setAnswered(found.answered || false);
     setAnsweredDetail((found as any).answeredDetail || '');
-
-    console.log('After setState - answered should be:', shouldBeAnswered);
-    console.log('========================');
-  }, [id, navigate, searchParams]);
+  }, [id, navigate]);
 
   const canSave = content.trim().length > 0;
 

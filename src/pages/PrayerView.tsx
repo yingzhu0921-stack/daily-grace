@@ -1,15 +1,25 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { get, remove, toggleAnswered } from '@/utils/prayerStorage';
+import { get, remove, toggleAnswered, update } from '@/utils/prayerStorage';
 import type { PrayerNote } from '@/types/prayer';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import { Check, ChevronLeft, Edit2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 export default function PrayerView() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const [note, setNote] = useState<PrayerNote | null>(null);
+  const [isAnsweredDialogOpen, setIsAnsweredDialogOpen] = useState(false);
+  const [answeredDetail, setAnsweredDetail] = useState('');
 
   useEffect(() => {
     if (!id) {
@@ -28,9 +38,10 @@ export default function PrayerView() {
   const handleToggleAnswered = async () => {
     if (!id) return;
 
-    // 응답됨으로 표시하려는 경우 수정 페이지로 이동
+    // 응답됨으로 표시하려는 경우 모달 열기
     if (!note?.answered) {
-      navigate(`/prayer/${id}/edit?showAnswered=true`);
+      setAnsweredDetail('');
+      setIsAnsweredDialogOpen(true);
       return;
     }
 
@@ -38,6 +49,26 @@ export default function PrayerView() {
     const updated = await toggleAnswered(id);
     setNote(updated);
     toast.success('응답 표시를 해제했습니다');
+  };
+
+  const handleSaveAnswered = async () => {
+    if (!id) return;
+
+    await update(id, {
+      title: note?.title || '',
+      content: note?.content || '',
+      answered: true,
+      answeredAt: new Date().toISOString(),
+      answeredDetail: answeredDetail.trim() || undefined,
+    });
+
+    const updated = get(id);
+    if (updated) {
+      setNote(updated);
+    }
+
+    setIsAnsweredDialogOpen(false);
+    toast.success('응답이 기록되었습니다', { duration: 2000 });
   };
 
   const handleDelete = () => {
@@ -80,7 +111,8 @@ export default function PrayerView() {
   if (!note) return null;
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <>
+      <div className="min-h-screen bg-[#FAF9F7]">
       <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
         <button 
           onClick={() => navigate('/prayer')}
@@ -158,5 +190,58 @@ export default function PrayerView() {
         </div>
       </div>
     </div>
+
+      {/* 응답 기록 모달 */}
+      <Dialog open={isAnsweredDialogOpen} onOpenChange={setIsAnsweredDialogOpen}>
+        <DialogContent className="sm:max-w-[500px] bg-[#FAF9F7]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-[#2E2E2E]">응답 기록하기</DialogTitle>
+            <DialogDescription className="text-sm text-[#8B8B8B]">
+              어떻게 응답되었는지, 은혜받은 내용을 기록해보세요
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="mt-4 space-y-4">
+            {/* 기도 제목 표시 */}
+            <div className="p-4 rounded-xl bg-white border border-[#F0EFED]">
+              <div className="text-xs text-[#9B9B9B] mb-1">기도 제목</div>
+              <div className="text-sm text-[#2E2E2E] font-medium line-clamp-2">
+                {note.title}
+              </div>
+            </div>
+
+            {/* 응답 내용 입력 */}
+            <div>
+              <label className="block text-sm font-medium text-[#2E2E2E] mb-2">
+                응답 내용 / 간증
+              </label>
+              <Textarea
+                value={answeredDetail}
+                onChange={(e) => setAnsweredDetail(e.target.value)}
+                placeholder="어떻게 응답되었는지, 은혜받은 내용을 기록해보세요"
+                className="min-h-[150px] resize-none bg-white border-[#E8E7E5] text-[15px] leading-relaxed placeholder:text-[#D0D0D0] focus-visible:ring-[#A57DB8] focus-visible:border-[#A57DB8]"
+                autoFocus
+              />
+            </div>
+
+            {/* 버튼 영역 */}
+            <div className="flex gap-2 pt-2">
+              <button
+                onClick={() => setIsAnsweredDialogOpen(false)}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#7E7C78] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSaveAnswered}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium text-white bg-[#A57DB8] hover:bg-[#956daa] transition-colors"
+              >
+                저장하기
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
