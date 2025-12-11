@@ -1,0 +1,7 @@
+project_id = "vngxsnenficumesjieuv"
+
+[functions.generate-image]
+verify_jwt = false
+
+[functions.analyze-records]
+verify_jwt = false
