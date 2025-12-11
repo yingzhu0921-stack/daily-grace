@@ -30,7 +30,7 @@ export default function PrayerView() {
 
     // 응답됨으로 표시하려는 경우 수정 페이지로 이동
     if (!note?.answered) {
-      navigate(`/prayer/${id}/edit`);
+      navigate(`/prayer/${id}/edit?showAnswered=true`);
       return;
     }
 

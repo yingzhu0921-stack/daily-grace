@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { get, update } from '@/utils/prayerStorage';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
@@ -11,6 +11,7 @@ import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
 export default function PrayerEdit() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const [content, setContent] = useState('');
   const [answered, setAnswered] = useState(false);
@@ -25,9 +26,12 @@ export default function PrayerEdit() {
       return;
     }
     setContent(found.content);
-    setAnswered(found.answered || false);
+
+    // URL 파라미터에 showAnswered=true가 있으면 자동으로 체크
+    const showAnswered = searchParams.get('showAnswered') === 'true';
+    setAnswered(showAnswered || found.answered || false);
     setAnsweredDetail((found as any).answeredDetail || '')
-  }, [id, navigate]);
+  }, [id, navigate, searchParams]);
 
   const canSave = content.trim().length > 0;
 
