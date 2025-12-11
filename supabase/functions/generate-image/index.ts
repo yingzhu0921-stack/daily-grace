@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 // Retry helper function with exponential backoff
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 5): Promise<Response> {
   for (let i = 0; i < maxRetries; i++) {
     const response = await fetch(url, options);
 
@@ -19,8 +19,8 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
 
     // If rate limited and not last attempt, wait and retry
     if (i < maxRetries - 1) {
-      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s, 4s
-      console.log(`Rate limited, retrying in ${waitTime}ms...`);
+      const waitTime = Math.pow(2, i) * 2000; // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+      console.log(`Rate limited (attempt ${i + 1}/${maxRetries}), retrying in ${waitTime / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
@@ -153,6 +153,14 @@ serve(async (req) => {
       if (!expandResponse.ok) {
         const errorText = await expandResponse.text();
         console.error('Expand prompt error:', expandResponse.status, errorText);
+
+        if (expandResponse.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'API 요청 한도를 초과했습니다. 잠시 후(1-2분) 다시 시도해주세요.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         return new Response(
           JSON.stringify({ error: `프롬프트 확장 실패: ${expandResponse.status}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -245,6 +253,14 @@ serve(async (req) => {
         if (!translateResponse.ok) {
           const errorText = await translateResponse.text();
           console.error('Translation error:', translateResponse.status, errorText);
+
+          if (translateResponse.status === 429) {
+            return new Response(
+              JSON.stringify({ error: 'API 요청 한도를 초과했습니다. 잠시 후(1-2분) 다시 시도해주세요.' }),
+              { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            );
+          }
+
           return new Response(
             JSON.stringify({ error: `번역 실패: ${translateResponse.status}` }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -297,8 +313,16 @@ serve(async (req) => {
       if (!response.ok) {
         const errorText = await response.text();
         console.error('Gemini API error:', response.status, errorText);
+
+        if (response.status === 429) {
+          return new Response(
+            JSON.stringify({ error: 'API 요청 한도를 초과했습니다. 잠시 후(1-2분) 다시 시도해주세요.' }),
+            { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ error: `Gemini API error: ${response.status}` }),
+          JSON.stringify({ error: `이미지 생성 실패: ${response.status}` }),
           { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

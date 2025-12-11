@@ -6,7 +6,7 @@ const corsHeaders = {
 };
 
 // Retry helper function with exponential backoff
-async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3): Promise<Response> {
+async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 5): Promise<Response> {
   for (let i = 0; i < maxRetries; i++) {
     const response = await fetch(url, options);
 
@@ -16,8 +16,8 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 3)
 
     // If rate limited and not last attempt, wait and retry
     if (i < maxRetries - 1) {
-      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s, 4s
-      console.log(`Rate limited, retrying in ${waitTime}ms...`);
+      const waitTime = Math.pow(2, i) * 2000; // Exponential backoff: 2s, 4s, 8s, 16s, 32s
+      console.log(`Rate limited (attempt ${i + 1}/${maxRetries}), retrying in ${waitTime / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
   }
