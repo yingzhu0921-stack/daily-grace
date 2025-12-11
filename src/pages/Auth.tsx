@@ -39,10 +39,6 @@ export default function Auth() {
 
         if (error) throw error;
 
-        toast({
-          title: "로그인 성공",
-          description: "환영합니다!",
-        });
         const redirectTo = callbackUrl || '/';
         navigate(redirectTo, { replace: true });
       } else {
