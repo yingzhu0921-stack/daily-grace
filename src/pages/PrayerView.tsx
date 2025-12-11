@@ -4,7 +4,7 @@ import { get, remove, toggleAnswered } from '@/utils/prayerStorage';
 import type { PrayerNote } from '@/types/prayer';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
-import { Check, ChevronLeft } from 'lucide-react';
+import { Check, ChevronLeft, Edit2 } from 'lucide-react';
 
 export default function PrayerView() {
   const navigate = useNavigate();
@@ -127,13 +127,20 @@ export default function PrayerView() {
           )}
 
           <div className="flex gap-2 pt-4 border-t border-[#F0EFED]">
-            <button 
+            <button
+              onClick={() => navigate(`/prayer/${id}/edit`)}
+              className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"
+            >
+              <Edit2 className="w-4 h-4" />
+              수정하기
+            </button>
+            <button
               onClick={handleShare}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors"
             >
               공유하기
             </button>
-            <button 
+            <button
               onClick={handleDelete}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
             >

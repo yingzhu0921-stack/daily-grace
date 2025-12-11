@@ -31,16 +31,17 @@ export default function PrayerEdit() {
 
   const canSave = content.trim().length > 0;
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!id) return;
     const contentTrimmed = content.trim();
 
-    update(id, {
+    await update(id, {
       title: contentTrimmed,
       content: contentTrimmed,
       answered,
-      answeredDetail
-    } as any);
+      answeredAt: answered ? (get(id)?.answeredAt || new Date().toISOString()) : null,
+      answeredDetail: answered ? answeredDetail : undefined
+    });
 
     toast.success('클라우드에 백업되었습니다.');
     navigate(`/prayer/${id}`, { replace: true });
