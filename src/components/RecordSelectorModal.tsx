@@ -61,7 +61,9 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
       console.log('🔄 Modal opened - triggering refetch');
       onRefetch();
     }
-  }, [open, onRefetch]);
+    // onRefetch는 useCallback으로 감싸져서 안정적인 참조를 가지므로 의존성 배열에 포함 가능
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]); // open이 변경될 때만 실행 (무한 루프 방지)
 
   const handleConfirm = () => {
     if (selectedRecord) {

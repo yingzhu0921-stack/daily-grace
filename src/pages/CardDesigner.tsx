@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline } from 'lucide-react';
@@ -541,12 +541,12 @@ export default function Designer() {
   };
 
 
-  const fetchRecordsForSelector = async () => {
+  const fetchRecordsForSelector = useCallback(async () => {
     try {
       console.log('🔄 Fetching records...');
       const { supabase } = await import('@/integrations/supabase/client');
       const { data: { session } } = await supabase.auth.getSession();
-      
+
       let supabaseRecords: any[] = [];
       let localRecords: any[] = [];
 
@@ -556,19 +556,19 @@ export default function Designer() {
       const localPrayersRaw = localStorage.getItem('prayers');          // ✅ 'prayers'
       const localGratitudesRaw = localStorage.getItem('gratitudes');    // ✅ 'gratitudes'
       const localDiariesRaw = localStorage.getItem('diaries');          // ✅ 'diaries'
-      
+
       console.log('📦 Raw localStorage data:', {
         meditation: localMeditationsRaw ? JSON.parse(localMeditationsRaw).length : 0,
         prayer: localPrayersRaw ? JSON.parse(localPrayersRaw).length : 0,
         gratitude: localGratitudesRaw ? JSON.parse(localGratitudesRaw).length : 0,
         diary: localDiariesRaw ? JSON.parse(localDiariesRaw).length : 0
       });
-      
+
       const localMeditations = JSON.parse(localMeditationsRaw || '[]').map((r: any) => ({ ...r, type: 'meditation' }));
       const localPrayers = JSON.parse(localPrayersRaw || '[]').map((r: any) => ({ ...r, type: 'prayer' }));
       const localGratitudes = JSON.parse(localGratitudesRaw || '[]').map((r: any) => ({ ...r, type: 'gratitude' }));
       const localDiaries = JSON.parse(localDiariesRaw || '[]').map((r: any) => ({ ...r, type: 'diary' }));
-      
+
       localRecords = [...localMeditations, ...localPrayers, ...localGratitudes, ...localDiaries];
       console.log('📦 localStorage total records:', localRecords.length);
 
@@ -609,15 +609,15 @@ export default function Designer() {
         ];
         console.log('✅ Supabase records fetched:', supabaseRecords.length);
       }
-      
+
       // 병합: localStorage 우선 (최신일 가능성 높음)
       const recordMap = new Map();
-      
+
       // Supabase 먼저 추가
       supabaseRecords.forEach(record => {
         recordMap.set(record.id, record);
       });
-      
+
       // localStorage로 덮어쓰기 (최신 데이터 우선)
       localRecords.forEach(record => {
         recordMap.set(record.id, {
@@ -629,7 +629,7 @@ export default function Designer() {
           items: record.items
         });
       });
-      
+
       // 정렬 후 최근 12개
       let allRecords = Array.from(recordMap.values())
         .sort((a, b) => {
@@ -638,22 +638,22 @@ export default function Designer() {
           return dateB - dateA;
         })
         .slice(0, 12);
-      
+
       console.log('✅ Total merged records:', allRecords.length);
-      console.log('📋 Latest 3 records:', allRecords.slice(0, 3).map(r => ({ 
-        type: r.type, 
-        date: r.date, 
+      console.log('📋 Latest 3 records:', allRecords.slice(0, 3).map(r => ({
+        type: r.type,
+        date: r.date,
         title: r.title,
-        created: r.created_at || r.createdAt 
+        created: r.created_at || r.createdAt
       })));
-      
+
       // 상태 업데이트
       setAvailableRecords(allRecords);
     } catch (error) {
       console.error('❌ Error fetching records:', error);
       toast.error('기록을 불러오는데 실패했습니다.');
     }
-  };
+  }, []); // 빈 배열: 컴포넌트 생명주기 동안 함수 참조 유지
 
   const openRecordSelector = async () => {
     const callback = async () => {
