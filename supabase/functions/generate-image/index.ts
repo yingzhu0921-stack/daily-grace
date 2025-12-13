@@ -139,12 +139,12 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `당신은 간단한 장면 설명을 풍부하고 상세한 이미지 생성 프롬프트로 확장하는 전문가입니다. 사용자의 간단한 입력을 받아 분위기, 조명, 깊이감, 세부 요소를 추가하여 영감을 주는 설명으로 만드세요. 200자 이내로 한국어로 작성하세요.\n\n장면: "${userScene}"\n스타일: ${styleDesc}\n\n이 간단한 장면을 말씀카드 배경에 적합한 상세하고 영감을 주는 설명으로 확장해주세요. 조명, 분위기, 색감, 구도 등을 포함해주세요.`
+                text: `"${userScene}" 장면을 ${styleDesc} 스타일로 상세히 묘사해주세요. 조명, 색감, 분위기를 포함하여 200자 이내로 작성하세요. 설명만 작성하고 다른 말은 하지 마세요.`
               }]
             }],
             generationConfig: {
-              temperature: 0.9,
-              maxOutputTokens: 500,
+              temperature: 0.7,
+              maxOutputTokens: 1024,
             }
           }),
         }
@@ -244,7 +244,7 @@ serve(async (req) => {
               }],
               generationConfig: {
                 temperature: 0.3,
-                maxOutputTokens: 500,
+                maxOutputTokens: 1024,
               }
             }),
           }
