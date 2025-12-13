@@ -19,7 +19,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
 
     // If rate limited and not last attempt, wait and retry
     if (i < maxRetries - 1) {
-      const waitTime = Math.pow(2, i) * 2000; // Exponential backoff: 2s, 4s (훨씬 빠름)
+      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s (더 빠름)
       console.log(`Rate limited (attempt ${i + 1}/${maxRetries}), retrying in ${waitTime / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
@@ -130,7 +130,7 @@ serve(async (req) => {
       console.log('Expanding prompt for scene:', userScene, 'with style:', styleDesc);
 
       const expandResponse = await fetchWithRetry(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -143,8 +143,8 @@ serve(async (req) => {
               }]
             }],
             generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1024,
+              temperature: 0.5,
+              maxOutputTokens: 512,
             }
           }),
         }
@@ -230,7 +230,7 @@ serve(async (req) => {
         console.log('Translating Korean prompt to English:', prompt);
 
         const translateResponse = await fetchWithRetry(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GOOGLE_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
           {
             method: 'POST',
             headers: {
@@ -243,8 +243,8 @@ serve(async (req) => {
                 }]
               }],
               generationConfig: {
-                temperature: 0.3,
-                maxOutputTokens: 1024,
+                temperature: 0.2,
+                maxOutputTokens: 512,
               }
             }),
           }
