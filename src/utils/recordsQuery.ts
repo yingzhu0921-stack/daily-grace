@@ -109,47 +109,86 @@ export function getTodayGoalCount() {
   const todayStr = toLocalDateString(today);
   const todayDayOfWeek = today.getDay();
   const counts = getRecordCounts(todayStr);
-  
-  const saved = localStorage.getItem('custom_categories');
-  let allCategories: any[] = [];
-  
-  if (saved) {
-    allCategories = JSON.parse(saved);
-  } else {
-    allCategories = [
-      { id: '1', name: 'QT', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
-      { id: '2', name: '기도', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
-      { id: '3', name: '감사', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
-      { id: '4', name: '일기', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
-    ];
+
+  // 기본 카테고리 4개
+  const defaultCategories = [
+    { id: '1', name: 'QT', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
+    { id: '2', name: '기도', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
+    { id: '3', name: '감사', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
+    { id: '4', name: '일기', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
+  ];
+
+  // 커스텀 카테고리 가져오기 (sessionStorage 우선, 없으면 localStorage)
+  let customCategories: any[] = [];
+  const sessionSaved = sessionStorage.getItem('custom_categories');
+  const localSaved = localStorage.getItem('custom_categories');
+
+  if (sessionSaved) {
+    try {
+      customCategories = JSON.parse(sessionSaved);
+    } catch (e) {
+      console.error('Failed to parse custom_categories from sessionStorage:', e);
+    }
+  } else if (localSaved) {
+    try {
+      customCategories = JSON.parse(localSaved);
+    } catch (e) {
+      console.error('Failed to parse custom_categories from localStorage:', e);
+    }
   }
-  
+
+  // 모든 카테고리 합치기
+  const allCategories = [...defaultCategories, ...customCategories];
+
+  // 오늘 목표에 포함되는 카테고리만 필터링
   const goalCategories = allCategories.filter((c: any) => {
     const isInGoal = c.includeInGoal !== false;
     const activeDays = c.activeDays || [0, 1, 2, 3, 4, 5, 6];
     const isActiveToday = activeDays.includes(todayDayOfWeek);
     return isInGoal && isActiveToday;
   });
-  
+
   const totalCategories = goalCategories.length;
-  
+
+  // 기본 카테고리 완료 체크
   let completed = 0;
-  
+
   const cat1 = allCategories.find((c: any) => c.id === '1');
   const cat2 = allCategories.find((c: any) => c.id === '2');
   const cat3 = allCategories.find((c: any) => c.id === '3');
   const cat4 = allCategories.find((c: any) => c.id === '4');
-  
+
   const isActiveToday = (cat: any) => {
     const activeDays = cat?.activeDays || [0, 1, 2, 3, 4, 5, 6];
     return activeDays.includes(todayDayOfWeek);
   };
-  
+
   if (cat1?.includeInGoal !== false && isActiveToday(cat1) && counts.meditation > 0) completed++;
   if (cat2?.includeInGoal !== false && isActiveToday(cat2) && counts.prayer > 0) completed++;
   if (cat3?.includeInGoal !== false && isActiveToday(cat3) && counts.gratitude > 0) completed++;
   if (cat4?.includeInGoal !== false && isActiveToday(cat4) && counts.diary > 0) completed++;
-  
+
+  // 커스텀 카테고리 완료 체크
+  customCategories.forEach((cat: any) => {
+    if (cat.includeInGoal !== false && isActiveToday(cat)) {
+      // 커스텀 카테고리의 기록 확인 (localStorage의 custom_records에서)
+      const customRecordsStr = localStorage.getItem('custom_records');
+      if (customRecordsStr) {
+        try {
+          const customRecords = JSON.parse(customRecordsStr);
+          // 오늘 날짜에 해당 카테고리의 기록이 있는지 확인
+          const hasTodayRecord = customRecords.some((record: any) => {
+            const recordDate = toDateKey(record.created_at || record.createdAt);
+            return record.category_id === cat.id && recordDate === todayStr;
+          });
+          if (hasTodayRecord) completed++;
+        } catch (e) {
+          console.error('Failed to parse custom_records:', e);
+        }
+      }
+    }
+  });
+
   return { completed, total: totalCategories };
 }
 
