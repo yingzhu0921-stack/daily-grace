@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { toast } from 'sonner';
+import { useAuth } from '@/hooks/useAuth';
+import { LoginModal } from '@/components/LoginModal';
 
 type Category = {
   id: string;
@@ -45,6 +47,7 @@ type Props = {
 };
 
 export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCategory }) => {
+  const { requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [showNewDialog, setShowNewDialog] = useState(false);
@@ -298,7 +301,11 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
           <div className="px-6 py-4 border-t border-[#F0EFED]">
             <Button
-              onClick={() => setShowNewDialog(true)}
+              onClick={() => {
+                requireAuth(() => {
+                  setShowNewDialog(true);
+                });
+              }}
               className="w-full h-11 bg-[#2E2E2E] hover:bg-[#1E1E1E] text-white rounded-xl"
             >
               <Plus className="w-4 h-4 mr-2" />
@@ -683,6 +690,18 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* 로그인 모달 */}
+      <LoginModal
+        open={showLoginModal}
+        onClose={() => {
+          setShowLoginModal(false);
+          cancelPendingCallback();
+        }}
+        callbackUrl={loginCallbackUrl}
+        title="카테고리를 만들려면 로그인이 필요해요"
+        description="로그인하시면 카테고리를 클라우드에 안전하게 저장하고 모든 기기에서 동기화할 수 있어요."
+      />
     </>
   );
 };
