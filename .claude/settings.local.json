@@ -5,7 +5,19 @@
       "Bash(lsof:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(export SUPABASE_ACCESS_TOKEN=\"sbp_ef65ab771fd76c122fb37ab49738fe6361baad8e\")",
+      "Bash(~/supabase functions deploy:*)",
+      "Bash(curl -s https://hyakkskfyeimsfmejzac.supabase.co/functions/v1/generate-image -X POST -H 'Content-Type: application/json' -d '{\"\"action\"\":\"\"expand-prompt\"\",\"\"prompt\"\":\"\"평화로운 자연\"\",\"\"style\"\":\"\"맑은 수채화\"\"}')",
+      "Bash(npx supabase:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "Bash(~/supabase secrets set:*)",
+      "Bash(if [ -z \"$GOOGLE_API_KEY\" ])",
+      "Bash(then echo \"GOOGLE_API_KEY not set\")",
+      "Bash(else echo \"GOOGLE_API_KEY is set\")",
+      "Bash(fi)",
+      "Bash(KEY=\"$GOOGLE_API_KEY\" curl:*)"
     ],
     "deny": [],
     "ask": []

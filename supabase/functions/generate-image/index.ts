@@ -19,7 +19,7 @@ async function fetchWithRetry(url: string, options: RequestInit, maxRetries = 2)
 
     // If rate limited and not last attempt, wait and retry
     if (i < maxRetries - 1) {
-      const waitTime = Math.pow(2, i) * 1000; // Exponential backoff: 1s, 2s (더 빠름)
+      const waitTime = Math.pow(2, i) * 2000; // Exponential backoff: 2s, 4s (훨씬 빠름)
       console.log(`Rate limited (attempt ${i + 1}/${maxRetries}), retrying in ${waitTime / 1000}s...`);
       await new Promise(resolve => setTimeout(resolve, waitTime));
     }
@@ -130,7 +130,7 @@ serve(async (req) => {
       console.log('Expanding prompt for scene:', userScene, 'with style:', styleDesc);
 
       const expandResponse = await fetchWithRetry(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: 'POST',
           headers: {
@@ -139,12 +139,12 @@ serve(async (req) => {
           body: JSON.stringify({
             contents: [{
               parts: [{
-                text: `"${userScene}" 장면을 ${styleDesc} 스타일로 상세히 묘사해주세요. 조명, 색감, 분위기를 포함하여 200자 이내로 작성하세요. 설명만 작성하고 다른 말은 하지 마세요.`
+                text: `당신은 간단한 장면 설명을 풍부하고 상세한 이미지 생성 프롬프트로 확장하는 전문가입니다. 사용자의 간단한 입력을 받아 분위기, 조명, 깊이감, 세부 요소를 추가하여 영감을 주는 설명으로 만드세요. 200자 이내로 한국어로 작성하세요.\n\n장면: "${userScene}"\n스타일: ${styleDesc}\n\n이 간단한 장면을 말씀카드 배경에 적합한 상세하고 영감을 주는 설명으로 확장해주세요. 조명, 분위기, 색감, 구도 등을 포함해주세요.`
               }]
             }],
             generationConfig: {
-              temperature: 0.5,
-              maxOutputTokens: 512,
+              temperature: 0.9,
+              maxOutputTokens: 500,
             }
           }),
         }
@@ -192,11 +192,11 @@ serve(async (req) => {
     if (action === 'generate-image') {
       // 스타일 기본 프롬프트 (상세한 스타일 정의)
       const stylePrompts: Record<string, string> = {
-        '맑은 수채화': 'A serene watercolor painting of ${input}, featuring soft brush strokes with transparent wash effects, delicate color blending, and gentle gradients. Natural landscape or botanical study style with realistic proportions, pastel color palette, subtle paper texture. Peaceful and calming atmosphere, traditional watercolor technique on white paper background. MUST be a pure landscape or nature scene - absolutely NO characters, NO faces, NO cartoons, NO animals with faces, NO chibi style, NO kawaii elements. Realistic watercolor art style only.',
-        '따스한 동화': 'Heartwarming hand-drawn illustration of ${input}, style of a children\'s picture book, rich texture of crayon and oil pastel on rough paper, warm and cozy colors, cute and round character design, soft lighting, analog fairytale atmosphere, no harsh outlines.',
+        '맑은 수채화': 'Create a peaceful watercolor landscape painting: ${input}. Style: Soft, transparent watercolor washes, gentle brush strokes, pastel colors, dreamy atmosphere. LANDSCAPE ONLY - NO people, NO animals, NO characters, NO faces, NO cute creatures of any kind. Pure nature scene with trees, water, sky, mountains, flowers only. Traditional watercolor on white paper.',
+        '따스한 동화': 'Hand-drawn doodle illustration of ${input} in children\'s book art style. Colored pencil and crayon texture on textured paper, sketchy lines, visible pencil strokes, rough coloring. Warm and soft color palette, whimsical and comforting atmosphere. Cute and round character design if characters are present, soft lighting, cozy fairytale mood.',
         '감성 사진': 'A soft and airy aesthetic photograph of ${input}. Bathed in gentle natural light, creating a fresh, dreamy and ethereal atmosphere. High resolution, clean composition, pastel color tones, soft bokeh background, peaceful and pure mood. Modern lifestyle photography style, very clean and sharp focus on the subject.',
         '심플 낙서': 'A charming minimalist black ink line drawing of ${input}. The style is simple, whimsical, and friendly, using essential but slightly rounded lines to capture the shape with a touch of cuteness. Isolated completely on a clean, solid white background with absolutely no color washes or textures. Hand-drawn ink feel, no shading, pure black on pure white. IMPORTANT: No text, no words, no letters, no writing of any kind.',
-        '말랑 3D': 'Cute 3D cartoon character illustration of ${input}, claymation and soft toy style, rounded shapes, big head and small body (chibi proportions), friendly and warm expression, soft textures like felt and clay, gentle studio lighting, pastel colors, clean background, high quality render, like a Pixar character.',
+        '말랑 3D': 'Cute 3D render of ${input} in claymation and soft toy style. Soft textures like felt, clay, and fabric, rounded shapes, gentle studio lighting, pastel colors, clean simple background, high quality 3D render like Pixar or Dreamworks animation. Warm and friendly mood.',
         '빈티지 필름': 'A retro lo-fi analog film photo of ${input}. Nostalgic 90s style, heavy film grain, light leaks, chromatic aberration, washed-out colors, and slight vignette. The image looks like a memory from an old photo album. Imperfect, textured, and sentimental. Disposable camera aesthetic.'
       };
 
@@ -213,15 +213,15 @@ serve(async (req) => {
         '빈티지 필름': `${commonNegative}, digital, hd, 4k, sharp focus`
       };
 
-      // 비율에 맞는 aspect ratio 설명
+      // 비율에 맞는 aspect ratio 설명 (매우 강력하게 명시)
       const ratioDescriptions: Record<string, string> = {
-        '9:16': 'vertical 9:16 portrait format',
-        '16:9': 'horizontal 16:9 landscape format',
-        '1:1': 'square 1:1 format',
-        '4:3': 'horizontal 4:3 format',
-        '4:5': 'vertical 4:5 portrait format',
-        '3:4': 'vertical 3:4 portrait format',
-        '2:3': 'vertical 2:3 tall portrait format'
+        '9:16': 'CRITICAL REQUIREMENT: The image MUST be in vertical 9:16 portrait format (width 9 units, height 16 units). This is a TALL vertical portrait orientation',
+        '16:9': 'CRITICAL REQUIREMENT: The image MUST be in horizontal 16:9 landscape format (width 16 units, height 9 units). This is a WIDE horizontal landscape orientation',
+        '1:1': 'CRITICAL REQUIREMENT: The image MUST be in square 1:1 format (equal width and height)',
+        '4:3': 'CRITICAL REQUIREMENT: The image MUST be in horizontal 4:3 format (width 4 units, height 3 units). This is a horizontal landscape orientation',
+        '4:5': 'CRITICAL REQUIREMENT: The image MUST be in vertical 4:5 portrait format (width 4 units, height 5 units). This is a vertical portrait orientation',
+        '3:4': 'CRITICAL REQUIREMENT: The image MUST be in vertical 3:4 portrait format (width 3 units, height 4 units). This is a vertical portrait orientation',
+        '2:3': 'CRITICAL REQUIREMENT: The image MUST be in vertical 2:3 tall portrait format (width 2 units, height 3 units). This is a TALL vertical portrait orientation'
       };
 
       // 한국어 프롬프트를 영어로 번역
@@ -230,7 +230,7 @@ serve(async (req) => {
         console.log('Translating Korean prompt to English:', prompt);
 
         const translateResponse = await fetchWithRetry(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GOOGLE_API_KEY}`,
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${GOOGLE_API_KEY}`,
           {
             method: 'POST',
             headers: {
@@ -243,8 +243,8 @@ serve(async (req) => {
                 }]
               }],
               generationConfig: {
-                temperature: 0.2,
-                maxOutputTokens: 512,
+                temperature: 0.3,
+                maxOutputTokens: 500,
               }
             }),
           }
@@ -289,6 +289,7 @@ serve(async (req) => {
 
       console.log('Generating image with ratio:', ratio, 'Final English prompt:', finalPrompt);
 
+      // Use Gemini 2.5 Flash Image - returns ratio metadata for frontend cropping
       const response = await fetchWithRetry(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`,
         {
@@ -304,7 +305,6 @@ serve(async (req) => {
             }],
             generationConfig: {
               temperature: 1.0,
-              responseMimeType: 'image/png',
             }
           }),
         }
@@ -312,7 +312,7 @@ serve(async (req) => {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('Gemini API error:', response.status, errorText);
+        console.error('Gemini 2.5 Flash Image API error:', response.status, errorText);
 
         if (response.status === 429) {
           return new Response(
@@ -329,8 +329,10 @@ serve(async (req) => {
 
       const data = await response.json();
 
-      // Gemini API 응답 구조에서 이미지 추출
-      const imageData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      // Gemini 2.5 Flash Image returns parts array with text and inlineData separately
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      const imagePart = parts.find((part: any) => part.inlineData);
+      const imageData = imagePart?.inlineData?.data;
 
       if (!imageData) {
         console.error('No image found in response. Full data:', JSON.stringify(data, null, 2));
@@ -344,14 +346,18 @@ serve(async (req) => {
       const imageUrl = `data:image/png;base64,${imageData}`;
 
       // Log success without the massive base64 data
-      console.log('Image generated successfully:', {
+      console.log('Image generated successfully via Gemini 2.5 Flash Image:', {
         hasImage: !!imageUrl,
         imageSize: `${Math.round(imageData.length / 1024)}KB`,
-        finishReason: data.candidates?.[0]?.finishReason
+        requestedRatio: ratio
       });
 
+      // Return image with ratio metadata for frontend cropping
       return new Response(
-        JSON.stringify({ image: imageUrl }),
+        JSON.stringify({
+          image: imageUrl,
+          requestedRatio: ratio  // Frontend can use this to crop if needed
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }

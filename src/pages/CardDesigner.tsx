@@ -92,6 +92,58 @@ const RatioBox: React.FC<{ ratio: Ratio; className?: string; style?: React.CSSPr
 
 function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(n, max)); }
 
+/**
+ * Crop image to specified aspect ratio (center crop)
+ */
+async function cropImageToRatio(imageDataUrl: string, ratio: Ratio): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      // Parse target ratio
+      const [widthRatio, heightRatio] = ratio.split(':').map(Number);
+      const targetAspectRatio = widthRatio / heightRatio;
+
+      // Calculate source dimensions
+      const sourceAspectRatio = img.width / img.height;
+
+      let cropWidth: number, cropHeight: number, cropX: number, cropY: number;
+
+      if (sourceAspectRatio > targetAspectRatio) {
+        // Image is wider than target - crop width
+        cropHeight = img.height;
+        cropWidth = cropHeight * targetAspectRatio;
+        cropX = (img.width - cropWidth) / 2;
+        cropY = 0;
+      } else {
+        // Image is taller than target - crop height
+        cropWidth = img.width;
+        cropHeight = cropWidth / targetAspectRatio;
+        cropX = 0;
+        cropY = (img.height - cropHeight) / 2;
+      }
+
+      // Create canvas and crop
+      const canvas = document.createElement('canvas');
+      canvas.width = cropWidth;
+      canvas.height = cropHeight;
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+
+      ctx.drawImage(img, cropX, cropY, cropWidth, cropHeight, 0, 0, cropWidth, cropHeight);
+
+      // Convert back to data URL
+      resolve(canvas.toDataURL('image/png'));
+    };
+
+    img.onerror = () => reject(new Error('Failed to load image'));
+    img.src = imageDataUrl;
+  });
+}
+
 /** ─────────────────────────────────────────────────────────
  * 메인 페이지
  * ───────────────────────────────────────────────────────── */
@@ -861,7 +913,23 @@ export default function Designer() {
       }
       
       const data = await response.json();
-      setMeta(m => ({ ...m, bgImageUrl: data.image }));
+
+      // Auto-crop image to match requested aspect ratio
+      let finalImage = data.image;
+      if (data.requestedRatio && meta.ratio) {
+        console.log('Cropping image from API response to ratio:', meta.ratio);
+        try {
+          finalImage = await cropImageToRatio(data.image, meta.ratio);
+          console.log('Image cropped successfully');
+        } catch (error) {
+          console.error('Failed to crop image:', error);
+          // Use original image if cropping fails
+        }
+      } else {
+        console.log('Skipping crop - requestedRatio:', data.requestedRatio, 'meta.ratio:', meta.ratio);
+      }
+
+      setMeta(m => ({ ...m, bgImageUrl: finalImage }));
       
       // 배경 생성 시 기본 텍스트 지우기
       if (t.content === '텍스트를 입력하세요.') {
