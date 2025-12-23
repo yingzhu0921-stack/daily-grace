@@ -2213,9 +2213,40 @@ function Toolbar({
         {/* 컨텐츠 영역 - Scrollable inside fixed height container */}
         <div className="px-4 py-3 pb-6 flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="text" className="mt-0 space-y-3 pb-4">
+            {/* Typography Presets */}
             <div>
+              <label className="text-xs text-[#7E7C78] mb-2 block">빠른 스타일</label>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'handwritten', name: '손글씨', font: 'NanumPen' as const, size: 28, lh: 1.6, ls: 0, align: 'center' as const },
+                  { id: 'serif', name: '세리프', font: 'NanumMyeongjo' as const, size: 24, lh: 1.8, ls: 1, align: 'center' as const },
+                  { id: 'minimal', name: '미니멀', font: 'NotoSans' as const, size: 22, lh: 1.7, ls: -0.5, align: 'center' as const },
+                  { id: 'bold', name: '강조', font: 'BlackHanSans' as const, size: 32, lh: 1.4, ls: 2, align: 'center' as const },
+                ].map((preset) => (
+                  <button
+                    key={preset.id}
+                    onClick={() => {
+                      setT(s => ({
+                        ...s,
+                        fontFamily: preset.font,
+                        fontSize: preset.size,
+                        lineHeight: preset.lh,
+                        letterSpacing: preset.ls,
+                        align: preset.align,
+                      }));
+                      toast.success(`${preset.name} 스타일 적용됨`);
+                    }}
+                    className="py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] hover:border-[#6BAAB8] hover:shadow-sm transition-all text-sm font-medium"
+                  >
+                    {preset.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="border-t border-[#E3E2E0] pt-3">
               <label className="text-xs text-[#7E7C78] mb-1.5 block">폰트</label>
-              <FontPicker 
+              <FontPicker
                 value={t.fontFamily}
                 onChange={(font) => setT(s => ({ ...s, fontFamily: font }))}
               />
