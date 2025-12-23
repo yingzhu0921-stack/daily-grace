@@ -2218,10 +2218,74 @@ function Toolbar({
               <label className="text-xs text-[#7E7C78] mb-2 block">빠른 스타일</label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'handwritten', name: '손글씨', font: 'NanumPen' as const, size: 28, lh: 1.6, ls: 0, align: 'center' as const },
-                  { id: 'serif', name: '세리프', font: 'NanumMyeongjo' as const, size: 24, lh: 1.8, ls: 1, align: 'center' as const },
-                  { id: 'minimal', name: '미니멀', font: 'NotoSans' as const, size: 22, lh: 1.7, ls: -0.5, align: 'center' as const },
-                  { id: 'bold', name: '강조', font: 'BlackHanSans' as const, size: 32, lh: 1.4, ls: 2, align: 'center' as const },
+                  {
+                    id: 'handwritten',
+                    name: '손글씨',
+                    font: 'NanumPen' as const,
+                    size: 32,
+                    lh: 1.5,
+                    ls: 0.5,
+                    align: 'center' as const,
+                    shadow: true,
+                    shadowSettings: { x: 2, y: 2, blur: 4, color: '#00000040' }
+                  },
+                  {
+                    id: 'elegant',
+                    name: '우아한',
+                    font: 'Playfair' as const,
+                    size: 36,
+                    lh: 1.3,
+                    ls: 2,
+                    align: 'center' as const,
+                    shadow: true,
+                    shadowSettings: { x: 0, y: 3, blur: 8, color: '#00000030' }
+                  },
+                  {
+                    id: 'bold-impact',
+                    name: '임팩트',
+                    font: 'BlackHanSans' as const,
+                    size: 40,
+                    lh: 1.2,
+                    ls: 1,
+                    align: 'center' as const,
+                    stroke: true,
+                    strokeSettings: { width: 3, color: '#FFFFFF' },
+                    shadow: true,
+                    shadowSettings: { x: 3, y: 3, blur: 6, color: '#00000050' }
+                  },
+                  {
+                    id: 'modern',
+                    name: '모던',
+                    font: 'Montserrat' as const,
+                    size: 28,
+                    lh: 1.4,
+                    ls: 3,
+                    align: 'center' as const,
+                    bold: true
+                  },
+                  {
+                    id: 'vintage',
+                    name: '빈티지',
+                    font: 'SongMyung' as const,
+                    size: 30,
+                    lh: 1.6,
+                    ls: 1.5,
+                    align: 'center' as const,
+                    box: true,
+                    boxSettings: { color: '#000000', opacity: 15, padding: 12, radius: 8 }
+                  },
+                  {
+                    id: 'script',
+                    name: '스크립트',
+                    font: 'GamjaFlower' as const,
+                    size: 34,
+                    lh: 1.5,
+                    ls: 0,
+                    align: 'center' as const,
+                    italic: true,
+                    shadow: true,
+                    shadowSettings: { x: 2, y: 2, blur: 5, color: '#00000035' }
+                  },
                 ].map((preset) => (
                   <button
                     key={preset.id}
@@ -2233,6 +2297,23 @@ function Toolbar({
                         lineHeight: preset.lh,
                         letterSpacing: preset.ls,
                         align: preset.align,
+                        bold: preset.bold || false,
+                        italic: preset.italic || false,
+                        shadow: {
+                          ...s.shadow,
+                          enabled: preset.shadow || false,
+                          ...(preset.shadowSettings || {})
+                        },
+                        stroke: {
+                          ...s.stroke,
+                          enabled: preset.stroke || false,
+                          ...(preset.strokeSettings || {})
+                        },
+                        box: {
+                          ...s.box,
+                          enabled: preset.box || false,
+                          ...(preset.boxSettings || {})
+                        }
                       }));
                       toast.success(`${preset.name} 스타일 적용됨`);
                     }}
