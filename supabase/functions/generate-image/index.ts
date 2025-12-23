@@ -115,11 +115,11 @@ serve(async (req) => {
     // 스타일별 설명
     const styleDescriptions: Record<string, string> = {
       '맑은 수채화': '부드러운 붓 터치와 투명한 워시 효과, 파스텔 컬러가 자연스럽게 블렌딩되는 수채화 스타일',
-      '따뜻한 동화': '손으로 그린 듯한 동화책 일러스트, 색연필 특유의 부드러운 질감과 스트로크, 따뜻하고 포근한 색감',
-      '심플낙서': '심플하고 장난스러운 라인아트의 손그림 두들 스타일, 미니멀한 흑백 스케치',
-      '말랑3d': '부드럽고 귀여운 3D 렌더링 스타일, 파스텔 톤의 밝고 경쾌한 분위기',
-      '빈티지 필름': '빈티지 필름 특유의 그레인과 따뜻한 색감, 부드러운 비네팅이 있는 아날로그 사진 스타일',
-      '감성사진': '부드러운 자연광과 따뜻한 대지색이 어우러진 감성적인 사진, 필름 그레인과 부드러운 포커스가 있는 아날로그 감성'
+      '따스한 동화': '손으로 그린 듯한 동화책 일러스트, 색연필 특유의 부드러운 질감과 스트로크, 따뜻하고 포근한 색감',
+      '감성 사진': '부드러운 자연광과 따뜻한 대지색이 어우러진 감성적인 사진, 필름 그레인과 부드러운 포커스가 있는 아날로그 감성',
+      '심플 낙서': '심플하고 장난스러운 라인아트의 손그림 두들 스타일, 미니멀한 흑백 스케치',
+      '말랑 3D': '부드럽고 귀여운 3D 렌더링 스타일, 파스텔 톤의 밝고 경쾌한 분위기',
+      '빈티지 필름': '빈티지 필름 특유의 그레인과 따뜻한 색감, 부드러운 비네팅이 있는 아날로그 사진 스타일'
     };
 
     // 프롬프트 확장 액션
@@ -192,25 +192,25 @@ serve(async (req) => {
     if (action === 'generate-image') {
       // 스타일 기본 프롬프트 (상세한 스타일 정의)
       const stylePrompts: Record<string, string> = {
-        '맑은 수채화': 'Create a peaceful watercolor landscape painting of ${input}. Soft, transparent watercolor washes, gentle brush strokes, pastel colors, calm and airy atmosphere. Landscape only. Nature elements such as trees, sky, water, mountains, or flowers. No people, no animals, no characters. Traditional watercolor on white paper.',
-        '따뜻한 동화': 'Hand-drawn illustration of ${input} in a warm storybook style. Colored pencil and crayon textures on lightly textured paper, sketchy lines with visible hand-drawn strokes. Warm, soft color palette and a gentle, comforting mood. Simple shapes, minimal detail, calm and friendly atmosphere.',
-        '심플낙서': 'A minimalist black ink line drawing of ${input}. Simple, friendly, slightly rounded lines. Pure black ink on a pure white background. No shading, no color, no texture. No text, no symbols, no letters of any kind.',
-        '말랑3d': 'Cute and soft 3D illustration of ${input} in a clay-like style. Rounded shapes, soft matte textures, pastel colors, gentle studio lighting and a simple background. Warm, calm, and friendly mood.',
-        '빈티지 필름': 'A nostalgic analog-style photograph of ${input}. Soft film grain, muted colors, subtle light leaks, gentle vignette and calm emotional tone. Feels like a quiet memory from an old photo album.',
-        '감성사진': 'A soft and airy lifestyle photograph of ${input}. Gentle natural light, calm and peaceful mood, clean composition with soft focus and subtle depth of field. Pastel and neutral tones, minimal styling, modern but quiet and reflective atmosphere.'
+        '맑은 수채화': 'Create a peaceful watercolor landscape painting: ${input}. Style: Soft, transparent watercolor washes, gentle brush strokes, pastel colors, dreamy atmosphere. LANDSCAPE ONLY - NO people, NO animals, NO characters, NO faces, NO cute creatures of any kind. Pure nature scene with trees, water, sky, mountains, flowers only. Traditional watercolor on white paper.',
+        '따스한 동화': 'Hand-drawn doodle illustration of ${input} in children\'s book art style. Colored pencil and crayon texture on textured paper, sketchy lines, visible pencil strokes, rough coloring. Warm and soft color palette, whimsical and comforting atmosphere. Cute and round character design if characters are present, soft lighting, cozy fairytale mood.',
+        '감성 사진': 'A soft and airy aesthetic photograph of ${input}. Bathed in gentle natural light, creating a fresh, dreamy and ethereal atmosphere. High resolution, clean composition, pastel color tones, soft bokeh background, peaceful and pure mood. Modern lifestyle photography style, very clean and sharp focus on the subject.',
+        '심플 낙서': 'A charming minimalist black ink line drawing of ${input}. The style is simple, whimsical, and friendly, using essential but slightly rounded lines to capture the shape with a touch of cuteness. Isolated completely on a clean, solid white background with absolutely no color washes or textures. Hand-drawn ink feel, no shading, pure black on pure white. IMPORTANT: No text, no words, no letters, no writing of any kind.',
+        '말랑 3D': 'Cute 3D render of ${input} in claymation and soft toy style. Soft textures like felt, clay, and fabric, rounded shapes, gentle studio lighting, pastel colors, clean simple background, high quality 3D render like Pixar or Dreamworks animation. Warm and friendly mood.',
+        '빈티지 필름': 'A retro lo-fi analog film photo of ${input}. Nostalgic 90s style, heavy film grain, light leaks, chromatic aberration, washed-out colors, and slight vignette. The image looks like a memory from an old photo album. Imperfect, textured, and sentimental. Disposable camera aesthetic.'
       };
 
       // 공통 Negative Prompt (모든 스타일에 기본 적용)
-      const commonNegative = 'text, letters, words, logo, watermark, signature, distorted, deformed, ugly, scary, horror, overly complex, cluttered, harsh lighting, neon colors';
+      const commonNegative = 'text, writing, letters, signature, watermark, typography, alphabet, logo, subtitle, blurred, distorted, extra limbs, ugly, messy, crowded, complex background, mutated hands, disfigured';
 
       // 스타일별 추가 Negative Prompt
       const negativePrompts: Record<string, string> = {
-        '맑은 수채화': `${commonNegative}, people, animals, characters, cartoon, anime, manga, dark colors, gloomy, sharp lines, thick outlines`,
-        '따뜻한 동화': `${commonNegative}, photorealistic, 3d render, shiny, digital art, vector, sharp lines, dark atmosphere, geometric, sleek`,
-        '심플낙서': `${commonNegative}, realistic, detailed, shading, color, grayscale, complex, busy, colored background, textured paper, gradient background, overly polished`,
-        '말랑3d': `${commonNegative}, photorealistic, realistic, 2d, flat, sketch, painting, anime, sharp edges, deformed, harsh lighting`,
-        '빈티지 필름': `${commonNegative}, digital, hd, 4k, sharp focus, modern, clean, pristine`,
-        '감성사진': `${commonNegative}, film grain, noise, dust, scratches, analog film, retro, vintage, dark, gloomy, high contrast, harsh shadows, intense saturation, grunge, blurry`
+        '맑은 수채화': `${commonNegative}, cartoon characters, cute faces, chibi, anime, manga, people, animals with faces, emoji, kawaii, children's book style, character illustration, fantasy creatures, anthropomorphic, dark colors, gloomy, sharp lines, thick outlines, scary`,
+        '따스한 동화': `${commonNegative}, photorealistic, 3d render, shiny, digital art, vector, sharp lines, dark atmosphere, horror, geometric, sleek`,
+        '말랑 3D': `${commonNegative}, photorealistic, realistic, 2d, flat, sketch, painting, anime, sharp edges, scary, deformed, harsh lighting`,
+        '심플 낙서': `${commonNegative}, realistic, detailed, shading, color, grayscale, complex, busy, colored background, textured paper, off-white background, gradient background, overly polished, sparkling eyes, blush, text, words, handwriting, calligraphy, labels, captions`,
+        '감성 사진': `${commonNegative}, film grain, noise, dust, scratches, analog film, retro, vintage, dark, gloomy, high contrast, harsh shadows, neon colors, intense saturation, grunge, blurry`,
+        '빈티지 필름': `${commonNegative}, digital, hd, 4k, sharp focus`
       };
 
       // 비율에 맞는 aspect ratio 설명 (매우 강력하게 명시)
