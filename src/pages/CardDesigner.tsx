@@ -929,7 +929,7 @@ export default function Designer() {
         console.log('Skipping crop - requestedRatio:', data.requestedRatio, 'meta.ratio:', meta.ratio);
       }
 
-      setMeta(m => ({ ...m, bgImageUrl: finalImage }));
+      setMeta(m => ({ ...m, bgImageUrl: finalImage, bgScale: 100 }));
       
       // 배경 생성 시 기본 텍스트 지우기
       if (t.content === '텍스트를 입력하세요.') {
