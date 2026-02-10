@@ -9,6 +9,7 @@ import { UserMenu } from '@/components/UserMenu';
 import { getAllRecords } from '@/utils/recordsQuery';
 import { RecordCard } from '@/components/RecordCard';
 import { getTodayGoalCount, getStreakDays } from '@/utils/recordsQuery';
+import * as categoryStorage from '@/utils/categoryStorage';
 
 type Category = {
   id: string;
@@ -57,7 +58,7 @@ const IndexNew = () => {
 
   // 커스텀 카테고리 로드
   useEffect(() => {
-    const loadCustomCategories = () => {
+    const loadFromCache = () => {
       const saved = sessionStorage.getItem('custom_categories') || localStorage.getItem('custom_categories');
       if (saved) {
         const parsed = JSON.parse(saved);
@@ -66,11 +67,28 @@ const IndexNew = () => {
       }
       updateStats();
     };
-    loadCustomCategories();
 
-    window.addEventListener('categoriesUpdated', loadCustomCategories);
-    return () => window.removeEventListener('categoriesUpdated', loadCustomCategories);
-  }, []);
+    const loadFromSupabase = async () => {
+      try {
+        const dbCategories = await categoryStorage.list();
+        const customs = dbCategories.filter((cat: any) => cat.user_id != null);
+        if (customs.length > 0) {
+          sessionStorage.setItem('custom_categories', JSON.stringify(customs));
+          localStorage.setItem('custom_categories', JSON.stringify(customs));
+          setCustomCategories(customs);
+          updateStats();
+        }
+      } catch (e) {
+        // Supabase 연결 실패 시 캐시에서 로드
+      }
+    };
+
+    loadFromCache();
+    if (user) loadFromSupabase();
+
+    window.addEventListener('categoriesUpdated', loadFromCache);
+    return () => window.removeEventListener('categoriesUpdated', loadFromCache);
+  }, [user]);
 
   // 추천 메시지 생성
   const getRecommendationMessage = () => {
