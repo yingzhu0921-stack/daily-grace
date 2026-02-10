@@ -138,10 +138,9 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
       setActiveDays([0, 1, 2, 3, 4, 5, 6]);
       setShowNewDialog(false);
 
-      console.log('✅ Category created:', newCategory);
-      console.log('📢 Dispatching categoriesUpdated event');
       toast.success('카테고리가 추가되었습니다');
       window.dispatchEvent(new Event('categoriesUpdated'));
+      onClose();
     } catch (error) {
       console.error('Failed to create category:', error);
       toast.error('카테고리 추가에 실패했습니다');
