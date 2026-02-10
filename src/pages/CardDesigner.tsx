@@ -10,15 +10,19 @@ import { CardSaveSuccessModal } from '@/components/CardSaveSuccessModal';
 import { LoginModal } from '@/components/LoginModal';
 import { FontPicker } from '@/components/FontPicker';
 import { toast } from 'sonner';
+import { motion, AnimatePresence } from 'framer-motion';
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
 
-// Add global CSS for hiding UI controls during capture
+// Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
   .hide-ui-controls .ui-control {
     display: none !important;
   }
   .hide-ui-controls .dashed-border {
     display: none !important;
+  }
+  body {
+    overscroll-behavior: none;
   }
 `;
 
@@ -243,6 +247,41 @@ export default function Designer() {
     }
     return false;
   });
+
+  // 실제 가시 영역 높이 (모바일 브라우저 주소창/키보드 대응)
+  const [viewportHeight, setViewportHeight] = useState(() =>
+    typeof window !== 'undefined' ? window.innerHeight : 800
+  );
+
+  useEffect(() => {
+    const updateVH = () => {
+      const h = window.visualViewport?.height ?? window.innerHeight;
+      setViewportHeight(h);
+    };
+    window.addEventListener('resize', updateVH);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', updateVH);
+      window.visualViewport.addEventListener('scroll', updateVH);
+    }
+    return () => {
+      window.removeEventListener('resize', updateVH);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', updateVH);
+        window.visualViewport.removeEventListener('scroll', updateVH);
+      }
+    };
+  }, []);
+
+  // 입력 모드 시 하단 패널 자동 숨김
+  const panelBeforeEditRef = useRef(false);
+  useEffect(() => {
+    if (isEditing) {
+      panelBeforeEditRef.current = isPanelCollapsed;
+      setIsPanelCollapsed(true);
+    } else {
+      setIsPanelCollapsed(panelBeforeEditRef.current);
+    }
+  }, [isEditing]);
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -975,7 +1014,7 @@ export default function Designer() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
+    <div className="flex flex-col overflow-hidden bg-gray-100" style={{ height: viewportHeight }}>
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-14 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
         <button
@@ -1349,7 +1388,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 180px)' : 'calc(65dvh - 132px)')
+              ? (isPanelCollapsed ? `${viewportHeight - 180}px` : `${viewportHeight * 0.65 - 132}px`)
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -1496,70 +1535,76 @@ export default function Designer() {
                     if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
                   }}
                 >
-                  {/* 플로팅 컨텍스트 툴바 - 편집 모드일 때 텍스트 박스 위에 표시 */}
-                  {isEditing && !isBgEditMode && (
-                    <div
-                      className={`ui-control absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-2.5 py-1.5 bg-black/80 backdrop-blur-sm rounded-full shadow-lg z-40 ${
-                        t.y < 15 ? 'top-full mt-2' : 'bottom-full mb-2'
-                      }`}
-                      onMouseDown={(e) => e.stopPropagation()}
-                      onTouchStart={(e) => e.stopPropagation()}
-                    >
-                      {/* B/I/U */}
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.bold ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                  {/* 플로팅 컨텍스트 툴바 - Framer Motion 애니메이션 */}
+                  <AnimatePresence>
+                    {isEditing && !isBgEditMode && (
+                      <motion.div
+                        initial={{ opacity: 0, y: t.y < 18 ? -8 : 8, scale: 0.9 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: t.y < 18 ? -6 : 6, scale: 0.95 }}
+                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                        className={`ui-control absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-2 py-1 bg-[#1a1a1a]/85 backdrop-blur-md rounded-full shadow-2xl z-40 ${
+                          t.y < 18 ? 'top-full mt-3' : 'bottom-full mb-3'
+                        }`}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onTouchStart={(e) => e.stopPropagation()}
                       >
-                        <Bold className="w-3.5 h-3.5 text-white" />
-                      </button>
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.italic ? 'bg-white/25' : 'hover:bg-white/10'}`}
-                      >
-                        <Italic className="w-3.5 h-3.5 text-white" />
-                      </button>
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.underline ? 'bg-white/25' : 'hover:bg-white/10'}`}
-                      >
-                        <Underline className="w-3.5 h-3.5 text-white" />
-                      </button>
-
-                      <div className="w-px h-5 bg-white/30 mx-0.5" />
-
-                      {/* 색상 미니 팔레트 */}
-                      {PALETTE.slice(0, 5).map(c => (
+                        {/* B/I/U */}
                         <button
-                          key={c}
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
-                          className={`w-5 h-5 rounded-full border transition-all ${t.color === c ? 'border-white scale-125' : 'border-white/30 hover:scale-110'}`}
-                          style={{ background: c }}
-                        />
-                      ))}
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.bold ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <Bold className="w-3.5 h-3.5 text-white/90" />
+                        </button>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.italic ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <Italic className="w-3.5 h-3.5 text-white/90" />
+                        </button>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.underline ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <Underline className="w-3.5 h-3.5 text-white/90" />
+                        </button>
 
-                      <div className="w-px h-5 bg-white/30 mx-0.5" />
+                        <div className="w-px h-4 bg-white/20 mx-0.5" />
 
-                      {/* 정렬 */}
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'left' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-                      >
-                        <AlignLeft className="w-3.5 h-3.5 text-white" />
-                      </button>
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'center' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-                      >
-                        <AlignCenter className="w-3.5 h-3.5 text-white" />
-                      </button>
-                      <button
-                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
-                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'right' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-                      >
-                        <AlignRight className="w-3.5 h-3.5 text-white" />
-                      </button>
-                    </div>
-                  )}
+                        {/* 색상 미니 팔레트 - 축소 */}
+                        {PALETTE.slice(0, 5).map(c => (
+                          <button
+                            key={c}
+                            onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
+                            className={`w-4 h-4 rounded-full transition-all ${t.color === c ? 'ring-[1.5px] ring-white ring-offset-1 ring-offset-[#1a1a1a]' : 'hover:scale-110'}`}
+                            style={{ background: c }}
+                          />
+                        ))}
+
+                        <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+                        {/* 정렬 */}
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'left' ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <AlignLeft className="w-3.5 h-3.5 text-white/90" />
+                        </button>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'center' ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <AlignCenter className="w-3.5 h-3.5 text-white/90" />
+                        </button>
+                        <button
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
+                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'right' ? 'bg-white/20' : 'hover:bg-white/10'}`}
+                        >
+                          <AlignRight className="w-3.5 h-3.5 text-white/90" />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* 선택 시 Dashed Border */}
                   {!isEditing && !isBgEditMode && (
@@ -1683,9 +1728,9 @@ export default function Designer() {
       </div>
 
       {/* 3. Editor Panel (Bottom) - Glassmorphism */}
-      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col ${
-        isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
-      }`}>
+      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col`}
+        style={{ height: isPanelCollapsed ? 40 : Math.min(viewportHeight * 0.35, 280) }}
+      >
         {/* Handlebar */}
         <div
           className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
@@ -2262,7 +2307,7 @@ function Toolbar({
   meta: Meta; setMeta: React.Dispatch<React.SetStateAction<Meta>>;
 }) {
   return (
-    <div className="h-full min-h-0 flex flex-col bg-white">
+    <div className="h-full min-h-0 flex flex-col bg-transparent">
       <Tabs value={active} onValueChange={setActive} className="h-full min-h-0 flex flex-col">
         {/* 탭 메뉴 */}
         <TabsList className="shrink-0 h-auto p-1 bg-white mx-2 sm:mx-3 my-2 rounded-full border border-[#E3E2E0] grid grid-cols-4 gap-0.5 sm:gap-1">
@@ -2310,13 +2355,13 @@ function Toolbar({
             {/* Text Formatting Buttons - Icon Only */}
             <div>
               <label className="text-xs text-[#7E7C78] mb-1.5 block">스타일</label>
-              <div className="flex gap-2">
+              <div className="flex gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
                 <button
                   onClick={() => setT(s => ({ ...s, bold: !s.bold }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all ${
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                     t.bold
-                      ? 'bg-[#6BAAB8] border-[#6BAAB8] text-white'
-                      : 'bg-white border-[#E3E2E0] text-[#2E2E2E] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                   }`}
                   title="굵게"
                 >
@@ -2324,10 +2369,10 @@ function Toolbar({
                 </button>
                 <button
                   onClick={() => setT(s => ({ ...s, italic: !s.italic }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all ${
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                     t.italic
-                      ? 'bg-[#6BAAB8] border-[#6BAAB8] text-white'
-                      : 'bg-white border-[#E3E2E0] text-[#2E2E2E] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                   }`}
                   title="기울임"
                 >
@@ -2335,10 +2380,10 @@ function Toolbar({
                 </button>
                 <button
                   onClick={() => setT(s => ({ ...s, underline: !s.underline }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg border transition-all ${
+                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                     t.underline
-                      ? 'bg-[#6BAAB8] border-[#6BAAB8] text-white'
-                      : 'bg-white border-[#E3E2E0] text-[#2E2E2E] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                   }`}
                   title="밑줄"
                 >
@@ -2356,7 +2401,7 @@ function Toolbar({
             <div className="space-y-2">
               <ToggleRow label="외곽선" checked={t.stroke.enabled} onChange={(v)=>setT(s=>({...s,stroke:{...s.stroke,enabled:v}}))} dark={false}/>
               {t.stroke.enabled && (
-                <div className="space-y-2 pl-2 border-l-2 border-[#E3E2E0]">
+                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
                   <ColorRow label="외곽선 색상" value={t.stroke.color} onPick={(c)=>setT(s=>({...s,stroke:{...s.stroke,color:c}}))} dark={false}/>
                   <LabeledSlider label={`두께: ${t.stroke.width}px`} min={0} max={8} step={1} value={t.stroke.width} onChange={(v)=>setT(s=>({...s,stroke:{...s.stroke,width:v}}))} dark={false}/>
                 </div>
@@ -2367,7 +2412,7 @@ function Toolbar({
             <div className="space-y-2">
               <ToggleRow label="그림자" checked={t.shadow.enabled} onChange={(v)=>setT(s=>({...s,shadow:{...s.shadow,enabled:v}}))} dark={false}/>
               {t.shadow.enabled && (
-                <div className="space-y-2 pl-2 border-l-2 border-[#E3E2E0]">
+                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
                   <ColorRow label="그림자 색상" value={t.shadow.color} onPick={(c)=>setT(s=>({...s,shadow:{...s.shadow,color:c}}))} dark={false}/>
                   <LabeledSlider label={`흐림: ${t.shadow.blur}px`} min={0} max={40} step={1} value={t.shadow.blur} onChange={(v)=>setT(s=>({...s,shadow:{...s.shadow,blur:v}}))} dark={false}/>
                 </div>
@@ -2378,7 +2423,7 @@ function Toolbar({
             <div className="space-y-2">
               <ToggleRow label="텍스트 박스" checked={t.box.enabled} onChange={(v)=>setT(s=>({...s,box:{...s.box,enabled:v}}))} dark={false}/>
               {t.box.enabled && (
-                <div className="space-y-2 pl-2 border-l-2 border-[#E3E2E0]">
+                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
                   <ColorRow label="박스 색상" value={t.box.color} onPick={(c)=>setT(s=>({...s,box:{...s.box,color:c}}))} dark={false}/>
                   <LabeledSlider label={`불투명도: ${t.box.opacity}%`} min={0} max={100} step={1} value={t.box.opacity} onChange={(v)=>setT(s=>({...s,box:{...s.box,opacity:v}}))} dark={false}/>
                   <LabeledSlider label={`모서리: ${t.box.radius}px`} min={0} max={32} step={1} value={t.box.radius} onChange={(v)=>setT(s=>({...s,box:{...s.box,radius:v}}))} dark={false}/>
@@ -2387,45 +2432,50 @@ function Toolbar({
             </div>
 
             {/* 가독성 조정 */}
-            <div className="space-y-2 pt-4 border-t border-[#E3E2E0]">
+            <div className="space-y-2.5 pt-4 border-t border-[#E3E2E0]">
               <div className="text-xs text-[#7E7C78] font-medium mb-2">가독성 조정</div>
-              <LabeledSlider label={`배경 어둡게: ${meta.bgDarken}%`} min={0} max={60} step={1} value={meta.bgDarken} onChange={(v)=>setMeta(m=>({...m,bgDarken:v}))} dark={false}/>
-              <LabeledSlider label={`배경 흐리게: ${meta.bgBlur}px`} min={0} max={8} step={1} value={meta.bgBlur} onChange={(v)=>setMeta(m=>({...m,bgBlur:v}))} dark={false}/>
+              <div className="px-3.5 py-3 rounded-xl bg-[#F7F6F5] space-y-2.5">
+                <LabeledSlider label={`배경 어둡게: ${meta.bgDarken}%`} min={0} max={60} step={1} value={meta.bgDarken} onChange={(v)=>setMeta(m=>({...m,bgDarken:v}))} dark={false}/>
+                <LabeledSlider label={`배경 흐리게: ${meta.bgBlur}px`} min={0} max={8} step={1} value={meta.bgBlur} onChange={(v)=>setMeta(m=>({...m,bgBlur:v}))} dark={false}/>
+              </div>
             </div>
           </TabsContent>
 
           <TabsContent value="align" className="mt-0 space-y-3 pb-4">
             <div>
               <label className="text-xs text-[#7E7C78] mb-2 block">텍스트 정렬</label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
                 <button
-                  className={`py-3 rounded-xl border text-sm font-medium transition-colors ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                     t.align === 'left'
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8] text-white'
-                      : 'border-[#E3E2E0] bg-white text-[#7E7C78] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
                   }`}
                   onClick={() => setT(s => ({ ...s, align: 'left' }))}
                 >
+                  <AlignLeft className="w-4 h-4" />
                   왼쪽
                 </button>
                 <button
-                  className={`py-3 rounded-xl border text-sm font-medium transition-colors ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                     t.align === 'center'
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8] text-white'
-                      : 'border-[#E3E2E0] bg-white text-[#7E7C78] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
                   }`}
                   onClick={() => setT(s => ({ ...s, align: 'center' }))}
                 >
+                  <AlignCenter className="w-4 h-4" />
                   가운데
                 </button>
                 <button
-                  className={`py-3 rounded-xl border text-sm font-medium transition-colors ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
                     t.align === 'right'
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8] text-white'
-                      : 'border-[#E3E2E0] bg-white text-[#7E7C78] hover:border-[#6BAAB8]'
+                      ? 'bg-[#6BAAB8] text-white shadow-sm'
+                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
                   }`}
                   onClick={() => setT(s => ({ ...s, align: 'right' }))}
                 >
+                  <AlignRight className="w-4 h-4" />
                   오른쪽
                 </button>
               </div>
@@ -2448,8 +2498,10 @@ function Toolbar({
           </TabsContent>
 
           <TabsContent value="spacing" className="mt-0 space-y-3 pb-4">
-            <LabeledSlider label={`행간: ${t.lineHeight.toFixed(2)}`} min={1.2} max={1.8} step={0.01} value={t.lineHeight} onChange={(v)=>setT(s=>({...s,lineHeight:v}))} dark={false}/>
-            <LabeledSlider label={`자간: ${t.letterSpacing}px`} min={-1} max={2} step={0.1} value={t.letterSpacing} onChange={(v)=>setT(s=>({...s,letterSpacing:v}))} dark={false}/>
+            <div className="px-3.5 py-3 rounded-xl bg-[#F7F6F5] space-y-3">
+              <LabeledSlider label={`행간: ${t.lineHeight.toFixed(2)}`} min={1.2} max={1.8} step={0.01} value={t.lineHeight} onChange={(v)=>setT(s=>({...s,lineHeight:v}))} dark={false}/>
+              <LabeledSlider label={`자간: ${t.letterSpacing}px`} min={-1} max={2} step={0.1} value={t.letterSpacing} onChange={(v)=>setT(s=>({...s,letterSpacing:v}))} dark={false}/>
+            </div>
           </TabsContent>
         </div>
       </Tabs>
@@ -2487,32 +2539,32 @@ function ColorRow({label,value,onPick,dark}:{label:string; value:string; onPick:
   return (
     <div>
       {label && <div className={`text-xs text-[#7E7C78] mb-1.5 ${dark?'text-white':''}`}>{label}</div>}
-      <div className="flex gap-2 items-center">
+      <div className="flex gap-1.5 items-center px-3 py-2.5 rounded-xl bg-[#F7F6F5]">
         {colors.map(c=>(
-          <button 
-            key={c} 
-            className={`w-8 h-8 rounded-lg transition-all ${
-              value === c ? 'ring-2 ring-[#6BAAB8] ring-offset-1 scale-110' : 'ring-1 ring-[#E3E2E0] hover:scale-105'
+          <button
+            key={c}
+            className={`w-7 h-7 rounded-full transition-all flex-shrink-0 ${
+              value === c ? 'ring-2 ring-[#6BAAB8] ring-offset-2 scale-110' : 'ring-1 ring-black/10 hover:scale-105'
             }`}
-            style={{background:c}} 
-            onClick={()=>onPick(c)} 
+            style={{background:c}}
+            onClick={()=>onPick(c)}
           />
         ))}
         {/* Rainbow gradient custom color picker button */}
-        <label 
-          className="relative w-8 h-8 rounded-lg cursor-pointer ring-1 ring-[#E3E2E0] hover:ring-2 hover:ring-[#6BAAB8] transition-all overflow-hidden"
+        <label
+          className="relative w-7 h-7 rounded-full cursor-pointer ring-1 ring-black/10 hover:ring-2 hover:ring-[#6BAAB8] transition-all overflow-hidden flex-shrink-0"
           title="커스텀 색상"
         >
-          <div 
-            className="absolute inset-0" 
+          <div
+            className="absolute inset-0 rounded-full"
             style={{
               background: 'conic-gradient(from 0deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000)'
             }}
           />
-          <input 
-            type="color" 
-            value={value} 
-            onChange={(e)=>onPick(e.target.value)} 
+          <input
+            type="color"
+            value={value}
+            onChange={(e)=>onPick(e.target.value)}
             className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
           />
         </label>
@@ -2523,9 +2575,13 @@ function ColorRow({label,value,onPick,dark}:{label:string; value:string; onPick:
 
 function ToggleRow({label,checked,onChange,dark}:{label:string;checked:boolean;onChange:(v:boolean)=>void;dark?:boolean}){
   return (
-    <label className="flex items-center justify-between">
-      <span className={`text-sm ${dark?'text-white':'text-[#2E2E2E]'}`}>{label}</span>
-      <input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)} className="w-5 h-5 accent-[rgba(125,184,125,1)]" />
+    <label className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-[#F7F6F5] hover:bg-[#F0EFED] transition-colors cursor-pointer">
+      <span className={`text-sm font-medium ${dark?'text-white':'text-[#2E2E2E]'}`}>{label}</span>
+      <div className="relative">
+        <input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)} className="sr-only peer" />
+        <div className={`w-10 h-[22px] rounded-full transition-colors ${checked ? 'bg-[#6BAAB8]' : 'bg-[#D4D3D1]'}`} />
+        <div className={`absolute top-[2px] left-[2px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform ${checked ? 'translate-x-[18px]' : ''}`} />
+      </div>
     </label>
   );
 }
