@@ -10,7 +10,7 @@ import { CardSaveSuccessModal } from '@/components/CardSaveSuccessModal';
 import { LoginModal } from '@/components/LoginModal';
 import { FontPicker } from '@/components/FontPicker';
 import { toast } from 'sonner';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
@@ -248,29 +248,6 @@ export default function Designer() {
     return false;
   });
 
-  // 실제 가시 영역 높이 (모바일 브라우저 주소창/키보드 대응)
-  const [viewportHeight, setViewportHeight] = useState(() =>
-    typeof window !== 'undefined' ? window.innerHeight : 800
-  );
-
-  useEffect(() => {
-    const updateVH = () => {
-      const h = window.visualViewport?.height ?? window.innerHeight;
-      setViewportHeight(h);
-    };
-    window.addEventListener('resize', updateVH);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', updateVH);
-      window.visualViewport.addEventListener('scroll', updateVH);
-    }
-    return () => {
-      window.removeEventListener('resize', updateVH);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', updateVH);
-        window.visualViewport.removeEventListener('scroll', updateVH);
-      }
-    };
-  }, []);
 
   // 입력 모드 시 하단 패널 완전 숨김 (교대 로직)
   const panelBeforeEditRef = useRef(false);
@@ -282,32 +259,6 @@ export default function Designer() {
       setIsPanelCollapsed(panelBeforeEditRef.current);
     }
   }, [isEditing]);
-
-  // 플로팅 툴바 위치 (fixed positioning으로 clipping 완전 제거)
-  const textContainerRef = useRef<HTMLDivElement>(null);
-  const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
-
-  useEffect(() => {
-    if (!isEditing || !textContainerRef.current) {
-      setToolbarPos(null);
-      return;
-    }
-    const update = () => {
-      const el = textContainerRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      // 텍스트 위에 공간이 60px 이상이면 위에, 아니면 아래에
-      const above = rect.top > 60;
-      const posY = above ? rect.top - 12 : rect.bottom + 12;
-      setToolbarPos({ x: centerX, y: posY, above });
-    };
-    update();
-    // 드래그, 리사이즈, 스크롤 등에 반응
-    const raf = () => { update(); rafId = requestAnimationFrame(raf); };
-    let rafId = requestAnimationFrame(raf);
-    return () => cancelAnimationFrame(rafId);
-  }, [isEditing, t.x, t.y]);
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -502,17 +453,10 @@ export default function Designer() {
     const currentDrag = dragRef.current;
     
     if (currentDrag.mode === 'move') {
-      // 이동 모드
-      const halfW = currentDrag.sw / 2;
-      const halfH = currentDrag.sh / 2;
-      const minX = halfW + 2;
-      const maxX = 100 - halfW - 2;
-      const minY = halfH + 2;
-      const maxY = 100 - halfH - 2;
-      
-      let newX = clamp(currentDrag.sx + dx, minX, maxX);
-      let newY = clamp(currentDrag.sy + dy, minY, maxY);
-      
+      // 이동 모드 - 여유로운 범위 (5~95%)로 자유 이동
+      let newX = clamp(currentDrag.sx + dx, 5, 95);
+      let newY = clamp(currentDrag.sy + dy, 5, 95);
+
       // 스냅 로직: 중앙에 가까우면 자동 스냅
       const snapThreshold = 3;
       if (Math.abs(newX - 50) < snapThreshold) newX = 50;
@@ -1400,7 +1344,7 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${isEditing ? 'p-1' : isPanelCollapsed ? 'p-4' : 'p-2'}`}>
+      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
           ratio={meta.ratio}
@@ -1536,7 +1480,6 @@ export default function Designer() {
                 {/* 텍스트 박스 (드래그 이동 및 리사이즈) */}
                 <div
                   id="text-container"
-                  ref={textContainerRef}
                   className="absolute text-box-wrapper"
                   style={{
                     left: textBoxStyle.left,
@@ -1683,115 +1626,37 @@ export default function Designer() {
           </RatioBox>
       </div>
 
-      {/* ── 교대 UI: 플로팅 툴바 (Focus 모드) ── */}
-      <AnimatePresence>
-        {isEditing && !isBgEditMode && toolbarPos && (
-          <motion.div
-            key="floating-toolbar"
-            initial={{ opacity: 0, scale: 0.9, y: toolbarPos.above ? 8 : -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.92, y: toolbarPos.above ? 6 : -6 }}
-            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-            className="ui-control fixed z-50 flex items-center gap-0.5 px-2.5 py-1.5 bg-[#1a1a1a]/90 backdrop-blur-md rounded-full shadow-2xl"
-            style={{
-              left: toolbarPos.x,
-              top: toolbarPos.y,
-              transform: `translateX(-50%) ${toolbarPos.above ? 'translateY(-100%)' : 'translateY(0)'}`,
+      {/* ── 하단 편집 패널 ── */}
+      {!isEditing && (
+        <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 ${
+          isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
+        }`}>
+          {/* Handlebar */}
+          <div
+            className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
+            onClick={() => {
+              if (!panelSwipeRef.current?.didSwipe) setIsPanelCollapsed(prev => !prev);
             }}
-            onMouseDown={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
+            onMouseDown={handlePanelSwipeStart}
+            onTouchStart={handlePanelSwipeStart}
           >
-            {/* B/I/U */}
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.bold ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <Bold className="w-3.5 h-3.5 text-white" />
-            </button>
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.italic ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <Italic className="w-3.5 h-3.5 text-white" />
-            </button>
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.underline ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <Underline className="w-3.5 h-3.5 text-white" />
-            </button>
-
-            <div className="w-px h-4 bg-white/20 mx-0.5" />
-
-            {/* 색상 미니 팔레트 */}
-            {PALETTE.slice(0, 4).map(c => (
-              <button
-                key={c}
-                onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
-                className={`w-4 h-4 rounded-full transition-all flex-shrink-0 ${t.color === c ? 'ring-[1.5px] ring-white ring-offset-1 ring-offset-[#1a1a1a]' : 'hover:scale-110'}`}
-                style={{ background: c }}
-              />
-            ))}
-
-            <div className="w-px h-4 bg-white/20 mx-0.5" />
-
-            {/* 정렬 */}
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'left' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <AlignLeft className="w-3.5 h-3.5 text-white" />
-            </button>
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'center' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <AlignCenter className="w-3.5 h-3.5 text-white" />
-            </button>
-            <button
-              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
-              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'right' ? 'bg-white/25' : 'hover:bg-white/10'}`}
-            >
-              <AlignRight className="w-3.5 h-3.5 text-white" />
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── 교대 UI: 하단 편집 패널 (Design 모드) ── */}
-      <motion.div
-        className="flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col overflow-hidden"
-        animate={{
-          height: isEditing ? 0 : (isPanelCollapsed ? 40 : 'auto'),
-          opacity: isEditing ? 0 : 1,
-        }}
-        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-      >
-        {/* Handlebar */}
-        <div
-          className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
-          onClick={() => {
-            if (!panelSwipeRef.current?.didSwipe) setIsPanelCollapsed(prev => !prev);
-          }}
-          onMouseDown={handlePanelSwipeStart}
-          onTouchStart={handlePanelSwipeStart}
-        >
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
-        </div>
-
-        {!isPanelCollapsed && !isEditing && (
-          <div className="flex-1 min-h-0" style={{ height: 'calc(35dvh - 40px)', maxHeight: 240 }}>
-            <Toolbar
-              active={activeTab}
-              setActive={setActiveTab}
-              t={t}
-              setT={setT}
-              meta={meta}
-              setMeta={setMeta}
-            />
+            <div className="w-10 h-1 bg-gray-300 rounded-full" />
           </div>
-        )}
-      </motion.div>
+
+          {!isPanelCollapsed && (
+            <div className="flex-1 min-h-0">
+              <Toolbar
+                active={activeTab}
+                setActive={setActiveTab}
+                t={t}
+                setT={setT}
+                meta={meta}
+                setMeta={setMeta}
+              />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Hidden file input */}
       <input
