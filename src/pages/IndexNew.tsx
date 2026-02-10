@@ -36,14 +36,14 @@ const IndexNew = () => {
     { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
+  const updateStats = () => {
+    const goal = getTodayGoalCount();
+    setGoalProgress(goal);
+    setStreakDays(getStreakDays());
+  };
+
   // Goal/Streak 계산
   useEffect(() => {
-    const updateStats = () => {
-      const goal = getTodayGoalCount();
-      setGoalProgress(goal);
-      setStreakDays(getStreakDays());
-    };
-
     updateStats();
     const interval = setInterval(updateStats, 30000); // 30초마다 업데이트
     return () => clearInterval(interval);
@@ -58,12 +58,13 @@ const IndexNew = () => {
   // 커스텀 카테고리 로드
   useEffect(() => {
     const loadCustomCategories = () => {
-      const saved = localStorage.getItem('custom_categories');
+      const saved = sessionStorage.getItem('custom_categories') || localStorage.getItem('custom_categories');
       if (saved) {
         const parsed = JSON.parse(saved);
         const customs = parsed.filter((cat: any) => !['1', '2', '3', '4'].includes(cat.id));
         setCustomCategories(customs);
       }
+      updateStats();
     };
     loadCustomCategories();
 

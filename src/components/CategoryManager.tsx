@@ -91,6 +91,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
       // 커스텀 카테고리 캐시 업데이트
       sessionStorage.setItem('custom_categories', JSON.stringify(uniqueCustomCategories));
+      localStorage.setItem('custom_categories', JSON.stringify(uniqueCustomCategories));
 
       setCategories(allCategories);
     } catch (error) {
