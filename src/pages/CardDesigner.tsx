@@ -1014,7 +1014,7 @@ export default function Designer() {
   };
 
   return (
-    <div className="flex flex-col overflow-hidden bg-gray-100" style={{ height: viewportHeight }}>
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-14 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
         <button
@@ -1374,7 +1374,7 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${isPanelCollapsed ? 'p-4' : 'p-2'}`}>
+      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${isEditing ? 'p-1' : isPanelCollapsed ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
           ratio={meta.ratio}
@@ -1388,7 +1388,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? `${viewportHeight - 180}px` : `${viewportHeight * 0.65 - 132}px`)
+              ? (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(65dvh - 132px)')
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -1728,9 +1728,9 @@ export default function Designer() {
       </div>
 
       {/* 3. Editor Panel (Bottom) - Glassmorphism */}
-      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col`}
-        style={{ height: isPanelCollapsed ? 40 : Math.min(viewportHeight * 0.35, 280) }}
-      >
+      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col ${
+        isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
+      }`}>
         {/* Handlebar */}
         <div
           className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
