@@ -4,6 +4,7 @@ export type Category = {
   id: string;
   name: string;
   color: string;
+  icon?: string;
   description?: string;
   includeInGoal?: boolean;
   activeDays?: number[];
@@ -29,6 +30,7 @@ export async function list(): Promise<Category[]> {
     user_id: cat.user_id,
     name: cat.name,
     color: cat.color,
+    icon: cat.icon || undefined,
     description: cat.description || undefined,
     includeInGoal: cat.include_in_goal,
     activeDays: cat.active_days,
@@ -40,19 +42,18 @@ export async function list(): Promise<Category[]> {
 
 export async function create(category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> {
   const { data: { user } } = await supabase.auth.getUser();
-  console.log('🔐 Creating category, user:', user?.id);
   if (!user) throw new Error('User not authenticated');
 
-  const insertData = {
+  const insertData: any = {
     user_id: user.id,
     name: category.name,
     color: category.color,
+    icon: category.icon || null,
     description: category.description || null,
     include_in_goal: category.includeInGoal ?? true,
     active_days: category.activeDays || [0,1,2,3,4,5,6],
     fields: category.fields,
   };
-  console.log('📝 Inserting category data:', insertData);
 
   const { data, error } = await supabase
     .from('categories')
@@ -60,17 +61,13 @@ export async function create(category: Omit<Category, 'id' | 'createdAt' | 'upda
     .select()
     .single();
 
-  if (error) {
-    console.error('❌ Error creating category:', error);
-    throw error;
-  }
-
-  console.log('✅ Category created successfully:', data);
+  if (error) throw error;
 
   return {
     id: data.id,
     name: data.name,
     color: data.color,
+    icon: data.icon || undefined,
     description: data.description || undefined,
     includeInGoal: data.include_in_goal,
     activeDays: data.active_days,
@@ -81,7 +78,6 @@ export async function create(category: Omit<Category, 'id' | 'createdAt' | 'upda
 }
 
 export async function get(id: string): Promise<Category | null> {
-  // 먼저 sessionStorage에서 캐시된 카테고리 확인
   const cached = sessionStorage.getItem(`category_${id}`);
   if (cached) {
     try {
@@ -117,7 +113,6 @@ export async function get(id: string): Promise<Category | null> {
     updatedAt: data.updated_at,
   };
 
-  // sessionStorage에 캐시 저장
   sessionStorage.setItem(`category_${id}`, JSON.stringify(category));
 
   return category;
@@ -130,6 +125,7 @@ export async function update(id: string, patch: Partial<Category>): Promise<Cate
   const updateData: any = {};
   if (patch.name !== undefined) updateData.name = patch.name;
   if (patch.color !== undefined) updateData.color = patch.color;
+  if (patch.icon !== undefined) updateData.icon = patch.icon;
   if (patch.description !== undefined) updateData.description = patch.description;
   if (patch.includeInGoal !== undefined) updateData.include_in_goal = patch.includeInGoal;
   if (patch.activeDays !== undefined) updateData.active_days = patch.activeDays;
@@ -149,6 +145,7 @@ export async function update(id: string, patch: Partial<Category>): Promise<Cate
     id: data.id,
     name: data.name,
     color: data.color,
+    icon: data.icon || undefined,
     description: data.description || undefined,
     includeInGoal: data.include_in_goal,
     activeDays: data.active_days,

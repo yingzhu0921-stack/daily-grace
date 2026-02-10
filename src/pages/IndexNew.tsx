@@ -71,7 +71,6 @@ const IndexNew = () => {
     const loadFromSupabase = async () => {
       try {
         const dbCategories = await categoryStorage.list();
-        // ID 중복 제거
         const seen = new Set<string>();
         const customs = dbCategories.filter((cat: any) => {
           if (seen.has(cat.id)) return false;
@@ -87,11 +86,16 @@ const IndexNew = () => {
       }
     };
 
+    const handleCategoriesUpdated = () => {
+      loadFromCache();
+      if (user) loadFromSupabase();
+    };
+
     loadFromCache();
     if (user) loadFromSupabase();
 
-    window.addEventListener('categoriesUpdated', loadFromCache);
-    return () => window.removeEventListener('categoriesUpdated', loadFromCache);
+    window.addEventListener('categoriesUpdated', handleCategoriesUpdated);
+    return () => window.removeEventListener('categoriesUpdated', handleCategoriesUpdated);
   }, [user]);
 
   // 추천 메시지 생성
