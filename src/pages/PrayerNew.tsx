@@ -49,7 +49,7 @@ export default function PrayerNew() {
     toast.success('전체 내용이 복사되었어요!');
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const value = text.trim();
     const validationResult = prayerSchema.safeParse({
       title: value,
@@ -69,22 +69,23 @@ export default function PrayerNew() {
 
     let savedPrayer;
     if (splitLines) {
-      const prayers = text.split('\n').filter(line => line.trim()).map(line =>
+      const lines = text.split('\n').filter(line => line.trim());
+      const prayers = await Promise.all(lines.map(line =>
         create({
           title: line.trim(),
           content: line.trim(),
           answered: false,
           answeredAt: null
         })
-      );
+      ));
       savedPrayer = prayers[0];
-      
+
       toast.success('클라우드에 백업되었습니다.');
 
       navigate('/prayer', { replace: true });
       setTimeout(() => navigate(`/prayer/${savedPrayer.id}`), 0);
     } else {
-      savedPrayer = create({
+      savedPrayer = await create({
         title: value,
         content: value,
         answered: false,
