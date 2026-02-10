@@ -1396,15 +1396,15 @@ export default function Designer() {
             <div
               id="card-preview"
               ref={canvasRef}
-              className="relative w-full h-full rounded-[28px] overflow-hidden shadow-xl"
+              className={`relative w-full h-full rounded-[28px] shadow-xl ${isEditing ? 'overflow-visible' : 'overflow-hidden'}`}
               style={{
                 background: meta.bgColor,
               }}
             >
                 {/* 배경 이미지 레이어 */}
                 {meta.bgImageUrl && (
-                  <div 
-                    className={`absolute inset-0 ${isBgEditMode ? 'cursor-move' : ''}`}
+                  <div
+                    className={`absolute inset-0 rounded-[28px] overflow-hidden ${isBgEditMode ? 'cursor-move' : ''}`}
                     style={{
                       backgroundImage: `url(${meta.bgImageUrl})`,
                       backgroundPosition: `${meta.bgPositionX}% ${meta.bgPositionY}%`,
@@ -1476,16 +1476,16 @@ export default function Designer() {
                 
                 {/* 배경 어둡게 오버레이 */}
                 {meta.bgDarken > 0 && (
-                  <div 
-                    className="absolute inset-0 bg-black pointer-events-none"
+                  <div
+                    className="absolute inset-0 bg-black pointer-events-none rounded-[28px]"
                     style={{ opacity: meta.bgDarken / 100 }}
                   />
                 )}
-                
+
                 {/* 배경 흐리게 (backdrop-filter는 최종 캡처에 적용) */}
-                <div 
-                  className="absolute inset-0 pointer-events-none"
-                  style={{ 
+                <div
+                  className="absolute inset-0 pointer-events-none rounded-[28px]"
+                  style={{
                     backdropFilter: meta.bgBlur > 0 ? `blur(${meta.bgBlur}px)` : 'none',
                     WebkitBackdropFilter: meta.bgBlur > 0 ? `blur(${meta.bgBlur}px)` : 'none',
                   }}
