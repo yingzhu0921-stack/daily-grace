@@ -71,6 +71,11 @@ const IndexNew = () => {
     };
   }, []);
 
+  // 커스텀 카테고리 변경 시 목표 재계산
+  useEffect(() => {
+    updateStats();
+  }, [customCategories]);
+
   // 커스텀 카테고리 로드
   useEffect(() => {
     const loadFromCache = () => {
