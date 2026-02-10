@@ -120,6 +120,7 @@ export function getTodayGoalCount() {
 
   // 커스텀 카테고리 가져오기 (sessionStorage 우선, 없으면 localStorage)
   let customCategories: any[] = [];
+  const defaultIds = ['1', '2', '3', '4'];
   const sessionSaved = sessionStorage.getItem('custom_categories');
   const localSaved = localStorage.getItem('custom_categories');
 
@@ -136,6 +137,9 @@ export function getTodayGoalCount() {
       console.error('Failed to parse custom_categories from localStorage:', e);
     }
   }
+
+  // 기본 카테고리와 중복되지 않는 커스텀 카테고리만 필터링
+  customCategories = customCategories.filter((c: any) => !defaultIds.includes(c.id));
 
   // 모든 카테고리 합치기
   const allCategories = [...defaultCategories, ...customCategories];

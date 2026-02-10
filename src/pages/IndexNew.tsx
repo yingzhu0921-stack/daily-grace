@@ -71,13 +71,17 @@ const IndexNew = () => {
     const loadFromSupabase = async () => {
       try {
         const dbCategories = await categoryStorage.list();
-        const customs = dbCategories.filter((cat: any) => cat.user_id != null);
-        if (customs.length > 0) {
-          sessionStorage.setItem('custom_categories', JSON.stringify(customs));
-          localStorage.setItem('custom_categories', JSON.stringify(customs));
-          setCustomCategories(customs);
-          updateStats();
-        }
+        // ID 중복 제거
+        const seen = new Set<string>();
+        const customs = dbCategories.filter((cat: any) => {
+          if (seen.has(cat.id)) return false;
+          seen.add(cat.id);
+          return true;
+        });
+        sessionStorage.setItem('custom_categories', JSON.stringify(customs));
+        localStorage.setItem('custom_categories', JSON.stringify(customs));
+        setCustomCategories(customs);
+        updateStats();
       } catch (e) {
         // Supabase 연결 실패 시 캐시에서 로드
       }
