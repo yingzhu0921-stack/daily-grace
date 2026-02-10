@@ -272,7 +272,7 @@ export default function Designer() {
     };
   }, []);
 
-  // 입력 모드 시 하단 패널 자동 숨김
+  // 입력 모드 시 하단 패널 완전 숨김 (교대 로직)
   const panelBeforeEditRef = useRef(false);
   useEffect(() => {
     if (isEditing) {
@@ -282,6 +282,32 @@ export default function Designer() {
       setIsPanelCollapsed(panelBeforeEditRef.current);
     }
   }, [isEditing]);
+
+  // 플로팅 툴바 위치 (fixed positioning으로 clipping 완전 제거)
+  const textContainerRef = useRef<HTMLDivElement>(null);
+  const [toolbarPos, setToolbarPos] = useState<{ x: number; y: number; above: boolean } | null>(null);
+
+  useEffect(() => {
+    if (!isEditing || !textContainerRef.current) {
+      setToolbarPos(null);
+      return;
+    }
+    const update = () => {
+      const el = textContainerRef.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      // 텍스트 위에 공간이 60px 이상이면 위에, 아니면 아래에
+      const above = rect.top > 60;
+      const posY = above ? rect.top - 12 : rect.bottom + 12;
+      setToolbarPos({ x: centerX, y: posY, above });
+    };
+    update();
+    // 드래그, 리사이즈, 스크롤 등에 반응
+    const raf = () => { update(); rafId = requestAnimationFrame(raf); };
+    let rafId = requestAnimationFrame(raf);
+    return () => cancelAnimationFrame(rafId);
+  }, [isEditing, t.x, t.y]);
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -1396,7 +1422,7 @@ export default function Designer() {
             <div
               id="card-preview"
               ref={canvasRef}
-              className={`relative w-full h-full rounded-[28px] shadow-xl ${isEditing ? 'overflow-visible' : 'overflow-hidden'}`}
+              className="relative w-full h-full rounded-[28px] shadow-xl overflow-hidden"
               style={{
                 background: meta.bgColor,
               }}
@@ -1510,6 +1536,7 @@ export default function Designer() {
                 {/* 텍스트 박스 (드래그 이동 및 리사이즈) */}
                 <div
                   id="text-container"
+                  ref={textContainerRef}
                   className="absolute text-box-wrapper"
                   style={{
                     left: textBoxStyle.left,
@@ -1535,77 +1562,6 @@ export default function Designer() {
                     if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
                   }}
                 >
-                  {/* 플로팅 컨텍스트 툴바 - Framer Motion 애니메이션 */}
-                  <AnimatePresence>
-                    {isEditing && !isBgEditMode && (
-                      <motion.div
-                        initial={{ opacity: 0, y: t.y < 18 ? -8 : 8, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: t.y < 18 ? -6 : 6, scale: 0.95 }}
-                        transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-                        className={`ui-control absolute left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-2 py-1 bg-[#1a1a1a]/85 backdrop-blur-md rounded-full shadow-2xl z-40 ${
-                          t.y < 18 ? 'top-full mt-3' : 'bottom-full mb-3'
-                        }`}
-                        onMouseDown={(e) => e.stopPropagation()}
-                        onTouchStart={(e) => e.stopPropagation()}
-                      >
-                        {/* B/I/U */}
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.bold ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <Bold className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.italic ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <Italic className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.underline ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <Underline className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-
-                        <div className="w-px h-4 bg-white/20 mx-0.5" />
-
-                        {/* 색상 미니 팔레트 - 축소 */}
-                        {PALETTE.slice(0, 5).map(c => (
-                          <button
-                            key={c}
-                            onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
-                            className={`w-4 h-4 rounded-full transition-all ${t.color === c ? 'ring-[1.5px] ring-white ring-offset-1 ring-offset-[#1a1a1a]' : 'hover:scale-110'}`}
-                            style={{ background: c }}
-                          />
-                        ))}
-
-                        <div className="w-px h-4 bg-white/20 mx-0.5" />
-
-                        {/* 정렬 */}
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'left' ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <AlignLeft className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'center' ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <AlignCenter className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-                        <button
-                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
-                          className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'right' ? 'bg-white/20' : 'hover:bg-white/10'}`}
-                        >
-                          <AlignRight className="w-3.5 h-3.5 text-white/90" />
-                        </button>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-
                   {/* 선택 시 Dashed Border */}
                   {!isEditing && !isBgEditMode && (
                     <div className="ui-control dashed-border absolute inset-0 border-2 border-dashed border-white/60 rounded-lg pointer-events-none" />
@@ -1727,10 +1683,90 @@ export default function Designer() {
           </RatioBox>
       </div>
 
-      {/* 3. Editor Panel (Bottom) - Glassmorphism */}
-      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col ${
-        isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
-      }`}>
+      {/* ── 교대 UI: 플로팅 툴바 (Focus 모드) ── */}
+      <AnimatePresence>
+        {isEditing && !isBgEditMode && toolbarPos && (
+          <motion.div
+            key="floating-toolbar"
+            initial={{ opacity: 0, scale: 0.9, y: toolbarPos.above ? 8 : -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.92, y: toolbarPos.above ? 6 : -6 }}
+            transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+            className="ui-control fixed z-50 flex items-center gap-0.5 px-2.5 py-1.5 bg-[#1a1a1a]/90 backdrop-blur-md rounded-full shadow-2xl"
+            style={{
+              left: toolbarPos.x,
+              top: toolbarPos.y,
+              transform: `translateX(-50%) ${toolbarPos.above ? 'translateY(-100%)' : 'translateY(0)'}`,
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            {/* B/I/U */}
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.bold ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <Bold className="w-3.5 h-3.5 text-white" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.italic ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <Italic className="w-3.5 h-3.5 text-white" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.underline ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <Underline className="w-3.5 h-3.5 text-white" />
+            </button>
+
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+            {/* 색상 미니 팔레트 */}
+            {PALETTE.slice(0, 4).map(c => (
+              <button
+                key={c}
+                onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
+                className={`w-4 h-4 rounded-full transition-all flex-shrink-0 ${t.color === c ? 'ring-[1.5px] ring-white ring-offset-1 ring-offset-[#1a1a1a]' : 'hover:scale-110'}`}
+                style={{ background: c }}
+              />
+            ))}
+
+            <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+            {/* 정렬 */}
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'left' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <AlignLeft className="w-3.5 h-3.5 text-white" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'center' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <AlignCenter className="w-3.5 h-3.5 text-white" />
+            </button>
+            <button
+              onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
+              className={`w-7 h-7 flex items-center justify-center rounded-md transition-colors ${t.align === 'right' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+            >
+              <AlignRight className="w-3.5 h-3.5 text-white" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── 교대 UI: 하단 편집 패널 (Design 모드) ── */}
+      <motion.div
+        className="flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col overflow-hidden"
+        animate={{
+          height: isEditing ? 0 : (isPanelCollapsed ? 40 : 'auto'),
+          opacity: isEditing ? 0 : 1,
+        }}
+        transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+      >
         {/* Handlebar */}
         <div
           className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
@@ -1742,9 +1778,9 @@ export default function Designer() {
         >
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
-        
-        {!isPanelCollapsed && (
-          <div className="flex-1 min-h-0">
+
+        {!isPanelCollapsed && !isEditing && (
+          <div className="flex-1 min-h-0" style={{ height: 'calc(35dvh - 40px)', maxHeight: 240 }}>
             <Toolbar
               active={activeTab}
               setActive={setActiveTab}
@@ -1755,7 +1791,7 @@ export default function Designer() {
             />
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Hidden file input */}
       <input
