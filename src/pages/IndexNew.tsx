@@ -26,9 +26,9 @@ const IndexNew = () => {
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
   const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [goalProgress, setGoalProgress] = useState({ completed: 0, total: 4 });
-  const [streakDays, setStreakDays] = useState(0);
-  const [recentRecords, setRecentRecords] = useState<any[]>([]);
+  const [goalProgress, setGoalProgress] = useState(() => getTodayGoalCount());
+  const [streakDays, setStreakDays] = useState(() => getStreakDays());
+  const [recentRecords, setRecentRecords] = useState<any[]>(() => getAllRecords().slice(0, 5));
 
   // 기본 카테고리
   const defaultCategories = [

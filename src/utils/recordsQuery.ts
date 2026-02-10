@@ -167,23 +167,19 @@ export function getTodayGoalCount(passedCustomCategories?: any[]) {
   if (cat4?.includeInGoal !== false && isActiveToday(cat4) && counts.diary > 0) completed++;
 
   // 커스텀 카테고리 완료 체크
+  const customRecordsStr = localStorage.getItem('custom_records');
+  let customRecordsParsed: any[] = [];
+  if (customRecordsStr) {
+    try { customRecordsParsed = JSON.parse(customRecordsStr); } catch (e) {}
+  }
+
   customCategories.forEach((cat: any) => {
     if (cat.includeInGoal !== false && isActiveToday(cat)) {
-      // 커스텀 카테고리의 기록 확인 (localStorage의 custom_records에서)
-      const customRecordsStr = localStorage.getItem('custom_records');
-      if (customRecordsStr) {
-        try {
-          const customRecords = JSON.parse(customRecordsStr);
-          // 오늘 날짜에 해당 카테고리의 기록이 있는지 확인
-          const hasTodayRecord = customRecords.some((record: any) => {
-            const recordDate = toDateKey(record.created_at || record.createdAt);
-            return record.category_id === cat.id && recordDate === todayStr;
-          });
-          if (hasTodayRecord) completed++;
-        } catch (e) {
-          console.error('Failed to parse custom_records:', e);
-        }
-      }
+      const hasTodayRecord = customRecordsParsed.some((record: any) => {
+        const recordDate = toDateKey(record.created_at || record.createdAt);
+        return (record.category_id === cat.id || record.categoryId === cat.id) && recordDate === todayStr;
+      });
+      if (hasTodayRecord) completed++;
     }
   });
 

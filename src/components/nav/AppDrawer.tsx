@@ -26,8 +26,8 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({ open, onOpenChange }) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showCategoryManager, setShowCategoryManager] = React.useState(false);
-  const [goalCount, setGoalCount] = React.useState({ completed: 0, total: 4 });
-  const [streak, setStreak] = React.useState(0);
+  const [goalCount, setGoalCount] = React.useState(() => getTodayGoalCount());
+  const [streak, setStreak] = React.useState(() => getStreakDays());
 
   React.useEffect(() => {
     const updateGoalCount = () => {
@@ -37,10 +37,12 @@ export const AppDrawer: React.FC<AppDrawerProps> = ({ open, onOpenChange }) => {
 
     updateGoalCount();
     window.addEventListener('categoriesUpdated', updateGoalCount);
+    window.addEventListener('recordsUpdated', updateGoalCount);
     const interval = setInterval(updateGoalCount, 3000);
-    
+
     return () => {
       window.removeEventListener('categoriesUpdated', updateGoalCount);
+      window.removeEventListener('recordsUpdated', updateGoalCount);
       clearInterval(interval);
     };
   }, []);
