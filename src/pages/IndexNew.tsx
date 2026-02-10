@@ -39,20 +39,15 @@ const IndexNew = () => {
   ];
 
   const refreshAll = useCallback(() => {
-    setGoalProgress(getTodayGoalCount());
+    setGoalProgress(getTodayGoalCount(customCategories));
     setStreakDays(getStreakDays());
     setRecentRecords(getAllRecords().slice(0, 5));
-  }, []);
-
-  // 라우트 변경(홈으로 돌아올 때)마다 즉시 갱신
-  useEffect(() => {
-    refreshAll();
-  }, [location.key]);
-
-  // 커스텀 카테고리 변경 시 목표 재계산
-  useEffect(() => {
-    refreshAll();
   }, [customCategories]);
+
+  // 라우트 변경(홈으로 돌아올 때) 또는 카테고리 변경 시 즉시 갱신
+  useEffect(() => {
+    refreshAll();
+  }, [location.key, refreshAll]);
 
   // 이벤트 기반 갱신
   useEffect(() => {

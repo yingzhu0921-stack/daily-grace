@@ -104,13 +104,12 @@ export function getRecordCounts(dateStr: string) {
   };
 }
 
-export function getTodayGoalCount() {
+export function getTodayGoalCount(passedCustomCategories?: any[]) {
   const today = new Date();
   const todayStr = toLocalDateString(today);
   const todayDayOfWeek = today.getDay();
   const counts = getRecordCounts(todayStr);
 
-  // 기본 카테고리 4개
   const defaultCategories = [
     { id: '1', name: 'QT', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
     { id: '2', name: '기도', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
@@ -118,27 +117,22 @@ export function getTodayGoalCount() {
     { id: '4', name: '일기', includeInGoal: true, activeDays: [0, 1, 2, 3, 4, 5, 6] },
   ];
 
-  // 커스텀 카테고리 가져오기 (sessionStorage 우선, 없으면 localStorage)
-  let customCategories: any[] = [];
   const defaultIds = ['1', '2', '3', '4'];
-  const sessionSaved = sessionStorage.getItem('custom_categories');
-  const localSaved = localStorage.getItem('custom_categories');
+  let customCategories: any[] = [];
 
-  if (sessionSaved) {
-    try {
-      customCategories = JSON.parse(sessionSaved);
-    } catch (e) {
-      console.error('Failed to parse custom_categories from sessionStorage:', e);
-    }
-  } else if (localSaved) {
-    try {
-      customCategories = JSON.parse(localSaved);
-    } catch (e) {
-      console.error('Failed to parse custom_categories from localStorage:', e);
+  if (passedCustomCategories && passedCustomCategories.length > 0) {
+    customCategories = passedCustomCategories;
+  } else {
+    const sessionSaved = sessionStorage.getItem('custom_categories');
+    const localSaved = localStorage.getItem('custom_categories');
+
+    if (sessionSaved) {
+      try { customCategories = JSON.parse(sessionSaved); } catch (e) {}
+    } else if (localSaved) {
+      try { customCategories = JSON.parse(localSaved); } catch (e) {}
     }
   }
 
-  // 기본 카테고리와 중복되지 않는 커스텀 카테고리만 필터링
   customCategories = customCategories.filter((c: any) => !defaultIds.includes(c.id));
 
   // 모든 카테고리 합치기
