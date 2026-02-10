@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Sparkles, Space } from 'lucide-react';
+import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -2278,21 +2278,21 @@ function Toolbar({
             title="스타일"
             className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            <Sparkles className="w-4 h-4" />
+            <Paintbrush className="w-4 h-4" />
           </TabsTrigger>
           <TabsTrigger
             value="align"
             title="정렬"
             className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            <AlignCenter className="w-4 h-4" />
+            <AlignJustify className="w-4 h-4" />
           </TabsTrigger>
           <TabsTrigger
             value="spacing"
             title="간격"
             className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            <Space className="w-4 h-4" />
+            <Ruler className="w-4 h-4" />
           </TabsTrigger>
         </TabsList>
 
