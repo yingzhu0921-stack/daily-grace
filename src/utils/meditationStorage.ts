@@ -25,6 +25,7 @@ function readAll(): MeditationNote[] {
 function writeAll(list: MeditationNote[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(KEY, JSON.stringify(list));
+  window.dispatchEvent(new Event('recordsUpdated'));
 }
 
 export async function create(note: Omit<MeditationNote,'id'|'createdAt'|'updatedAt'>) {

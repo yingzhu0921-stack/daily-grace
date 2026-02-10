@@ -11,6 +11,7 @@ function readAll(): GratitudeNote[] {
 function writeAll(list: GratitudeNote[]) {
   if (typeof window === 'undefined') return;
   localStorage.setItem(KEY, JSON.stringify(list));
+  window.dispatchEvent(new Event('recordsUpdated'));
 }
 
 export function list(): GratitudeNote[] {

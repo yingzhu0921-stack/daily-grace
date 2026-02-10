@@ -54,6 +54,7 @@ const CustomRecordList = () => {
       const allRecords: CustomRecord[] = JSON.parse(saved);
       const filtered = allRecords.filter(r => r.id !== id);
       localStorage.setItem('custom_records', JSON.stringify(filtered));
+      window.dispatchEvent(new Event('recordsUpdated'));
       refresh();
       toast.success('기록이 삭제되었습니다');
     }
@@ -225,6 +226,7 @@ const CustomRecordList = () => {
                                     return r;
                                   });
                                   localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
+                                  window.dispatchEvent(new Event('recordsUpdated'));
                                   refresh();
                                 }
                               }}

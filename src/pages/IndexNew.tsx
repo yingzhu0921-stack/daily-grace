@@ -43,17 +43,32 @@ const IndexNew = () => {
     setStreakDays(getStreakDays());
   };
 
-  // Goal/Streak 계산
-  useEffect(() => {
+  const refreshAll = () => {
     updateStats();
-    const interval = setInterval(updateStats, 30000); // 30초마다 업데이트
-    return () => clearInterval(interval);
-  }, []);
+    setRecentRecords(getAllRecords().slice(0, 5));
+  };
 
-  // 최신 기록 로드
+  // Goal/Streak 계산 + 최신 기록 로드
   useEffect(() => {
-    const records = getAllRecords().slice(0, 5); // 최신 5개
-    setRecentRecords(records);
+    refreshAll();
+    const interval = setInterval(refreshAll, 30000);
+
+    // 페이지로 돌아왔을 때 즉시 갱신
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') refreshAll();
+    };
+    const handleFocus = () => refreshAll();
+
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('recordsUpdated', refreshAll);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('recordsUpdated', refreshAll);
+    };
   }, []);
 
   // 커스텀 카테고리 로드

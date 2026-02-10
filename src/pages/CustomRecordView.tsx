@@ -185,6 +185,7 @@ const CustomRecordView = () => {
       const records: CustomRecord[] = JSON.parse(saved);
       const updatedRecords = records.filter(r => r.id !== recordId);
       localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
+      window.dispatchEvent(new Event('recordsUpdated'));
     }
 
     toast({

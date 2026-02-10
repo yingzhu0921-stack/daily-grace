@@ -205,6 +205,7 @@ const CustomRecordNew = () => {
 
       console.log('Updated records:', updatedRecords);
       localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
+      window.dispatchEvent(new Event('recordsUpdated'));
 
       toast({
         title: "수정 완료!",
@@ -230,6 +231,7 @@ const CustomRecordNew = () => {
 
       records.push(newRecord);
       localStorage.setItem('custom_records', JSON.stringify(records));
+      window.dispatchEvent(new Event('recordsUpdated'));
 
       toast({
         title: "저장 완료!",

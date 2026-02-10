@@ -17,6 +17,7 @@ function readAll(): Diary[] {
 function writeAll(list: Diary[]) {
   if (typeof window === "undefined") return;
   localStorage.setItem(KEY, JSON.stringify(list));
+  window.dispatchEvent(new Event('recordsUpdated'));
 }
 
 export function listAll(): Diary[] {
