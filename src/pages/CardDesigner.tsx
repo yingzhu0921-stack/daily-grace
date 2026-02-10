@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline } from 'lucide-react';
+import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, Type, Sparkles, Space } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -224,7 +224,7 @@ export default function Designer() {
   const [expandedPrompt, setExpandedPrompt] = useState('');
   const [selectedStyle, setSelectedStyle] = useState<string>('');
   const [isExpandingPrompt, setIsExpandingPrompt] = useState(false);
-  const [showMoveHint, setShowMoveHint] = useState(true);
+  const lastTapRef = useRef<number>(0);
   const [lastGenerateTime, setLastGenerateTime] = useState<number>(0);
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -361,21 +361,44 @@ export default function Designer() {
     }
   }, [location.search, user, navigate]);
 
-  // 이동 힌트 자동 숨김 (3초 후)
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowMoveHint(false);
-    }, 3000);
-    return () => clearTimeout(timer);
-  }, []);
+  // 하단 패널 스와이프 제스처
+  const panelSwipeRef = useRef<{ startY: number; didSwipe: boolean }>();
+
+  const handlePanelSwipeStart = (e: React.MouseEvent | React.TouchEvent) => {
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    panelSwipeRef.current = { startY: clientY, didSwipe: false };
+    const doc = (e.currentTarget as HTMLElement).ownerDocument;
+    const onMove = (ev: MouseEvent | TouchEvent) => {
+      if (!panelSwipeRef.current) return;
+      const cy = 'touches' in ev ? ev.touches[0].clientY : (ev as MouseEvent).clientY;
+      const delta = cy - panelSwipeRef.current.startY;
+      if (Math.abs(delta) > 40) panelSwipeRef.current.didSwipe = true;
+    };
+    const onEnd = (ev: MouseEvent | TouchEvent) => {
+      doc.removeEventListener('mousemove', onMove);
+      doc.removeEventListener('mouseup', onEnd);
+      doc.removeEventListener('touchmove', onMove as any);
+      doc.removeEventListener('touchend', onEnd);
+      if (!panelSwipeRef.current) return;
+      const cy = 'changedTouches' in ev ? ev.changedTouches[0].clientY : (ev as MouseEvent).clientY;
+      const delta = cy - panelSwipeRef.current.startY;
+      if (Math.abs(delta) > 40) {
+        if (delta > 0) setIsPanelCollapsed(true);
+        else setIsPanelCollapsed(false);
+      }
+      panelSwipeRef.current = undefined;
+    };
+    doc.addEventListener('mousemove', onMove);
+    doc.addEventListener('mouseup', onEnd);
+    doc.addEventListener('touchmove', onMove as any, { passive: false });
+    doc.addEventListener('touchend', onEnd);
+  };
 
   /** 드래그: 이동 및 리사이즈 */
   const onDragStart = (e: React.MouseEvent | React.TouchEvent, mode: 'move' | 'resize-tl' | 'resize-tr' | 'resize-bl' | 'resize-br') => {
     if (!canvasRef.current || isEditing || isBgEditMode) return;
     e.preventDefault();
     e.stopPropagation();
-    
-    setShowMoveHint(false); // 드래그 시작하면 힌트 숨김
     
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
@@ -1312,22 +1335,23 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className="flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 p-4">
+      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${isPanelCollapsed ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
-        <RatioBox 
-          ratio={meta.ratio} 
+        <RatioBox
+          ratio={meta.ratio}
           className="shadow-2xl my-auto"
           style={{
-            width: meta.ratio === '9:16' ? 'min(90vw, 400px)' : 
-                   meta.ratio === '16:9' ? 'min(90vw, 600px)' : 
+            width: meta.ratio === '9:16' ? 'min(90vw, 400px)' :
+                   meta.ratio === '16:9' ? 'min(90vw, 600px)' :
                    meta.ratio === '1:1' ? 'min(90vw, 500px)' :
                    meta.ratio === '4:3' ? 'min(90vw, 600px)' :
                    meta.ratio === '4:5' ? 'min(90vw, 400px)' :
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
-            maxHeight: meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5'
-              ? 'calc(100vh - 180px)' // 세로로 긴 비율은 높이 제한
-              : undefined
+            maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
+              ? (isPanelCollapsed ? 'calc(100dvh - 180px)' : 'calc(65dvh - 132px)')
+              : undefined,
+            transition: 'max-height 0.3s ease',
           }}
         >
             <div
@@ -1448,13 +1472,13 @@ export default function Designer() {
                 <div
                   id="text-container"
                   className="absolute text-box-wrapper"
-                  style={{ 
-                    left: textBoxStyle.left, 
-                    top: textBoxStyle.top, 
+                  style={{
+                    left: textBoxStyle.left,
+                    top: textBoxStyle.top,
                     width: textBoxStyle.width,
                     minHeight: '100px',
                     height: 'auto',
-                    maxWidth: textBoxStyle.maxWidth, 
+                    maxWidth: textBoxStyle.maxWidth,
                     transform: textBoxStyle.transform,
                     display: 'flex',
                     flexDirection: 'column',
@@ -1463,8 +1487,80 @@ export default function Designer() {
                     padding: '20px',
                     boxSizing: 'border-box',
                     pointerEvents: isBgEditMode ? 'none' : 'auto',
+                    cursor: isEditing ? 'text' : (isBgEditMode ? 'default' : 'grab'),
+                  }}
+                  onMouseDown={(e) => {
+                    if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
+                  }}
+                  onTouchStart={(e) => {
+                    if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
                   }}
                 >
+                  {/* 플로팅 컨텍스트 툴바 - 편집 모드일 때 텍스트 박스 위에 표시 */}
+                  {isEditing && !isBgEditMode && (
+                    <div
+                      className={`ui-control absolute left-1/2 -translate-x-1/2 flex items-center gap-1 px-2.5 py-1.5 bg-black/80 backdrop-blur-sm rounded-full shadow-lg z-40 ${
+                        t.y < 15 ? 'top-full mt-2' : 'bottom-full mb-2'
+                      }`}
+                      onMouseDown={(e) => e.stopPropagation()}
+                      onTouchStart={(e) => e.stopPropagation()}
+                    >
+                      {/* B/I/U */}
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, bold: !s.bold })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.bold ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <Bold className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, italic: !s.italic })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.italic ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <Italic className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, underline: !s.underline })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.underline ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <Underline className="w-3.5 h-3.5 text-white" />
+                      </button>
+
+                      <div className="w-px h-5 bg-white/30 mx-0.5" />
+
+                      {/* 색상 미니 팔레트 */}
+                      {PALETTE.slice(0, 5).map(c => (
+                        <button
+                          key={c}
+                          onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, color: c })); }}
+                          className={`w-5 h-5 rounded-full border transition-all ${t.color === c ? 'border-white scale-125' : 'border-white/30 hover:scale-110'}`}
+                          style={{ background: c }}
+                        />
+                      ))}
+
+                      <div className="w-px h-5 bg-white/30 mx-0.5" />
+
+                      {/* 정렬 */}
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'left' })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'left' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <AlignLeft className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'center' })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'center' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <AlignCenter className="w-3.5 h-3.5 text-white" />
+                      </button>
+                      <button
+                        onMouseDown={(e) => { e.preventDefault(); setT(s => ({ ...s, align: 'right' })); }}
+                        className={`w-7 h-7 flex items-center justify-center rounded transition-colors ${t.align === 'right' ? 'bg-white/25' : 'hover:bg-white/10'}`}
+                      >
+                        <AlignRight className="w-3.5 h-3.5 text-white" />
+                      </button>
+                    </div>
+                  )}
+
                   {/* 선택 시 Dashed Border */}
                   {!isEditing && !isBgEditMode && (
                     <div className="ui-control dashed-border absolute inset-0 border-2 border-dashed border-white/60 rounded-lg pointer-events-none" />
@@ -1481,17 +1577,27 @@ export default function Designer() {
                     />
                   )}
 
-                  {/* 텍스트 클릭 영역 wrapper */}
+                  {/* 텍스트 더블탭 영역 wrapper */}
                   <div
                     className="relative w-full"
-                    onClick={(e) => {
+                    onDoubleClick={(e) => {
                       if (!isEditing) {
                         e.stopPropagation();
                         setIsEditing(true);
                         setTimeout(() => textRef.current?.focus(), 50);
                       }
                     }}
-                    style={{ cursor: isEditing ? 'text' : 'pointer' }}
+                    onTouchEnd={(e) => {
+                      if (isEditing) return;
+                      const now = Date.now();
+                      if (now - lastTapRef.current < 300) {
+                        e.preventDefault();
+                        setIsEditing(true);
+                        setTimeout(() => textRef.current?.focus(), 50);
+                      }
+                      lastTapRef.current = now;
+                    }}
+                    style={{ cursor: isEditing ? 'text' : 'grab' }}
                   >
                     {/* 실제 텍스트 (contenteditable) */}
                     <div
@@ -1571,50 +1677,26 @@ export default function Designer() {
                       </div>
                     </>
                   )}
-
-                  {/* 이동 핸들 - 편집 모드와 배경 편집 모드가 아닐 때만 표시 */}
-                  {!isEditing && !isBgEditMode && (
-                    <div
-                      className="ui-control move-handle absolute left-1/2 -bottom-14 -translate-x-1/2 w-12 h-12 bg-white border-2 border-[#7B9AAC] rounded-full flex items-center justify-center cursor-move z-30 touch-none shadow-md hover:bg-[#7B9AAC]/10 transition-colors"
-                      onMouseDown={(e) => onDragStart(e, 'move')}
-                      onTouchStart={(e) => onDragStart(e, 'move')}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#7B9AAC]">
-                        <path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/>
-                      </svg>
-                      {showMoveHint && (
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/70 text-white text-xs rounded-full whitespace-nowrap pointer-events-none">
-                          드래그로 이동
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
             </div>
           </RatioBox>
       </div>
 
-      {/* 3. Editor Panel (Bottom) - Fixed Height */}
-      <div className={`flex-none bg-white border-t border-[#F0EFED] shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-20 transition-all duration-300 flex flex-col ${
-        isPanelCollapsed ? 'h-12' : 'h-[35dvh] sm:h-[280px]'
+      {/* 3. Editor Panel (Bottom) - Glassmorphism */}
+      <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 transition-all duration-300 flex flex-col ${
+        isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
       }`}>
-        {/* Collapse/Expand Button */}
-        <button
-          onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
-          className="shrink-0 h-12 flex items-center justify-center gap-2 text-[#7E7C78] hover:text-[#2E2E2E] transition-colors border-b border-[#F0EFED]"
+        {/* Handlebar */}
+        <div
+          className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
+          onClick={() => {
+            if (!panelSwipeRef.current?.didSwipe) setIsPanelCollapsed(prev => !prev);
+          }}
+          onMouseDown={handlePanelSwipeStart}
+          onTouchStart={handlePanelSwipeStart}
         >
-          <span className="text-sm font-medium">
-            {isPanelCollapsed ? '편집 패널 펼치기' : '편집 패널 접기'}
-          </span>
-          <svg 
-            className={`w-4 h-4 transition-transform ${isPanelCollapsed ? 'rotate-180' : ''}`}
-            fill="none" 
-            viewBox="0 0 24 24" 
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
         
         {!isPanelCollapsed && (
           <div className="flex-1 min-h-0">
@@ -2184,29 +2266,33 @@ function Toolbar({
       <Tabs value={active} onValueChange={setActive} className="h-full min-h-0 flex flex-col">
         {/* 탭 메뉴 */}
         <TabsList className="shrink-0 h-auto p-1 bg-white mx-2 sm:mx-3 my-2 rounded-full border border-[#E3E2E0] grid grid-cols-4 gap-0.5 sm:gap-1">
-          <TabsTrigger 
-            value="text" 
-            className="px-2 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=active]:font-semibold data-[state=inactive]:text-[#7E7C78] transition-all"
+          <TabsTrigger
+            value="text"
+            title="텍스트"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            텍스트
+            <Type className="w-4 h-4" />
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="style"
-            className="px-2 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=active]:font-semibold data-[state=inactive]:text-[#7E7C78] transition-all"
+            title="스타일"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            스타일
+            <Sparkles className="w-4 h-4" />
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="align"
-            className="px-2 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=active]:font-semibold data-[state=inactive]:text-[#7E7C78] transition-all"
+            title="정렬"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            정렬
+            <AlignCenter className="w-4 h-4" />
           </TabsTrigger>
-          <TabsTrigger 
+          <TabsTrigger
             value="spacing"
-            className="px-2 sm:px-4 py-2 sm:py-2.5 rounded-full text-xs sm:text-sm data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=active]:font-semibold data-[state=inactive]:text-[#7E7C78] transition-all"
+            title="간격"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            간격
+            <Space className="w-4 h-4" />
           </TabsTrigger>
         </TabsList>
 
