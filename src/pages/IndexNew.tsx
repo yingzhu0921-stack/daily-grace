@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Settings, Leaf, Flame, Plus } from 'lucide-react';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
@@ -21,6 +21,7 @@ type Category = {
 
 const IndexNew = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
@@ -37,44 +38,41 @@ const IndexNew = () => {
     { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
-  const updateStats = () => {
-    const goal = getTodayGoalCount();
-    setGoalProgress(goal);
+  const refreshAll = useCallback(() => {
+    setGoalProgress(getTodayGoalCount());
     setStreakDays(getStreakDays());
-  };
-
-  const refreshAll = () => {
-    updateStats();
     setRecentRecords(getAllRecords().slice(0, 5));
-  };
+  }, []);
 
-  // Goal/Streak 계산 + 최신 기록 로드
+  // 라우트 변경(홈으로 돌아올 때)마다 즉시 갱신
   useEffect(() => {
     refreshAll();
+  }, [location.key]);
+
+  // 커스텀 카테고리 변경 시 목표 재계산
+  useEffect(() => {
+    refreshAll();
+  }, [customCategories]);
+
+  // 이벤트 기반 갱신
+  useEffect(() => {
     const interval = setInterval(refreshAll, 30000);
 
-    // 페이지로 돌아왔을 때 즉시 갱신
     const handleVisibility = () => {
       if (document.visibilityState === 'visible') refreshAll();
     };
-    const handleFocus = () => refreshAll();
 
     document.addEventListener('visibilitychange', handleVisibility);
-    window.addEventListener('focus', handleFocus);
+    window.addEventListener('focus', refreshAll);
     window.addEventListener('recordsUpdated', refreshAll);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener('visibilitychange', handleVisibility);
-      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('focus', refreshAll);
       window.removeEventListener('recordsUpdated', refreshAll);
     };
-  }, []);
-
-  // 커스텀 카테고리 변경 시 목표 재계산
-  useEffect(() => {
-    updateStats();
-  }, [customCategories]);
+  }, [refreshAll]);
 
   // 커스텀 카테고리 로드
   useEffect(() => {
@@ -85,7 +83,6 @@ const IndexNew = () => {
         const customs = parsed.filter((cat: any) => !['1', '2', '3', '4'].includes(cat.id));
         setCustomCategories(customs);
       }
-      updateStats();
     };
 
     const loadFromSupabase = async () => {
@@ -100,7 +97,6 @@ const IndexNew = () => {
         sessionStorage.setItem('custom_categories', JSON.stringify(customs));
         localStorage.setItem('custom_categories', JSON.stringify(customs));
         setCustomCategories(customs);
-        updateStats();
       } catch (e) {
         // Supabase 연결 실패 시 캐시에서 로드
       }
