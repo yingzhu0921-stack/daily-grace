@@ -1615,7 +1615,7 @@ export default function Designer() {
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
       <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-16 sm:h-[35dvh] sm:h-[280px]'
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-28 sm:h-[35dvh] sm:h-[280px]'
       }`}>
           {/* Handlebar */}
           <div
