@@ -249,16 +249,6 @@ export default function Designer() {
   });
 
 
-  // 입력 모드 시 하단 패널 완전 숨김 (교대 로직)
-  const panelBeforeEditRef = useRef(false);
-  useEffect(() => {
-    if (isEditing) {
-      panelBeforeEditRef.current = isPanelCollapsed;
-      setIsPanelCollapsed(true);
-    } else {
-      setIsPanelCollapsed(panelBeforeEditRef.current);
-    }
-  }, [isEditing]);
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -1344,7 +1334,9 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
+      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
+        isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(35dvh+4rem)] sm:pb-0'
+      } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
           ratio={meta.ratio}
@@ -1626,11 +1618,10 @@ export default function Designer() {
           </RatioBox>
       </div>
 
-      {/* ── 하단 편집 패널 ── */}
-      {!isEditing && (
-        <div className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 ${
-          isPanelCollapsed ? 'h-10' : 'h-[35dvh] sm:h-[280px]'
-        }`}>
+      {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
+      <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[35dvh] sm:h-[35dvh] sm:h-[280px]'
+      }`}>
           {/* Handlebar */}
           <div
             className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
@@ -1656,7 +1647,6 @@ export default function Designer() {
             </div>
           )}
         </div>
-      )}
 
       {/* Hidden file input */}
       <input
