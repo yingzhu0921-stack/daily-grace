@@ -243,7 +243,8 @@ export default function Designer() {
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
 
-
+  // Mobile: view mode (canvas or edit)
+  const [viewMode, setViewMode] = useState<'canvas' | 'edit'>('canvas');
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -1329,8 +1330,10 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-        isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(64px+4rem)] sm:pb-0'
+      <div className={`w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 ${
+        viewMode === 'canvas' ? 'flex-1' : 'hidden sm:flex sm:flex-1'
+      } sm:pb-0 ${
+        viewMode === 'canvas' ? 'pb-0' : (isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(64px+4rem)] sm:pb-0')
       } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
@@ -1345,7 +1348,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(65dvh - 132px)')
+              ? (viewMode === 'canvas' ? 'calc(100dvh - 112px)' : (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(65dvh - 132px)'))
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -1611,11 +1614,27 @@ export default function Designer() {
                 </div>
             </div>
           </RatioBox>
+
+          {/* 모바일 전용: 텍스트 편집 바로가기 버튼 */}
+          {viewMode === 'canvas' && !isEditing && !isBgEditMode && (
+            <button
+              onClick={() => {
+                setViewMode('edit');
+                setActiveTab('text');
+              }}
+              className="sm:hidden absolute bottom-20 right-4 flex items-center gap-1.5 px-4 py-2.5 bg-[#7B9AAC] text-white rounded-full shadow-lg text-sm font-medium z-30 hover:bg-[#6A8A9C] transition-colors"
+            >
+              <Type className="w-4 h-4" />
+              텍스트
+            </button>
+          )}
       </div>
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
-      <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-28 sm:h-[35dvh] sm:h-[280px]'
+      <div className={`bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
+        viewMode === 'edit' ? 'fixed bottom-0 left-0 right-0 flex-1' : 'hidden sm:flex sm:static'
+      } ${
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'sm:h-[35dvh] sm:h-[280px]'
       }`}>
           {/* Handlebar */}
           <div
@@ -2175,6 +2194,42 @@ export default function Designer() {
           </div>
         </div>
       )}
+
+      {/* 모바일 전용: 하단 탭바 */}
+      <nav className="sm:hidden fixed bottom-0 left-0 right-0 h-14 bg-white border-t border-[#F0EFED] z-40 flex">
+        <button
+          onClick={() => setViewMode('canvas')}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+            viewMode === 'canvas' ? 'text-[#7B9AAC]' : 'text-[#B0AFAD]'
+          }`}
+        >
+          <div className="w-5 h-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            </svg>
+          </div>
+          카드
+        </button>
+        <button
+          onClick={() => setViewMode('edit')}
+          className={`flex-1 flex flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors ${
+            viewMode === 'edit' ? 'text-[#7B9AAC]' : 'text-[#B0AFAD]'
+          }`}
+        >
+          <div className="w-5 h-5">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+            </svg>
+          </div>
+          편집
+        </button>
+      </nav>
+
+      {/* 모바일 탭바 높이만큼 패널에 패딩 추가 */}
+      {viewMode === 'edit' && (
+        <div className="sm:hidden h-14"></div>
+      )}
     </div>
   );
 }
@@ -2228,7 +2283,7 @@ function Toolbar({
         </TabsList>
 
         {/* 컨텐츠 영역 - Scrollable inside fixed height container */}
-        <div className="px-4 py-3 pb-6 flex-1 min-h-0 overflow-y-auto">
+        <div className="px-4 py-3 pb-20 sm:pb-6 flex-1 min-h-0 overflow-y-auto">
           <TabsContent value="text" className="mt-0 space-y-3 pb-4">
             <div>
               <label className="text-xs text-[#7E7C78] mb-1.5 block">폰트</label>
