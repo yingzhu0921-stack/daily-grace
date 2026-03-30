@@ -241,12 +241,7 @@ export default function Designer() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Mobile: start collapsed by default
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 768;
-    }
-    return false;
-  });
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
 
 
 
