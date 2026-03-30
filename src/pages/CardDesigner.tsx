@@ -1330,7 +1330,7 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-        isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(25dvh+4rem)] sm:pb-0'
+        isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(20dvh+4rem)] sm:pb-0'
       } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
@@ -1615,7 +1615,7 @@ export default function Designer() {
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
       <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[25dvh] sm:h-[35dvh] sm:h-[280px]'
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[20dvh] sm:h-[35dvh] sm:h-[280px]'
       }`}>
           {/* Handlebar */}
           <div
