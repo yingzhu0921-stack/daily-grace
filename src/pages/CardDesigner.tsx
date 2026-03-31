@@ -263,12 +263,23 @@ export default function Designer() {
 
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
+  const panelCollapsedBeforeEdit = useRef(true);
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
+
+  // 편집 모드 시 패널 자동 접기 (키보드 공간 확보)
+  useEffect(() => {
+    if (isEditing) {
+      panelCollapsedBeforeEdit.current = isPanelCollapsed;
+      setIsPanelCollapsed(true);
+    } else {
+      setIsPanelCollapsed(panelCollapsedBeforeEdit.current);
+    }
+  }, [isEditing]);
 
   // contentEditable을 비제어 컴포넌트로 관리
   useEffect(() => {
