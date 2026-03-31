@@ -970,7 +970,7 @@ export default function Designer() {
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
       {/* 1. Fixed Header (Top) */}
-      <header className="flex-none h-14 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
+      <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
         <button
           onClick={() => navigate('/')}
           className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0"
@@ -1602,7 +1602,7 @@ export default function Designer() {
       {/* ── 하단 편집 패널 ── */}
       <div
         className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-200 overflow-hidden ${
-          isPanelCollapsed ? 'h-10' : 'h-[45vh] sm:h-[280px]'
+          isPanelCollapsed ? 'h-8' : 'h-[40vh] sm:h-[280px]'
         }`}>
           {/* Handlebar */}
           <div
