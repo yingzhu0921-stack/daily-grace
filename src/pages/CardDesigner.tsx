@@ -218,7 +218,7 @@ export default function Designer() {
     align: 'center',
     x: 50, y: 50, w: 85, h: 40, // w, h 초기값
   });
-  const [activeTab, setActiveTab] = useState<'text'|'font'|'color'|'size'|'align'>('text');
+  const [activeTab, setActiveTab] = useState<'text'|'font'|'color'|'size'>('text');
   const [isGenerating, setIsGenerating] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
@@ -242,7 +242,7 @@ export default function Designer() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Mobile: start collapsed by default
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 기본으로 패널 닫혀있음 (핸들바만 노출)
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
 
 
   // 캔버스 참조
@@ -1330,7 +1330,7 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-        isPanelCollapsed ? 'pb-12 sm:pb-0' : 'pb-[calc(52dvh+0.5rem)] sm:pb-0'
+        isPanelCollapsed ? 'pb-12 sm:pb-0' : 'pb-[calc(45vh+2rem)] sm:pb-0'
       } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
@@ -1345,7 +1345,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 112px)' : 'calc(50dvh - 100px)')
+              ? (isPanelCollapsed ? 'calc(100dvh - 112px)' : 'calc(55vh - 100px)')
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -1615,7 +1615,7 @@ export default function Designer() {
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
       <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[52dvh] sm:h-[35dvh] sm:h-[280px]'
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[45vh] sm:h-[35dvh] sm:h-[280px]'
       }`}>
           {/* Handlebar */}
           <div
@@ -2220,7 +2220,7 @@ function Toolbar({
   active, setActive,
   t, setT, meta, setMeta, onPanelOpen
 }:{
-  active: 'text'|'font'|'color'|'size'|'align';
+  active: 'text'|'font'|'color'|'size';
   setActive: (a:any)=>void;
   t: TextStyle; setT: React.Dispatch<React.SetStateAction<TextStyle>>;
   meta: Meta; setMeta: React.Dispatch<React.SetStateAction<Meta>>;
@@ -2265,13 +2265,6 @@ function Toolbar({
             className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <Ruler className="w-6 h-6" />
-          </TabsTrigger>
-          <TabsTrigger
-            value="align"
-            title="정렬"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
-          >
-            <AlignJustify className="w-6 h-6" />
           </TabsTrigger>
         </TabsList>
 
@@ -2318,6 +2311,18 @@ function Toolbar({
 
             {/* 글자크기 슬라이더 */}
             <LabeledSlider label={`크기: ${t.fontSize}px`} min={1} max={72} step={1} value={t.fontSize} onChange={(v)=>setT(s=>({...s,fontSize:v}))} dark={false}/>
+
+            {/* 중앙 배치 버튼 */}
+            <button
+              className="w-full py-3 rounded-xl border-2 border-[#6BAAB8] bg-[#6BAAB8]/10 text-[#6BAAB8] hover:bg-[#6BAAB8]/20 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+              onClick={() => setT(s => ({ ...s, x: 50, y: 50 }))}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="3" width="18" height="18" rx="2" />
+                <circle cx="12" cy="12" r="2" fill="currentColor" />
+              </svg>
+              중앙 배치
+            </button>
           </TabsContent>
 
           {/* 폰트 탭: 현재 선택 폰트명 표시 */}
@@ -2386,155 +2391,6 @@ function Toolbar({
           </TabsContent>
 
           {/* 정렬 탭 */}
-          <TabsContent value="align" className="mt-0 pb-0">
-            {/* 텍스트 정렬 */}
-            <div className="mb-2">
-              <label className="text-xs text-[#7E7C78] mb-1.5 block">텍스트 정렬</label>
-              <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
-                <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
-                    t.align === 'left'
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, align: 'left' }))}
-                >
-                  <AlignLeft className="w-4 h-4" />
-                </button>
-                <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
-                    t.align === 'center'
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, align: 'center' }))}
-                >
-                  <AlignCenter className="w-4 h-4" />
-                </button>
-                <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
-                    t.align === 'right'
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#7E7C78] hover:bg-white'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, align: 'right' }))}
-                >
-                  <AlignRight className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* 박스 위치 3x3 그리드 */}
-            <div>
-              <label className="text-xs text-[#7E7C78] mb-1.5 block">박스 위치</label>
-              <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
-                {/* 행 1: 상단좌, 상단중, 상단우 */}
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 20 && t.y === 20
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 20, y: 20 }))}
-                  title="상단좌"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 50 && t.y === 20
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 50, y: 20 }))}
-                  title="상단중"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 80 && t.y === 20
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 80, y: 20 }))}
-                  title="상단우"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-
-                {/* 행 2: 중앙좌, 중앙, 중앙우 */}
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 20 && t.y === 50
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 20, y: 50 }))}
-                  title="중앙좌"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 50 && t.y === 50
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 50, y: 50 }))}
-                  title="중앙"
-                >
-                  <div className="w-3 h-3 bg-[#6BAAB8] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 80 && t.y === 50
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 80, y: 50 }))}
-                  title="중앙우"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-
-                {/* 행 3: 하단좌, 하단중, 하단우 */}
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 20 && t.y === 80
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 20, y: 80 }))}
-                  title="하단좌"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 50 && t.y === 80
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 50, y: 80 }))}
-                  title="하단중"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-                <button
-                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
-                    t.x === 80 && t.y === 80
-                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
-                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
-                  }`}
-                  onClick={() => setT(s => ({ ...s, x: 80, y: 80 }))}
-                  title="하단우"
-                >
-                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
-                </button>
-              </div>
-            </div>
-          </TabsContent>
 
         </div>
       </Tabs>
