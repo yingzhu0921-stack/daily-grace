@@ -238,6 +238,7 @@ export default function Designer() {
   const [savedCardData, setSavedCardData] = useState<{ imageDataUrl: string; text: string } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
+  const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
   // Mobile: start collapsed by default
@@ -1344,7 +1345,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(48dvh - 100px)')
+              ? (isPanelCollapsed ? 'calc(100dvh - 112px)' : 'calc(50dvh - 100px)')
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -2175,6 +2176,38 @@ export default function Designer() {
           </div>
         </div>
       )}
+
+      {/* 폰트 선택 바텀시트 */}
+      {fontPickerOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setFontPickerOpen(false)}>
+          <div
+            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[80vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+              <h2 className="text-base font-medium text-[#2E2E2E]">폰트 선택</h2>
+              <button
+                onClick={() => setFontPickerOpen(false)}
+                className="text-[#7E7C78] hover:text-[#2E2E2E]"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* 폰트 목록 - 가로 스크롤 칩 */}
+            <div className="flex-1 overflow-y-auto hide-scrollbar">
+              <FontPicker
+                value={t.fontFamily}
+                onChange={(font) => {
+                  setT(s => ({ ...s, fontFamily: font }));
+                  setFontPickerOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2203,49 +2236,50 @@ function Toolbar({
         }}
         className="h-full min-h-0 flex flex-col"
       >
-        {/* 탭 메뉴 */}
+        {/* 탭 메뉴 - 44x44px 최소 터치 영역 */}
         <TabsList className="shrink-0 h-auto p-1 bg-white mx-1 sm:mx-3 my-2 rounded-full border border-[#E3E2E0] flex gap-0.5 sm:gap-1 overflow-x-auto whitespace-nowrap sm:grid sm:grid-cols-5">
           <TabsTrigger
             value="text"
             title="텍스트"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <Type className="w-4 h-4" />
+            <Type className="w-6 h-6" />
           </TabsTrigger>
           <TabsTrigger
             value="font"
             title="폰트"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <span className="text-xs font-bold">가</span>
+            <span className="text-lg font-bold">가</span>
           </TabsTrigger>
           <TabsTrigger
             value="color"
             title="색상"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <Palette className="w-4 h-4" />
+            <Palette className="w-6 h-6" />
           </TabsTrigger>
           <TabsTrigger
             value="size"
             title="크기"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <Ruler className="w-4 h-4" />
+            <Ruler className="w-6 h-6" />
           </TabsTrigger>
           <TabsTrigger
             value="align"
             title="정렬"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
-            <AlignJustify className="w-4 h-4" />
+            <AlignJustify className="w-6 h-6" />
           </TabsTrigger>
         </TabsList>
 
-        {/* 컨텐츠 영역 - Scrollable inside fixed height container */}
-        <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto">
+        {/* 컨텐츠 영역 - 고정 높이로 탭 전환 시 흔들림 방지 */}
+        <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto h-[calc(52dvh-80px)]">
           {/* 텍스트 탭: B/I/U 버튼만 */}
-          <TabsContent value="text" className="mt-0 pb-2 sm:pb-4">
+          <TabsContent value="text" className="mt-0 space-y-2 sm:space-y-3 pb-0">
+            {/* B/I/U 버튼 */}
             <div className="flex gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
               <button
                 onClick={() => setT(s => ({ ...s, bold: !s.bold }))}
@@ -2281,14 +2315,21 @@ function Toolbar({
                 <Underline className="w-5 h-5" />
               </button>
             </div>
+
+            {/* 글자크기 슬라이더 */}
+            <LabeledSlider label={`크기: ${t.fontSize}px`} min={1} max={72} step={1} value={t.fontSize} onChange={(v)=>setT(s=>({...s,fontSize:v}))} dark={false}/>
           </TabsContent>
 
-          {/* 폰트 탭: FontPicker (가로 스크롤 칩) */}
-          <TabsContent value="font" className="mt-0 pb-2 sm:pb-4">
-            <FontPicker
-              value={t.fontFamily}
-              onChange={(font) => setT(s => ({ ...s, fontFamily: font }))}
-            />
+          {/* 폰트 탭: 현재 선택 폰트명 표시 */}
+          <TabsContent value="font" className="mt-0 pb-0">
+            <button
+              onClick={() => setFontPickerOpen(true)}
+              className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#6BAAB8] transition-colors"
+            >
+              <span style={{ fontFamily: t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif KR' : t.fontFamily === 'NotoSans' ? 'Noto Sans KR' : t.fontFamily === 'NanumGothic' ? 'Nanum Gothic' : t.fontFamily === 'NanumMyeongjo' ? 'Nanum Myeongjo' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? 'Gowun Dodum' : t.fontFamily === 'GowunBatang' ? 'Gowun Batang' : t.fontFamily === 'SongMyung' ? 'Song Myung' : t.fontFamily === 'Hahmlet' ? 'Hahmlet' : t.fontFamily === 'NanumPen' ? 'Nanum Pen Script' : t.fontFamily === 'NanumBrush' ? 'Nanum Brush Script' : t.fontFamily === 'GamjaFlower' ? 'Gamja Flower' : t.fontFamily === 'HiMelody' ? 'Hi Melody' : t.fontFamily === 'Gaegu' ? 'Gaegu' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? 'Black Han Sans' : t.fontFamily === 'DoHyeon' ? 'Do Hyeon' : t.fontFamily === 'Sunflower' ? 'Sunflower' : t.fontFamily === 'Dongle' ? 'Dongle' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair Display' : 'Lora' }}>
+                {t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif' : t.fontFamily === 'NotoSans' ? 'Noto Sans' : t.fontFamily === 'NanumGothic' ? '나눔고딕' : t.fontFamily === 'NanumMyeongjo' ? '나눔명조' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? '고운도둠' : t.fontFamily === 'GowunBatang' ? '고운바탕' : t.fontFamily === 'SongMyung' ? '송명조' : t.fontFamily === 'Hahmlet' ? '함릿체' : t.fontFamily === 'NanumPen' ? '나눔손글씨' : t.fontFamily === 'NanumBrush' ? '나눔붓' : t.fontFamily === 'GamjaFlower' ? '감자꽃' : t.fontFamily === 'HiMelody' ? '하이멜로디' : t.fontFamily === 'Gaegu' ? '개구쟁이' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? '검은고딕' : t.fontFamily === 'DoHyeon' ? '도현체' : t.fontFamily === 'Sunflower' ? '해바라기' : t.fontFamily === 'Dongle' ? '동글체' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair' : 'Lora'}
+              </span>
+            </button>
           </TabsContent>
 
           {/* 색상 탭: 텍스트 색상 + 외곽선/그림자/박스 토글 */}
@@ -2345,12 +2386,13 @@ function Toolbar({
           </TabsContent>
 
           {/* 정렬 탭 */}
-          <TabsContent value="align" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
-            <div>
-              <label className="text-xs text-[#7E7C78] mb-2 block">텍스트 정렬</label>
+          <TabsContent value="align" className="mt-0 pb-0">
+            {/* 텍스트 정렬 */}
+            <div className="mb-2">
+              <label className="text-xs text-[#7E7C78] mb-1.5 block">텍스트 정렬</label>
               <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
                 <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     t.align === 'left'
                       ? 'bg-[#6BAAB8] text-white shadow-sm'
                       : 'bg-transparent text-[#7E7C78] hover:bg-white'
@@ -2358,10 +2400,9 @@ function Toolbar({
                   onClick={() => setT(s => ({ ...s, align: 'left' }))}
                 >
                   <AlignLeft className="w-4 h-4" />
-                  왼쪽
                 </button>
                 <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     t.align === 'center'
                       ? 'bg-[#6BAAB8] text-white shadow-sm'
                       : 'bg-transparent text-[#7E7C78] hover:bg-white'
@@ -2369,10 +2410,9 @@ function Toolbar({
                   onClick={() => setT(s => ({ ...s, align: 'center' }))}
                 >
                   <AlignCenter className="w-4 h-4" />
-                  가운데
                 </button>
                 <button
-                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+                  className={`py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1 ${
                     t.align === 'right'
                       ? 'bg-[#6BAAB8] text-white shadow-sm'
                       : 'bg-transparent text-[#7E7C78] hover:bg-white'
@@ -2380,24 +2420,119 @@ function Toolbar({
                   onClick={() => setT(s => ({ ...s, align: 'right' }))}
                 >
                   <AlignRight className="w-4 h-4" />
-                  오른쪽
                 </button>
               </div>
             </div>
-            
-            {/* 중앙 배치 버튼 */}
-            <div className="pt-2 border-t border-[#E3E2E0]">
-              <label className="text-xs text-[#7E7C78] mb-2 block">박스 위치</label>
-              <button
-                className="w-full py-3 rounded-xl border-2 border-[#6BAAB8] bg-[#6BAAB8]/10 text-[#6BAAB8] hover:bg-[#6BAAB8]/20 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
-                onClick={() => setT(s => ({ ...s, x: 50, y: 50 }))}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="3" y="3" width="18" height="18" rx="2" />
-                  <circle cx="12" cy="12" r="2" fill="currentColor" />
-                </svg>
-                중앙 배치
-              </button>
+
+            {/* 박스 위치 3x3 그리드 */}
+            <div>
+              <label className="text-xs text-[#7E7C78] mb-1.5 block">박스 위치</label>
+              <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
+                {/* 행 1: 상단좌, 상단중, 상단우 */}
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 20 && t.y === 20
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 20, y: 20 }))}
+                  title="상단좌"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 50 && t.y === 20
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 50, y: 20 }))}
+                  title="상단중"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 80 && t.y === 20
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 80, y: 20 }))}
+                  title="상단우"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+
+                {/* 행 2: 중앙좌, 중앙, 중앙우 */}
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 20 && t.y === 50
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 20, y: 50 }))}
+                  title="중앙좌"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 50 && t.y === 50
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 50, y: 50 }))}
+                  title="중앙"
+                >
+                  <div className="w-3 h-3 bg-[#6BAAB8] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 80 && t.y === 50
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 80, y: 50 }))}
+                  title="중앙우"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+
+                {/* 행 3: 하단좌, 하단중, 하단우 */}
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 20 && t.y === 80
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 20, y: 80 }))}
+                  title="하단좌"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 50 && t.y === 80
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 50, y: 80 }))}
+                  title="하단중"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+                <button
+                  className={`aspect-square rounded-lg flex items-center justify-center transition-all border-2 ${
+                    t.x === 80 && t.y === 80
+                      ? 'border-[#6BAAB8] bg-[#6BAAB8]/20'
+                      : 'border-transparent bg-white hover:border-[#6BAAB8]/30'
+                  }`}
+                  onClick={() => setT(s => ({ ...s, x: 80, y: 80 }))}
+                  title="하단우"
+                >
+                  <div className="w-2 h-2 bg-[#7E7C78] rounded-full" />
+                </button>
+              </div>
             </div>
           </TabsContent>
 
