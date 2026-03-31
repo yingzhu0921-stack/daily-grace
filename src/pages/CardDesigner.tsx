@@ -1779,7 +1779,7 @@ export default function Designer() {
       {/* ── 하단 편집 패널 ── */}
       <div
         className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-200 overflow-hidden ${
-          isPanelCollapsed ? 'h-8' : 'h-[40dvh] sm:h-[280px]'
+          isPanelCollapsed ? 'h-8' : 'h-[240px]'
         }`}>
           {/* Handlebar */}
           <div
