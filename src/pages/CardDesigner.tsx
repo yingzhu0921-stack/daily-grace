@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler } from 'lucide-react';
+import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -218,7 +218,7 @@ export default function Designer() {
     align: 'center',
     x: 50, y: 50, w: 85, h: 40, // w, h 초기값
   });
-  const [activeTab, setActiveTab] = useState<'text'|'style'|'align'|'spacing'>('text');
+  const [activeTab, setActiveTab] = useState<'text'|'font'|'color'|'size'|'align'>('text');
   const [isGenerating, setIsGenerating] = useState(false);
   const [bgOpen, setBgOpen] = useState(false);
   const [isComposing, setIsComposing] = useState(false);
@@ -241,7 +241,7 @@ export default function Designer() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Mobile: start collapsed by default
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 기본으로 패널 닫혀있음 (핸들바만 노출)
 
 
   // 캔버스 참조
@@ -1329,7 +1329,7 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-        isPanelCollapsed ? 'pb-16 sm:pb-0' : 'pb-[calc(170px+4rem)] sm:pb-0'
+        isPanelCollapsed ? 'pb-12 sm:pb-0' : 'pb-[calc(52dvh+0.5rem)] sm:pb-0'
       } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
@@ -1344,7 +1344,7 @@ export default function Designer() {
                    meta.ratio === '3:4' ? 'min(90vw, 400px)' :
                    'min(90vw, 400px)', // 2:3
             maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(65dvh - 132px)')
+              ? (isPanelCollapsed ? 'calc(100dvh - 120px)' : 'calc(48dvh - 100px)')
               : undefined,
             transition: 'max-height 0.3s ease',
           }}
@@ -1614,7 +1614,7 @@ export default function Designer() {
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
       <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-40 sm:h-[35dvh] sm:h-[280px]'
+        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[52dvh] sm:h-[35dvh] sm:h-[280px]'
       }`}>
           {/* Handlebar */}
           <div
@@ -1637,6 +1637,7 @@ export default function Designer() {
                 setT={setT}
                 meta={meta}
                 setMeta={setMeta}
+                onPanelOpen={() => setIsPanelCollapsed(false)}
               />
             </div>
           )}
@@ -2184,18 +2185,26 @@ export default function Designer() {
  * ───────────────────────────────────────────────────────── */
 function Toolbar({
   active, setActive,
-  t, setT, meta, setMeta
+  t, setT, meta, setMeta, onPanelOpen
 }:{
-  active: 'text'|'style'|'align'|'spacing';
+  active: 'text'|'font'|'color'|'size'|'align';
   setActive: (a:any)=>void;
   t: TextStyle; setT: React.Dispatch<React.SetStateAction<TextStyle>>;
   meta: Meta; setMeta: React.Dispatch<React.SetStateAction<Meta>>;
+  onPanelOpen?: () => void;
 }) {
   return (
     <div className="h-full min-h-0 flex flex-col bg-transparent">
-      <Tabs value={active} onValueChange={setActive} className="h-full min-h-0 flex flex-col">
+      <Tabs
+        value={active}
+        onValueChange={(v) => {
+          setActive(v as any);
+          onPanelOpen?.();
+        }}
+        className="h-full min-h-0 flex flex-col"
+      >
         {/* 탭 메뉴 */}
-        <TabsList className="shrink-0 h-auto p-1 bg-white mx-1 sm:mx-3 my-2 rounded-full border border-[#E3E2E0] flex gap-0.5 sm:gap-1 overflow-x-auto whitespace-nowrap sm:grid sm:grid-cols-4">
+        <TabsList className="shrink-0 h-auto p-1 bg-white mx-1 sm:mx-3 my-2 rounded-full border border-[#E3E2E0] flex gap-0.5 sm:gap-1 overflow-x-auto whitespace-nowrap sm:grid sm:grid-cols-5">
           <TabsTrigger
             value="text"
             title="텍스트"
@@ -2204,11 +2213,25 @@ function Toolbar({
             <Type className="w-4 h-4" />
           </TabsTrigger>
           <TabsTrigger
-            value="style"
-            title="스타일"
+            value="font"
+            title="폰트"
             className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
           >
-            <Paintbrush className="w-4 h-4" />
+            <span className="text-xs font-bold">가</span>
+          </TabsTrigger>
+          <TabsTrigger
+            value="color"
+            title="색상"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+          >
+            <Palette className="w-4 h-4" />
+          </TabsTrigger>
+          <TabsTrigger
+            value="size"
+            title="크기"
+            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
+          >
+            <Ruler className="w-4 h-4" />
           </TabsTrigger>
           <TabsTrigger
             value="align"
@@ -2217,116 +2240,112 @@ function Toolbar({
           >
             <AlignJustify className="w-4 h-4" />
           </TabsTrigger>
-          <TabsTrigger
-            value="spacing"
-            title="간격"
-            className="px-3 py-2.5 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all"
-          >
-            <Ruler className="w-4 h-4" />
-          </TabsTrigger>
         </TabsList>
 
         {/* 컨텐츠 영역 - Scrollable inside fixed height container */}
         <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto">
-          <TabsContent value="text" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
-            <div>
-              <label className="text-[11px] sm:text-xs text-[#7E7C78] mb-1 sm:mb-1.5 block">폰트</label>
-              <FontPicker 
-                value={t.fontFamily}
-                onChange={(font) => setT(s => ({ ...s, fontFamily: font }))}
-              />
+          {/* 텍스트 탭: B/I/U 버튼만 */}
+          <TabsContent value="text" className="mt-0 pb-2 sm:pb-4">
+            <div className="flex gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
+              <button
+                onClick={() => setT(s => ({ ...s, bold: !s.bold }))}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                  t.bold
+                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    : 'bg-transparent text-[#2E2E2E] hover:bg-white'
+                }`}
+                title="굵게"
+              >
+                <Bold className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setT(s => ({ ...s, italic: !s.italic }))}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                  t.italic
+                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    : 'bg-transparent text-[#2E2E2E] hover:bg-white'
+                }`}
+                title="기울임"
+              >
+                <Italic className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setT(s => ({ ...s, underline: !s.underline }))}
+                className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
+                  t.underline
+                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    : 'bg-transparent text-[#2E2E2E] hover:bg-white'
+                }`}
+                title="밑줄"
+              >
+                <Underline className="w-5 h-5" />
+              </button>
             </div>
-
-            {/* Text Formatting Buttons - Icon Only */}
-            <div>
-              <label className="text-[11px] sm:text-xs text-[#7E7C78] mb-1 sm:mb-1.5 block">스타일</label>
-              <div className="flex gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
-                <button
-                  onClick={() => setT(s => ({ ...s, bold: !s.bold }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                    t.bold
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
-                  }`}
-                  title="굵게"
-                >
-                  <Bold className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setT(s => ({ ...s, italic: !s.italic }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                    t.italic
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
-                  }`}
-                  title="기울임"
-                >
-                  <Italic className="w-5 h-5" />
-                </button>
-                <button
-                  onClick={() => setT(s => ({ ...s, underline: !s.underline }))}
-                  className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
-                    t.underline
-                      ? 'bg-[#6BAAB8] text-white shadow-sm'
-                      : 'bg-transparent text-[#2E2E2E] hover:bg-white'
-                  }`}
-                  title="밑줄"
-                >
-                  <Underline className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            <LabeledSlider label={`글자 크기: ${t.fontSize}px`} min={1} max={72} step={1} value={t.fontSize} onChange={(v)=>setT(s=>({...s,fontSize:v}))} dark={false}/>
-            <ColorRow label="텍스트 색상" value={t.color} onPick={(c)=>setT(s=>({...s,color:c}))} dark={false}/>
           </TabsContent>
 
-          <TabsContent value="style" className="mt-0 space-y-4 pb-4">
+          {/* 폰트 탭: FontPicker (가로 스크롤 칩) */}
+          <TabsContent value="font" className="mt-0 pb-2 sm:pb-4">
+            <FontPicker
+              value={t.fontFamily}
+              onChange={(font) => setT(s => ({ ...s, fontFamily: font }))}
+            />
+          </TabsContent>
+
+          {/* 색상 탭: 텍스트 색상 + 외곽선/그림자/박스 토글 */}
+          <TabsContent value="color" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
+            <ColorRow label="텍스트 색상" value={t.color} onPick={(c)=>setT(s=>({...s,color:c}))} dark={false}/>
+
             {/* 외곽선 */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <ToggleRow label="외곽선" checked={t.stroke.enabled} onChange={(v)=>setT(s=>({...s,stroke:{...s.stroke,enabled:v}}))} dark={false}/>
               {t.stroke.enabled && (
-                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
-                  <ColorRow label="외곽선 색상" value={t.stroke.color} onPick={(c)=>setT(s=>({...s,stroke:{...s.stroke,color:c}}))} dark={false}/>
+                <div className="space-y-1.5 px-3 py-2 rounded-lg bg-[#F7F6F5]">
+                  <ColorRow label="색상" value={t.stroke.color} onPick={(c)=>setT(s=>({...s,stroke:{...s.stroke,color:c}}))} dark={false}/>
                   <LabeledSlider label={`두께: ${t.stroke.width}px`} min={0} max={8} step={1} value={t.stroke.width} onChange={(v)=>setT(s=>({...s,stroke:{...s.stroke,width:v}}))} dark={false}/>
                 </div>
               )}
             </div>
 
             {/* 그림자 */}
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               <ToggleRow label="그림자" checked={t.shadow.enabled} onChange={(v)=>setT(s=>({...s,shadow:{...s.shadow,enabled:v}}))} dark={false}/>
               {t.shadow.enabled && (
-                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
-                  <ColorRow label="그림자 색상" value={t.shadow.color} onPick={(c)=>setT(s=>({...s,shadow:{...s.shadow,color:c}}))} dark={false}/>
+                <div className="space-y-1.5 px-3 py-2 rounded-lg bg-[#F7F6F5]">
+                  <ColorRow label="색상" value={t.shadow.color} onPick={(c)=>setT(s=>({...s,shadow:{...s.shadow,color:c}}))} dark={false}/>
                   <LabeledSlider label={`흐림: ${t.shadow.blur}px`} min={0} max={40} step={1} value={t.shadow.blur} onChange={(v)=>setT(s=>({...s,shadow:{...s.shadow,blur:v}}))} dark={false}/>
                 </div>
               )}
             </div>
 
             {/* 텍스트 박스 */}
-            <div className="space-y-2">
-              <ToggleRow label="텍스트 박스" checked={t.box.enabled} onChange={(v)=>setT(s=>({...s,box:{...s.box,enabled:v}}))} dark={false}/>
+            <div className="space-y-1.5">
+              <ToggleRow label="박스" checked={t.box.enabled} onChange={(v)=>setT(s=>({...s,box:{...s.box,enabled:v}}))} dark={false}/>
               {t.box.enabled && (
-                <div className="space-y-2.5 px-3.5 py-3 rounded-xl bg-[#F7F6F5]">
-                  <ColorRow label="박스 색상" value={t.box.color} onPick={(c)=>setT(s=>({...s,box:{...s.box,color:c}}))} dark={false}/>
-                  <LabeledSlider label={`불투명도: ${t.box.opacity}%`} min={0} max={100} step={1} value={t.box.opacity} onChange={(v)=>setT(s=>({...s,box:{...s.box,opacity:v}}))} dark={false}/>
+                <div className="space-y-1.5 px-3 py-2 rounded-lg bg-[#F7F6F5]">
+                  <ColorRow label="색상" value={t.box.color} onPick={(c)=>setT(s=>({...s,box:{...s.box,color:c}}))} dark={false}/>
+                  <LabeledSlider label={`투명도: ${t.box.opacity}%`} min={0} max={100} step={1} value={t.box.opacity} onChange={(v)=>setT(s=>({...s,box:{...s.box,opacity:v}}))} dark={false}/>
                   <LabeledSlider label={`모서리: ${t.box.radius}px`} min={0} max={32} step={1} value={t.box.radius} onChange={(v)=>setT(s=>({...s,box:{...s.box,radius:v}}))} dark={false}/>
                 </div>
               )}
             </div>
+          </TabsContent>
+
+          {/* 크기 탭: 글자크기 + 행간 + 자간 */}
+          <TabsContent value="size" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
+            <LabeledSlider label={`글자 크기: ${t.fontSize}px`} min={1} max={72} step={1} value={t.fontSize} onChange={(v)=>setT(s=>({...s,fontSize:v}))} dark={false}/>
+            <LabeledSlider label={`행간: ${t.lineHeight.toFixed(2)}`} min={1.2} max={1.8} step={0.01} value={t.lineHeight} onChange={(v)=>setT(s=>({...s,lineHeight:v}))} dark={false}/>
+            <LabeledSlider label={`자간: ${t.letterSpacing}px`} min={-1} max={2} step={0.1} value={t.letterSpacing} onChange={(v)=>setT(s=>({...s,letterSpacing:v}))} dark={false}/>
 
             {/* 가독성 조정 */}
-            <div className="space-y-2.5 pt-4 border-t border-[#E3E2E0]">
-              <div className="text-xs text-[#7E7C78] font-medium mb-2">가독성 조정</div>
-              <div className="px-3.5 py-3 rounded-xl bg-[#F7F6F5] space-y-2.5">
-                <LabeledSlider label={`배경 어둡게: ${meta.bgDarken}%`} min={0} max={60} step={1} value={meta.bgDarken} onChange={(v)=>setMeta(m=>({...m,bgDarken:v}))} dark={false}/>
-                <LabeledSlider label={`배경 흐리게: ${meta.bgBlur}px`} min={0} max={8} step={1} value={meta.bgBlur} onChange={(v)=>setMeta(m=>({...m,bgBlur:v}))} dark={false}/>
-              </div>
+            <div className="space-y-1.5 pt-2 border-t border-[#E3E2E0]">
+              <div className="text-[11px] sm:text-xs text-[#7E7C78] font-medium">가독성</div>
+              <LabeledSlider label={`배경 어둡게: ${meta.bgDarken}%`} min={0} max={60} step={1} value={meta.bgDarken} onChange={(v)=>setMeta(m=>({...m,bgDarken:v}))} dark={false}/>
+              <LabeledSlider label={`배경 흐리게: ${meta.bgBlur}px`} min={0} max={8} step={1} value={meta.bgBlur} onChange={(v)=>setMeta(m=>({...m,bgBlur:v}))} dark={false}/>
             </div>
           </TabsContent>
 
-          <TabsContent value="align" className="mt-0 space-y-3 pb-4">
+          {/* 정렬 탭 */}
+          <TabsContent value="align" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
             <div>
               <label className="text-xs text-[#7E7C78] mb-2 block">텍스트 정렬</label>
               <div className="grid grid-cols-3 gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
@@ -2382,12 +2401,6 @@ function Toolbar({
             </div>
           </TabsContent>
 
-          <TabsContent value="spacing" className="mt-0 space-y-3 pb-4">
-            <div className="px-3.5 py-3 rounded-xl bg-[#F7F6F5] space-y-3">
-              <LabeledSlider label={`행간: ${t.lineHeight.toFixed(2)}`} min={1.2} max={1.8} step={0.01} value={t.lineHeight} onChange={(v)=>setT(s=>({...s,lineHeight:v}))} dark={false}/>
-              <LabeledSlider label={`자간: ${t.letterSpacing}px`} min={-1} max={2} step={0.1} value={t.letterSpacing} onChange={(v)=>setT(s=>({...s,letterSpacing:v}))} dark={false}/>
-            </div>
-          </TabsContent>
         </div>
       </Tabs>
     </div>
