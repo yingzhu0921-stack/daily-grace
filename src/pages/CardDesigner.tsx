@@ -242,7 +242,7 @@ export default function Designer() {
   const [isSaving, setIsSaving] = useState(false);
   
   // Mobile: start collapsed by default
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -1334,7 +1334,7 @@ export default function Designer() {
         {/* Card Preview - aspect-ratio with max-width/height */}
         <RatioBox
           ratio={meta.ratio}
-          className="w-full max-h-full shadow-2xl"
+          className="max-w-full max-h-full shadow-2xl"
         >
             <div
               id="card-preview"
