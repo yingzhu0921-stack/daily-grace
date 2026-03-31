@@ -240,6 +240,20 @@ export default function Designer() {
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  // Track visual viewport height for iOS keyboard handling
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const handler = () => setViewportHeight(vv.height);
+    vv.addEventListener('resize', handler);
+    vv.addEventListener('scroll', handler);
+    return () => {
+      vv.removeEventListener('resize', handler);
+      vv.removeEventListener('scroll', handler);
+    };
+  }, []);
 
   // ── 멀티스텝 플로우 ──
   type FlowStep = 'entry' | 'record' | 'auto-style' | 'auto-preview' | 'edit';
@@ -1120,7 +1134,10 @@ export default function Designer() {
 
   // edit step - 기존의 전체 안정적인 구조
   return (
-    <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
+    <div
+      className="flex flex-col overflow-hidden bg-gray-100"
+      style={{ height: viewportHeight ? `${viewportHeight}px` : '100dvh' }}
+    >
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
         <button
@@ -1655,8 +1672,8 @@ export default function Designer() {
                     onDoubleClick={(e) => {
                       if (!isEditing) {
                         e.stopPropagation();
+                        textRef.current?.focus();
                         setIsEditing(true);
-                        setTimeout(() => textRef.current?.focus(), 50);
                       }
                     }}
                     onTouchEnd={(e) => {
@@ -1664,8 +1681,8 @@ export default function Designer() {
                       const now = Date.now();
                       if (now - lastTapRef.current < 300) {
                         e.preventDefault();
+                        textRef.current?.focus();
                         setIsEditing(true);
-                        setTimeout(() => textRef.current?.focus(), 50);
                       }
                       lastTapRef.current = now;
                     }}
