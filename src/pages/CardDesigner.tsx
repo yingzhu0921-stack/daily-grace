@@ -1335,7 +1335,7 @@ export default function Designer() {
         {/* Card Preview - aspect-ratio with max-width/height */}
         <RatioBox
           ratio={meta.ratio}
-          className="shadow-2xl max-h-full max-w-full bg-blue-500"
+          className="w-full max-h-full shadow-2xl bg-blue-500"
           style={{ border: '3px solid green' }}
         >
             <div
