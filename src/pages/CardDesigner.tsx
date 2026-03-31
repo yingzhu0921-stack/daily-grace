@@ -240,13 +240,14 @@ export default function Designer() {
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [vvStyle, setVvStyle] = useState<{ top: number; height: number } | null>(null);
 
-  // Track visual viewport height for iOS keyboard handling
+  // Track visual viewport for iOS keyboard handling (position: fixed + offsetTop + height)
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const handler = () => setViewportHeight(vv.height);
+    const handler = () => setVvStyle({ top: vv.offsetTop, height: vv.height });
+    handler();
     vv.addEventListener('resize', handler);
     vv.addEventListener('scroll', handler);
     return () => {
@@ -1147,7 +1148,10 @@ export default function Designer() {
   return (
     <div
       className="flex flex-col overflow-hidden bg-gray-100"
-      style={{ height: viewportHeight ? `${viewportHeight}px` : '100dvh' }}
+      style={vvStyle
+        ? { position: 'fixed', top: vvStyle.top, left: 0, right: 0, height: vvStyle.height }
+        : { height: '100dvh' }
+      }
     >
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
