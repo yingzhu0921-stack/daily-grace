@@ -1,14 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette } from 'lucide-react';
+import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { RecordSelectorModal } from '@/components/RecordSelectorModal';
 import { CardSaveSuccessModal } from '@/components/CardSaveSuccessModal';
 import { LoginModal } from '@/components/LoginModal';
-import { FontPicker } from '@/components/FontPicker';
+import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
@@ -243,12 +243,10 @@ export default function Designer() {
   
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
-  const [panelHeight, setPanelHeight] = useState(0);  // 패널 실제 높이 (동적으로 측정)
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
-  const panelRef = useRef<HTMLDivElement>(null);  // 패널 높이 측정용
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
 
@@ -258,24 +256,6 @@ export default function Designer() {
       textRef.current.innerText = t.content;
     }
   }, [t.content]);
-
-  // 패널 높이를 ResizeObserver로 동적 측정
-  useEffect(() => {
-    if (!panelRef.current) return;
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const height = entry.contentRect.height;
-        setPanelHeight(height);
-      }
-    });
-
-    resizeObserver.observe(panelRef.current);
-
-    return () => {
-      resizeObserver.disconnect();
-    };
-  }, []);
 
   // Load editor state if editing existing card
   useEffect(() => {
@@ -1349,29 +1329,15 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
-        className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-          isPanelCollapsed ? 'pb-12 sm:pb-0' : 'sm:pb-0'
-        } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}
-        style={{
-          paddingBottom: isPanelCollapsed ? 'auto' : `calc(${panelHeight}px + 1rem)`
-        }}
+        className="flex-1 min-h-0 w-full flex items-center justify-center p-4 bg-gray-200 overflow-hidden"
       >
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
           ratio={meta.ratio}
-          className="shadow-2xl my-auto"
+          className="shadow-2xl max-h-full"
           style={{
-            width: meta.ratio === '9:16' ? 'min(90vw, 400px)' :
-                   meta.ratio === '16:9' ? 'min(90vw, 600px)' :
-                   meta.ratio === '1:1' ? 'min(90vw, 500px)' :
-                   meta.ratio === '4:3' ? 'min(90vw, 600px)' :
-                   meta.ratio === '4:5' ? 'min(90vw, 400px)' :
-                   meta.ratio === '3:4' ? 'min(90vw, 400px)' :
-                   'min(90vw, 400px)', // 2:3
-            maxHeight: (meta.ratio === '9:16' || meta.ratio === '2:3' || meta.ratio === '3:4' || meta.ratio === '4:5')
-              ? (isPanelCollapsed ? 'calc(100dvh - 112px)' : 'calc(55vh - 100px)')
-              : undefined,
-            transition: 'max-height 0.3s ease',
+            width: 'auto',
+            maxWidth: '100%',
           }}
         >
             <div
@@ -1637,11 +1603,10 @@ export default function Designer() {
           </RatioBox>
       </div>
 
-      {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
+      {/* ── 하단 편집 패널 ── */}
       <div
-        ref={panelRef}
-        className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-          isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[45vh] sm:h-[35dvh] sm:h-[280px]'
+        className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-200 overflow-hidden ${
+          isPanelCollapsed ? 'h-10' : 'h-[45vh] sm:h-[280px]'
         }`}>
           {/* Handlebar */}
           <div
@@ -2204,36 +2169,48 @@ export default function Designer() {
         </div>
       )}
 
-      {/* 폰트 선택 바텀시트 */}
+      {/* 폰트 선택 바텀시트 - 최대 50vh, 카드 상단 절반 항상 보임 */}
       {fontPickerOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" onClick={() => setFontPickerOpen(false)}>
-          <div
-            className="fixed bottom-0 left-0 right-0 bg-white rounded-t-2xl max-h-[80vh] overflow-hidden flex flex-col"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <>
+          {/* 투명 오버레이: 시트 위 영역 터치 시 닫힘 */}
+          <div className="fixed inset-0 z-40" onClick={() => setFontPickerOpen(false)} />
+
+          {/* 폰트 선택 시트 */}
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-h-[50vh] flex flex-col shadow-[0_-4px_30px_rgba(0,0,0,0.2)]">
+
             {/* 헤더 */}
             <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
               <h2 className="text-base font-medium text-[#2E2E2E]">폰트 선택</h2>
               <button
                 onClick={() => setFontPickerOpen(false)}
-                className="text-[#7E7C78] hover:text-[#2E2E2E]"
+                className="p-2 text-[#7E7C78] hover:text-[#2E2E2E]"
               >
                 ✕
               </button>
             </div>
 
-            {/* 폰트 목록 - 가로 스크롤 칩 */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar px-5 py-4">
-              <FontPicker
-                value={t.fontFamily}
-                onChange={(font) => {
-                  setT(s => ({ ...s, fontFamily: font }));
-                  setFontPickerOpen(false);
-                }}
-              />
+            {/* 폰트 목록 - 세로 스크롤, 각 항목 해당 서체로 렌더링 */}
+            <div className="flex-1 overflow-y-auto">
+              {fontOptions.map((font) => (
+                <button
+                  key={font.value}
+                  style={{ fontFamily: font.family }}
+                  onClick={() => setT(s => ({ ...s, fontFamily: font.value }))}
+                  className={`w-full flex items-center justify-between px-5 min-h-[48px] transition-colors ${
+                    t.fontFamily === font.value
+                      ? 'text-[#6BAAB8] bg-[#6BAAB8]/5'
+                      : 'text-[#2E2E2E] hover:bg-gray-50'
+                  }`}
+                >
+                  <span className="text-base">{font.label}</span>
+                  {t.fontFamily === font.value && (
+                    <Check className="w-5 h-5 text-[#6BAAB8] shrink-0" />
+                  )}
+                </button>
+              ))}
             </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
@@ -2297,7 +2274,7 @@ function Toolbar({
         </TabsList>
 
         {/* 컨텐츠 영역 - 고정 높이로 탭 전환 시 흔들림 방지 */}
-        <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto h-[calc(52dvh-80px)]">
+        <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto">
           {/* 텍스트 탭: B/I/U 버튼만 */}
           <TabsContent value="text" className="mt-0 space-y-2 sm:space-y-3 pb-0">
             {/* B/I/U 버튼 */}

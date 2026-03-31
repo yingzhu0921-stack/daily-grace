@@ -1,19 +1,19 @@
 import React from 'react';
 
-type FontFamily =
+export type FontFamily =
   | 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo'
   | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower'
   | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang'
   | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung'
   | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora';
 
-interface FontOption {
+export interface FontOption {
   value: FontFamily;
   label: string;
   family: string;
 }
 
-const fontOptions: FontOption[] = [
+export const fontOptions: FontOption[] = [
   // 고딕/명조 (Basic)
   { value: 'NotoSans', label: 'Noto Sans KR', family: 'Noto Sans KR' },
   { value: 'SerifKR', label: 'Noto Serif KR', family: 'Noto Serif KR' },
