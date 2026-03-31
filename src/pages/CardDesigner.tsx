@@ -1329,12 +1329,12 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
-        className="flex-1 min-h-0 flex items-center justify-center p-4 bg-gray-200 overflow-hidden"
+        className="flex-1 min-h-0 flex items-center justify-center px-4 py-2 bg-gray-200 overflow-hidden"
       >
-        {/* Card Preview - aspect-ratio with max-width/height */}
+        {/* Card Preview - aspect-ratio with full width and max height */}
         <RatioBox
           ratio={meta.ratio}
-          className="max-w-full max-h-full shadow-2xl"
+          className="w-full max-h-full shadow-2xl"
         >
             <div
               id="card-preview"
