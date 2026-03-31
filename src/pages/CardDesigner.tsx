@@ -243,11 +243,12 @@ export default function Designer() {
   
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);  // 기본으로 패널 열려있음
-
+  const [panelHeight, setPanelHeight] = useState(0);  // 패널 실제 높이 (동적으로 측정)
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);  // 패널 높이 측정용
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
 
@@ -257,6 +258,24 @@ export default function Designer() {
       textRef.current.innerText = t.content;
     }
   }, [t.content]);
+
+  // 패널 높이를 ResizeObserver로 동적 측정
+  useEffect(() => {
+    if (!panelRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        setPanelHeight(height);
+      }
+    });
+
+    resizeObserver.observe(panelRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   // Load editor state if editing existing card
   useEffect(() => {
@@ -1329,9 +1348,14 @@ export default function Designer() {
       </header>
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
-      <div className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
-        isPanelCollapsed ? 'pb-12 sm:pb-0' : 'pb-[calc(45vh+2rem)] sm:pb-0'
-      } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}>
+      <div
+        className={`flex-1 w-full relative flex items-center justify-center overflow-auto bg-gray-200 transition-all duration-300 sm:pb-0 ${
+          isPanelCollapsed ? 'pb-12 sm:pb-0' : 'sm:pb-0'
+        } ${(isPanelCollapsed || isEditing) ? 'p-4' : 'p-2'}`}
+        style={{
+          paddingBottom: isPanelCollapsed ? 'auto' : `calc(${panelHeight}px + 1rem)`
+        }}
+      >
         {/* Card Canvas - Fixed size based on ratio, height-constrained for vertical ratios */}
         <RatioBox
           ratio={meta.ratio}
@@ -1614,9 +1638,11 @@ export default function Designer() {
       </div>
 
       {/* ── 하단 편집 패널 (모바일에서 fixed bottom) ── */}
-      <div className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
-        isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[45vh] sm:h-[35dvh] sm:h-[280px]'
-      }`}>
+      <div
+        ref={panelRef}
+        className={`fixed bottom-0 left-0 right-0 sm:static bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] z-20 flex flex-col transition-all duration-200 overflow-hidden ${
+          isPanelCollapsed ? 'h-10 sm:h-10' : 'h-[45vh] sm:h-[35dvh] sm:h-[280px]'
+        }`}>
           {/* Handlebar */}
           <div
             className="shrink-0 flex items-center justify-center py-2.5 cursor-grab active:cursor-grabbing touch-none"
@@ -1639,6 +1665,7 @@ export default function Designer() {
                 meta={meta}
                 setMeta={setMeta}
                 onPanelOpen={() => setIsPanelCollapsed(false)}
+                onOpenFontPicker={() => setFontPickerOpen(true)}
               />
             </div>
           )}
@@ -2196,7 +2223,7 @@ export default function Designer() {
             </div>
 
             {/* 폰트 목록 - 가로 스크롤 칩 */}
-            <div className="flex-1 overflow-y-auto hide-scrollbar">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden hide-scrollbar px-5 py-4">
               <FontPicker
                 value={t.fontFamily}
                 onChange={(font) => {
@@ -2218,13 +2245,14 @@ export default function Designer() {
  * ───────────────────────────────────────────────────────── */
 function Toolbar({
   active, setActive,
-  t, setT, meta, setMeta, onPanelOpen
+  t, setT, meta, setMeta, onPanelOpen, onOpenFontPicker
 }:{
   active: 'text'|'font'|'color'|'size';
   setActive: (a:any)=>void;
   t: TextStyle; setT: React.Dispatch<React.SetStateAction<TextStyle>>;
   meta: Meta; setMeta: React.Dispatch<React.SetStateAction<Meta>>;
   onPanelOpen?: () => void;
+  onOpenFontPicker?: () => void;
 }) {
   return (
     <div className="h-full min-h-0 flex flex-col bg-transparent">
@@ -2328,7 +2356,10 @@ function Toolbar({
           {/* 폰트 탭: 현재 선택 폰트명 표시 */}
           <TabsContent value="font" className="mt-0 pb-0">
             <button
-              onClick={() => setFontPickerOpen(true)}
+              onClick={() => {
+                console.log('Font button clicked');
+                onOpenFontPicker?.();
+              }}
               className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#6BAAB8] transition-colors"
             >
               <span style={{ fontFamily: t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif KR' : t.fontFamily === 'NotoSans' ? 'Noto Sans KR' : t.fontFamily === 'NanumGothic' ? 'Nanum Gothic' : t.fontFamily === 'NanumMyeongjo' ? 'Nanum Myeongjo' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? 'Gowun Dodum' : t.fontFamily === 'GowunBatang' ? 'Gowun Batang' : t.fontFamily === 'SongMyung' ? 'Song Myung' : t.fontFamily === 'Hahmlet' ? 'Hahmlet' : t.fontFamily === 'NanumPen' ? 'Nanum Pen Script' : t.fontFamily === 'NanumBrush' ? 'Nanum Brush Script' : t.fontFamily === 'GamjaFlower' ? 'Gamja Flower' : t.fontFamily === 'HiMelody' ? 'Hi Melody' : t.fontFamily === 'Gaegu' ? 'Gaegu' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? 'Black Han Sans' : t.fontFamily === 'DoHyeon' ? 'Do Hyeon' : t.fontFamily === 'Sunflower' ? 'Sunflower' : t.fontFamily === 'Dongle' ? 'Dongle' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair Display' : 'Lora' }}>
