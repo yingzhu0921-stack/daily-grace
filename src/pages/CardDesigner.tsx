@@ -272,16 +272,6 @@ export default function Designer() {
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
 
-  // 편집 모드 시 패널 자동 접기 (키보드 공간 확보)
-  useEffect(() => {
-    if (isEditing) {
-      panelCollapsedBeforeEdit.current = isPanelCollapsed;
-      setIsPanelCollapsed(true);
-    } else {
-      setIsPanelCollapsed(panelCollapsedBeforeEdit.current);
-    }
-  }, [isEditing]);
-
   // contentEditable을 비제어 컴포넌트로 관리
   useEffect(() => {
     if (textRef.current && textRef.current.innerText !== t.content) {
