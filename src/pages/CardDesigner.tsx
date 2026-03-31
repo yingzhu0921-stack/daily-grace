@@ -240,7 +240,13 @@ export default function Designer() {
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
+
+  // ── 멀티스텝 플로우 ──
+  type FlowStep = 'entry' | 'record' | 'auto-style' | 'auto-preview' | 'edit';
+  const [flowStep, setFlowStep] = useState<FlowStep>('entry');
+  const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | null>(null);
+  const [verseInput, setVerseInput] = useState('');
+
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
 
@@ -967,12 +973,161 @@ export default function Designer() {
     }
   };
 
+  // ── 멀티스텝 플로우 함수들 ──
+  const goBack = () => {
+    switch (flowStep) {
+      case 'record':      setFlowStep('entry'); break;
+      case 'auto-style':  setFlowStep('record'); break;
+      case 'auto-preview': setFlowStep('auto-style'); break;
+      case 'edit':
+        if (activeTrack === 'manual') setFlowStep('entry');
+        else setFlowStep('auto-preview');
+        break;
+      default: navigate('/'); break;
+    }
+  };
+
+  // Entry 화면
+  const renderEntry = () => (
+    <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-4 py-8 bg-white gap-8">
+      <h2 className="text-xl sm:text-2xl font-semibold text-[#2E2E2E]">어떻게 만들까요?</h2>
+      <div className="flex flex-col gap-4 w-full max-w-sm">
+        <button
+          onClick={() => { setActiveTrack('auto'); setFlowStep('record'); }}
+          className="flex items-center gap-3 p-5 border-2 border-[#6BAAB8] rounded-2xl hover:bg-[#6BAAB8]/5"
+        >
+          <Wand2 className="w-6 h-6 text-[#6BAAB8]" />
+          <div className="text-left">
+            <p className="font-semibold text-[#2E2E2E]">자동 완성</p>
+            <p className="text-xs text-[#7E7C78]">말씀 선택하면 카드까지 자동 완성</p>
+          </div>
+        </button>
+        <button
+          onClick={() => { setActiveTrack('manual'); setFlowStep('edit'); }}
+          className="flex items-center gap-3 p-5 border-2 border-[#6BAAB8] rounded-2xl hover:bg-[#6BAAB8]/5"
+        >
+          <Type className="w-6 h-6 text-[#6BAAB8]" />
+          <div className="text-left">
+            <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
+            <p className="text-xs text-[#7E7C78]">배경 고르고 텍스트는 내가 입력</p>
+          </div>
+        </button>
+      </div>
+    </div>
+  );
+
+  // Record 화면
+  const renderRecord = () => (
+    <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
+      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">말씀 입력</h2>
+      <textarea
+        value={verseInput}
+        onChange={(e) => {
+          setVerseInput(e.target.value);
+          setT(s => ({ ...s, content: e.target.value }));
+          if (textRef.current) textRef.current.innerText = e.target.value;
+        }}
+        placeholder="말씀을 입력하거나 기록에서 선택해주세요"
+        className="flex-1 min-h-[150px] p-4 border border-[#E3E2E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6BAAB8] resize-none"
+      />
+      <button
+        onClick={openRecordSelector}
+        className="px-4 py-2 text-sm font-medium border border-[#6BAAB8] text-[#6BAAB8] rounded-xl hover:bg-[#6BAAB8]/5"
+      >
+        내 기록에서 선택
+      </button>
+      <button
+        onClick={() => {
+          if (!verseInput.trim()) {
+            toast.error('말씀을 입력해주세요');
+            return;
+          }
+          setFlowStep('auto-style');
+        }}
+        className="px-4 py-3 bg-[#6BAAB8] text-white rounded-xl font-medium hover:bg-[#5A98A8]"
+      >
+        다음
+      </button>
+    </div>
+  );
+
+  // Auto Style 화면
+  const renderAutoStyle = () => (
+    <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
+      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">스타일 선택</h2>
+      <div className="grid grid-cols-2 gap-3">
+        {['minimal', 'elegant', 'modern', 'classic', 'vibrant', 'calm'].map(style => (
+          <button
+            key={style}
+            onClick={() => setSelectedStyle(style)}
+            className={`p-4 rounded-xl border-2 transition-colors capitalize text-sm font-medium ${
+              selectedStyle === style
+                ? 'border-[#6BAAB8] bg-[#6BAAB8]/10'
+                : 'border-[#E3E2E0] hover:border-[#6BAAB8]'
+            }`}
+          >
+            {style}
+          </button>
+        ))}
+      </div>
+      <button
+        onClick={() => setFlowStep('auto-preview')}
+        className="px-4 py-3 bg-[#6BAAB8] text-white rounded-xl font-medium hover:bg-[#5A98A8]"
+      >
+        배경 생성하기
+      </button>
+    </div>
+  );
+
+  // Auto Preview 화면
+  const renderAutoPreview = () => (
+    <div className="flex-1 min-h-0 flex flex-col">
+      {/* 여기서 기존 canvas 구조 사용 */}
+      <div className="flex-1 min-h-0 flex items-center justify-center px-4 bg-gray-200 overflow-hidden">
+        {/* 기존 카드 미리보기 */}
+      </div>
+      <div className="shrink-0 flex gap-2 p-4 border-t bg-white">
+        <button onClick={() => setFlowStep('auto-style')} className="flex-1 px-4 py-2 border border-[#6BAAB8] text-[#6BAAB8] rounded-xl font-medium">다시 생성</button>
+        <button onClick={() => setFlowStep('edit')} className="flex-1 px-4 py-2 bg-[#6BAAB8] text-white rounded-xl font-medium">편집하기</button>
+      </div>
+    </div>
+  );
+
+  // 멀티스텝 플로우 - entry, record, auto-style, auto-preview일 때 간단한 구조 표시
+  if (flowStep !== 'edit') {
+    return (
+      <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
+        <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 px-4 sm:px-5">
+          <button onClick={goBack} className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0">
+            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E2E2E]" />
+          </button>
+          <div className="flex-1 flex items-center justify-center">
+            <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
+              {flowStep === 'entry' ? '말씀카드 만들기' :
+               flowStep === 'record' ? '말씀 입력' :
+               flowStep === 'auto-style' ? '스타일 선택' : '미리보기'}
+            </h1>
+          </div>
+          <div className="w-12" />
+        </header>
+        {flowStep === 'entry' && renderEntry()}
+        {flowStep === 'record' && renderRecord()}
+        {flowStep === 'auto-style' && renderAutoStyle()}
+        {flowStep === 'auto-preview' && renderAutoPreview()}
+      </div>
+    );
+  }
+
+  // edit step - 기존의 전체 안정적인 구조
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => {
+            if (activeTrack === 'manual') goBack();
+            else navigate('/');
+          }}
           className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0"
         >
           <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E2E2E]" />
