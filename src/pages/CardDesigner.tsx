@@ -194,7 +194,7 @@ export default function Designer() {
   const [meta, setMeta] = useState<Meta>({ 
     ratio: '9:16', 
     safeGuide: true, 
-    bgColor: '#7B9AAC', 
+    bgColor: '#7B8FA0',
     bgScale: 150, 
     bgPositionX: 50, 
     bgPositionY: 50,
@@ -240,13 +240,16 @@ export default function Designer() {
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [vvStyle, setVvStyle] = useState<{ top: number; height: number } | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
-  // Track visual viewport for iOS keyboard handling (position: fixed + offsetTop + height)
+  // Track keyboard height for iOS: pad the bottom so panel stays above keyboard
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
-    const handler = () => setVvStyle({ top: vv.offsetTop, height: vv.height });
+    const handler = () => {
+      const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      setKeyboardHeight(kh);
+    };
     handler();
     vv.addEventListener('resize', handler);
     vv.addEventListener('scroll', handler);
@@ -1005,24 +1008,27 @@ export default function Designer() {
 
   // Entry 화면
   const renderEntry = () => (
-    <div className="flex-1 min-h-0 flex flex-col items-center justify-center px-4 py-8 bg-white gap-8">
-      <h2 className="text-xl sm:text-2xl font-semibold text-[#2E2E2E]">어떻게 만들까요?</h2>
-      <div className="flex flex-col gap-4 w-full max-w-sm">
+    <div className="flex-1 min-h-0 flex flex-col items-center justify-start px-4 pt-12 pb-8 bg-white gap-6">
+      <div className="w-full max-w-sm">
+        <h2 className="text-2xl font-bold text-[#2E2E2E] mb-1">말씀카드 만들기</h2>
+        <p className="text-sm text-[#7E7C78]">어떻게 만들까요?</p>
+      </div>
+      <div className="flex flex-col gap-3 w-full max-w-sm">
         <button
           onClick={() => { setActiveTrack('auto'); setFlowStep('record'); }}
-          className="flex items-center gap-3 p-5 border-2 border-[#6BAAB8] rounded-2xl hover:bg-[#6BAAB8]/5"
+          className="flex items-center gap-3 p-5 border-2 border-[#7DB87D] rounded-2xl hover:bg-[#7DB87D]/5"
         >
-          <Wand2 className="w-6 h-6 text-[#6BAAB8]" />
+          <Wand2 className="w-6 h-6 text-[#7DB87D]" />
           <div className="text-left">
             <p className="font-semibold text-[#2E2E2E]">자동 완성</p>
             <p className="text-xs text-[#7E7C78]">말씀 선택하면 카드까지 자동 완성</p>
           </div>
         </button>
         <button
-          onClick={() => { setActiveTrack('manual'); setFlowStep('edit'); }}
-          className="flex items-center gap-3 p-5 border-2 border-[#6BAAB8] rounded-2xl hover:bg-[#6BAAB8]/5"
+          onClick={() => { setActiveTrack('manual'); setFlowStep('edit'); setBgOpen(true); }}
+          className="flex items-center gap-3 p-5 border-2 border-[#7DB87D] rounded-2xl hover:bg-[#7DB87D]/5"
         >
-          <Type className="w-6 h-6 text-[#6BAAB8]" />
+          <Type className="w-6 h-6 text-[#7DB87D]" />
           <div className="text-left">
             <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
             <p className="text-xs text-[#7E7C78]">배경 고르고 텍스트는 내가 입력</p>
@@ -1033,6 +1039,7 @@ export default function Designer() {
   );
 
   // Record 화면
+
   const renderRecord = () => (
     <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
       <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">말씀 입력</h2>
@@ -1044,11 +1051,11 @@ export default function Designer() {
           if (textRef.current) textRef.current.innerText = e.target.value;
         }}
         placeholder="말씀을 입력하거나 기록에서 선택해주세요"
-        className="flex-1 min-h-[150px] p-4 border border-[#E3E2E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#6BAAB8] resize-none"
+        className="flex-1 min-h-[150px] p-4 border border-[#E3E2E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#7DB87D] resize-none"
       />
       <button
         onClick={openRecordSelector}
-        className="px-4 py-2 text-sm font-medium border border-[#6BAAB8] text-[#6BAAB8] rounded-xl hover:bg-[#6BAAB8]/5"
+        className="px-4 py-2 text-sm font-medium border border-[#7DB87D] text-[#7DB87D] rounded-xl hover:bg-[#7DB87D]/5"
       >
         내 기록에서 선택
       </button>
@@ -1060,7 +1067,7 @@ export default function Designer() {
           }
           setFlowStep('auto-style');
         }}
-        className="px-4 py-3 bg-[#6BAAB8] text-white rounded-xl font-medium hover:bg-[#5A98A8]"
+        className="px-4 py-3 bg-[#7DB87D] text-white rounded-xl font-medium hover:bg-[#6AA86A]"
       >
         다음
       </button>
@@ -1078,8 +1085,8 @@ export default function Designer() {
             onClick={() => setSelectedStyle(style)}
             className={`p-4 rounded-xl border-2 transition-colors capitalize text-sm font-medium ${
               selectedStyle === style
-                ? 'border-[#6BAAB8] bg-[#6BAAB8]/10'
-                : 'border-[#E3E2E0] hover:border-[#6BAAB8]'
+                ? 'border-[#7DB87D] bg-[#7DB87D]/10'
+                : 'border-[#E3E2E0] hover:border-[#7DB87D]'
             }`}
           >
             {style}
@@ -1088,7 +1095,7 @@ export default function Designer() {
       </div>
       <button
         onClick={() => setFlowStep('auto-preview')}
-        className="px-4 py-3 bg-[#6BAAB8] text-white rounded-xl font-medium hover:bg-[#5A98A8]"
+        className="px-4 py-3 bg-[#7DB87D] text-white rounded-xl font-medium hover:bg-[#6AA86A]"
       >
         배경 생성하기
       </button>
@@ -1103,8 +1110,8 @@ export default function Designer() {
         {/* 기존 카드 미리보기 */}
       </div>
       <div className="shrink-0 flex gap-2 p-4 border-t bg-white">
-        <button onClick={() => setFlowStep('auto-style')} className="flex-1 px-4 py-2 border border-[#6BAAB8] text-[#6BAAB8] rounded-xl font-medium">다시 생성</button>
-        <button onClick={() => setFlowStep('edit')} className="flex-1 px-4 py-2 bg-[#6BAAB8] text-white rounded-xl font-medium">편집하기</button>
+        <button onClick={() => setFlowStep('auto-style')} className="flex-1 px-4 py-2 border border-[#7DB87D] text-[#7DB87D] rounded-xl font-medium">다시 생성</button>
+        <button onClick={() => setFlowStep('edit')} className="flex-1 px-4 py-2 bg-[#7DB87D] text-white rounded-xl font-medium">편집하기</button>
       </div>
     </div>
   );
@@ -1138,10 +1145,7 @@ export default function Designer() {
   return (
     <div
       className="flex flex-col overflow-hidden bg-gray-100"
-      style={vvStyle
-        ? { position: 'fixed', top: vvStyle.top, left: 0, right: 0, height: vvStyle.height }
-        : { height: '100dvh' }
-      }
+      style={{ position: 'fixed', inset: 0, paddingBottom: keyboardHeight }}
     >
       {/* 1. Fixed Header (Top) */}
       <header className="flex-none h-12 bg-white border-b border-[#F0EFED] z-10 flex items-center gap-2 sm:gap-3 px-4 sm:px-5">
@@ -1180,8 +1184,8 @@ export default function Designer() {
               onClick={() => setIsBgEditMode(!isBgEditMode)}
               className={`h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-2 text-xs sm:text-sm font-medium transition-colors ${
                 isBgEditMode 
-                  ? 'border-[#7B9AAC] bg-[#7B9AAC] text-white' 
-                  : 'border-[#7B9AAC] bg-white text-[#7B9AAC] hover:bg-[#7B9AAC]/10'
+                  ? 'border-[#7DB87D] bg-[#7DB87D] text-white' 
+                  : 'border-[#7DB87D] bg-white text-[#7DB87D] hover:bg-[#7DB87D]/10'
               }`}
             >
               {isBgEditMode ? '완료' : '배경 조정'}
@@ -1189,12 +1193,12 @@ export default function Designer() {
           )}
           <button
             onClick={() => setBgOpen(true)}
-            className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-2 border-[#7B9AAC] bg-white text-[#7B9AAC] hover:bg-[#7B9AAC]/10 text-xs sm:text-sm font-medium transition-colors"
+            className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-2 border-[#7DB87D] bg-white text-[#7DB87D] hover:bg-[#7DB87D]/10 text-xs sm:text-sm font-medium transition-colors"
           >
             배경
           </button>
           <button
-            className="h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-[#7DB87D] hover:bg-[#6AA86A] text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={isSaving}
             onClick={async () => {
               requireAuth(async () => {
@@ -1511,7 +1515,13 @@ export default function Designer() {
         {/* Card Preview - aspect-ratio with full width and max height */}
         <RatioBox
           ratio={meta.ratio}
-          className="w-full max-h-full shadow-2xl"
+          className="shadow-2xl"
+          style={(() => {
+            const [w, h] = meta.ratio.split(':').map(Number);
+            return h > w
+              ? { height: '100%', width: 'auto', maxWidth: '100%' }
+              : { width: '100%', height: 'auto', maxHeight: '100%' };
+          })()}
         >
             <div
               id="card-preview"
@@ -1730,6 +1740,13 @@ export default function Designer() {
                     />
                   </div>
 
+                  {/* 빈 상태 힌트 */}
+                  {!isEditing && !t.content.trim() || (!isEditing && t.content === '텍스트를 입력하세요.') ? (
+                    <div className="ui-control absolute -bottom-7 left-0 right-0 flex items-center justify-center pointer-events-none">
+                      <span className="text-white/60 text-[11px] bg-black/20 px-2 py-0.5 rounded-full">탭하여 텍스트 입력</span>
+                    </div>
+                  ) : null}
+
                   {/* 코너 리사이즈 핸들 - 편집 모드와 배경 편집 모드가 아닐 때만 표시 */}
                   {!isEditing && !isBgEditMode && (
                     <>
@@ -1740,7 +1757,7 @@ export default function Designer() {
                         onMouseDown={(e) => onDragStart(e, 'resize-tl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tl')}
                       >
-                        <div className="w-3 h-3 bg-white border-2 border-[#7B9AAC] rounded-full" />
+                        <div className="w-3 h-3 bg-white border-2 border-[#7DB87D] rounded-full" />
                       </div>
                       {/* Top-Right */}
                       <div
@@ -1749,7 +1766,7 @@ export default function Designer() {
                         onMouseDown={(e) => onDragStart(e, 'resize-tr')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tr')}
                       >
-                        <div className="w-3 h-3 bg-white border-2 border-[#7B9AAC] rounded-full" />
+                        <div className="w-3 h-3 bg-white border-2 border-[#7DB87D] rounded-full" />
                       </div>
                       {/* Bottom-Left */}
                       <div
@@ -1758,7 +1775,7 @@ export default function Designer() {
                         onMouseDown={(e) => onDragStart(e, 'resize-bl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-bl')}
                       >
-                        <div className="w-3 h-3 bg-white border-2 border-[#7B9AAC] rounded-full" />
+                        <div className="w-3 h-3 bg-white border-2 border-[#7DB87D] rounded-full" />
                       </div>
                       {/* Bottom-Right */}
                       <div
@@ -1767,7 +1784,7 @@ export default function Designer() {
                         onMouseDown={(e) => onDragStart(e, 'resize-br')}
                         onTouchStart={(e) => onDragStart(e, 'resize-br')}
                       >
-                        <div className="w-3 h-3 bg-white border-2 border-[#7B9AAC] rounded-full" />
+                        <div className="w-3 h-3 bg-white border-2 border-[#7DB87D] rounded-full" />
                       </div>
                     </>
                   )}
@@ -1779,7 +1796,7 @@ export default function Designer() {
       {/* ── 하단 편집 패널 ── */}
       <div
         className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-200 overflow-hidden ${
-          isPanelCollapsed ? 'h-8' : 'h-[240px]'
+          isPanelCollapsed ? 'h-8' : 'h-[280px]'
         }`}>
           {/* Handlebar */}
           <div
@@ -1883,8 +1900,8 @@ export default function Designer() {
                         onClick={() => setSelectedStyle(style)}
                         className={`px-3 py-2 rounded-lg border text-[#2E2E2E] text-[13px] font-medium transition-colors text-left ${
                           selectedStyle === style
-                            ? 'border-[#6BAAB8] bg-[#6BAAB8]/10'
-                            : 'border-[#E8E7E5] bg-white hover:border-[#6BAAB8] hover:bg-[#6BAAB8]/5'
+                            ? 'border-[#7DB87D] bg-[#7DB87D]/10'
+                            : 'border-[#E8E7E5] bg-white hover:border-[#7DB87D] hover:bg-[#7DB87D]/5'
                         }`}
                       >
                         {style}
@@ -1892,8 +1909,8 @@ export default function Designer() {
                     ))}
                   </div>
                   {selectedStyle && (
-                    <div className="mt-2 flex items-center gap-2 text-[12px] text-[#6BAAB8]">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#6BAAB8]" />
+                    <div className="mt-2 flex items-center gap-2 text-[12px] text-[#7DB87D]">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#7DB87D]" />
                       선택됨: {selectedStyle}
                     </div>
                    )}
@@ -1911,7 +1928,7 @@ export default function Designer() {
                       setExpandedPrompt('');
                     }}
                     placeholder="예: 호수, 새벽 햇살, 어린양..."
-                    className="w-full h-20 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#6BAAB8] focus:ring-2 focus:ring-[#6BAAB8]/20"
+                    className="w-full h-20 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#7DB87D] focus:ring-2 focus:ring-[#7DB87D]/20"
                   />
                 </section>
 
@@ -1924,12 +1941,12 @@ export default function Designer() {
                       </h2>
                       <button
                         onClick={() => setExpandedPrompt('')}
-                        className="text-[12px] text-[#6BAAB8] hover:text-[#5A98A8] font-medium"
+                        className="text-[12px] text-[#7DB87D] hover:text-[#6AA86A] font-medium"
                       >
                         다시 작성
                       </button>
                     </div>
-                    <div className="p-3 rounded-lg bg-white border-2 border-[#6BAAB8] shadow-sm">
+                    <div className="p-3 rounded-lg bg-white border-2 border-[#7DB87D] shadow-sm">
                       <textarea
                         value={expandedPrompt}
                         onChange={(e) => setExpandedPrompt(e.target.value)}
@@ -1948,7 +1965,7 @@ export default function Designer() {
                 >
                   <div className="flex items-center gap-2">
                     <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <Upload className="w-3.5 h-3.5 text-[#6BAAB8]" />
+                      <Upload className="w-3.5 h-3.5 text-[#7DB87D]" />
                     </div>
                     <div className="text-left">
                       <h3 className="text-[12px] font-semibold text-[#2E2E2E]">
@@ -1982,8 +1999,8 @@ export default function Designer() {
                             onClick={() => setMeta(m => ({ ...m, bgFilter: preset.filter }))}
                             className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg border transition-colors ${
                               meta.bgFilter === preset.filter
-                                ? 'border-[#6BAAB8] bg-[#6BAAB8]/10'
-                                : 'border-[#E8E7E5] bg-white hover:border-[#6BAAB8]'
+                                ? 'border-[#7DB87D] bg-[#7DB87D]/10'
+                                : 'border-[#E8E7E5] bg-white hover:border-[#7DB87D]'
                             }`}
                           >
                             <div
@@ -2009,7 +2026,7 @@ export default function Designer() {
                     <Button
                       onClick={expandPrompt}
                       disabled={isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
-                      className="w-full h-11 bg-[#6BAAB8] hover:bg-[#5A98A8] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full h-11 bg-[#7DB87D] hover:bg-[#6AA86A] text-white rounded-xl text-[14px] font-medium"
                     >
                       {isExpandingPrompt ? (
                         '프롬프트 만드는 중...'
@@ -2023,7 +2040,7 @@ export default function Designer() {
                   ) : meta.bgImageUrl && bgTab === 'ai' ? (
                     <Button
                       onClick={() => setBgOpen(false)}
-                      className="w-full h-11 bg-[#6BAAB8] hover:bg-[#5A98A8] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full h-11 bg-[#7DB87D] hover:bg-[#6AA86A] text-white rounded-xl text-[14px] font-medium"
                     >
                       완료
                     </Button>
@@ -2031,7 +2048,7 @@ export default function Designer() {
                     <Button
                       onClick={generateBackground}
                       disabled={isGenerating}
-                      className="w-full h-11 bg-[#6BAAB8] hover:bg-[#5A98A8] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full h-11 bg-[#7DB87D] hover:bg-[#6AA86A] text-white rounded-xl text-[14px] font-medium"
                     >
                       {isGenerating ? (
                         '이미지 생성 중...'
@@ -2057,9 +2074,9 @@ export default function Designer() {
                       </h2>
                       <button
                         onClick={() => fileInputRef.current?.click()}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-[#D1D0CE] bg-[#F9F8F6] hover:border-[#6BAAB8] hover:bg-[#6BAAB8]/5 transition-colors flex flex-col items-center justify-center gap-1.5"
+                        className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-[#D1D0CE] bg-[#F9F8F6] hover:border-[#7DB87D] hover:bg-[#7DB87D]/5 transition-colors flex flex-col items-center justify-center gap-1.5"
                       >
-                        <Upload className="w-6 h-6 text-[#6BAAB8]" />
+                        <Upload className="w-6 h-6 text-[#7DB87D]" />
                         <span className="text-[13px] text-[#2E2E2E] font-medium">
                           사진 선택하기
                         </span>
@@ -2074,11 +2091,11 @@ export default function Designer() {
                       <section>
                         <button
                           onClick={() => fileInputRef.current?.click()}
-                          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-[#6BAAB8] bg-[#6BAAB8]/5 hover:bg-[#6BAAB8]/10 transition-colors group"
+                          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-[#7DB87D] bg-[#7DB87D]/5 hover:bg-[#7DB87D]/10 transition-colors group"
                         >
                           <div className="flex items-center gap-3">
                             <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                              <Upload className="w-5 h-5 text-[#6BAAB8]" />
+                              <Upload className="w-5 h-5 text-[#7DB87D]" />
                             </div>
                             <div className="text-left">
                               <h3 className="text-[13px] font-semibold text-[#2E2E2E]">
@@ -2089,7 +2106,7 @@ export default function Designer() {
                               </p>
                             </div>
                           </div>
-                          <ChevronLeft className="w-5 h-5 text-[#6BAAB8] rotate-180 group-hover:translate-x-1 transition-transform" />
+                          <ChevronLeft className="w-5 h-5 text-[#7DB87D] rotate-180 group-hover:translate-x-1 transition-transform" />
                         </button>
                       </section>
 
@@ -2112,8 +2129,8 @@ export default function Designer() {
                               onClick={() => setMeta(m => ({ ...m, bgFilter: preset.filter }))}
                               className={`flex-shrink-0 flex flex-col items-center gap-1.5 px-3 py-2 rounded-lg border transition-colors ${
                                 meta.bgFilter === preset.filter
-                                  ? 'border-[#6BAAB8] bg-[#6BAAB8]/10'
-                                  : 'border-[#E8E7E5] bg-white hover:border-[#6BAAB8]'
+                                  ? 'border-[#7DB87D] bg-[#7DB87D]/10'
+                                  : 'border-[#E8E7E5] bg-white hover:border-[#7DB87D]'
                               }`}
                             >
                               <div
@@ -2139,7 +2156,7 @@ export default function Designer() {
                   <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110]">
                     <Button
                       onClick={() => setBgOpen(false)}
-                      className="w-full h-11 bg-[#6BAAB8] hover:bg-[#5A98A8] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full h-11 bg-[#7DB87D] hover:bg-[#6AA86A] text-white rounded-xl text-[14px] font-medium"
                     >
                       완료
                     </Button>
@@ -2165,7 +2182,7 @@ export default function Designer() {
                       />
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="w-7 h-7 rounded-full bg-white/90 backdrop-blur flex items-center justify-center group-hover:scale-110 transition-transform">
-                          <svg className="w-4 h-4 text-[#6BAAB8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <svg className="w-4 h-4 text-[#7DB87D]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
                           </svg>
                         </div>
@@ -2193,7 +2210,7 @@ export default function Designer() {
                         onClick={() => setMeta(m => ({ ...m, bgColor: preset.color, bgImageUrl: undefined }))}
                         className={`aspect-square rounded-lg border-2 transition-all ${
                           meta.bgColor === preset.color && !meta.bgImageUrl
-                            ? 'border-[#6BAAB8] scale-110 shadow-md'
+                            ? 'border-[#7DB87D] scale-110 shadow-md'
                             : 'border-[#E8E7E5] hover:scale-105'
                         }`}
                         style={{ backgroundColor: preset.color }}
@@ -2221,7 +2238,7 @@ export default function Designer() {
                         onClick={() => setMeta(m => ({ ...m, bgColor: preset.gradient, bgImageUrl: undefined }))}
                         className={`aspect-video rounded-lg border-2 transition-all relative overflow-hidden ${
                           meta.bgColor === preset.gradient && !meta.bgImageUrl
-                            ? 'border-[#6BAAB8] scale-105 shadow-md'
+                            ? 'border-[#7DB87D] scale-105 shadow-md'
                             : 'border-[#E8E7E5] hover:scale-105'
                         }`}
                         style={{ background: preset.gradient }}
@@ -2234,6 +2251,14 @@ export default function Designer() {
                     ))}
                   </div>
                 </section>
+                </div>
+                <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110]">
+                  <Button
+                    onClick={() => setBgOpen(false)}
+                    className="w-full h-11 bg-[#7DB87D] hover:bg-[#6AA86A] text-white rounded-xl text-[14px] font-medium"
+                  >
+                    완료
+                  </Button>
                 </div>
               </TabsContent>
             </Tabs>
@@ -2284,7 +2309,7 @@ export default function Designer() {
             setMeta({
               ratio: '9:16',
               safeGuide: true,
-              bgColor: '#7B9AAC',
+              bgColor: '#7DB87D',
               bgImageUrl: '',
               bgScale: 150,
               bgPositionX: 50,
@@ -2328,8 +2353,8 @@ export default function Designer() {
         <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-2xl p-6 sm:p-8 max-w-sm mx-4 text-center shadow-2xl">
             <div className="w-16 h-16 mx-auto mb-4 relative">
-              <div className="absolute inset-0 border-4 border-[#7B9AAC]/20 rounded-full"></div>
-              <div className="absolute inset-0 border-4 border-[#7B9AAC] rounded-full border-t-transparent animate-spin"></div>
+              <div className="absolute inset-0 border-4 border-[#7DB87D]/20 rounded-full"></div>
+              <div className="absolute inset-0 border-4 border-[#7DB87D] rounded-full border-t-transparent animate-spin"></div>
             </div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               기록 분석 중
@@ -2371,13 +2396,13 @@ export default function Designer() {
                   onClick={() => setT(s => ({ ...s, fontFamily: font.value }))}
                   className={`w-full flex items-center justify-between px-5 min-h-[48px] transition-colors ${
                     t.fontFamily === font.value
-                      ? 'text-[#6BAAB8] bg-[#6BAAB8]/5'
+                      ? 'text-[#7DB87D] bg-[#7DB87D]/5'
                       : 'text-[#2E2E2E] hover:bg-gray-50'
                   }`}
                 >
                   <span className="text-base">{font.label}</span>
                   {t.fontFamily === font.value && (
-                    <Check className="w-5 h-5 text-[#6BAAB8] shrink-0" />
+                    <Check className="w-5 h-5 text-[#7DB87D] shrink-0" />
                   )}
                 </button>
               ))}
@@ -2419,28 +2444,28 @@ function Toolbar({
           <TabsTrigger
             value="text"
             title="텍스트"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#7DB87D] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <Type className="w-6 h-6" />
           </TabsTrigger>
           <TabsTrigger
             value="font"
             title="폰트"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#7DB87D] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <span className="text-lg font-bold">가</span>
           </TabsTrigger>
           <TabsTrigger
             value="color"
             title="색상"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#7DB87D] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <Palette className="w-6 h-6" />
           </TabsTrigger>
           <TabsTrigger
             value="size"
             title="크기"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#6BAAB8] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="px-4 py-3 rounded-full data-[state=active]:bg-[#7DB87D] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <Ruler className="w-6 h-6" />
           </TabsTrigger>
@@ -2456,7 +2481,7 @@ function Toolbar({
                 onClick={() => setT(s => ({ ...s, bold: !s.bold }))}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                   t.bold
-                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    ? 'bg-[#7DB87D] text-white shadow-sm'
                     : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                 }`}
                 title="굵게"
@@ -2467,7 +2492,7 @@ function Toolbar({
                 onClick={() => setT(s => ({ ...s, italic: !s.italic }))}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                   t.italic
-                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    ? 'bg-[#7DB87D] text-white shadow-sm'
                     : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                 }`}
                 title="기울임"
@@ -2478,7 +2503,7 @@ function Toolbar({
                 onClick={() => setT(s => ({ ...s, underline: !s.underline }))}
                 className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all ${
                   t.underline
-                    ? 'bg-[#6BAAB8] text-white shadow-sm'
+                    ? 'bg-[#7DB87D] text-white shadow-sm'
                     : 'bg-transparent text-[#2E2E2E] hover:bg-white'
                 }`}
                 title="밑줄"
@@ -2492,7 +2517,7 @@ function Toolbar({
 
             {/* 중앙 배치 버튼 */}
             <button
-              className="w-full py-3 rounded-xl border-2 border-[#6BAAB8] bg-[#6BAAB8]/10 text-[#6BAAB8] hover:bg-[#6BAAB8]/20 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 rounded-xl border-2 border-[#7DB87D] bg-[#7DB87D]/10 text-[#7DB87D] hover:bg-[#7DB87D]/20 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
               onClick={() => setT(s => ({ ...s, x: 50, y: 50 }))}
             >
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2510,7 +2535,7 @@ function Toolbar({
                 console.log('Font button clicked');
                 onOpenFontPicker?.();
               }}
-              className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#6BAAB8] transition-colors"
+              className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#7DB87D] transition-colors"
             >
               <span style={{ fontFamily: t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif KR' : t.fontFamily === 'NotoSans' ? 'Noto Sans KR' : t.fontFamily === 'NanumGothic' ? 'Nanum Gothic' : t.fontFamily === 'NanumMyeongjo' ? 'Nanum Myeongjo' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? 'Gowun Dodum' : t.fontFamily === 'GowunBatang' ? 'Gowun Batang' : t.fontFamily === 'SongMyung' ? 'Song Myung' : t.fontFamily === 'Hahmlet' ? 'Hahmlet' : t.fontFamily === 'NanumPen' ? 'Nanum Pen Script' : t.fontFamily === 'NanumBrush' ? 'Nanum Brush Script' : t.fontFamily === 'GamjaFlower' ? 'Gamja Flower' : t.fontFamily === 'HiMelody' ? 'Hi Melody' : t.fontFamily === 'Gaegu' ? 'Gaegu' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? 'Black Han Sans' : t.fontFamily === 'DoHyeon' ? 'Do Hyeon' : t.fontFamily === 'Sunflower' ? 'Sunflower' : t.fontFamily === 'Dongle' ? 'Dongle' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair Display' : 'Lora' }}>
                 {t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif' : t.fontFamily === 'NotoSans' ? 'Noto Sans' : t.fontFamily === 'NanumGothic' ? '나눔고딕' : t.fontFamily === 'NanumMyeongjo' ? '나눔명조' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? '고운도둠' : t.fontFamily === 'GowunBatang' ? '고운바탕' : t.fontFamily === 'SongMyung' ? '송명조' : t.fontFamily === 'Hahmlet' ? '함릿체' : t.fontFamily === 'NanumPen' ? '나눔손글씨' : t.fontFamily === 'NanumBrush' ? '나눔붓' : t.fontFamily === 'GamjaFlower' ? '감자꽃' : t.fontFamily === 'HiMelody' ? '하이멜로디' : t.fontFamily === 'Gaegu' ? '개구쟁이' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? '검은고딕' : t.fontFamily === 'DoHyeon' ? '도현체' : t.fontFamily === 'Sunflower' ? '해바라기' : t.fontFamily === 'Dongle' ? '동글체' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair' : 'Lora'}
@@ -2595,9 +2620,9 @@ function LabeledSlider({label,min,max,step,value,onChange,dark}:{label:string;mi
         step={step} 
         value={value} 
         onChange={(e)=>onChange(parseFloat(e.target.value))}
-        className={`w-full h-1.5 ${dark?'accent-white':'accent-[#6BAAB8]'} appearance-none rounded-full bg-[#E3E2E0] cursor-pointer`}
+        className={`w-full h-1.5 ${dark?'accent-white':'accent-[#7DB87D]'} appearance-none rounded-full bg-[#E3E2E0] cursor-pointer`}
         style={{
-          background: `linear-gradient(to right, #6BAAB8 0%, #6BAAB8 ${((value-min)/(max-min)*100)}%, #E3E2E0 ${((value-min)/(max-min)*100)}%, #E3E2E0 100%)`
+          background: `linear-gradient(to right, #7DB87D 0%, #7DB87D ${((value-min)/(max-min)*100)}%, #E3E2E0 ${((value-min)/(max-min)*100)}%, #E3E2E0 100%)`
         }}
       />
     </div>
@@ -2614,7 +2639,7 @@ function ColorRow({label,value,onPick,dark}:{label:string; value:string; onPick:
           <button
             key={c}
             className={`w-7 h-7 rounded-full transition-all flex-shrink-0 ${
-              value === c ? 'ring-2 ring-[#6BAAB8] ring-offset-2 scale-110' : 'ring-1 ring-black/10 hover:scale-105'
+              value === c ? 'ring-2 ring-[#7DB87D] ring-offset-2 scale-110' : 'ring-1 ring-black/10 hover:scale-105'
             }`}
             style={{background:c}}
             onClick={()=>onPick(c)}
@@ -2622,7 +2647,7 @@ function ColorRow({label,value,onPick,dark}:{label:string; value:string; onPick:
         ))}
         {/* Rainbow gradient custom color picker button */}
         <label
-          className="relative w-7 h-7 rounded-full cursor-pointer ring-1 ring-black/10 hover:ring-2 hover:ring-[#6BAAB8] transition-all overflow-hidden flex-shrink-0"
+          className="relative w-7 h-7 rounded-full cursor-pointer ring-1 ring-black/10 hover:ring-2 hover:ring-[#7DB87D] transition-all overflow-hidden flex-shrink-0"
           title="커스텀 색상"
         >
           <div
@@ -2649,7 +2674,7 @@ function ToggleRow({label,checked,onChange,dark}:{label:string;checked:boolean;o
       <span className={`text-sm font-medium ${dark?'text-white':'text-[#2E2E2E]'}`}>{label}</span>
       <div className="relative">
         <input type="checkbox" checked={checked} onChange={e=>onChange(e.target.checked)} className="sr-only peer" />
-        <div className={`w-10 h-[22px] rounded-full transition-colors ${checked ? 'bg-[#6BAAB8]' : 'bg-[#D4D3D1]'}`} />
+        <div className={`w-10 h-[22px] rounded-full transition-colors ${checked ? 'bg-[#7DB87D]' : 'bg-[#D4D3D1]'}`} />
         <div className={`absolute top-[2px] left-[2px] w-[18px] h-[18px] bg-white rounded-full shadow-sm transition-transform ${checked ? 'translate-x-[18px]' : ''}`} />
       </div>
     </label>

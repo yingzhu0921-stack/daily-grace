@@ -32,10 +32,10 @@ const Today: React.FC = () => {
   });
 
   const categories = [
-    { type: 'meditation', label: 'Q.T', description: '말씀을 묵상하며', bgColor: '#D4EAD4', icon: 'bookOpen', route: routes.meditationNew },
-    { type: 'prayer', label: '기도', description: '하루의 기도 기록', bgColor: '#F0D9DC', icon: 'hands', route: routes.prayerNew },
-    { type: 'gratitude', label: '감사', description: '감사했던 순간', bgColor: '#E8D7F0', icon: 'sparkles', route: routes.gratitudeNew },
-    { type: 'diary', label: '일기', description: '오늘의 마음 기록', bgColor: '#D9E8F0', icon: 'pencilLine', route: routes.diaryNew },
+    { type: 'meditation', label: 'Q.T', color: 'rgba(125,184,125,1)', icon: 'bookOpen', route: routes.meditationNew },
+    { type: 'prayer', label: '기도', color: 'rgba(165,125,184,1)', icon: 'heart', route: routes.prayerNew },
+    { type: 'gratitude', label: '감사', color: 'rgba(232,200,125,1)', icon: 'sparkles', route: routes.gratitudeNew },
+    { type: 'diary', label: '일기', color: 'rgba(221,149,125,1)', icon: 'pencilLine', route: routes.diaryNew },
   ] as const;
 
   return (
@@ -43,7 +43,7 @@ const Today: React.FC = () => {
       <Header />
       <main className="max-w-5xl mx-auto px-5 pb-8">
         {/* 헤더 */}
-        <div className="pt-4 pb-6">
+        <div className="pt-4 pb-4">
           <div className="flex items-center gap-2 mb-2">
             <AppIcon name="sun" size={18} className="text-[#7C7C7C]" />
             <span className="text-[13px] font-medium text-[#7C7C7C]">오늘</span>
@@ -53,12 +53,12 @@ const Today: React.FC = () => {
 
         {/* 말씀카드 배너 */}
         <div
-          className="rounded-3xl p-5 mb-8 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-between"
+          className="rounded-3xl p-5 mb-6 cursor-pointer hover:shadow-md transition-shadow flex items-center justify-between"
           style={{ backgroundColor: '#C8E6D7' }}
           onClick={() => navigate('/cards/designer')}
         >
           <div>
-            <h3 className="text-[14px] font-semibold text-[#2E2E2E] mb-1">⭐ 말씈카드 만들기</h3>
+            <h3 className="text-[14px] font-semibold text-[#2E2E2E] mb-1">⭐ 말씀카드 만들기</h3>
             <p className="text-[13px] text-[#2E2E2E]">오늘의 말씀을 카드로</p>
             <p className="text-[12px] text-[#666] mt-0.5">AI 생성 · 직접 꾸미기</p>
           </div>
@@ -69,28 +69,30 @@ const Today: React.FC = () => {
         <div className="mb-6">
           <h2 className="text-[13px] font-semibold text-[#999] uppercase mb-3 px-1 tracking-widest">MY ROUTINE</h2>
 
-          {/* 카드 그리드 (2x2, 가로로 긴 직사각형) */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             {categories.map(cat => {
               const completed = counts[cat.type as keyof typeof counts] > 0;
               return (
                 <div
                   key={cat.type}
-                  className="rounded-2xl p-4 cursor-pointer hover:shadow-sm transition-shadow flex flex-col justify-center"
-                  style={{ backgroundColor: cat.bgColor }}
+                  className="bg-white rounded-2xl p-4 cursor-pointer hover:shadow-sm transition-shadow h-[100px] flex flex-col justify-between"
                   onClick={() => navigate(cat.route)}
                 >
-                  <div className="flex items-start gap-3 mb-2">
-                    <AppIcon name={cat.icon as any} size={24} className="text-[#2E2E2E] flex-shrink-0" />
+                  <div className="flex items-start justify-between">
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      style={{ backgroundColor: cat.color }}
+                    >
+                      <AppIcon name={cat.icon as any} size={18} color="#fff" strokeWidth={1.75} />
+                    </div>
+                    <StatusBadge completed={completed} variant="compact" />
                   </div>
-                  <h3 className="text-[18px] font-semibold text-[#2E2E2E] mb-0.5">{cat.label}</h3>
-                  <p className="text-[13px] text-[#2E2E2E]">{cat.description}</p>
+                  <h3 className="text-[15px] font-semibold text-[#2E2E2E]">{cat.label}</h3>
                 </div>
               );
             })}
           </div>
 
-          {/* 카테고리 추가 버튼 */}
           <button
             onClick={() => navigate('/settings')}
             className="w-full py-3 rounded-2xl border-2 border-dashed border-[#D9D9D9] text-[14px] font-medium text-[#999] hover:border-[#999] hover:text-[#2E2E2E] transition-colors"
@@ -99,7 +101,7 @@ const Today: React.FC = () => {
           </button>
         </div>
 
-        {/* RECENT RECORDS 타임라인 */}
+        {/* RECENT RECORDS */}
         <div className="mb-6">
           <div className="flex items-center justify-between px-1 mb-3">
             <h2 className="text-[13px] font-semibold text-[#999] uppercase tracking-widest">RECENT RECORDS</h2>

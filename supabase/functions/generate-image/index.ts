@@ -289,9 +289,9 @@ serve(async (req) => {
 
       console.log('Generating image with ratio:', ratio, 'Final English prompt:', finalPrompt);
 
-      // Use Gemini 2.5 Flash Image - returns ratio metadata for frontend cropping
+      // Use Gemini 3.1 Flash Image Preview
       const response = await fetchWithRetry(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${GOOGLE_API_KEY}`,
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${GOOGLE_API_KEY}`,
         {
           method: 'POST',
           headers: {

@@ -18,6 +18,11 @@ type Category = {
   color: string;
   icon?: IconName;
   description?: string;
+  iconBg?: string;
+  iconColor?: string;
+  cardBg?: string;
+  titleColor?: string;
+  subColor?: string;
 };
 
 const IndexNew = () => {
@@ -115,7 +120,7 @@ const IndexNew = () => {
   const getRecommendationMessage = () => {
     const messages = [
       '오늘은 감사를 먼저 기록해볼까요?',
-      '하루를 Q.T로 시작해보세요 ✨',
+      '하루를 Q.T로 시작해보세요',
       '기도 제목을 적어볼까요?',
       '오늘의 마음을 일기로 남겨보세요',
     ];
@@ -184,17 +189,21 @@ const IndexNew = () => {
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Goal Progress */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#7DB87D]/10">
-              <Leaf className="w-4 h-4 text-[#7DB87D]" strokeWidth={2} />
-              <span className="text-sm font-semibold text-[#7DB87D]">
-                {goalProgress.completed}/{goalProgress.total}
-              </span>
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#7DB87D]/50">
+              <Leaf className="w-4 h-4 text-[#7DB87D] flex-shrink-0" strokeWidth={2} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-[13px] font-semibold text-[#7DB87D]">{goalProgress.completed}/{goalProgress.total} 완료</span>
+                <span className="text-[10px] text-[#7DB87D]/70">{goalProgress.completed === 0 ? '시작해볼까요!' : goalProgress.completed === goalProgress.total ? '오늘 루틴 완성!' : '계속해봐요!'}</span>
+              </div>
             </div>
-            
+
             {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#FF6B6B]/10">
-              <Flame className="w-4 h-4 text-[#FF6B6B]" strokeWidth={2} />
-              <span className="text-sm font-semibold text-[#FF6B6B]">{streakDays}일</span>
+            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#FF6B6B]/50">
+              <Flame className="w-4 h-4 text-[#FF6B6B] flex-shrink-0" strokeWidth={2} />
+              <div className="flex flex-col leading-tight">
+                <span className="text-[13px] font-semibold text-[#FF6B6B]">{streakDays}일 연속</span>
+                <span className="text-[10px] text-[#FF6B6B]/70">{streakDays === 0 ? '첫 스트릭 도전!' : `${streakDays}일째 이어가는 중`}</span>
+              </div>
             </div>
           </div>
 
@@ -293,63 +302,70 @@ const IndexNew = () => {
           </p>
         </div>
 
+        {/* 말씀카드 배너 */}
+        <div
+          className="rounded-3xl p-5 mb-6 cursor-pointer transition-all flex items-center justify-between active:scale-[0.99]"
+          style={{ backgroundColor: 'rgba(125,184,125,0.12)' }}
+          onClick={() => navigate('/cards/designer')}
+        >
+          <div>
+            <p className="text-[11px] font-medium text-[rgba(125,184,125,1)] mb-1 tracking-wide uppercase">Card Maker</p>
+            <h3 className="text-[15px] font-bold text-[#2E2E2E] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
+            <p className="text-[12px] text-[#888]">AI 자동 완성 · 직접 꾸미기</p>
+          </div>
+        </div>
+
         {/* 루틴 섹션 - 2열 그리드 */}
         <section className="mb-8">
           <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide mb-4">
             MY ROUTINE
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
             {allCategories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => handleCategoryClick(category)}
-                className="relative aspect-square rounded-[20px] p-5 flex flex-col justify-between transition-all active:scale-95 shadow-sm hover:shadow-md"
-                style={{
-                  background: `linear-gradient(135deg, ${category.color} 0%, ${category.color}DD 100%)`,
-                }}
+                className="relative h-[120px] rounded-[20px] p-5 flex flex-col justify-between transition-all active:scale-95"
+                style={{ backgroundColor: category.color }}
               >
                 {/* 상단 영역: 아이콘과 제목 */}
                 <div className="flex items-start gap-3">
                   {/* 아이콘 */}
-                  <div className="w-12 h-12 rounded-xl bg-white/25 flex items-center justify-center backdrop-blur-sm flex-shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
                     {category.icon ? (
-                      <AppIcon name={category.icon} size={22} color="#fff" strokeWidth={2} />
+                      <AppIcon name={category.icon} size={20} color="#ffffff" strokeWidth={2} />
                     ) : (
-                      <span className="text-white text-[18px] font-semibold">
+                      <span className="text-white text-[16px] font-semibold">
                         {category.name.charAt(0)}
                       </span>
                     )}
                   </div>
 
                   {/* 제목 */}
-                  <h3 className="text-[19px] font-bold text-white leading-tight pt-1">
+                  <h3 className="text-[17px] font-bold text-white leading-tight pt-1">
                     {category.name}
                   </h3>
                 </div>
 
                 {/* 하단 영역: 설명 */}
                 <div className="text-left">
-                  <p className="text-[12px] text-white/70 leading-snug line-clamp-2">
+                  <p className="text-[11px] text-white/70 leading-snug line-clamp-1">
                     {category.description || `${category.name}을 기록하세요`}
                   </p>
                 </div>
               </button>
             ))}
-
-            {/* 카테고리 추가 버튼 */}
-            <button
-              onClick={() => setShowCategoryManager(true)}
-              className="aspect-square rounded-[20px] border-2 border-dashed border-[#E8E7E5] bg-white flex flex-col items-center justify-center gap-3 transition-all hover:bg-[#F9F8F6] hover:border-[#7DB87D]/30 active:scale-95"
-            >
-              <div className="w-12 h-12 rounded-full bg-[#F9F8F6] flex items-center justify-center">
-                <Plus className="w-6 h-6 text-[#ACACAC]" strokeWidth={2} />
-              </div>
-              <span className="text-[14px] font-medium text-[#ACACAC]">
-                카테고리 추가
-              </span>
-            </button>
           </div>
+
+          {/* 카테고리 추가 버튼 */}
+          <button
+            onClick={() => setShowCategoryManager(true)}
+            className="w-full py-3 rounded-[20px] border-2 border-dashed border-[#E8E7E5] text-[14px] font-medium text-[#ACACAC] flex items-center justify-center gap-2 transition-all hover:bg-[#F9F8F6] hover:border-[#7DB87D]/30 active:scale-95"
+          >
+            <Plus className="w-4 h-4" strokeWidth={2} />
+            카테고리 추가
+          </button>
         </section>
 
         {/* 최신 기록 섹션 */}
