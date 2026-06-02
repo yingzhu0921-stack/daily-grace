@@ -39,6 +39,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       auth_method: 'google_oauth',
       google_sub: payload.sub,
     });
+  } else {
+    await env.DB.prepare('UPDATE users SET name = ?, updated_at = ? WHERE id = ?')
+      .bind(payload.name, Date.now(), user.id).run();
+    user = { ...user, name: payload.name };
   }
 
   const sessionId = await createSession(env.DB, user.id);
