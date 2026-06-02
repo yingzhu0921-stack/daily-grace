@@ -19,8 +19,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     }),
   });
 
-  const { id_token } = await tokenRes.json<{ id_token: string }>();
-  const payload = JSON.parse(atob(id_token.split('.')[1])) as { sub: string; email: string; name: string };
+  const tokenData = await tokenRes.json<{ id_token?: string; error?: string }>();
+  if (!tokenData.id_token) {
+    return new Response(`Token exchange failed: ${JSON.stringify(tokenData)}`, { status: 500 });
+  }
+
+  const base64 = tokenData.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+  const payload = JSON.parse(atob(base64)) as { sub: string; email: string; name: string };
 
   let user = await getUserByEmail(env.DB, payload.email);
   if (!user) {
