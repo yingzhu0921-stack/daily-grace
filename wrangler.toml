@@ -1,0 +1,9 @@
+name = "daily-grace"
+compatibility_date = "2026-05-01"
+pages_build_output_dir = "./dist"
+account_id = "115ba31fc14cf5a52b29132dc8026ac8"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "daily-grace-db"
+database_id = "da23fb19-c96d-4cb5-b8a1-35ef080f9e2f"
