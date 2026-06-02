@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Camera, LogOut, Trash2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,34 +23,28 @@ const ProfileEdit: React.FC = () => {
   const navigate = useNavigate();
   const { user, signOut, deleteAccount } = useAuth();
   const [displayName, setDisplayName] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     if (user) {
-      setDisplayName(user.user_metadata?.display_name || '');
-      setAvatarUrl(user.user_metadata?.avatar_url || '');
+      setDisplayName(user.name || '');
     }
   }, [user]);
 
   const handleSave = async () => {
     if (!user) return;
-
     setIsLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({
-        data: {
-          display_name: displayName,
-          avatar_url: avatarUrl,
-        },
+      const res = await fetch('/api/auth/update-profile', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: displayName }),
       });
-
-      if (error) throw error;
-
+      if (!res.ok) throw new Error('업데이트 실패');
       toast.success('프로필이 업데이트되었습니다');
-    } catch (error) {
-      console.error('Profile update error:', error);
+    } catch {
       toast.error('프로필 업데이트에 실패했습니다');
     } finally {
       setIsLoading(false);
@@ -108,7 +101,6 @@ const ProfileEdit: React.FC = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="relative">
             <Avatar className="w-24 h-24">
-              <AvatarImage src={avatarUrl} />
               <AvatarFallback className="bg-[#7DB87D]/20 text-[#7DB87D] text-2xl font-semibold">
                 {userInitial}
               </AvatarFallback>

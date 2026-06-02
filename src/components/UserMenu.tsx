@@ -35,9 +35,7 @@ export const UserMenu: React.FC = () => {
     }
   };
 
-  // 아바타 이니셜 표시 (로그인 상태)
-  const displayName = user?.user_metadata?.display_name || user?.user_metadata?.nickname || user?.user_metadata?.full_name;
-  const userInitial = user ? (displayName || user.email?.charAt(0) || 'U').charAt(0).toUpperCase() : null;
+  const userInitial = user ? (user.name || user.email?.charAt(0) || 'U').charAt(0).toUpperCase() : null;
 
   if (!user) {
     return (
