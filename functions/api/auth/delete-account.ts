@@ -2,7 +2,7 @@ import { getSessionUser } from '../_lib/session';
 import type { Env } from '../_lib/db';
 
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
-  const user = await getSessionUser(request, env.DB);
+  const user = await getSessionUser(env.DB, request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   await env.DB.prepare('DELETE FROM sessions WHERE user_id = ?').bind(user.id).run();
