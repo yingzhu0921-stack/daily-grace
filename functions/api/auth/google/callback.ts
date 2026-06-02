@@ -25,7 +25,10 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   const base64 = tokenData.id_token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-  const payload = JSON.parse(atob(base64)) as { sub: string; email: string; name: string };
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const payload = JSON.parse(new TextDecoder().decode(bytes)) as { sub: string; email: string; name: string };
 
   let user = await getUserByEmail(env.DB, payload.email);
   if (!user) {
