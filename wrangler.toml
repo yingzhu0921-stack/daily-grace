@@ -2,6 +2,9 @@ name = "daily-grace"
 compatibility_date = "2026-05-01"
 pages_build_output_dir = "./dist"
 
+[vars]
+APP_ORIGIN = "https://daily-grace.pages.dev"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "daily-grace-db"
