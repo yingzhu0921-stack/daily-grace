@@ -1,7 +1,6 @@
 name = "daily-grace"
 compatibility_date = "2026-05-01"
 pages_build_output_dir = "./dist"
-account_id = "115ba31fc14cf5a52b29132dc8026ac8"
 
 [[d1_databases]]
 binding = "DB"
