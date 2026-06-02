@@ -8,5 +8,6 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
       : 'NOT SET',
     CLIENT_SECRET_SET: !!env.GOOGLE_CLIENT_SECRET,
     CLIENT_SECRET_LEN: env.GOOGLE_CLIENT_SECRET?.length ?? 0,
+    CLIENT_SECRET_PREFIX: env.GOOGLE_CLIENT_SECRET?.slice(0, 7) ?? 'NOT SET',
   });
 };
