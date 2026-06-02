@@ -6,7 +6,6 @@ export const onRequest: PagesFunction<Env> = async ({ env }) => {
     redirect_uri: `${env.APP_ORIGIN}/api/auth/google/callback`,
     response_type: 'code',
     scope: 'openid email profile',
-    access_type: 'offline',
   });
 
   return new Response(null, {
