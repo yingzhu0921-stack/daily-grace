@@ -766,19 +766,10 @@ export default function Designer() {
     });
 
     try {
-      // Get valid session for authorization
-      const { data: { session }, error: sessionError } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        throw new Error('세션이 만료되었습니다. 다시 로그인해주세요.');
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/analyze-records`, {
+      const response = await fetch('/api/analyze-records', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ records: [record] }),
       });
 
@@ -831,34 +822,11 @@ export default function Designer() {
     setLastGenerateTime(now);
     setIsExpandingPrompt(true);
     try {
-      // 유효한 세션 가져오기 (서버 검증)
-      const { data: { session }, error: sessionError } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
-
-      if (sessionError || !session) {
-        console.error('❌ Session error:', sessionError);
-        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
-        setIsExpandingPrompt(false);
-        return;
-      }
-
-      console.log('📤 Sending request to generate-image:', {
-        action: 'expand-prompt',
-        prompt: bgPrompt.trim(),
-        style: selectedStyle
-      });
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`, {
+      const response = await fetch('/api/generate-image', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          action: 'expand-prompt',
-          prompt: bgPrompt.trim(),
-          style: selectedStyle
-        }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'expand-prompt', prompt: bgPrompt.trim(), style: selectedStyle }),
       });
 
       console.log('📥 Response status:', response.status);
@@ -869,7 +837,7 @@ export default function Designer() {
 
         if (response.status === 429) {
           toast.error('API 요청 한도 초과', {
-            description: 'Google API 사용량 제한에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+            description: 'API 요청 한도에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
             duration: 5000,
           });
           return;
@@ -913,29 +881,11 @@ export default function Designer() {
     setLastGenerateTime(now);
     setIsGenerating(true);
     try {
-      // 유효한 세션 가져오기 (서버 검증)
-      const { data: { session }, error: sessionError } = await (await import('@/integrations/supabase/client')).supabase.auth.getSession();
-      
-      if (sessionError || !session) {
-        console.error('Session error:', sessionError);
-        toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
-        navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
-        setIsGenerating(false);
-        return;
-      }
-
-      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-image`, {
+      const response = await fetch('/api/generate-image', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ 
-          action: 'generate-image',
-          prompt: expandedPrompt,
-          style: selectedStyle,
-          ratio: meta.ratio
-        }),
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'generate-image', prompt: expandedPrompt, style: selectedStyle, ratio: meta.ratio }),
       });
       
       if (!response.ok) {
@@ -944,7 +894,7 @@ export default function Designer() {
 
         if (response.status === 429) {
           toast.error('API 요청 한도 초과', {
-            description: 'Google API 사용량 제한에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+            description: 'API 요청 한도에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
             duration: 5000,
           });
           return;
