@@ -45,7 +45,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         <div className="space-y-3 mt-4">
           <Button 
             onClick={handleLogin}
-            className="w-full bg-[rgba(125,184,125,1)] hover:bg-[rgba(115,174,115,1)] text-white rounded-full py-6 font-medium"
+            className="w-full bg-[#1F1F1F] hover:bg-[#333] text-white rounded-full py-6 font-medium"
           >
             이메일로 계속하기
           </Button>

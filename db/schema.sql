@@ -77,3 +77,19 @@ CREATE TABLE IF NOT EXISTS diary_entries (
   FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 CREATE INDEX IF NOT EXISTS idx_diary_user ON diary_entries(user_id);
+
+CREATE TABLE IF NOT EXISTS categories (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  color TEXT NOT NULL DEFAULT '#4F8A5B',
+  icon TEXT DEFAULT NULL,
+  description TEXT DEFAULT NULL,
+  include_in_goal INTEGER DEFAULT 1,
+  active_days TEXT NOT NULL DEFAULT '[0,1,2,3,4,5,6]',
+  fields TEXT NOT NULL DEFAULT '["title","content"]',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+CREATE INDEX IF NOT EXISTS idx_categories_user ON categories(user_id);

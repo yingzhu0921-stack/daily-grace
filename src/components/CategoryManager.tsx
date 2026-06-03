@@ -24,10 +24,10 @@ type Category = {
 
 // 기본 카테고리 (하드코딩, 삭제 불가)
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: '1', name: 'QT', color: '#1F1F1F', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', name: '기도', color: '#A57DB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', name: '감사', color: '#E8C87D', icon: 'sparkles', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '1', name: 'QT', color: '#4F8A5B', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', name: '기도', color: '#7A6BB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', name: '감사', color: '#C89B3C', icon: 'star', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '4', name: '일기', color: '#D97B5D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
 // 기존 카테고리 색상(초록, 보라, 노랑, 오렌지)과 겹치지 않는 다양한 색상 (텍스트 가독성 고려)
