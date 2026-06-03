@@ -79,7 +79,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-1', prompt: finalPrompt, size, n: 1 }),
+      body: JSON.stringify({ model: 'gpt-image-2', prompt: finalPrompt, size, n: 1 }),
     });
 
     const imgData = await imgRes.json<any>();
