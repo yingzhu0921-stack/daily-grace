@@ -50,7 +50,7 @@ const IndexNew = () => {
   const defaultCategories = [
     { id: '1', name: 'Q.T', color: '#4F8A5B', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
     { id: '2', name: '기도', color: '#7A6BB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
-    { id: '3', name: '감사', color: '#C89B3C', icon: 'sparkles' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
+    { id: '3', name: '감사', color: '#C89B3C', icon: 'star' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
     { id: '4', name: '일기', color: '#D97B5D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
