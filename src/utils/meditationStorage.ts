@@ -1,4 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
 import { ApplicationItem } from '@/types/meditation';
 
 export type MeditationNote = {
@@ -28,40 +27,32 @@ function writeAll(list: MeditationNote[]) {
   window.dispatchEvent(new Event('recordsUpdated'));
 }
 
-export async function create(note: Omit<MeditationNote,'id'|'createdAt'|'updatedAt'>) {
+function syncCreate(note: MeditationNote) {
+  fetch('/api/data/meditations', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(note),
+  }).catch(() => {});
+}
+
+function syncUpdate(note: MeditationNote) {
+  fetch(`/api/data/meditations/${note.id}`, {
+    method: 'PUT', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(note),
+  }).catch(() => {});
+}
+
+function syncDelete(id: string) {
+  fetch(`/api/data/meditations/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+}
+
+export async function create(note: Omit<MeditationNote, 'id' | 'createdAt' | 'updatedAt'>) {
   const all = readAll();
   const now = new Date().toISOString();
-  const id = crypto.randomUUID();
-  const saved: MeditationNote = { ...note, id, createdAt: now, updatedAt: now };
+  const saved: MeditationNote = { ...note, id: crypto.randomUUID(), createdAt: now, updatedAt: now };
   writeAll([saved, ...all]);
-
-  // Supabase 백업 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('meditation_notes').insert({
-        id: saved.id,
-        user_id: user.id,
-        title: saved.title,
-        passage: saved.passage || '',
-        content: saved.content,
-        application: saved.application || '',
-        applications: saved.applications ? JSON.stringify(saved.applications) : null,
-        apply_checked: saved.applyChecked || false,
-        apply_checked_at: saved.applyCheckedAt || null,
-        full_text: saved.fullText || '',
-        date: saved.createdAt.split('T')[0],
-      });
-      if (error) {
-        console.error('❌ Supabase 저장 실패:', error);
-      } else {
-        console.log('✅ Supabase에 저장됨:', saved.id);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
-
+  syncCreate(saved);
   return saved;
 }
 
@@ -71,28 +62,7 @@ export async function update(id: string, patch: Partial<MeditationNote>) {
   if (i < 0) throw new Error('묵상을 찾을 수 없습니다');
   all[i] = { ...all[i], ...patch, updatedAt: new Date().toISOString() };
   writeAll(all);
-
-  // Supabase 백업 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('meditation_notes').update({
-        title: all[i].title,
-        passage: all[i].passage || '',
-        content: all[i].content,
-        application: all[i].application || '',
-        applications: all[i].applications ? JSON.stringify(all[i].applications) : null,
-        apply_checked: all[i].applyChecked || false,
-        apply_checked_at: all[i].applyCheckedAt || null,
-        full_text: all[i].fullText || '',
-        updated_at: all[i].updatedAt,
-      }).eq('id', id).eq('user_id', user.id);
-      if (error) console.error('❌ Supabase 업데이트 실패:', error);
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
-
+  syncUpdate(all[i]);
   return all[i];
 }
 
@@ -105,16 +75,9 @@ export function getAll() {
 }
 
 export function list(): MeditationNote[] {
-  const raw = readAll();
-  
-  const all = raw.map((n: any) => ({
-    ...n,
-    createdAt: n.createdAt || n.updatedAt || new Date().toISOString(),
-  }));
-
-  return all.sort((a: MeditationNote, b: MeditationNote) =>
-    (b.createdAt || '').localeCompare(a.createdAt || '')
-  );
+  return readAll()
+    .map((n: any) => ({ ...n, createdAt: n.createdAt || n.updatedAt || new Date().toISOString() }))
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
 }
 
 export async function toggleApply(id: string) {
@@ -122,52 +85,19 @@ export async function toggleApply(id: string) {
   const i = all.findIndex(n => n.id === id);
   if (i < 0) throw new Error('묵상을 찾을 수 없습니다');
   const checked = !all[i].applyChecked;
-
-  // applications 배열이 있으면 모든 항목을 체크/해제
-  const updatedApplications = all[i].applications
-    ? all[i].applications!.map(item => ({ ...item, checked }))
-    : undefined;
-
   all[i] = {
     ...all[i],
-    applications: updatedApplications,
+    applications: all[i].applications?.map(item => ({ ...item, checked })),
     applyChecked: checked,
     applyCheckedAt: checked ? new Date().toISOString() : null,
     updatedAt: new Date().toISOString(),
   };
   writeAll(all);
-
-  // Supabase 백업 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('meditation_notes').update({
-        applications: all[i].applications ? JSON.stringify(all[i].applications) : null,
-        apply_checked: all[i].applyChecked,
-        apply_checked_at: all[i].applyCheckedAt,
-        updated_at: all[i].updatedAt,
-      }).eq('id', id).eq('user_id', user.id);
-      if (error) console.error('❌ Supabase 업데이트 실패:', error);
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
-
+  syncUpdate(all[i]);
   return all[i];
 }
 
 export async function remove(id: string) {
-  const all = readAll();
-  writeAll(all.filter(n => n.id !== id));
-
-  // Supabase 삭제 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('meditation_notes').delete().eq('id', id).eq('user_id', user.id);
-      if (error) console.error('❌ Supabase 삭제 실패:', error);
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
+  writeAll(readAll().filter(n => n.id !== id));
+  syncDelete(id);
 }

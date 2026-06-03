@@ -1,5 +1,3 @@
-import { supabase } from '@/integrations/supabase/client';
-
 export type Diary = {
   id: string;
   content: string;
@@ -21,8 +19,7 @@ function writeAll(list: Diary[]) {
 }
 
 export function listAll(): Diary[] {
-  const all = readAll();
-  return all.sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
+  return readAll().sort((a, b) => (b.createdAt || "").localeCompare(a.createdAt || ""));
 }
 
 export function listByDate(dateISO: string): Diary[] {
@@ -30,74 +27,40 @@ export function listByDate(dateISO: string): Diary[] {
 }
 
 export async function create(content: string): Promise<Diary> {
-  const all = readAll();
   const now = new Date().toISOString();
   const d: Diary = { id: crypto.randomUUID(), content, createdAt: now, updatedAt: now };
-  writeAll([d, ...all]);
-
-  // Supabase 백업 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('diary_entries').insert({
-        id: d.id,
-        user_id: user.id,
-        content: d.content,
-        date: d.createdAt.split('T')[0],
-      });
-      if (error) console.error('❌ Supabase 저장 실패:', error);
-      else console.log('✅ Supabase에 저장됨:', d.id);
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
-
+  writeAll([d, ...readAll()]);
+  fetch('/api/data/diaries', {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(d),
+  }).catch(() => {});
   return d;
 }
 
-export function get(id: string) { 
-  return readAll().find(d => d.id === id) || null; 
+export function get(id: string) {
+  return readAll().find(d => d.id === id) || null;
 }
 
 export async function update(id: string, content: string) {
   const all = readAll();
-  const now = new Date().toISOString();
   const idx = all.findIndex(d => d.id === id);
-  if (idx >= 0) { 
-    all[idx] = { ...all[idx], content, updatedAt: now }; 
+  if (idx >= 0) {
+    all[idx] = { ...all[idx], content, updatedAt: new Date().toISOString() };
     writeAll(all);
-
-    // Supabase 백업 (동기화)
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error } = await supabase.from('diary_entries').update({
-          content: all[idx].content,
-        }).eq('id', id).eq('user_id', user.id);
-        if (error) console.error('❌ Supabase 업데이트 실패:', error);
-      }
-    } catch (error) {
-      console.error('❌ Supabase 백업 중 오류:', error);
-    }
+    fetch(`/api/data/diaries/${id}`, {
+      method: 'PUT', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(all[idx]),
+    }).catch(() => {});
   }
 }
 
-export async function remove(id: string) { 
+export async function remove(id: string) {
   writeAll(readAll().filter(d => d.id !== id));
-
-  // Supabase 삭제 (동기화)
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { error } = await supabase.from('diary_entries').delete().eq('id', id).eq('user_id', user.id);
-      if (error) console.error('❌ Supabase 삭제 실패:', error);
-    }
-  } catch (error) {
-    console.error('❌ Supabase 백업 중 오류:', error);
-  }
+  fetch(`/api/data/diaries/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
 }
 
 export function hasDiaryOn(date: Date) {
-  const ds = date.toISOString().split("T")[0];
-  return listByDate(ds).length > 0;
+  return listByDate(date.toISOString().split("T")[0]).length > 0;
 }
