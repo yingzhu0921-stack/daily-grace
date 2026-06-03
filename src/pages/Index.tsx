@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Leaf, Plus, ChevronLeft, ChevronRight, ChevronRight as ArrowRight } from 'lucide-react';
+import { Leaf, Plus, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { BottomNav } from '@/components/BottomNav';
 import { CategoryManager } from '@/components/CategoryManager';
@@ -191,14 +191,15 @@ const IndexNew = () => {
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Goal Progress */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E0E0] bg-white">
-              <Leaf className="w-3.5 h-3.5 text-[#1F1F1F] flex-shrink-0" strokeWidth={1.5} />
-              <span className="text-[12px] font-medium text-[#1F1F1F]">{goalProgress.completed}/{goalProgress.total} 완료</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#4F8A5B40' }}>
+              <Leaf className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4F8A5B' }} strokeWidth={1.5} />
+              <span className="text-[12px] font-medium" style={{ color: '#4F8A5B' }}>{goalProgress.completed}/{goalProgress.total} 완료</span>
             </div>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E0E0] bg-white">
-              <span className="text-[11px] text-[#7A7A7A]">{streakDays}일 연속</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#C89B3C40' }}>
+              <Flame className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#C89B3C' }} strokeWidth={1.5} />
+              <span className="text-[12px] font-medium" style={{ color: '#C89B3C' }}>{streakDays}일 연속</span>
             </div>
           </div>
 
