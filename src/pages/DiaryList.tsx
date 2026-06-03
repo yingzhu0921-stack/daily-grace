@@ -25,9 +25,9 @@ export default function DiaryList() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 
           onClick={() => navigate("/")} 
           className="p-2 -ml-2"
@@ -91,7 +91,7 @@ export default function DiaryList() {
             >
               <button 
                 onClick={() => navigate(`/diary/${d.id}`)}
-                className="w-full text-left rounded-2xl bg-white border border-[#F0EFED] shadow-sm px-4 py-4 hover:shadow-md transition-all"
+                className="w-full text-left rounded-2xl bg-white border border-[#EDEDED] shadow-sm px-4 py-4 hover:shadow-md transition-all"
               >
                 <div className="text-[13px] text-[#8F8C86] mb-1">
                   {new Date(d.createdAt).toLocaleDateString("ko-KR")}

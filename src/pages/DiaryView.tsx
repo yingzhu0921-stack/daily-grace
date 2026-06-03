@@ -18,7 +18,7 @@ export default function DiaryView() {
 
   if (!diary) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
         <div className="text-[#8C8A86]">기록을 찾을 수 없어요.</div>
       </div>
     );
@@ -54,8 +54,8 @@ export default function DiaryView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button
           onClick={() => navigate("/diary")}
           className="p-2 -ml-2"
@@ -69,7 +69,7 @@ export default function DiaryView() {
       </header>
 
       <div className="px-5 py-6 pb-24">
-        <div className="rounded-2xl bg-white border border-[#F0EFED] shadow-sm p-5">
+        <div className="rounded-2xl bg-white border border-[#EDEDED] shadow-sm p-5">
           <div className="text-sm text-[#8B8B8B] mb-4">
             {new Date(diary.createdAt).toLocaleDateString("ko-KR")}
           </div>
@@ -77,7 +77,7 @@ export default function DiaryView() {
             {diary.content}
           </div>
 
-          <div className="flex gap-2 pt-4 border-t border-[#F0EFED]">
+          <div className="flex gap-2 pt-4 border-t border-[#EDEDED]">
             <button
               onClick={() => navigate(`/diary/${id}/edit`)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"

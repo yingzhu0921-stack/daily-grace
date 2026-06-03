@@ -118,9 +118,9 @@ const MeditationEdit = () => {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAF9F7]">
+    <div className="flex min-h-screen flex-col bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED] bg-[#FAF9F7]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED] bg-[#FAFAF9]">
         <button
           onClick={handleBack}
           className="p-2 -ml-2"
@@ -135,7 +135,7 @@ const MeditationEdit = () => {
           disabled={!hasContent}
           className={`h-9 px-5 rounded-full text-sm font-medium transition-colors ${
             hasContent 
-              ? 'bg-[#7DB87D] hover:bg-[#6da76d] text-white' 
+              ? 'bg-[#4F8A5B] hover:bg-[#3d7849] text-white' 
               : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
           }`}
         >

@@ -89,9 +89,9 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAF9F7] border-b border-[#F0EFED]">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"
@@ -138,7 +138,7 @@ const Settings: React.FC = () => {
       {/* 형식 선택 다이얼로그 */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent className="max-w-[420px] rounded-3xl p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#EDEDED] relative">
             <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
               내보내기 형식 선택
             </DialogTitle>

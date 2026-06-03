@@ -107,8 +107,8 @@ export default function PrayerNew() {
         callbackUrl={location.pathname}
       />
       
-      <div className="min-h-screen bg-[#FAF9F7]">
-        <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <div className="min-h-screen bg-[#FAFAF9]">
+        <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2">
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
@@ -128,7 +128,7 @@ export default function PrayerNew() {
               disabled={!canSave}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 canSave 
-                  ? 'bg-[#A57DB8] text-white hover:bg-[#956daa]' 
+                  ? 'bg-[#7A6BB8] text-white hover:bg-[#6a5ba8]' 
                   : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
               }`}
             >
@@ -157,7 +157,7 @@ export default function PrayerNew() {
               type="checkbox" 
               checked={splitLines} 
               onChange={e => setSplitLines(e.target.checked)}
-              className="w-4 h-4 rounded border-[#E8E7E5] text-[#A57DB8] focus:ring-[#A57DB8]"
+              className="w-4 h-4 rounded border-[#E8E7E5] text-[#7A6BB8] focus:ring-[#7A6BB8]"
             />
             줄마다 별도 기도제목으로 저장
           </label>

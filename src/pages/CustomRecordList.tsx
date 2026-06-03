@@ -107,9 +107,9 @@ const CustomRecordList = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"
@@ -153,7 +153,7 @@ const CustomRecordList = () => {
               <button
                 ref={searchParams.get('new') === record.id ? highlightRef : null}
                 onClick={() => navigate(`/custom/${categoryId}/${record.id}`)}
-                className="w-full text-left rounded-2xl bg-white border border-[#F0EFED] shadow-sm px-4 py-4 hover:shadow-md transition-all duration-300"
+                className="w-full text-left rounded-2xl bg-white border border-[#EDEDED] shadow-sm px-4 py-4 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex flex-col gap-1">
                   {record.title && (

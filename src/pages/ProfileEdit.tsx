@@ -70,7 +70,7 @@ const ProfileEdit: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#FAF9F7] flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
         <p className="text-[#7E7C78]">로그인이 필요합니다</p>
       </div>
     );
@@ -79,9 +79,9 @@ const ProfileEdit: React.FC = () => {
   const userInitial = (displayName || user.email?.split('@')[0] || 'U')[0].toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
+    <div className="min-h-screen bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAF9F7] border-b border-[#F0EFED]">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"
@@ -164,7 +164,7 @@ const ProfileEdit: React.FC = () => {
         </Button>
 
         {/* 위험 구역 */}
-        <div className="border-t border-[#F0EFED] pt-6">
+        <div className="border-t border-[#EDEDED] pt-6">
           <h2 className="text-sm font-semibold text-[#DD5757] mb-2">위험 구역</h2>
           <p className="text-xs text-[#7E7C78] mb-4">
             계정 삭제 시 모든 데이터가 영구적으로 삭제되며 복구할 수 없습니다

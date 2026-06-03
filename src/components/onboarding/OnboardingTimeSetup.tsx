@@ -41,7 +41,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
       {/* Background gradient blob */}
       <div 
         className="absolute top-1/3 right-0 w-[300px] h-[300px] rounded-full opacity-25 blur-[80px]"
-        style={{ background: 'linear-gradient(135deg, #A57DB8 0%, #7DB87D 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #7A6BB8 0%, #4F8A5B 100%)' }}
       />
       
       <div className="flex-1 relative z-10">
@@ -55,7 +55,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
         </div>
         
         <div className="space-y-4">
-          <div className="h-[132px] rounded-[20px] px-5 py-4 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #7DB87D 0%, #6BA96B 100%)' }}>
+          <div className="h-[132px] rounded-[20px] px-5 py-4 flex items-center gap-4" style={{ background: 'linear-gradient(135deg, #1F1F1F 0%, #333 100%)' }}>
             <div className="w-14 h-14 rounded-full bg-white/30 flex items-center justify-center shrink-0">
               <BookOpen className="w-6 h-6 text-white" strokeWidth={1.6} />
             </div>
@@ -93,7 +93,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
       <div className="w-full pt-4 relative z-10">
         <Button
           onClick={handleNext}
-          className="w-full h-12 rounded-full bg-[#7DB87D] hover:bg-[#6da76d] text-white text-[15px] font-semibold shadow-md"
+          className="w-full h-12 rounded-full bg-[#1F1F1F] hover:bg-[#333] text-white text-[15px] font-semibold shadow-md"
         >
           다음
         </Button>

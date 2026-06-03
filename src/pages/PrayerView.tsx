@@ -112,8 +112,8 @@ export default function PrayerView() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 
           onClick={() => navigate('/prayer')}
           className="p-2 -ml-2"
@@ -137,7 +137,7 @@ export default function PrayerView() {
       </header>
 
       <div className="px-5 py-6 pb-24">
-        <div className="p-5 rounded-2xl bg-white border border-[#F0EFED] shadow-sm">
+        <div className="p-5 rounded-2xl bg-white border border-[#EDEDED] shadow-sm">
           <div className="mb-4">
             <div className="text-sm text-[#8B8B8B] mb-3">
               작성 {new Date(note.createdAt).toLocaleDateString('ko-KR')}
@@ -166,7 +166,7 @@ export default function PrayerView() {
             </div>
           )}
 
-          <div className="flex gap-2 pt-4 border-t border-[#F0EFED]">
+          <div className="flex gap-2 pt-4 border-t border-[#EDEDED]">
             <button
               onClick={() => navigate(`/prayer/${id}/edit`)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"
@@ -193,7 +193,7 @@ export default function PrayerView() {
 
       {/* 응답 기록 모달 */}
       <Dialog open={isAnsweredDialogOpen} onOpenChange={setIsAnsweredDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-[#FAF9F7]">
+        <DialogContent className="sm:max-w-[500px] bg-[#FAFAF9]">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#2E2E2E]">응답 기록하기</DialogTitle>
             <DialogDescription className="text-sm text-[#8B8B8B]">
@@ -203,7 +203,7 @@ export default function PrayerView() {
 
           <div className="mt-4 space-y-4">
             {/* 기도 제목 표시 */}
-            <div className="p-4 rounded-xl bg-white border border-[#F0EFED]">
+            <div className="p-4 rounded-xl bg-white border border-[#EDEDED]">
               <div className="text-xs text-[#9B9B9B] mb-1">기도 제목</div>
               <div className="text-sm text-[#2E2E2E] font-medium line-clamp-2">
                 {note.title}

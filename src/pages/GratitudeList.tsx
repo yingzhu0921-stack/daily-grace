@@ -20,8 +20,8 @@ export default function GratitudeList() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 
           onClick={() => navigate('/')} 
           className="p-2 -ml-2"
@@ -62,7 +62,7 @@ export default function GratitudeList() {
             >
               <button
                 onClick={() => navigate(`/gratitude/${n.id}`)}
-                className="w-full text-left rounded-2xl bg-white border border-[#F0EFED] shadow-sm px-4 py-4 hover:shadow-md transition"
+                className="w-full text-left rounded-2xl bg-white border border-[#EDEDED] shadow-sm px-4 py-4 hover:shadow-md transition"
               >
                 <div className="text-[13px] text-[#8F8C86]">
                   {new Date(n.createdAt).toLocaleDateString('ko-KR')}

@@ -183,7 +183,7 @@ export const MeditationEditor: React.FC<MeditationEditorProps> = ({
         onChange={handleApplicationChange}
         label="적용"
         placeholder="오늘 말씀을 삶에 어떻게 적용할까요?"
-        categoryColor="#7DB87D"
+        categoryColor="#4F8A5B"
       />
     </div>
   );

@@ -52,8 +52,8 @@ export default function PrayerList() {
 
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"
@@ -93,7 +93,7 @@ export default function PrayerList() {
               editColor="#A57DB8"
               deleteColor="#E06B6B"
             >
-              <div className="rounded-2xl bg-white border border-[#F0EFED] shadow-sm">
+              <div className="rounded-2xl bg-white border border-[#EDEDED] shadow-sm">
                 <div className="px-4 py-4 flex items-start justify-between gap-3">
                   <div 
                     className="min-w-0 flex-1 cursor-pointer"

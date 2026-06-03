@@ -48,8 +48,8 @@ export default function PrayerEdit() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 
           onClick={() => navigate(-1)}
           className="p-2 -ml-2"
@@ -64,7 +64,7 @@ export default function PrayerEdit() {
           disabled={!canSave}
           className={`h-9 px-5 rounded-full text-sm font-medium transition-colors ${
             canSave 
-              ? 'bg-[#A57DB8] hover:bg-[#956daa] text-white' 
+              ? 'bg-[#7A6BB8] hover:bg-[#6a5ba8] text-white' 
               : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
           }`}
         >
@@ -98,7 +98,7 @@ export default function PrayerEdit() {
           detailLabel="응답 내용 / 간증"
           detailPlaceholder="어떻게 응답되었는지, 은혜받은 내용을 기록해보세요"
           categoryName="기도"
-          categoryColor="#A57DB8"
+          categoryColor="#7A6BB8"
         />
       </div>
     </div>

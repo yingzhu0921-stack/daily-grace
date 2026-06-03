@@ -330,7 +330,7 @@ const IndexNew = () => {
                 >
                   {/* 상단 Accent Line */}
                   <div
-                    className="absolute top-0 left-0 right-0 h-[3px]"
+                    className="absolute top-0 left-0 right-0 h-[4px]"
                     style={{ backgroundColor: isDone ? category.color : `${category.color}60`, borderRadius: '24px 24px 0 0' }}
                   />
                   {/* 완료 체크 */}
@@ -345,7 +345,7 @@ const IndexNew = () => {
                   {/* 아이콘 */}
                   <div
                     className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${category.color}15` }}
+                    style={{ backgroundColor: `${category.color}28` }}
                   >
                     {category.icon ? (
                       <AppIcon name={category.icon} size={17} color={category.color} strokeWidth={1.5} />

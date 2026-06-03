@@ -160,8 +160,8 @@ export default function NotificationSettings() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+    <div className="min-h-screen bg-[#FAFAF9]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button onClick={() => navigate('/settings')} className="p-2 -ml-2">
           <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
         </button>
@@ -257,7 +257,7 @@ export default function NotificationSettings() {
 
         {/* 적용 알림 섹션 */}
         {Object.keys(applicationReminders).length > 0 && (
-          <div className="pt-6 border-t border-[#F0EFED] space-y-4">
+          <div className="pt-6 border-t border-[#EDEDED] space-y-4">
             <h2 className="text-[15px] font-semibold text-[#2E2E2E] flex items-center gap-2">
               <Calendar className="w-5 h-5 text-[#7DB87D]" />
               나의 적용 알림
@@ -266,7 +266,7 @@ export default function NotificationSettings() {
               {Object.entries(applicationReminders).map(([reminderId, reminder]: [string, any]) => (
                 <div
                   key={reminderId}
-                  className="bg-white rounded-2xl p-4 space-y-3 border border-[#F0EFED]"
+                  className="bg-white rounded-2xl p-4 space-y-3 border border-[#EDEDED]"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -285,7 +285,7 @@ export default function NotificationSettings() {
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between pt-2 border-t border-[#F0EFED]">
+                  <div className="flex items-center justify-between pt-2 border-t border-[#EDEDED]">
                     <div className="flex items-center gap-2">
                       <Bell className="w-4 h-4 text-[#7DB87D]" />
                       <span className="text-[13px] text-[#5A5A5A]">{reminder.time}</span>
@@ -299,7 +299,7 @@ export default function NotificationSettings() {
                   </div>
 
                   {reminder.enabled && (
-                    <div className="space-y-2 pt-2 border-t border-[#F0EFED]">
+                    <div className="space-y-2 pt-2 border-t border-[#EDEDED]">
                       <div className="flex items-center gap-2">
                         <span className="text-[12px] text-[#5A5A5A] min-w-[60px]">시간</span>
                         <input
@@ -358,7 +358,7 @@ export default function NotificationSettings() {
         )}
 
         {/* 시간 재설정 버튼 */}
-        <div className="pt-6 border-t border-[#F0EFED]">
+        <div className="pt-6 border-t border-[#EDEDED]">
           <Button
             onClick={() => {
               setQtTime('09:00');

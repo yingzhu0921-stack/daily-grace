@@ -75,8 +75,8 @@ export default function DiaryNew() {
         callbackUrl={location.pathname}
       />
       
-      <div className="min-h-screen bg-[#FAF9F7]">
-        <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <div className="min-h-screen bg-[#FAFAF9]">
+        <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2">
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
@@ -96,7 +96,7 @@ export default function DiaryNew() {
               disabled={!canSave}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 canSave 
-                  ? 'bg-[#DD957D] text-white hover:bg-[#cd856d]' 
+                  ? 'bg-[#D97B5D] text-white hover:bg-[#c96b4d]' 
                   : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
               }`}
             >

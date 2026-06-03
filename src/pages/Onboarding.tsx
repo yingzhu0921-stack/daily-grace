@@ -31,7 +31,7 @@ const Onboarding = () => {
   }, [emblaApi]);
 
   return (
-    <div className="relative h-screen w-full bg-[#FAF9F7] overflow-hidden">
+    <div className="relative h-screen w-full bg-[#FAFAF9] overflow-hidden">
       <div className="h-full overflow-hidden" ref={emblaRef}>
         <div className="flex h-full">
           <div className="flex-[0_0_100%] min-w-0">

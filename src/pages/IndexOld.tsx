@@ -179,10 +179,10 @@ const Index = () => {
     path: '/diary/new',
     listPath: '/diary'
   }];
-  return <div className="min-h-screen bg-[#FAF9F7]">
+  return <div className="min-h-screen bg-[#FAFAF9]">
       <div className="max-w-[480px] mx-auto">
         {/* Header */}
-        <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+        <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
           <Sheet open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
             <SheetTrigger asChild>
               <button className="p-2">
@@ -250,7 +250,7 @@ const Index = () => {
             const hasRecord = hasRecordOnDate(dateStr);
             const dayOfWeek = date.getDay();
             const dayLabel = ['일', '월', '화', '수', '목', '금', '토'][dayOfWeek];
-            return <button key={index} onClick={() => setSelectedDate(date)} className={`flex-1 min-w-0 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${selected ? 'bg-gradient-to-b from-[#7DB87D] to-[#6BA96B] shadow-md scale-105' : 'border border-[#F0EFED] bg-white'}`}>
+            return <button key={index} onClick={() => setSelectedDate(date)} className={`flex-1 min-w-0 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${selected ? 'bg-gradient-to-b from-[#7DB87D] to-[#6BA96B] shadow-md scale-105' : 'border border-[#EDEDED] bg-white'}`}>
                   <span className={`text-[10px] ${selected ? 'text-white/90' : 'text-[#ACACAC]'}`}>
                     {dayLabel}
                   </span>

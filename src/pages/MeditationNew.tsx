@@ -272,9 +272,9 @@ const MeditationNew = () => {
         description="클라우드에 저장하고 언제 어디서나 확인하세요."
       />
       
-      <div className="flex min-h-screen flex-col bg-[#FAF9F7]">
+      <div className="flex min-h-screen flex-col bg-[#FAFAF9]">
         {/* 헤더 */}
-      <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#F0EFED] bg-[#FAF9F7] px-5 py-4">
+      <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#EDEDED] bg-[#FAFAF9] px-5 py-4">
         <button
           onClick={handleBack}
           className="p-2 -ml-2"
@@ -297,7 +297,7 @@ const MeditationNew = () => {
             disabled={!hasContent}
             className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
               hasContent 
-                ? 'bg-[#7DB87D] text-white hover:bg-[#6da76d]' 
+                ? 'bg-[#4F8A5B] text-white hover:bg-[#3d7849]' 
                 : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
             }`}
           >
@@ -324,8 +324,8 @@ const MeditationNew = () => {
       <DialogContent className="max-w-[340px] rounded-3xl p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <div className="flex justify-center mb-3">
-            <div className="w-12 h-12 rounded-full bg-[#7DB87D]/10 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-[#7DB87D]" />
+            <div className="w-12 h-12 rounded-full bg-[#4F8A5B]/10 flex items-center justify-center">
+              <Bell className="w-6 h-6 text-[#4F8A5B]" />
             </div>
           </div>
           <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E] text-center">
@@ -339,7 +339,7 @@ const MeditationNew = () => {
         <div className="px-6 pb-6 space-y-3">
           <Button
             onClick={handleSetReminder}
-            className="w-full h-12 bg-[#7DB87D] hover:bg-[#6da76d] text-white rounded-xl text-[15px] font-medium"
+            className="w-full h-12 bg-[#4F8A5B] hover:bg-[#3d7849] text-white rounded-xl text-[15px] font-medium"
           >
             알림 설정하기
           </Button>
@@ -359,8 +359,8 @@ const MeditationNew = () => {
       <DialogContent className="max-w-[340px] rounded-3xl p-0 gap-0">
         <DialogHeader className="px-6 pt-6 pb-4">
           <div className="flex justify-center mb-3">
-            <div className="w-12 h-12 rounded-full bg-[#7DB87D]/10 flex items-center justify-center">
-              <Bell className="w-6 h-6 text-[#7DB87D]" />
+            <div className="w-12 h-12 rounded-full bg-[#4F8A5B]/10 flex items-center justify-center">
+              <Bell className="w-6 h-6 text-[#4F8A5B]" />
             </div>
           </div>
           <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E] text-center">
@@ -378,7 +378,7 @@ const MeditationNew = () => {
           <div className="space-y-3">
             <Button
               onClick={handleConfirmTime}
-              className="w-full h-12 bg-[#7DB87D] hover:bg-[#6da76d] text-white rounded-xl text-[15px] font-medium"
+              className="w-full h-12 bg-[#4F8A5B] hover:bg-[#3d7849] text-white rounded-xl text-[15px] font-medium"
             >
               확인
             </Button>

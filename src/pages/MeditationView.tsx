@@ -120,9 +120,9 @@ const MeditationView = () => {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#FAF9F7]">
+    <div className="flex min-h-screen flex-col bg-[#FAFAF9]">
       {/* 헤더 */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
+      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/meditation')}
           className="p-2 -ml-2"
@@ -140,7 +140,7 @@ const MeditationView = () => {
         <MeditationViewContent note={note} onCheckChange={handleCheckChange} />
 
         {/* 버튼 영역 */}
-        <div className="flex gap-2 pt-6 mt-6 border-t border-[#F0EFED]">
+        <div className="flex gap-2 pt-6 mt-6 border-t border-[#EDEDED]">
           <button
             onClick={handleEdit}
             className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#2E2E2E] bg-white border border-[#E8E7E5] hover:bg-[#F9F8F6] transition-colors flex items-center justify-center gap-1.5"

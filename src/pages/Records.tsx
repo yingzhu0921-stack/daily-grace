@@ -142,9 +142,9 @@ const Records: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] pb-20">
+    <div className="min-h-screen bg-[#FAFAF9] pb-20">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#FAF9F7]/95 backdrop-blur-sm border-b border-[#F0EFED]">
+      <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#EDEDED]">
         <div className="max-w-[480px] mx-auto px-6 h-14 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
