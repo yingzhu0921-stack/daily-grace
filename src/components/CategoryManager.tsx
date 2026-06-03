@@ -240,7 +240,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 return (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-[#FAF9F7] hover:bg-[#F3F2F1] transition-colors cursor-pointer group"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white hover:bg-[#FAFAF9] border border-[#EFEFEF] transition-colors cursor-pointer group"
                     onClick={() => handleSelectCategory(category)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -336,7 +336,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setIncludeInGoal(true);
                 setActiveDays([0, 1, 2, 3, 4, 5, 6]);
               }}
-              className="absolute right-6 top-6 p-1 hover:bg-[#F3F2F1] rounded-lg transition-colors"
+              className="absolute right-6 top-6 p-1 hover:bg-[#F5F5F5] rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-[#7E7C78]" />
             </button>
@@ -352,7 +352,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="예: 간증, 성경메모, 찬양노트"
-                className="h-12 text-[14px] border-[#E8E7E5] bg-[#F9F8F6]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleCreateCategory();
                 }}
@@ -368,7 +368,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#E8E7E5] bg-[#F9F8F6]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{newName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -407,7 +407,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
                       newIcon === iconName 
                         ? 'bg-[#2E2E2E] text-white scale-105' 
-                        : 'bg-[#F9F8F6] text-[#7E7C78] hover:bg-[#F3F2F1] hover:scale-105'
+                        : 'bg-[#FAFAF9] text-[#7E7C78] hover:bg-[#F5F5F5] hover:scale-105'
                     }`}
                   >
                     <AppIcon name={iconName} size={20} strokeWidth={2} />
@@ -431,7 +431,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 ].map(field => (
                   <label
                     key={field.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F9F8F6] hover:bg-[#F3F2F1] cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFAF9] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -443,7 +443,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                           setSelectedFields(selectedFields.filter(f => f !== field.id));
                         }
                       }}
-                      className="w-5 h-5 rounded border-[#E8E7E5] text-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
+                      className="w-5 h-5 rounded border-[#EDEDED] text-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
                     />
                     <div className="flex-1">
                       <div className="text-[14px] font-medium text-[#2E2E2E] mb-0.5">
@@ -465,7 +465,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={includeInGoal}
                   onChange={(e) => setIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
+                  className="w-5 h-5 rounded border-[#EDEDED] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
@@ -509,7 +509,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       activeDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#F9F8F6] text-[#ACACAC] hover:bg-[#F3F2F1]'
+                        : 'bg-[#FAFAF9] text-[#ACACAC] hover:bg-[#F5F5F5]'
                     }`}
                   >
                     {label}
@@ -532,7 +532,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setActiveDays([0, 1, 2, 3, 4, 5, 6]);
               }}
               variant="outline"
-              className="flex-1 h-12 border-[#E8E7E5] text-[#7E7C78] hover:bg-[#F3F2F1] rounded-xl text-[15px]"
+              className="flex-1 h-12 border-[#EDEDED] text-[#7E7C78] hover:bg-[#F5F5F5] rounded-xl text-[15px]"
             >
               취소
             </Button>
@@ -567,7 +567,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setEditIncludeInGoal(true);
                 setEditActiveDays([0, 1, 2, 3, 4, 5, 6]);
               }}
-              className="absolute right-6 top-6 p-1 hover:bg-[#F3F2F1] rounded-lg transition-colors"
+              className="absolute right-6 top-6 p-1 hover:bg-[#F5F5F5] rounded-lg transition-colors"
             >
               <X className="w-5 h-5 text-[#7E7C78]" />
             </button>
@@ -583,7 +583,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="카테고리 이름을 입력하세요"
-                className="h-12 text-[14px] border-[#E8E7E5] bg-[#F9F8F6]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
               />
             </div>
 
@@ -596,7 +596,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#E8E7E5] bg-[#F9F8F6]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{editName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -610,7 +610,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={editIncludeInGoal}
                   onChange={(e) => setEditIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
+                  className="w-5 h-5 rounded border-[#EDEDED] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
@@ -654,7 +654,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       editActiveDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#F9F8F6] text-[#ACACAC] hover:bg-[#F3F2F1]'
+                        : 'bg-[#FAFAF9] text-[#ACACAC] hover:bg-[#F5F5F5]'
                     }`}
                   >
                     {label}
@@ -676,7 +676,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setEditActiveDays([0, 1, 2, 3, 4, 5, 6]);
               }}
               variant="outline"
-              className="flex-1 h-12 border-[#E8E7E5] text-[#7E7C78] hover:bg-[#F3F2F1] rounded-xl text-[15px]"
+              className="flex-1 h-12 border-[#EDEDED] text-[#7E7C78] hover:bg-[#F5F5F5] rounded-xl text-[15px]"
             >
               취소
             </Button>
