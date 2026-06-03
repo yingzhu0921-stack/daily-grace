@@ -58,8 +58,8 @@ const Settings: React.FC = () => {
       icon: Bell,
       title: '알림 관리',
       description: '카테고리별 알림 시간 설정',
-      bgColor: 'bg-[#7DB87D]/10',
-      iconColor: 'text-[#7DB87D]',
+      bgColor: 'bg-[#1F1F1F]/10',
+      iconColor: 'text-[#4F8A5B]',
       onClick: () => navigate('/settings/notifications'),
     },
     {

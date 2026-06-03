@@ -114,7 +114,7 @@ export default function Auth() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-[rgba(125,184,125,1)] hover:bg-[rgba(115,174,115,1)] text-white rounded-full py-6 font-medium"
+                  className="w-full bg-[#1F1F1F] hover:bg-[#333] text-white rounded-full py-6 font-medium"
                   disabled={loading}
                 >
                   {loading ? '전송 중...' : '로그인 링크 받기'}

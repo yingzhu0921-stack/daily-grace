@@ -168,7 +168,7 @@ const Records: React.FC = () => {
           >
             전체 기록
             {activeTab === 'records' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7DB87D]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1F1F1F]" />
             )}
           </button>
           <button
@@ -179,7 +179,7 @@ const Records: React.FC = () => {
           >
             말씀카드
             {activeTab === 'cards' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#7DB87D]" />
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1F1F1F]" />
             )}
           </button>
         </div>
@@ -198,7 +198,7 @@ const Records: React.FC = () => {
               {dateParam && (
                 <button
                   onClick={() => navigate('/records')}
-                  className="mt-2 text-[13px] text-[#7DB87D] font-medium"
+                  className="mt-2 text-[13px] text-[#1F1F1F] font-medium"
                 >
                   전체 보기 →
                 </button>
@@ -211,7 +211,7 @@ const Records: React.FC = () => {
                 onClick={() => setSelectedCategory('all')}
                 className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === 'all'
-                    ? 'bg-[#7DB87D] text-white'
+                    ? 'bg-[#1F1F1F] text-white'
                     : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
                 }`}
               >
@@ -318,7 +318,7 @@ const Records: React.FC = () => {
                 </p>
                 <button
                   onClick={() => navigate(routes.cardDesigner)}
-                  className="px-5 py-2.5 bg-[#7DB87D] text-white rounded-full text-[14px] font-medium hover:bg-[#6FA76F] transition-colors inline-flex items-center gap-2"
+                  className="px-5 py-2.5 bg-[#1F1F1F] text-white rounded-full text-[14px] font-medium hover:bg-[#333333] transition-colors inline-flex items-center gap-2"
                 >
                   <Plus className="w-4 h-4" strokeWidth={2} />
                   카드 만들기

@@ -24,7 +24,7 @@ type Category = {
 
 // 기본 카테고리 (하드코딩, 삭제 불가)
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: '1', name: 'QT', color: '#7DB87D', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '1', name: 'QT', color: '#1F1F1F', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: '2', name: '기도', color: '#A57DB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: '3', name: '감사', color: '#E8C87D', icon: 'sparkles', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -465,7 +465,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={includeInGoal}
                   onChange={(e) => setIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#7DB87D] focus:ring-[#7DB87D] mt-0.5"
+                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
@@ -508,7 +508,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     }}
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       activeDays.includes(day)
-                        ? 'bg-[#7DB87D] text-white shadow-sm scale-105'
+                        ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
                         : 'bg-[#F9F8F6] text-[#ACACAC] hover:bg-[#F3F2F1]'
                     }`}
                   >
@@ -610,7 +610,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={editIncludeInGoal}
                   onChange={(e) => setEditIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#7DB87D] focus:ring-[#7DB87D] mt-0.5"
+                  className="w-5 h-5 rounded border-[#E8E7E5] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
@@ -653,7 +653,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     }}
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       editActiveDays.includes(day)
-                        ? 'bg-[#7DB87D] text-white shadow-sm scale-105'
+                        ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
                         : 'bg-[#F9F8F6] text-[#ACACAC] hover:bg-[#F3F2F1]'
                     }`}
                   >

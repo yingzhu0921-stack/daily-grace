@@ -275,7 +275,7 @@ const CardsVault: React.FC = () => {
               <div className="grid grid-cols-2 gap-3 mt-4">
                 <button
                   onClick={() => handleShare(selectedCard)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#7DB87D] hover:bg-[#6FA76F] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
                   공유하기
@@ -289,14 +289,14 @@ const CardsVault: React.FC = () => {
                 </button>
                 <button
                   onClick={() => handleEdit(selectedCard)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#E8C87D] hover:bg-[#D9B86D] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#C89B3C] hover:bg-[#b88b2c] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Edit3 className="w-4 h-4" />
                   편집하기
                 </button>
                 <button
                   onClick={() => handleDelete(selectedCard.id)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#DD957D] hover:bg-[#CC8570] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#D97B5D] hover:bg-[#c96b4d] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                   삭제
