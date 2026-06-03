@@ -101,7 +101,7 @@ const ProfileEdit: React.FC = () => {
         <div className="flex flex-col items-center mb-8">
           <div className="relative">
             <Avatar className="w-24 h-24">
-              <AvatarFallback className="bg-[#7DB87D]/20 text-[#7DB87D] text-2xl font-semibold">
+              <AvatarFallback className="bg-[#F0F0F0] text-[#1F1F1F] text-2xl font-semibold">
                 {userInitial}
               </AvatarFallback>
             </Avatar>
@@ -148,7 +148,7 @@ const ProfileEdit: React.FC = () => {
         <Button
           onClick={handleSave}
           disabled={isLoading}
-          className="w-full bg-[#7DB87D] hover:bg-[#6FA76F] text-white rounded-xl h-12 mb-4"
+          className="w-full bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl h-12 mb-4"
         >
           {isLoading ? '저장 중...' : '변경사항 저장'}
         </Button>
