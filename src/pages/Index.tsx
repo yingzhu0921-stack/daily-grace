@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Settings, Leaf, Flame, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Leaf, Plus, ChevronLeft, ChevronRight, ChevronRight as ArrowRight } from 'lucide-react';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { BottomNav } from '@/components/BottomNav';
 import { CategoryManager } from '@/components/CategoryManager';
@@ -48,10 +48,10 @@ const IndexNew = () => {
 
   // 기본 카테고리
   const defaultCategories = [
-    { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
-    { id: '2', name: '기도', color: '#A57DB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
-    { id: '3', name: '감사', color: '#E8C87D', icon: 'sparkles' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
-    { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
+    { id: '1', name: 'Q.T', color: '#4F8A5B', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
+    { id: '2', name: '기도', color: '#7A6BB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
+    { id: '3', name: '감사', color: '#C89B3C', icon: 'sparkles' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
+    { id: '4', name: '일기', color: '#D97B5D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
   // Goal/Streak 계산
@@ -185,34 +185,24 @@ const IndexNew = () => {
   const allCategories = [...defaultCategories, ...customCategories];
 
   return (
-    <div className="min-h-screen bg-[#FAF9F7] pb-20">
+    <div className="min-h-screen bg-[#FAFAF9] pb-20">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#FAF9F7]/95 backdrop-blur-sm border-b border-[#F0EFED]">
+      <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#EDEDED]">
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Goal Progress */}
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#7DB87D]/50">
-              <Leaf className="w-4 h-4 text-[#7DB87D] flex-shrink-0" strokeWidth={2} />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[13px] font-semibold text-[#7DB87D]">{goalProgress.completed}/{goalProgress.total} 완료</span>
-                <span className="text-[10px] text-[#7DB87D]/70">{goalProgress.completed === 0 ? '시작해볼까요!' : goalProgress.completed === goalProgress.total ? '오늘 루틴 완성!' : '계속해봐요!'}</span>
-              </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E0E0] bg-white">
+              <Leaf className="w-3.5 h-3.5 text-[#1F1F1F] flex-shrink-0" strokeWidth={1.5} />
+              <span className="text-[12px] font-medium text-[#1F1F1F]">{goalProgress.completed}/{goalProgress.total} 완료</span>
             </div>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-2 rounded-full border border-[#FF6B6B]/50">
-              <Flame className="w-4 h-4 text-[#FF6B6B] flex-shrink-0" strokeWidth={2} />
-              <div className="flex flex-col leading-tight">
-                <span className="text-[13px] font-semibold text-[#FF6B6B]">{streakDays}일 연속</span>
-                <span className="text-[10px] text-[#FF6B6B]/70">{streakDays === 0 ? '첫 스트릭 도전!' : `${streakDays}일째 이어가는 중`}</span>
-              </div>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[#E0E0E0] bg-white">
+              <span className="text-[11px] text-[#7A7A7A]">{streakDays}일 연속</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            {/* User Menu */}
-            <UserMenu />
-          </div>
+          <UserMenu />
         </div>
       </header>
 
@@ -273,20 +263,20 @@ const IndexNew = () => {
                   }}
                   className={`flex-1 min-w-0 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
                     selected && hasRecord
-                      ? 'bg-gradient-to-b from-[#7DB87D] to-[#6BA96B] shadow-md scale-105'
+                      ? 'bg-[#1F1F1F] shadow-sm scale-105'
                       : selected
-                      ? 'border-2 border-[#7DB87D] bg-white'
-                      : 'border border-[#F0EFED] bg-white hover:bg-[#F9F8F6]'
+                      ? 'border-2 border-[#1F1F1F] bg-white'
+                      : 'border border-[#EDEDED] bg-white hover:bg-[#F5F5F5]'
                   }`}
                 >
-                  <span className={`text-[10px] ${selected && hasRecord ? 'text-white/90' : 'text-[#ACACAC]'}`}>
+                  <span className={`text-[10px] ${selected ? 'text-[#7A7A7A]' : 'text-[#ACACAC]'} ${selected && hasRecord ? '!text-white/70' : ''}`}>
                     {dayLabel}
                   </span>
-                  <span className={`text-base font-medium ${selected && hasRecord ? 'text-white font-semibold' : 'text-[#2E2E2E]'}`}>
+                  <span className={`text-base font-medium ${selected && hasRecord ? 'text-white font-semibold' : 'text-[#1F1F1F]'}`}>
                     {date.getDate()}
                   </span>
                   {hasRecord && (
-                    <div className={`w-1.5 h-1.5 rounded-full ${selected ? 'bg-white' : 'bg-[#7DB87D]'}`} />
+                    <div className={`w-1 h-1 rounded-full ${selected && hasRecord ? 'bg-white/60' : 'bg-[#1F1F1F]/30'}`} />
                   )}
                 </button>
               );
@@ -306,15 +296,16 @@ const IndexNew = () => {
 
         {/* 말씀카드 배너 */}
         <div
-          className="rounded-3xl p-5 mb-6 cursor-pointer transition-all flex items-center justify-between active:scale-[0.99]"
-          style={{ backgroundColor: 'rgba(125,184,125,0.12)' }}
+          className="rounded-2xl p-5 mb-6 cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] bg-white"
+          style={{ border: '1px solid #EFEFEF' }}
           onClick={() => navigate('/cards/designer')}
         >
           <div>
-            <p className="text-[11px] font-medium text-[rgba(125,184,125,1)] mb-1 tracking-wide">카드 만들기</p>
-            <h3 className="text-[15px] font-bold text-[#2E2E2E] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
-            <p className="text-[12px] text-[#888]">AI 자동 완성 · 직접 꾸미기</p>
+            <p className="text-[11px] font-medium text-[#4F8A5B] mb-1 tracking-wide">카드 만들기</p>
+            <h3 className="text-[15px] font-semibold text-[#1F1F1F] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
+            <p className="text-[12px] text-[#7A7A7A]">AI 자동 완성 · 직접 꾸미기</p>
           </div>
+          <ChevronRight className="w-4 h-4 text-[#ACACAC] flex-shrink-0" />
         </div>
 
         {/* 루틴 섹션 - 2열 그리드 */}
@@ -323,7 +314,7 @@ const IndexNew = () => {
             MY ROUTINE
           </h2>
 
-          <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-2 gap-3 mb-4">
             {allCategories.map((category) => {
               const isDone =
                 category.id === '1' ? todayCounts.meditation > 0 :
@@ -334,37 +325,43 @@ const IndexNew = () => {
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category)}
-                  className="relative h-[120px] rounded-[20px] p-5 flex flex-col justify-between transition-all active:scale-95 overflow-hidden"
-                  style={{ backgroundColor: category.color, opacity: isDone ? 0.75 : 1 }}
+                  className="relative h-[120px] rounded-[24px] p-4 flex flex-col justify-between transition-all active:scale-[0.97] overflow-hidden bg-white text-left"
+                  style={{ border: '1px solid #EFEFEF' }}
                 >
+                  {/* 상단 Accent Line */}
+                  <div
+                    className="absolute top-0 left-0 right-0 h-[3px]"
+                    style={{ backgroundColor: isDone ? category.color : `${category.color}60`, borderRadius: '24px 24px 0 0' }}
+                  />
+                  {/* 완료 체크 */}
                   {isDone && (
-                    <div className="absolute inset-0 flex items-center justify-end pr-4 pt-4 pointer-events-none">
-                      <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center">
-                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                          <path d="M2.5 7L5.5 10L11.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </div>
+                    <div className="absolute top-3 right-3">
+                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                        <circle cx="8" cy="8" r="7" stroke={category.color} strokeWidth="1.2"/>
+                        <path d="M5 8L7 10L11 6" stroke={category.color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
                     </div>
                   )}
-                  {/* 상단 영역: 아이콘과 제목 */}
-                  <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
-                      {category.icon ? (
-                        <AppIcon name={category.icon} size={20} color="#ffffff" strokeWidth={2} />
-                      ) : (
-                        <span className="text-white text-[16px] font-semibold">
-                          {category.name.charAt(0)}
-                        </span>
-                      )}
-                    </div>
-                    <h3 className="text-[17px] font-bold text-white leading-tight pt-1">
+                  {/* 아이콘 */}
+                  <div
+                    className="w-9 h-9 rounded-xl flex items-center justify-center"
+                    style={{ backgroundColor: `${category.color}15` }}
+                  >
+                    {category.icon ? (
+                      <AppIcon name={category.icon} size={17} color={category.color} strokeWidth={1.5} />
+                    ) : (
+                      <span style={{ color: category.color }} className="text-[13px] font-semibold">
+                        {category.name.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  {/* 텍스트 */}
+                  <div>
+                    <h3 className="text-[14px] font-semibold text-[#1F1F1F] leading-tight">
                       {category.name}
                     </h3>
-                  </div>
-                  {/* 하단 영역: 설명 */}
-                  <div className="text-left">
-                    <p className="text-[11px] text-white/70 leading-snug line-clamp-1">
-                      {isDone ? '오늘 완료 ✓' : (category.description || `${category.name}을 기록하세요`)}
+                    <p className="text-[11px] text-[#7A7A7A] mt-0.5 line-clamp-1">
+                      {isDone ? '오늘 완료' : (category.description || `${category.name}을 기록하세요`)}
                     </p>
                   </div>
                 </button>
@@ -375,7 +372,7 @@ const IndexNew = () => {
           {/* 카테고리 추가 버튼 */}
           <button
             onClick={() => setShowCategoryManager(true)}
-            className="w-full py-3 rounded-[20px] border-2 border-dashed border-[#E8E7E5] text-[14px] font-medium text-[#ACACAC] flex items-center justify-center gap-2 transition-all hover:bg-[#F9F8F6] hover:border-[#7DB87D]/30 active:scale-95"
+            className="w-full py-3 rounded-[20px] border border-dashed border-[#DCDCDC] text-[13px] font-medium text-[#ACACAC] flex items-center justify-center gap-2 transition-all hover:bg-white hover:border-[#ACACAC] active:scale-95"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
             카테고리 추가
@@ -391,7 +388,7 @@ const IndexNew = () => {
               </h2>
               <button
                 onClick={() => navigate('/records')}
-                className="text-[12px] text-[#7DB87D] font-medium"
+                className="text-[12px] text-[#7A7A7A] font-medium"
               >
                 전체보기 →
               </button>
