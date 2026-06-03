@@ -200,6 +200,9 @@ const Calendar: React.FC = () => {
             <h3 className="text-[20px] font-semibold text-[#2E2E2E] mb-4">
               {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 {['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'][selectedDate.getDay()]}
             </h3>
+            {!hasRecordOnDate(toLocalDateString(selectedDate)) && (
+              <p className="text-[14px] text-[#ACACAC] mb-3">아직 이 날의 기록이 없어요 :)</p>
+            )}
             <div className="flex gap-2 overflow-x-auto pb-2">
               {defaultCategories.map((category) => {
                 const selectedDateStr = toLocalDateString(selectedDate);

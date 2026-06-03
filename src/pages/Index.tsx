@@ -6,9 +6,10 @@ import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { BottomNav } from '@/components/BottomNav';
 import { CategoryManager } from '@/components/CategoryManager';
 import { UserMenu } from '@/components/UserMenu';
-import { getAllRecords, hasRecordOnDate } from '@/utils/recordsQuery';
+import { getAllRecords, hasRecordOnDate, getRecordCounts } from '@/utils/recordsQuery';
 import { RecordCard } from '@/components/RecordCard';
 import { getTodayGoalCount, getStreakDays } from '@/utils/recordsQuery';
+import { toLocalDateString as toLocal } from '@/utils/dateHelpers';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import * as categoryStorage from '@/utils/categoryStorage';
 
@@ -35,6 +36,7 @@ const IndexNew = () => {
   const [streakDays, setStreakDays] = useState(0);
   const [recentRecords, setRecentRecords] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const todayCounts = getRecordCounts(toLocal(new Date()));
 
   // 온보딩 체크
   useEffect(() => {
@@ -309,7 +311,7 @@ const IndexNew = () => {
           onClick={() => navigate('/cards/designer')}
         >
           <div>
-            <p className="text-[11px] font-medium text-[rgba(125,184,125,1)] mb-1 tracking-wide uppercase">Card Maker</p>
+            <p className="text-[11px] font-medium text-[rgba(125,184,125,1)] mb-1 tracking-wide">카드 만들기</p>
             <h3 className="text-[15px] font-bold text-[#2E2E2E] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
             <p className="text-[12px] text-[#888]">AI 자동 완성 · 직접 꾸미기</p>
           </div>
@@ -322,40 +324,52 @@ const IndexNew = () => {
           </h2>
 
           <div className="grid grid-cols-2 gap-4 mb-4">
-            {allCategories.map((category) => (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryClick(category)}
-                className="relative h-[120px] rounded-[20px] p-5 flex flex-col justify-between transition-all active:scale-95"
-                style={{ backgroundColor: category.color }}
-              >
-                {/* 상단 영역: 아이콘과 제목 */}
-                <div className="flex items-start gap-3">
-                  {/* 아이콘 */}
-                  <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
-                    {category.icon ? (
-                      <AppIcon name={category.icon} size={20} color="#ffffff" strokeWidth={2} />
-                    ) : (
-                      <span className="text-white text-[16px] font-semibold">
-                        {category.name.charAt(0)}
-                      </span>
-                    )}
+            {allCategories.map((category) => {
+              const isDone =
+                category.id === '1' ? todayCounts.meditation > 0 :
+                category.id === '2' ? todayCounts.prayer > 0 :
+                category.id === '3' ? todayCounts.gratitude > 0 :
+                category.id === '4' ? todayCounts.diary > 0 : false;
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category)}
+                  className="relative h-[120px] rounded-[20px] p-5 flex flex-col justify-between transition-all active:scale-95 overflow-hidden"
+                  style={{ backgroundColor: category.color, opacity: isDone ? 0.75 : 1 }}
+                >
+                  {isDone && (
+                    <div className="absolute inset-0 flex items-center justify-end pr-4 pt-4 pointer-events-none">
+                      <div className="w-7 h-7 rounded-full bg-white/30 flex items-center justify-center">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                          <path d="M2.5 7L5.5 10L11.5 4" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                  {/* 상단 영역: 아이콘과 제목 */}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/25 flex items-center justify-center flex-shrink-0">
+                      {category.icon ? (
+                        <AppIcon name={category.icon} size={20} color="#ffffff" strokeWidth={2} />
+                      ) : (
+                        <span className="text-white text-[16px] font-semibold">
+                          {category.name.charAt(0)}
+                        </span>
+                      )}
+                    </div>
+                    <h3 className="text-[17px] font-bold text-white leading-tight pt-1">
+                      {category.name}
+                    </h3>
                   </div>
-
-                  {/* 제목 */}
-                  <h3 className="text-[17px] font-bold text-white leading-tight pt-1">
-                    {category.name}
-                  </h3>
-                </div>
-
-                {/* 하단 영역: 설명 */}
-                <div className="text-left">
-                  <p className="text-[11px] text-white/70 leading-snug line-clamp-1">
-                    {category.description || `${category.name}을 기록하세요`}
-                  </p>
-                </div>
-              </button>
-            ))}
+                  {/* 하단 영역: 설명 */}
+                  <div className="text-left">
+                    <p className="text-[11px] text-white/70 leading-snug line-clamp-1">
+                      {isDone ? '오늘 완료 ✓' : (category.description || `${category.name}을 기록하세요`)}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
 
           {/* 카테고리 추가 버튼 */}
