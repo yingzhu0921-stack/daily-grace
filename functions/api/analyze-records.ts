@@ -42,7 +42,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         },
         { role: 'user', content: `다음 기록을 분석하여 배경 이미지 장면 설명을 작성해주세요:\n\n${recordsText}` },
       ],
-      max_tokens: 200,
+      max_tokens: 300,
     }),
   });
 

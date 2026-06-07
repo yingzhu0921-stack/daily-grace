@@ -5,13 +5,17 @@ interface ExtendedEnv extends Env {
   OPENAI_API_KEY: string;
 }
 
+const NO_TEXT = 'IMPORTANT: NO text, letters, words, or writing of any kind in the image.';
+const NO_FACES = 'NO human faces, portraits, or close-up characters.';
+const CARD_BG = 'The image will be used as a card background — leave visual breathing room for text overlay. Keep the composition calm and uncluttered.';
+
 const stylePrompts: Record<string, string> = {
-  '맑은 수채화': 'Create a peaceful watercolor landscape painting: ${input}. Style: Soft, transparent watercolor washes, gentle brush strokes, pastel colors, dreamy atmosphere. LANDSCAPE ONLY - NO people, NO animals, NO characters, NO faces. Pure nature scene.',
-  '따스한 동화': 'Hand-drawn illustration of ${input} in children\'s book art style. Colored pencil texture, warm and soft color palette, whimsical and comforting atmosphere.',
-  '감성 사진': 'A soft aesthetic photograph of ${input}. Gentle natural light, dreamy atmosphere, pastel tones, soft bokeh, peaceful mood.',
-  '심플 낙서': 'A minimalist black ink line drawing of ${input}. Simple, whimsical lines on clean white background. No shading, no color.',
-  '말랑 3D': 'Cute 3D render of ${input} in claymation style. Soft textures, rounded shapes, pastel colors, clean background.',
-  '빈티지 필름': 'A retro analog film photo of ${input}. Film grain, light leaks, washed-out colors, nostalgic 90s style.',
+  '맑은 수채화': `Peaceful watercolor landscape: \${input}. Soft transparent washes, gentle brush strokes, pastel colors, dreamy atmosphere. Pure nature scene only — NO people, NO animals, NO characters, NO faces. ${NO_TEXT} ${CARD_BG}`,
+  '따스한 동화': `Hand-drawn children's book illustration of \${input}. Colored pencil texture on paper, warm soft palette, whimsical cozy atmosphere. Scene-only — NO human faces or portraits, soft character shapes allowed only if small and non-dominant. ${NO_TEXT} ${CARD_BG}`,
+  '감성 사진': `Soft aesthetic photograph of \${input}. Gentle natural light, dreamy bokeh, pastel tones, airy and peaceful mood. NO people in foreground. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
+  '심플 낙서': `Minimalist black ink line drawing of \${input} on a clean white background. Simple whimsical doodle style, no shading, no fill color, essential lines only. ${NO_TEXT} NO letters, NO numbers, NO symbols. ${CARD_BG}`,
+  '말랑 3D': `Cute 3D claymation render of \${input}. Soft clay/felt textures, rounded shapes, pastel colors, clean simple background. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
+  '빈티지 필름': `Retro analog film photo of \${input}. Film grain, light leaks, warm washed-out tones, nostalgic 90s feel, soft vignette. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
 };
 
 const styleDescriptions: Record<string, string> = {
@@ -100,8 +104,17 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const scene = prompt?.trim() || '평화로운 풍경';
     const styleDesc = style ? styleDescriptions[style] || '' : '';
     const expanded = await gpt(env.OPENAI_API_KEY, [
-      { role: 'system', content: '당신은 간단한 장면 설명을 풍부한 이미지 생성 프롬프트로 확장하는 전문가입니다. 200자 이내 한국어로 작성하세요.' },
-      { role: 'user', content: `장면: "${scene}"\n스타일: ${styleDesc}\n\n말씀카드 배경에 적합한 상세하고 영감을 주는 설명으로 확장해주세요.` },
+      {
+        role: 'system',
+        content: `당신은 말씀카드 배경 이미지를 위한 장면 설명 전문가입니다.
+다음 규칙을 반드시 지켜 150자 이내 한국어로 작성하세요:
+1. 배경 이미지이므로 위에 텍스트가 올라갑니다 — 여백이 충분하고 시각적으로 차분한 구도
+2. 인물 얼굴, 초상화, 텍스트/글자는 절대 포함하지 마세요
+3. 조명, 색감, 분위기를 구체적으로 묘사하세요
+4. 신앙적 감성(평온, 소망, 위로, 감사)이 느껴지는 자연 또는 추상적 장면
+5. 너무 복잡하거나 바쁜 구도는 피하세요`,
+      },
+      { role: 'user', content: `장면 키워드: "${scene}"\n스타일: ${styleDesc}\n\n이 키워드를 말씀카드 배경에 적합한 구체적인 장면 설명으로 확장해주세요.` },
     ], 300);
     return Response.json({ expandedPrompt: expanded });
   }
