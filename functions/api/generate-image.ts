@@ -48,9 +48,52 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
   const user = await getSessionUser(env.DB, request);
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const { action, prompt, style, ratio } = await request.json<any>();
+  const body = await request.json<any>();
+  const { action, prompt, style, ratio } = body;
 
   if (!env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
+
+  // ── photo-text: 업로드된 사진에 AI로 텍스트 배치 ──
+  if (action === 'photo-text') {
+    const { imageBase64, text } = body;
+    if (!imageBase64 || !text) return Response.json({ error: '이미지와 텍스트가 필요합니다.' }, { status: 400 });
+
+    const base64Data = imageBase64.replace(/^data:image\/[a-z+]+;base64,/, '');
+    const binary = atob(base64Data);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+    const formData = new FormData();
+    formData.append('image', new Blob([bytes], { type: 'image/png' }), 'photo.png');
+    formData.append('model', 'gpt-image-2');
+    formData.append('prompt',
+      `This is a faith-based card. Add the following text beautifully and naturally to this image: "${text}". ` +
+      `Requirements: 1) Place the text where it's most readable and aesthetically harmonious with the composition. ` +
+      `2) Choose a text color that contrasts well with the background (white or dark depending on the image). ` +
+      `3) Use elegant, clean typography. ` +
+      `4) If the text is long, break it into natural lines. ` +
+      `5) Keep the original photo as the background without major alterations. ` +
+      `6) The result should look like a beautiful inspirational card.`
+    );
+    formData.append('n', '1');
+    formData.append('size', '1024x1024');
+
+    const editRes = await fetch('https://api.openai.com/v1/images/edits', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}` },
+      body: formData,
+    });
+
+    const editData = await editRes.json<any>();
+    if (!editRes.ok) {
+      if (editRes.status === 429) return Response.json({ error: 'API 요청 한도를 초과했습니다.' }, { status: 429 });
+      return Response.json({ error: editData.error?.message || '이미지 생성 실패' }, { status: 500 });
+    }
+
+    const b64 = editData.data?.[0]?.b64_json;
+    if (!b64) return Response.json({ error: '이미지 생성 실패' }, { status: 500 });
+    return Response.json({ image: `data:image/png;base64,${b64}` });
+  }
 
   // ── expand-prompt ──
   if (action === 'expand-prompt') {

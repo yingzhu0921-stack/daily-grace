@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ChevronLeft, Wand2, Upload, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check } from 'lucide-react';
+import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
@@ -260,9 +260,12 @@ export default function Designer() {
   }, []);
 
   // ── 멀티스텝 플로우 ──
-  type FlowStep = 'entry' | 'record' | 'auto-style' | 'auto-preview' | 'edit';
+  type FlowStep = 'entry' | 'record' | 'auto-style' | 'auto-preview' | 'edit' | 'photo-upload';
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
-  const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | null>(null);
+  const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
+  const [photoData, setPhotoData] = useState<string | null>(null);
+  const [photoText, setPhotoText] = useState('');
+  const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
   const [verseInput, setVerseInput] = useState('');
 
   // Mobile: start collapsed by default
@@ -945,7 +948,8 @@ export default function Designer() {
   // ── 멀티스텝 플로우 함수들 ──
   const goBack = () => {
     switch (flowStep) {
-      case 'record':      setFlowStep('entry'); break;
+      case 'record':        setFlowStep('entry'); break;
+      case 'photo-upload':  setFlowStep('entry'); setPhotoData(null); setPhotoText(''); break;
       case 'auto-style':  setFlowStep('record'); break;
       case 'auto-preview': setFlowStep('auto-style'); break;
       case 'edit':
@@ -984,9 +988,117 @@ export default function Designer() {
             <p className="text-xs text-[#7E7C78]">배경 고르고 텍스트는 내가 입력</p>
           </div>
         </button>
+        <button
+          onClick={() => { setActiveTrack('photo'); setFlowStep('photo-upload'); }}
+          className="flex items-center gap-3 p-5 border-2 border-[#1F1F1F] rounded-2xl hover:bg-[#1F1F1F]/5"
+        >
+          <ImageIcon className="w-6 h-6 text-[#1F1F1F]" />
+          <div className="text-left">
+            <p className="font-semibold text-[#2E2E2E]">내 사진으로 만들기</p>
+            <p className="text-xs text-[#7E7C78]">사진 업로드 후 AI가 텍스트 배치</p>
+          </div>
+        </button>
       </div>
     </div>
   );
+
+  // Photo Upload 화면
+  const renderPhotoUpload = () => {
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => setPhotoData(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    };
+
+    const handleGenerate = async () => {
+      if (!photoData || !photoText.trim()) return;
+      setIsGeneratingPhoto(true);
+      try {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'photo-text', imageBase64: photoData, text: photoText.trim() }),
+        });
+        const data = await res.json() as any;
+        if (!res.ok) throw new Error(data.error || '생성 실패');
+        // 결과 이미지를 카드 배경으로 설정하고 저장
+        setMeta(m => ({ ...m, bgImageUrl: data.image, bgType: 'image' as any }));
+        setFlowStep('edit');
+      } catch (err: any) {
+        alert(err.message || '이미지 생성에 실패했습니다.');
+      } finally {
+        setIsGeneratingPhoto(false);
+      }
+    };
+
+    return (
+      <div className="flex-1 min-h-0 flex flex-col px-4 pt-8 pb-8 bg-white gap-5 overflow-y-auto">
+        <div>
+          <h2 className="text-xl font-bold text-[#1F1F1F] mb-1">내 사진으로 만들기</h2>
+          <p className="text-sm text-[#7A7A7A]">사진을 업로드하고 텍스트를 입력하면 AI가 카드를 완성해요</p>
+        </div>
+
+        {/* 사진 업로드 */}
+        <label className="block cursor-pointer">
+          <div className={`w-full aspect-[4/3] rounded-2xl border-2 border-dashed flex flex-col items-center justify-center transition-all overflow-hidden
+            ${photoData ? 'border-transparent' : 'border-[#EDEDED] hover:border-[#1F1F1F]/30'}`}>
+            {photoData ? (
+              <img src={photoData} alt="preview" className="w-full h-full object-cover rounded-2xl" />
+            ) : (
+              <>
+                <Upload className="w-8 h-8 text-[#C0C0C0] mb-2" />
+                <p className="text-sm text-[#7A7A7A]">사진을 탭해서 업로드</p>
+                <p className="text-xs text-[#C0C0C0] mt-1">JPG, PNG, WEBP 지원</p>
+              </>
+            )}
+          </div>
+          <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+        </label>
+
+        {photoData && (
+          <button
+            onClick={() => setPhotoData(null)}
+            className="text-xs text-[#7A7A7A] underline text-center -mt-2"
+          >
+            다른 사진 선택
+          </button>
+        )}
+
+        {/* 텍스트 입력 */}
+        <div>
+          <label className="text-sm font-semibold text-[#1F1F1F] mb-2 block">넣고 싶은 구절 / 문구</label>
+          <textarea
+            value={photoText}
+            onChange={e => setPhotoText(e.target.value)}
+            placeholder={"예) 주는 나의 목자시니 내가 부족함이 없으리로다\n시편 23:1"}
+            className="w-full h-28 px-4 py-3 rounded-xl border border-[#EDEDED] text-[14px] text-[#1F1F1F] resize-none focus:outline-none focus:border-[#1F1F1F]/40"
+          />
+        </div>
+
+        {/* 생성 버튼 */}
+        <button
+          onClick={handleGenerate}
+          disabled={!photoData || !photoText.trim() || isGeneratingPhoto}
+          className="w-full h-12 rounded-full bg-[#1F1F1F] text-white font-semibold text-[15px] disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {isGeneratingPhoto ? (
+            <>
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              AI가 카드를 만드는 중...
+            </>
+          ) : (
+            <>
+              <Sparkles className="w-4 h-4" />
+              AI로 카드 완성하기
+            </>
+          )}
+        </button>
+      </div>
+    );
+  };
 
   // Record 화면
 
@@ -1084,6 +1196,7 @@ export default function Designer() {
           <div className="w-12" />
         </header>
         {flowStep === 'entry' && renderEntry()}
+        {flowStep === 'photo-upload' && renderPhotoUpload()}
         {flowStep === 'record' && renderRecord()}
         {flowStep === 'auto-style' && renderAutoStyle()}
         {flowStep === 'auto-preview' && renderAutoPreview()}
