@@ -995,7 +995,7 @@ export default function Designer() {
           <ImageIcon className="w-6 h-6 text-[#1F1F1F]" />
           <div className="text-left">
             <p className="font-semibold text-[#2E2E2E]">사진 + AI 텍스트</p>
-            <p className="text-xs text-[#7E7C78]">사진 위에 AI가 텍스트 자동 배치</p>
+            <p className="text-xs text-[#7E7C78]">사진 위에 AI가 텍스트 자동 생성</p>
           </div>
         </button>
       </div>
@@ -1038,7 +1038,7 @@ export default function Designer() {
       <div className="flex-1 min-h-0 flex flex-col px-4 pt-8 pb-8 bg-white gap-5 overflow-y-auto">
         <div>
           <h2 className="text-xl font-bold text-[#1F1F1F] mb-1">사진 + AI 텍스트</h2>
-          <p className="text-sm text-[#7A7A7A]">사진을 올리고 원하는 텍스트를 입력하면 AI가 자동으로 배치해요</p>
+          <p className="text-sm text-[#7A7A7A]">사진을 올리고 원하는 텍스트를 입력하면 AI가 자동으로 생성해요</p>
         </div>
 
         {/* 사진 업로드 */}
