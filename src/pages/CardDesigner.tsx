@@ -2076,10 +2076,10 @@ export default function Designer() {
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
                       '맑은 수채화',
-                      '따스한 동화',
-                      '감성 사진',
+                      '따뜻한 동화',
                       '심플 낙서',
-                      '말랑 3D',
+                      '감성 사진',
+                      '미니멀감성',
                       '빈티지 필름'
                     ].map((style, idx) => (
                       <button

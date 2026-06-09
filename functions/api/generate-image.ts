@@ -18,20 +18,20 @@ const stylePrompts: Record<string, string> = {
   'vibrant': `Vibrant colorful card: \${input}. Rich saturated colors, dynamic yet peaceful composition. Overlay this text beautifully on the image: "\${text}". Bold readable typography. ${NO_FACES}`,
   'calm': `Calm tranquil card: \${input}. Soft cool tones, gentle misty atmosphere, still and meditative mood. Overlay this text beautifully on the image: "\${text}". Soft gentle typography. ${NO_FACES}`,
   // ── 직접 편집 스타일 ──
-  '맑은 수채화': `Peaceful watercolor landscape: \${input}. Soft transparent washes, gentle brush strokes, pastel colors, dreamy atmosphere. Pure nature scene only — NO people, NO animals, NO characters, NO faces. ${NO_TEXT} ${CARD_BG}`,
-  '따스한 동화': `Hand-drawn children's book illustration of \${input}. Colored pencil texture on paper, warm soft palette, whimsical cozy atmosphere. Scene-only — NO human faces or portraits, soft character shapes allowed only if small and non-dominant. ${NO_TEXT} ${CARD_BG}`,
-  '감성 사진': `Soft aesthetic photograph of \${input}. Gentle natural light, dreamy bokeh, pastel tones, airy and peaceful mood. NO people in foreground. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
-  '심플 낙서': `Minimalist black ink line drawing of \${input} on a clean white background. Simple whimsical doodle style, no shading, no fill color, essential lines only. ${NO_TEXT} NO letters, NO numbers, NO symbols. ${CARD_BG}`,
-  '말랑 3D': `Cute 3D claymation render of \${input}. Soft clay/felt textures, rounded shapes, pastel colors, clean simple background. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
-  '빈티지 필름': `Retro analog film photo of \${input}. Film grain, light leaks, warm washed-out tones, nostalgic 90s feel, soft vignette. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
+  '맑은 수채화': `Beautiful watercolor illustration of \${input}. Soft transparent watercolor washes. Gentle brush strokes. Warm natural lighting. Dreamy and peaceful atmosphere. Premium devotional aesthetic. Pastel color palette. Plenty of clean negative space. Elegant composition. Nature-focused scenery. No text. No letters. No people. No faces. No characters. ${CARD_BG}`,
+  '따뜻한 동화': `Warm and playful storybook illustration of \${input}. Crayon and colored pencil drawing style. Soft hand-drawn textures. Simple shapes. Slightly imperfect lines. Childlike and charming. Cozy and heartwarming atmosphere. Gentle sunlight. Cute storybook feeling. Whimsical and cheerful mood. Soft pastel colors. Warm color palette. Simple composition. Looks like an illustration from a beloved children's picture book. Playful rather than realistic. Cute rather than elegant. No text. No typography. No realistic rendering. No dramatic lighting. ${CARD_BG}`,
+  '감성 사진': `Professional lifestyle photography of \${input}. Soft natural light. Warm cinematic tones. Beautiful depth of field. Editorial photography style. Pinterest aesthetic. Calm and peaceful atmosphere. Premium visual storytelling. Large clean space for text overlay. No text. No logos. No people in foreground. ${CARD_BG}`,
+  '심플 낙서': `Cute doodle sticker illustration of \${input}. Simple rounded shapes. Thick hand-drawn lines. Tiny dot eyes. Soft blush cheeks. Playful and slightly goofy expressions. Warm and lovable atmosphere. Korean sticker character aesthetic. Instagram doodle style. Minimal composition. Lots of white space. Cute and charming rather than realistic. Hand-drawn charm. No text. No typography. No realistic rendering. ${CARD_BG}`,
+  '미니멀감성': `Minimal editorial illustration of \${input}. Warm beige background. Soft paper grain texture. Natural window light. Gentle shadows. Japanese minimal aesthetic. Kinfolk magazine style. Premium journaling atmosphere. Clean layout. Large negative space. Calm and contemplative mood. Muted natural colors. Elegant simplicity. Perfect for inspirational quote cards. No text. No typography. No logos. No people. No clutter. ${CARD_BG}`,
+  '빈티지 필름': `Retro analog film photography of \${input}. Authentic 35mm film look. Subtle film grain. Warm faded colors. Soft natural sunlight. Light leaks. Vintage lens rendering. Nostalgic atmosphere. Timeless and peaceful mood. Editorial photography style. Large clean space for text overlay. Slight vignette. Soft contrast. Warm shadows. No text. No logos. ${CARD_BG}`,
 };
 
 const styleDescriptions: Record<string, string> = {
   '맑은 수채화': '부드러운 붓 터치와 투명한 워시 효과, 파스텔 컬러의 수채화 스타일',
-  '따스한 동화': '손으로 그린 동화책 일러스트, 색연필 질감의 따뜻하고 포근한 스타일',
+  '따뜻한 동화': '손으로 그린 동화책 일러스트, 색연필 질감의 따뜻하고 포근한 스타일',
   '감성 사진': '부드러운 자연광과 따뜻한 색감의 감성적인 사진 스타일',
   '심플 낙서': '심플한 라인아트의 손그림 두들 스타일',
-  '말랑 3D': '부드럽고 귀여운 3D 렌더링 스타일',
+  '미니멀감성': '따뜻한 베이지 배경과 자연광의 미니멀 에디토리얼 스타일',
   '빈티지 필름': '빈티지 필름 특유의 그레인과 따뜻한 색감의 아날로그 스타일',
 };
 
@@ -106,11 +106,12 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `You analyze Korean Bible verses for card design. Return JSON only:
+          content: `You analyze user-provided Korean faith text for card design. Return JSON only:
 {"mainPhrase":"","secondaryPhrase":"","reference":"","mood":"","templates":["T01","T03","T17"]}
-- mainPhrase: 2-6 word key phrase in Korean (most impactful part)
-- secondaryPhrase: supporting verse or continuation in Korean
-- reference: Bible reference like "시편 23:1" or empty string
+CRITICAL: Extract only from the user's input. Never invent, complete, or add Bible text that is not in the input.
+- mainPhrase: 2-6 word key phrase extracted directly from the user's input (most impactful part)
+- secondaryPhrase: remaining supporting phrase extracted from the user's input, or empty string if nothing left to extract
+- reference: Bible reference if explicitly present in the input (e.g. "시편 23:1"), otherwise empty string
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood`,
         },
@@ -205,15 +206,63 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const expanded = await gpt(env.OPENAI_API_KEY, [
       {
         role: 'system',
-        content: `당신은 말씀카드 배경 이미지를 위한 장면 설명 전문가입니다.
-다음 규칙을 반드시 지켜 150자 이내 한국어로 작성하세요:
-1. 배경 이미지이므로 위에 텍스트가 올라갑니다 — 여백이 충분하고 시각적으로 차분한 구도
-2. 인물 얼굴, 초상화, 텍스트/글자는 절대 포함하지 마세요
-3. 조명, 색감, 분위기를 구체적으로 묘사하세요
-4. 신앙적 감성(평온, 소망, 위로, 감사)이 느껴지는 자연 또는 추상적 장면
-5. 너무 복잡하거나 바쁜 구도는 피하세요`,
+        content: `당신은 Daily Grace 앱의 배경 이미지 디렉터입니다.
+
+사용자는 다음 중 하나를 입력할 수 있습니다.
+* 장면 키워드 (호수, 바다, 들꽃, 창가 등)
+* 감정 키워드 (감사, 평안, 위로, 소망 등)
+* 성경 말씀
+* QT 기록
+* 기도 제목
+* 감사 일기
+* 자유로운 메모
+
+당신의 역할은 입력 내용을 분석하여 말씀카드 배경에 적합한 장면 설명으로 변환하는 것입니다.
+
+---
+
+규칙
+
+1. 반드시 한국어
+2. 80~150자 이내
+3. 이미지 설명만 출력
+4. 해설, 설명, 제목 금지
+5. 텍스트가 올라갈 충분한 여백 포함
+6. 인물 얼굴, 초상화, 글자, 간판, 로고 금지
+7. 복잡하거나 요소가 많은 장면 금지
+8. 선택한 스타일(${styleDesc})을 자연스럽게 반영
+9. 조명, 색감, 분위기를 구체적으로 묘사
+
+---
+
+입력 해석 규칙
+
+### 1. 장면 키워드
+사용자가 장면을 입력한 경우 → 더욱 구체적이고 아름다운 장면으로 확장
+
+### 2. 감정 키워드
+사용자가 감정을 입력한 경우 감정을 상징하는 자연 풍경이나 사물 장면으로 변환
+예: 감사 → 따뜻한 햇살이 비치는 들꽃 풍경 / 평안 → 잔잔한 호수와 고요한 물결 / 위로 → 노을빛이 스며드는 창가 / 소망 → 새벽빛이 비추는 먼 지평선
+
+### 3. 성경 말씀
+말씀의 핵심 의미와 정서를 현대적이고 감성적인 배경 장면으로 상징화
+예: 여호와는 나의 목자시니 → 따뜻한 빛이 내려앉은 평화로운 초원 / 강하고 담대하라 → 새벽 햇살이 비추는 산길
+
+### 4. QT, 기도, 감사 기록
+가장 중요한 감정과 주제를 추출하고 이를 상징하는 장면으로 변환
+예: "취업 때문에 불안하지만 하나님을 신뢰하고 싶다" → 새벽빛이 비추는 길게 이어진 산책길, 멀리 밝아오는 하늘과 차분한 소망의 분위기
+
+---
+
+스타일 참고
+맑은 수채화 → 자연 풍경, 부드러운 색 번짐
+따뜻한 동화 → 크레파스, 색연필, 그림책
+감성 사진 → 실사, 자연광, 핀터레스트 감성
+심플 낙서 → 귀여운 캐릭터 중심, 단순한 구성
+미니멀 감성 → 베이지 톤, 창가, 종이 질감, 여백
+빈티지 필름 → 따뜻한 필름 색감, 노을빛, 추억 같은 분위기`,
       },
-      { role: 'user', content: `장면 키워드: "${scene}"\n스타일: ${styleDesc}\n\n이 키워드를 말씀카드 배경에 적합한 구체적인 장면 설명으로 확장해주세요.` },
+      { role: 'user', content: `입력 내용:\n"${scene}"\n\n선택 스타일:\n"${styleDesc}"\n\n이 입력을 말씀카드 배경용 장면 설명으로 변환해주세요.` },
     ], 300);
     return Response.json({ expandedPrompt: expanded });
   }
