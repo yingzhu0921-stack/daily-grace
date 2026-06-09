@@ -100,8 +100,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'MONOCHROMATIC BLACK AND WHITE ONLY. Zero color. Pure black, white, and gray tones exclusively. Bold editorial poster. Strong graphic contrast. Museum-quality print aesthetic. Heavy paper grain texture. Geometric or typographic negative space. High contrast composition. NO warm tones. NO beige. NO color gradients whatsoever.',
-        styleLock: 'T01 ABSOLUTE RULE: black and white only, no color allowed, bold graphic confidence, strong contrast, print grain. If color appears this template has failed.',
+        backgroundPrompt: 'Bold editorial poster aesthetic. Strong graphic composition. High contrast. Museum-quality print design. Heavy paper grain texture. Large typography-safe area. Powerful and confident visual energy.',
+        styleLock: 'T01 ABSOLUTE RULE: bold poster energy, strong contrast, graphic confidence, premium print quality. Soft pastel or gentle devotional aesthetics = template failure.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -228,9 +228,9 @@ Design should feel premium, poetic, and personally connected to the user's words
     const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
     const templateVariations: Record<string, string[]> = {
       T01: [
-        'Asymmetric editorial layout, subtle ink grain, one bold quiet focal area near the edge.',
-        'Museum poster paper, restrained geometric shadow, generous calm blank space.',
-        'Minimal print texture, quiet contrast, sparse composition with a refined margin system.',
+        'COLOR: Deep navy blue (#1a2744) dominant background. Off-white negative space. Strong navy and white contrast. Bold editorial navy poster.',
+        'COLOR: Deep forest green (#1c3a2a) dominant background. Cream and gold accents. Rich dark green editorial poster quality.',
+        'COLOR: Dark charcoal (#2a2a2a) with warm gold (#c9a84c) accent highlights. Charcoal and gold premium poster aesthetic.',
       ],
       T03: [
         'Soft ivory editorial spread, delicate fabric-like shadow, high-end devotional magazine mood.',
