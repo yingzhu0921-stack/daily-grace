@@ -118,7 +118,8 @@ CRITICAL: Extract only from the user's input. Never invent, complete, or add Bib
         { role: 'user', content: verse.trim() },
       ], 300);
       try {
-        analysis = JSON.parse(raw);
+        const jsonMatch = raw.match(/\{[\s\S]*\}/);
+        analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
       } catch {
         return Response.json({ error: '말씀 분석에 실패했습니다.' }, { status: 500 });
       }
