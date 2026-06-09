@@ -278,6 +278,7 @@ export default function Designer() {
     recommendedTemplates: string[];
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
@@ -1168,8 +1169,6 @@ export default function Designer() {
     { id: 'T17', name: 'Beige Minimal', mood: '은혜 · 쉼 · 평안' },
     { id: 'T20', name: 'Light & Shadow', mood: '묵상 · 기도 · 고요함' },
   ];
-
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
 
   const renderAutoTemplate = () => {
     const handleGenerate = async () => {
