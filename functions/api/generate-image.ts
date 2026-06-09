@@ -10,6 +10,14 @@ const NO_FACES = 'NO human faces, portraits, or close-up characters.';
 const CARD_BG = 'The image will be used as a card background — leave visual breathing room for text overlay. Keep the composition calm and uncluttered.';
 
 const stylePrompts: Record<string, string> = {
+  // ── 자동 완성 스타일 ──
+  'minimal': `Clean minimalist card: \${input}. Large areas of negative space, muted neutral palette, soft light. Overlay this text beautifully on the image: "\${text}". Elegant readable typography, well-placed for readability. ${NO_FACES}`,
+  'elegant': `Elegant refined card: \${input}. Soft gold and cream tones, delicate lighting, luxurious calm atmosphere. Overlay this text beautifully on the image: "\${text}". Graceful sophisticated typography. ${NO_FACES}`,
+  'modern': `Modern artistic card: \${input}. Clean lines, bold but harmonious colors, contemporary aesthetic. Overlay this text beautifully on the image: "\${text}". Clean modern typography. ${NO_FACES}`,
+  'classic': `Classic timeless card: \${input}. Warm earthy tones, painterly quality, soft natural light. Overlay this text beautifully on the image: "\${text}". Timeless elegant typography. ${NO_FACES}`,
+  'vibrant': `Vibrant colorful card: \${input}. Rich saturated colors, dynamic yet peaceful composition. Overlay this text beautifully on the image: "\${text}". Bold readable typography. ${NO_FACES}`,
+  'calm': `Calm tranquil card: \${input}. Soft cool tones, gentle misty atmosphere, still and meditative mood. Overlay this text beautifully on the image: "\${text}". Soft gentle typography. ${NO_FACES}`,
+  // ── 직접 편집 스타일 ──
   '맑은 수채화': `Peaceful watercolor landscape: \${input}. Soft transparent washes, gentle brush strokes, pastel colors, dreamy atmosphere. Pure nature scene only — NO people, NO animals, NO characters, NO faces. ${NO_TEXT} ${CARD_BG}`,
   '따스한 동화': `Hand-drawn children's book illustration of \${input}. Colored pencil texture on paper, warm soft palette, whimsical cozy atmosphere. Scene-only — NO human faces or portraits, soft character shapes allowed only if small and non-dominant. ${NO_TEXT} ${CARD_BG}`,
   '감성 사진': `Soft aesthetic photograph of \${input}. Gentle natural light, dreamy bokeh, pastel tones, airy and peaceful mood. NO people in foreground. ${NO_TEXT} ${NO_FACES} ${CARD_BG}`,
@@ -53,9 +61,97 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
   if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
   const body = await request.json<any>();
-  const { action, prompt, style, ratio } = body;
+  const { action, prompt, style, ratio, text } = body;
 
   if (!env.OPENAI_API_KEY) return Response.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
+
+  // ── auto-complete: 말씀 분석 + 템플릿 선택 + 배경 생성 ──
+  if (action === 'auto-complete') {
+    const { verse, templateIndex = 0, cachedAnalysis } = body;
+    if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
+
+    const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; fonts: { primary: string; secondary: string } }> = {
+      'T01': {
+        backgroundPrompt: 'Minimal off-white paper texture. High contrast editorial poster aesthetic. Subtle grain texture. Contemporary graphic design. Strong visual impact. Clean geometric composition. Large typography-safe area. Museum poster style.',
+        fonts: { primary: 'KBLJump', secondary: 'PaperBlack' },
+      },
+      'T03': {
+        backgroundPrompt: 'Luxury editorial magazine aesthetic. Ivory paper texture. Soft natural shadows. Minimal composition. Elegant visual balance. Premium print design feeling. High-end fashion magazine atmosphere. Large negative space.',
+        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+      },
+      'T09': {
+        backgroundPrompt: 'Purple, pink and blue gradient background. Contemporary worship conference aesthetic. Soft glow effects. Modern Christian creative direction. Album cover quality. Clean composition. Inspirational atmosphere.',
+        fonts: { primary: 'Taenada', secondary: 'PaperBlack' },
+      },
+      'T13': {
+        backgroundPrompt: 'Warm journal paper texture. Soft cream colored notebook page. Gentle natural lighting. Quiet devotional atmosphere. Minimal and elegant. Premium journaling aesthetic. Handcrafted feeling. Large empty space for reflection text.',
+        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+      },
+      'T17': {
+        backgroundPrompt: 'Warm beige background. Minimal editorial aesthetic. Soft paper grain. Japanese minimal design influence. Clean luxury composition. Calm and peaceful mood. Large negative space.',
+        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
+      },
+      'T20': {
+        backgroundPrompt: 'Soft sunlight through a window. Beautiful shadow patterns. Quiet room atmosphere. Minimal composition. Meditative and peaceful feeling. Editorial photography aesthetic. Warm neutral colors.',
+        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+      },
+    };
+
+    const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography poster background. No text. No letters. No words. No typography. No logos. Vertical composition (4:5). Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end poster design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
+
+    let analysis: { mainPhrase: string; secondaryPhrase: string; reference: string; mood: string; templates: string[] };
+    if (cachedAnalysis?.templates?.length) {
+      analysis = cachedAnalysis;
+    } else {
+      const raw = await gpt(env.OPENAI_API_KEY, [
+        {
+          role: 'system',
+          content: `You analyze Korean Bible verses for card design. Return JSON only:
+{"mainPhrase":"","secondaryPhrase":"","reference":"","mood":"","templates":["T01","T03","T17"]}
+- mainPhrase: 2-6 word key phrase in Korean (most impactful part)
+- secondaryPhrase: supporting verse or continuation in Korean
+- reference: Bible reference like "시편 23:1" or empty string
+- mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
+- templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood`,
+        },
+        { role: 'user', content: verse.trim() },
+      ], 300);
+      try {
+        analysis = JSON.parse(raw);
+      } catch {
+        return Response.json({ error: '말씀 분석에 실패했습니다.' }, { status: 500 });
+      }
+    }
+
+    const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T09'];
+    const selectedTemplate = templates[templateIndex % templates.length];
+    const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
+    const bgPromptFinal = config.backgroundPrompt + GLOBAL_BG_PROMPT;
+
+    const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'gpt-image-2', prompt: bgPromptFinal, size: '1024x1536', n: 1 }),
+    });
+    const imgData = await imgRes.json<any>();
+    if (!imgRes.ok) {
+      if (imgRes.status === 429) return Response.json({ error: 'API 요청 한도를 초과했습니다.' }, { status: 429 });
+      throw new Error(imgData.error?.message || '이미지 생성 실패');
+    }
+    const b64 = imgData.data?.[0]?.b64_json;
+    if (!b64) return Response.json({ error: '이미지 생성 실패' }, { status: 500 });
+
+    return Response.json({
+      image: `data:image/png;base64,${b64}`,
+      template: selectedTemplate,
+      fonts: config.fonts,
+      mainPhrase: analysis.mainPhrase,
+      secondaryPhrase: analysis.secondaryPhrase,
+      reference: analysis.reference,
+      mood: analysis.mood,
+      recommendedTemplates: templates,
+    });
+  }
 
   // ── photo-text: 업로드된 사진에 AI로 텍스트 배치 ──
   if (action === 'photo-text') {
@@ -71,13 +167,16 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     formData.append('image', new Blob([bytes], { type: 'image/png' }), 'photo.png');
     formData.append('model', 'gpt-image-2');
     formData.append('prompt',
-      `This is a faith-based card. Add the following text beautifully and naturally to this image: "${text}". ` +
-      `Requirements: 1) Place the text where it's most readable and aesthetically harmonious with the composition. ` +
-      `2) Choose a text color that contrasts well with the background (white or dark depending on the image). ` +
-      `3) Use elegant, clean typography. ` +
-      `4) If the text is long, break it into natural lines. ` +
-      `5) Keep the original photo as the background without major alterations. ` +
-      `6) The result should look like a beautiful inspirational card.`
+      `Create a beautiful faith-based card by adding this text to the image: "${text}". ` +
+      `First, analyze the photo's mood and atmosphere (bright/dark, warm/cool, minimal/rich, natural/urban). ` +
+      `Then automatically choose everything to match that mood: ` +
+      `1) Font style — serif for classic/warm moods, handwriting for soft/emotional, sans-serif for modern/clean, display for bold/dramatic. ` +
+      `2) Font weight and size — prominent enough to read clearly but balanced with the composition. ` +
+      `3) Text color — white with subtle shadow for dark backgrounds, dark for light backgrounds, or a harmonious accent color that suits the mood. ` +
+      `4) Placement — find the natural breathing room in the composition and place text there elegantly. ` +
+      `5) Line breaks — break long text into natural, visually balanced lines. ` +
+      `6) Keep the original photo intact as background. ` +
+      `The result should feel like a professionally designed inspirational card where the typography perfectly complements the photo.`
     );
     formData.append('n', '1');
     formData.append('size', '1024x1024');
@@ -129,7 +228,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       : 'beautiful peaceful scene';
 
     const styleTemplate = style ? stylePrompts[style] || '' : 'A beautiful scene: ${input}';
-    const finalPrompt = styleTemplate.replace('${input}', translated);
+    const finalPrompt = styleTemplate.replace('${input}', translated).replace('${text}', text || '');
     const size = ratio ? ratioToSize[ratio] || '1024x1024' : '1024x1024';
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {

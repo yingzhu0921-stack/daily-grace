@@ -46,7 +46,7 @@ type Align = 'left' | 'center' | 'right';
 
 type TextStyle = {
   content: string;
-  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora';
+  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora' | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada' | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo' | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush';
   fontSize: number;         // px
   lineHeight: number;       // 1.2 ~ 1.8
   letterSpacing: number;    // -1 ~ 2(px)
@@ -260,13 +260,24 @@ export default function Designer() {
   }, []);
 
   // ── 멀티스텝 플로우 ──
-  type FlowStep = 'entry' | 'record' | 'auto-style' | 'auto-preview' | 'edit' | 'photo-upload';
+  type FlowStep = 'entry' | 'record' | 'auto-preview' | 'edit' | 'photo-upload';
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
   const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoText, setPhotoText] = useState('');
   const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
   const [verseInput, setVerseInput] = useState('');
+  const [autoResult, setAutoResult] = useState<{
+    image: string;
+    template: string;
+    fonts: { primary: string; secondary: string };
+    mainPhrase: string;
+    secondaryPhrase: string;
+    reference: string;
+    mood: string;
+    recommendedTemplates: string[];
+  } | null>(null);
+  const [templateIndex, setTemplateIndex] = useState(0);
 
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
@@ -604,6 +615,21 @@ export default function Designer() {
       t.fontFamily === 'Playfair' ? `'Playfair Display', serif` :
       t.fontFamily === 'Montserrat' ? `'Montserrat', sans-serif` :
       t.fontFamily === 'Roboto' ? `'Roboto', sans-serif` :
+      t.fontFamily === 'KBLJump' ? `'KBLJump', sans-serif` :
+      t.fontFamily === 'GangwonTunTun' ? `'GangwonTunTun', sans-serif` :
+      t.fontFamily === 'PaperBlack' ? `'PaperBlack', sans-serif` :
+      t.fontFamily === 'PaperLight' ? `'PaperLight', sans-serif` :
+      t.fontFamily === 'Taenada' ? `'Taenada', sans-serif` :
+      t.fontFamily === 'RidiBatang' ? `'RidiBatang', serif` :
+      t.fontFamily === 'SeoulHangang' ? `'SeoulHangang', sans-serif` :
+      t.fontFamily === 'Hyunok' ? `'Hyunok', sans-serif` :
+      t.fontFamily === 'Kkubullim' ? `'Kkubullim', sans-serif` :
+      t.fontFamily === 'GangwonModoo' ? `'GangwonModoo', sans-serif` :
+      t.fontFamily === 'Keris' ? `'Keris', sans-serif` :
+      t.fontFamily === 'JeonnamBarun' ? `'JeonnamBarun', sans-serif` :
+      t.fontFamily === 'Incheon' ? `'Incheon', sans-serif` :
+      t.fontFamily === 'Limelight' ? `'Limelight', cursive` :
+      t.fontFamily === 'CaveatBrush' ? `'Caveat Brush', cursive` :
       `'Lora', serif`,
     fontSize: t.fontSize,
     fontWeight: t.bold ? 700 : 400,
@@ -888,7 +914,7 @@ export default function Designer() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate-image', prompt: expandedPrompt, style: selectedStyle, ratio: meta.ratio }),
+        body: JSON.stringify({ action: 'generate-image', prompt: expandedPrompt, style: selectedStyle, ratio: meta.ratio, text: t.content }),
       });
       
       if (!response.ok) {
@@ -950,8 +976,7 @@ export default function Designer() {
     switch (flowStep) {
       case 'record':        setFlowStep('entry'); break;
       case 'photo-upload':  setFlowStep('entry'); setPhotoData(null); setPhotoText(''); break;
-      case 'auto-style':  setFlowStep('record'); break;
-      case 'auto-preview': setFlowStep('auto-style'); break;
+      case 'auto-preview': setFlowStep('record'); break;
       case 'edit':
         if (activeTrack === 'manual') setFlowStep('entry');
         else setFlowStep('auto-preview');
@@ -1122,61 +1147,145 @@ export default function Designer() {
         내 기록에서 선택
       </button>
       <button
-        onClick={() => {
-          if (!verseInput.trim()) {
-            toast.error('말씀을 입력해주세요');
-            return;
+        onClick={async () => {
+          if (!verseInput.trim()) { toast.error('말씀을 입력해주세요'); return; }
+          if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
+          setIsGenerating(true);
+          const nextIndex = 0;
+          setTemplateIndex(nextIndex);
+          try {
+            const res = await fetch('/api/generate-image', {
+              method: 'POST', credentials: 'include',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateIndex: nextIndex }),
+            });
+            if (!res.ok) {
+              const err = await res.json().catch(() => ({ error: '오류' }));
+              if (res.status === 429) { toast.error('API 요청 한도 초과', { description: '잠시 후 다시 시도해주세요.' }); return; }
+              throw new Error(err.error || '생성 실패');
+            }
+            const data = await res.json();
+            setAutoResult(data);
+            setFlowStep('auto-preview');
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : '카드 생성에 실패했습니다.');
+          } finally {
+            setIsGenerating(false);
           }
-          setFlowStep('auto-style');
         }}
-        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333]"
+        disabled={isGenerating}
+        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333] disabled:opacity-40 flex items-center justify-center gap-2"
       >
-        다음
-      </button>
-    </div>
-  );
-
-  // Auto Style 화면
-  const renderAutoStyle = () => (
-    <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
-      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">스타일 선택</h2>
-      <div className="grid grid-cols-2 gap-3">
-        {['minimal', 'elegant', 'modern', 'classic', 'vibrant', 'calm'].map(style => (
-          <button
-            key={style}
-            onClick={() => setSelectedStyle(style)}
-            className={`p-4 rounded-xl border-2 transition-colors capitalize text-sm font-medium ${
-              selectedStyle === style
-                ? 'border-[#1F1F1F] bg-[#1F1F1F]/10'
-                : 'border-[#E3E2E0] hover:border-[#1F1F1F]'
-            }`}
-          >
-            {style}
-          </button>
-        ))}
-      </div>
-      <button
-        onClick={() => setFlowStep('auto-preview')}
-        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333]"
-      >
-        배경 생성하기
+        {isGenerating ? (
+          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />AI가 카드를 만드는 중...</>
+        ) : 'AI로 카드 만들기'}
       </button>
     </div>
   );
 
   // Auto Preview 화면
-  const renderAutoPreview = () => (
-    <div className="flex-1 min-h-0 flex flex-col">
-      {/* 여기서 기존 canvas 구조 사용 */}
-      <div className="flex-1 min-h-0 flex items-center justify-center px-4 bg-gray-200 overflow-hidden">
-        {/* 기존 카드 미리보기 */}
+  const PREVIEW_FONT: Record<string, string> = {
+    'KBLJump': "'KBLJump', sans-serif",
+    'GangwonTunTun': "'GangwonTunTun', sans-serif",
+    'PaperBlack': "'PaperBlack', sans-serif",
+    'PaperLight': "'PaperLight', sans-serif",
+    'Taenada': "'Taenada', sans-serif",
+    'RidiBatang': "'RidiBatang', serif",
+    'SeoulHangang': "'SeoulHangang', sans-serif",
+    'Hyunok': "'Hyunok', sans-serif",
+    'Kkubullim': "'Kkubullim', sans-serif",
+    'GangwonModoo': "'GangwonModoo', sans-serif",
+    'Keris': "'Keris', sans-serif",
+    'JeonnamBarun': "'JeonnamBarun', sans-serif",
+    'Incheon': "'Incheon', sans-serif",
+    'Limelight': "'Limelight', cursive",
+    'CaveatBrush': "'Caveat Brush', cursive",
+  };
+
+  const renderAutoPreview = () => {
+    if (!autoResult) return null;
+    const primaryFont = PREVIEW_FONT[autoResult.fonts.primary] || 'sans-serif';
+    const secondaryFont = PREVIEW_FONT[autoResult.fonts.secondary] || 'sans-serif';
+
+    const handleRegenerate = async () => {
+      setIsGenerating(true);
+      const nextIndex = templateIndex + 1;
+      setTemplateIndex(nextIndex);
+      try {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'auto-complete',
+            verse: verseInput.trim(),
+            templateIndex: nextIndex,
+            cachedAnalysis: {
+              mainPhrase: autoResult.mainPhrase,
+              secondaryPhrase: autoResult.secondaryPhrase,
+              reference: autoResult.reference,
+              mood: autoResult.mood,
+              templates: autoResult.recommendedTemplates,
+            },
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: '오류' }));
+          if (res.status === 429) { toast.error('API 요청 한도 초과'); return; }
+          throw new Error(err.error || '생성 실패');
+        }
+        setAutoResult(await res.json());
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '재생성에 실패했습니다.');
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    return (
+      <div className="flex-1 min-h-0 flex flex-col">
+        <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-gray-200 overflow-hidden">
+          <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: '4/5', maxHeight: '100%', maxWidth: '100%' }}>
+            <img src={autoResult.image} alt="card" className="w-full h-full object-cover" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+              <p style={{ fontFamily: primaryFont, fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', lineHeight: 1.15, color: 'white', textShadow: '0 2px 12px rgba(0,0,0,0.5)', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
+                {autoResult.mainPhrase}
+              </p>
+              {autoResult.secondaryPhrase && (
+                <p style={{ fontFamily: secondaryFont, fontSize: 'clamp(0.85rem, 2.5vw, 1rem)', marginTop: '1rem', color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 6px rgba(0,0,0,0.5)', wordBreak: 'keep-all' }}>
+                  {autoResult.secondaryPhrase}
+                </p>
+              )}
+              {autoResult.reference && (
+                <p style={{ fontFamily: secondaryFont, fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', marginTop: '0.4rem', color: 'rgba(255,255,255,0.75)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+                  {autoResult.reference}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 flex gap-2 p-4 border-t bg-white">
+          <button
+            onClick={handleRegenerate}
+            disabled={isGenerating}
+            className="flex-1 px-4 py-2 border border-[#1F1F1F] text-[#1F1F1F] rounded-xl font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+          >
+            {isGenerating ? <><div className="w-3.5 h-3.5 border-2 border-[#1F1F1F]/30 border-t-[#1F1F1F] rounded-full animate-spin" />생성 중...</> : '다시 생성'}
+          </button>
+          <button
+            onClick={() => {
+              setMeta(m => ({ ...m, bgImageUrl: autoResult.image, bgScale: 100 }));
+              setT(s => ({ ...s, content: verseInput, fontFamily: autoResult.fonts.primary as any }));
+              if (textRef.current) textRef.current.innerText = verseInput;
+              setFlowStep('edit');
+            }}
+            className="flex-1 px-4 py-2 bg-[#1F1F1F] text-white rounded-xl font-medium"
+          >
+            편집하기
+          </button>
+        </div>
       </div>
-      <div className="shrink-0 flex gap-2 p-4 border-t bg-white">
-        <button onClick={() => setFlowStep('auto-style')} className="flex-1 px-4 py-2 border border-[#1F1F1F] text-[#1F1F1F] rounded-xl font-medium">다시 생성</button>
-        <button onClick={() => setFlowStep('edit')} className="flex-1 px-4 py-2 bg-[#1F1F1F] text-white rounded-xl font-medium">편집하기</button>
-      </div>
-    </div>
-  );
+    );
+  };
 
   // 멀티스텝 플로우 - entry, record, auto-style, auto-preview일 때 간단한 구조 표시
   if (flowStep !== 'edit') {
@@ -1190,7 +1299,8 @@ export default function Designer() {
             <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
               {flowStep === 'entry' ? '말씀카드 만들기' :
                flowStep === 'record' ? '말씀 입력' :
-               flowStep === 'auto-style' ? '스타일 선택' : '미리보기'}
+               flowStep === 'auto-preview' ? '미리보기' :
+               flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
             </h1>
           </div>
           <div className="w-12" />
@@ -1198,7 +1308,6 @@ export default function Designer() {
         {flowStep === 'entry' && renderEntry()}
         {flowStep === 'photo-upload' && renderPhotoUpload()}
         {flowStep === 'record' && renderRecord()}
-        {flowStep === 'auto-style' && renderAutoStyle()}
         {flowStep === 'auto-preview' && renderAutoPreview()}
       </div>
     );
@@ -1409,6 +1518,21 @@ export default function Designer() {
                       t.fontFamily === 'Playfair' ? 'Playfair Display, serif' :
                       t.fontFamily === 'Montserrat' ? 'Montserrat, sans-serif' :
                       t.fontFamily === 'Roboto' ? 'Roboto, sans-serif' :
+                      t.fontFamily === 'KBLJump' ? 'KBLJump, sans-serif' :
+                      t.fontFamily === 'GangwonTunTun' ? 'GangwonTunTun, sans-serif' :
+                      t.fontFamily === 'PaperBlack' ? 'PaperBlack, sans-serif' :
+                      t.fontFamily === 'PaperLight' ? 'PaperLight, sans-serif' :
+                      t.fontFamily === 'Taenada' ? 'Taenada, sans-serif' :
+                      t.fontFamily === 'RidiBatang' ? 'RidiBatang, serif' :
+                      t.fontFamily === 'SeoulHangang' ? 'SeoulHangang, sans-serif' :
+                      t.fontFamily === 'Hyunok' ? 'Hyunok, sans-serif' :
+                      t.fontFamily === 'Kkubullim' ? 'Kkubullim, sans-serif' :
+                      t.fontFamily === 'GangwonModoo' ? 'GangwonModoo, sans-serif' :
+                      t.fontFamily === 'Keris' ? 'Keris, sans-serif' :
+                      t.fontFamily === 'JeonnamBarun' ? 'JeonnamBarun, sans-serif' :
+                      t.fontFamily === 'Incheon' ? 'Incheon, sans-serif' :
+                      t.fontFamily === 'Limelight' ? 'Limelight, cursive' :
+                      t.fontFamily === 'CaveatBrush' ? 'Caveat Brush, cursive' :
                       'Lora, serif';
                     
                     const fontWeight = t.bold ? 'bold' : 'normal';
