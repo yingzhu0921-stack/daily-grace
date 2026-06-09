@@ -45,6 +45,32 @@ const ratioToSize: Record<string, string> = {
   '4:3': '1536x1024',
 };
 
+const ratioGuidance: Record<string, string> = {
+  '1:1': 'Square composition (1:1). Keep the central 60% clean for typography.',
+  '9:16': 'Vertical story composition (9:16). Keep the central vertical area clean for typography.',
+  '2:3': 'Vertical poster composition (2:3). Keep the central 60% clean for typography.',
+  '3:4': 'Vertical card composition (3:4). Keep the central 60% clean for typography.',
+  '4:5': 'Vertical social card composition (4:5). Keep the central 60% clean for typography.',
+  '16:9': 'Wide landscape composition (16:9). Keep the central horizontal band clean for typography.',
+  '4:3': 'Landscape card composition (4:3). Keep the central horizontal area clean for typography.',
+};
+
+type AutoCardAnalysis = {
+  mainPhrase: string;
+  secondaryPhrase: string;
+  reference: string;
+  mood: string;
+  templates: string[];
+  backgroundConcept?: string;
+  visualMotifs?: string[];
+  palette?: string;
+  lighting?: string;
+  composition?: string;
+  typographyTone?: string;
+  fontMood?: 'bold' | 'editorial' | 'lyrical' | 'quiet' | 'handwritten' | 'modern';
+  avoidImagery?: string[];
+};
+
 async function gpt(apiKey: string, messages: any[], maxTokens = 500): Promise<string> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -69,38 +95,96 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
   if (action === 'auto-complete') {
     try {
     const { verse, templateIndex = 0, cachedAnalysis, templateId } = body;
+    const requestedRatio = typeof ratio === 'string' && ratioToSize[ratio] ? ratio : '4:5';
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
-    const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; fonts: { primary: string; secondary: string } }> = {
+    const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Minimal off-white paper texture. High contrast editorial poster aesthetic. Subtle grain texture. Contemporary graphic design. Strong visual impact. Clean geometric composition. Large typography-safe area. Museum poster style.',
-        fonts: { primary: 'KBLJump', secondary: 'PaperBlack' },
+        backgroundPrompt: 'MONOCHROMATIC BLACK AND WHITE ONLY. Zero color. Pure black, white, and gray tones exclusively. Bold editorial poster. Strong graphic contrast. Museum-quality print aesthetic. Heavy paper grain texture. Geometric or typographic negative space. High contrast composition. NO warm tones. NO beige. NO color gradients whatsoever.',
+        styleLock: 'T01 ABSOLUTE RULE: black and white only, no color allowed, bold graphic confidence, strong contrast, print grain. If color appears this template has failed.',
+        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
-        backgroundPrompt: 'Luxury editorial magazine aesthetic. Ivory paper texture. Soft natural shadows. Minimal composition. Elegant visual balance. Premium print design feeling. High-end fashion magazine atmosphere. Large negative space.',
+        backgroundPrompt: 'IVORY AND WARM CREAM TONES ONLY. Soft off-white to light beige palette. Luxury editorial magazine aesthetic. Premium ivory paper with delicate photographic shadows. Elegant natural lighting. High-end fashion magazine atmosphere. NO strong colors. NO dark backgrounds. NO gradients. Sophisticated and quiet.',
+        styleLock: 'T03 ABSOLUTE RULE: ivory/cream only, photographic soft shadow quality, magazine luxury, no bold colors, no dark backgrounds. Must feel like an expensive editorial print.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       'T09': {
-        backgroundPrompt: 'Purple, pink and blue gradient background. Contemporary worship conference aesthetic. Soft glow effects. Modern Christian creative direction. Album cover quality. Clean composition. Inspirational atmosphere.',
-        fonts: { primary: 'Taenada', secondary: 'PaperBlack' },
+        backgroundPrompt: 'BOLD COLOR GRADIENT REQUIRED. Deep purple transitioning to soft pink and blue. Luminous glow effects. Contemporary worship album cover energy. Rich saturated colors. Soft light bloom. Cinematic color atmosphere. Modern Christian creative direction. NO paper textures. NO beige. NO black and white. Must be visually vibrant and colorful.',
+        styleLock: 'T09 ABSOLUTE RULE: must have rich color gradient (purple/pink/blue), glowing atmosphere, album-cover energy. Beige or paper textures = template failure.',
+        fonts: { primary: 'Taenada', secondary: 'PaperLight' },
       },
       'T13': {
-        backgroundPrompt: 'Warm journal paper texture. Soft cream colored notebook page. Gentle natural lighting. Quiet devotional atmosphere. Minimal and elegant. Premium journaling aesthetic. Handcrafted feeling. Large empty space for reflection text.',
-        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        backgroundPrompt: 'WARM GOLDEN MORNING LIGHT. Soft cream and golden yellow tones. Cozy notebook or journal paper texture with visible grain. Gentle morning sunlight from the side. Handcrafted devotional atmosphere. Warm amber and honey tones. Intimate and personal feeling. Large empty space. NO cool tones. NO dark colors. NO bold graphics.',
+        styleLock: 'T13 ABSOLUTE RULE: warm golden/cream morning light, tactile journal paper texture, cozy intimate mood. Cool tones or dark backgrounds = template failure.',
+        fonts: { primary: 'Hyunok', secondary: 'SeoulHangang' },
       },
       'T17': {
-        backgroundPrompt: 'Warm beige background. Minimal editorial aesthetic. Soft paper grain. Japanese minimal design influence. Clean luxury composition. Calm and peaceful mood. Large negative space.',
-        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        backgroundPrompt: 'PURE BEIGE. Flat warm beige or sand background. Extremely minimal. Japanese wabi-sabi aesthetic. Almost no objects — only the faintest suggestion of texture or shadow. Maximum negative space. Neutral muted tones only. Clean and sparse. NO dramatic lighting. NO strong shadows. NO objects. NO color. Near-empty composition.',
+        styleLock: 'T17 ABSOLUTE RULE: pure beige/sand, near-empty, extreme minimalism. Any dramatic element or strong color = template failure.',
+        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
       },
       'T20': {
-        backgroundPrompt: 'Soft sunlight through a window. Beautiful shadow patterns. Quiet room atmosphere. Minimal composition. Meditative and peaceful feeling. Editorial photography aesthetic. Warm neutral colors.',
+        backgroundPrompt: 'STRONG WINDOW LIGHT AND SHADOWS. Dramatic natural sunlight streaming through a window. Clear shadow patterns cast on a surface — organic, geometric, or plant-shadow. Warm golden hour light. High contrast between light and shadow areas. Photographic realism. Contemplative quiet room. NO flat backgrounds. NO gradients. Must have visible, beautiful shadow patterns.',
+        styleLock: 'T20 ABSOLUTE RULE: must have actual window light with clear shadow patterns, photographic realism, cinematic contrast. Flat or gradient backgrounds = template failure.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
     };
 
-    const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography poster background. No text. No letters. No words. No typography. No logos. Vertical composition (4:5). Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end poster design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
+    const TEMPLATE_FONT_OPTIONS: Record<string, Record<string, { primary: string; secondary: string }>> = {
+      T01: {
+        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        editorial: { primary: 'PaperBlack', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
+        quiet: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'PaperBlack', secondary: 'PaperLight' },
+      },
+      T03: {
+        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+      },
+      T09: {
+        bold: { primary: 'Taenada', secondary: 'PaperLight' },
+        editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'Taenada', secondary: 'PaperLight' },
+      },
+      T13: {
+        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        editorial: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+      },
+      T17: {
+        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+      },
+      T20: {
+        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
+        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+      },
+    };
 
-    let analysis: { mainPhrase: string; secondaryPhrase: string; reference: string; mood: string; templates: string[] };
+    const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography card background. No text. No letters. No words. No typography. No logos. Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end card design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
+
+    let analysis: AutoCardAnalysis;
     if (cachedAnalysis?.templates?.length) {
       analysis = cachedAnalysis;
     } else {
@@ -108,16 +192,25 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         {
           role: 'system',
           content: `You analyze user-provided Korean faith text for card design. Return JSON only:
-{"mainPhrase":"","secondaryPhrase":"","reference":"","mood":"","templates":["T01","T03","T17"]}
+{"mainPhrase":"","secondaryPhrase":"","reference":"","mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 CRITICAL: Extract only from the user's input. Never invent, complete, or add Bible text that is not in the input.
 - mainPhrase: 2-6 word key phrase extracted directly from the user's input (most impactful part)
 - secondaryPhrase: remaining supporting phrase extracted from the user's input, or empty string if nothing left to extract
 - reference: Bible reference if explicitly present in the input (e.g. "시편 23:1"), otherwise empty string
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
-- templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood`,
+- templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
+- backgroundConcept: one sentence in English describing a beautiful personalized background scene inspired by the meaning, not a generic church card
+- visualMotifs: 3-5 concrete but subtle visual motifs in English, inferred from the text's meaning
+- palette: refined color direction in English, personalized to the text
+- lighting: lighting direction in English
+- composition: composition direction in English, including where important objects should sit so the center remains readable
+- typographyTone: English typography direction matching the emotional tone
+- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern
+- avoidImagery: generic or cliché imagery to avoid. Avoid obvious crosses, church buildings, Bibles, doves, and hands unless the user's text explicitly mentions them.
+Design should feel premium, poetic, and personally connected to the user's words while remaining beautiful and uncluttered.`,
         },
         { role: 'user', content: verse.trim() },
-      ], 300);
+      ], 700);
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
         analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
@@ -129,12 +222,72 @@ CRITICAL: Extract only from the user's input. Never invent, complete, or add Bib
     const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T09'];
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
-    const bgPromptFinal = config.backgroundPrompt + GLOBAL_BG_PROMPT;
+    const fontMood = analysis.fontMood && TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[analysis.fontMood]
+      ? analysis.fontMood
+      : 'editorial';
+    const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
+    const templateVariations: Record<string, string[]> = {
+      T01: [
+        'Asymmetric editorial layout, subtle ink grain, one bold quiet focal area near the edge.',
+        'Museum poster paper, restrained geometric shadow, generous calm blank space.',
+        'Minimal print texture, quiet contrast, sparse composition with a refined margin system.',
+      ],
+      T03: [
+        'Soft ivory editorial spread, delicate fabric-like shadow, high-end devotional magazine mood.',
+        'Warm natural shadow on premium paper, understated luxury, quiet negative space.',
+        'Elegant cream surface with subtle depth, refined print design, serene visual balance.',
+      ],
+      T09: [
+        'Deep worship gradient with soft light bloom, cinematic but uncluttered, center-safe.',
+        'Modern worship album-cover atmosphere, luminous color field, subtle depth and glow.',
+        'Contemporary praise-night palette, gentle radiant haze, clean typography-safe center.',
+      ],
+      T13: [
+        'Quiet journaling paper, soft notebook texture, warm morning light, handcrafted devotional mood.',
+        'Cream journal page with gentle imperfections, cozy reflection atmosphere, lots of empty space.',
+        'Soft paper grain and faint desk-light shadow, intimate daily grace journaling feeling.',
+      ],
+      T17: [
+        'Minimal beige editorial scene, restrained natural shadow, clean premium simplicity.',
+        'Warm neutral paper field, Japanese minimal balance, soft tactile grain.',
+        'Calm beige composition with subtle tonal variation, very sparse and contemplative.',
+      ],
+      T20: [
+        'Sunlight through a window casting quiet organic shadows, contemplative room atmosphere.',
+        'Soft side light and gentle shadow pattern, warm stillness, meditative negative space.',
+        'Window-lit surface with nuanced shadow, quiet prayer-room mood, uncluttered center.',
+      ],
+    };
+    const variations = templateVariations[selectedTemplate] || templateVariations.T13;
+    const variation = variations[Math.abs(templateIndex) % variations.length];
+    const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
+    const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
+    const personalizedBrief = [
+      `Personalized content brief based on the user's Korean text: "${verse?.trim() || analysis.mainPhrase}".`,
+      analysis.backgroundConcept ? `Core background concept: ${analysis.backgroundConcept}` : '',
+      analysis.visualMotifs?.length ? `Subtle visual motifs to weave in: ${analysis.visualMotifs.join(', ')}.` : '',
+      analysis.palette ? `Personalized palette: ${analysis.palette}.` : '',
+      analysis.lighting ? `Lighting: ${analysis.lighting}.` : '',
+      analysis.composition ? `Composition: ${analysis.composition}.` : '',
+      analysis.typographyTone ? `Typography mood to support later overlay: ${analysis.typographyTone}.` : '',
+      analysis.avoidImagery?.length ? `Avoid these generic/cliche visuals unless essential: ${analysis.avoidImagery.join(', ')}.` : '',
+      'The background must feel meaningfully connected to the specific words, not interchangeable.',
+      'Use metaphorical, atmospheric, or symbolic imagery rather than literal religious stock imagery.',
+    ].filter(Boolean).join('\n');
+    const bgPromptFinal = [
+      config.backgroundPrompt,
+      config.styleLock,
+      personalizedBrief,
+      variation,
+      moodHint,
+      ratioPrompt,
+      GLOBAL_BG_PROMPT,
+    ].filter(Boolean).join('\n\n');
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: 'gpt-image-2', prompt: bgPromptFinal, size: '1024x1536', n: 1 }),
+      body: JSON.stringify({ model: 'gpt-image-2', prompt: bgPromptFinal, size: ratioToSize[requestedRatio], n: 1 }),
     });
     const imgData = await imgRes.json<any>();
     if (!imgRes.ok) {
@@ -147,11 +300,20 @@ CRITICAL: Extract only from the user's input. Never invent, complete, or add Bib
     return Response.json({
       image: `data:image/png;base64,${b64}`,
       template: selectedTemplate,
-      fonts: config.fonts,
+      fonts: selectedFonts,
       mainPhrase: analysis.mainPhrase,
       secondaryPhrase: analysis.secondaryPhrase,
       reference: analysis.reference,
       mood: analysis.mood,
+      backgroundConcept: analysis.backgroundConcept,
+      visualMotifs: analysis.visualMotifs,
+      palette: analysis.palette,
+      lighting: analysis.lighting,
+      composition: analysis.composition,
+      typographyTone: analysis.typographyTone,
+      fontMood,
+      avoidImagery: analysis.avoidImagery,
+      ratio: requestedRatio,
       recommendedTemplates: templates,
     });
     } catch (err: any) {
