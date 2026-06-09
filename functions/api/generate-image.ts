@@ -67,7 +67,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
   // ── auto-complete: 말씀 분석 + 템플릿 선택 + 배경 생성 ──
   if (action === 'auto-complete') {
-    const { verse, templateIndex = 0, cachedAnalysis } = body;
+    const { verse, templateIndex = 0, cachedAnalysis, templateId } = body;
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; fonts: { primary: string; secondary: string } }> = {
@@ -126,7 +126,7 @@ CRITICAL: Extract only from the user's input. Never invent, complete, or add Bib
     }
 
     const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T09'];
-    const selectedTemplate = templates[templateIndex % templates.length];
+    const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
     const bgPromptFinal = config.backgroundPrompt + GLOBAL_BG_PROMPT;
 

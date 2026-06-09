@@ -260,7 +260,7 @@ export default function Designer() {
   }, []);
 
   // ── 멀티스텝 플로우 ──
-  type FlowStep = 'entry' | 'record' | 'auto-preview' | 'edit' | 'photo-upload';
+  type FlowStep = 'entry' | 'record' | 'auto-template' | 'auto-preview' | 'edit' | 'photo-upload';
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
   const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
@@ -976,7 +976,8 @@ export default function Designer() {
     switch (flowStep) {
       case 'record':        setFlowStep('entry'); break;
       case 'photo-upload':  setFlowStep('entry'); setPhotoData(null); setPhotoText(''); break;
-      case 'auto-preview': setFlowStep('record'); break;
+      case 'auto-template': setFlowStep('record'); break;
+      case 'auto-preview':  setFlowStep('auto-template'); break;
       case 'edit':
         if (activeTrack === 'manual') setFlowStep('entry');
         else setFlowStep('auto-preview');
@@ -1129,7 +1130,7 @@ export default function Designer() {
 
   const renderRecord = () => (
     <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
-      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">말씀 입력</h2>
+      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">카드 내용 입력</h2>
       <textarea
         value={verseInput}
         onChange={(e) => {
@@ -1137,7 +1138,7 @@ export default function Designer() {
           setT(s => ({ ...s, content: e.target.value }));
           if (textRef.current) textRef.current.innerText = e.target.value;
         }}
-        placeholder="말씀을 입력하거나 기록에서 선택해주세요"
+        placeholder="말씀, 찬양 가사, 기도, 감사 내용을 입력해주세요"
         className="flex-1 min-h-[150px] p-4 border border-[#E3E2E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none"
       />
       <button
@@ -1147,41 +1148,88 @@ export default function Designer() {
         내 기록에서 선택
       </button>
       <button
-        onClick={async () => {
-          if (!verseInput.trim()) { toast.error('말씀을 입력해주세요'); return; }
-          if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
-          setIsGenerating(true);
-          const nextIndex = 0;
-          setTemplateIndex(nextIndex);
-          try {
-            const res = await fetch('/api/generate-image', {
-              method: 'POST', credentials: 'include',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateIndex: nextIndex }),
-            });
-            if (!res.ok) {
-              const err = await res.json().catch(() => ({ error: '오류' }));
-              if (res.status === 429) { toast.error('API 요청 한도 초과', { description: '잠시 후 다시 시도해주세요.' }); return; }
-              throw new Error(err.error || '생성 실패');
-            }
-            const data = await res.json();
-            setAutoResult(data);
-            setFlowStep('auto-preview');
-          } catch (e) {
-            toast.error(e instanceof Error ? e.message : '카드 생성에 실패했습니다.');
-          } finally {
-            setIsGenerating(false);
-          }
+        onClick={() => {
+          if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
+          setFlowStep('auto-template');
         }}
-        disabled={isGenerating}
-        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333] disabled:opacity-40 flex items-center justify-center gap-2"
+        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333]"
       >
-        {isGenerating ? (
-          <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />AI가 카드를 만드는 중...</>
-        ) : 'AI로 카드 만들기'}
+        다음
       </button>
     </div>
   );
+
+  // Auto Template 선택 화면
+  const TEMPLATE_INFO = [
+    { id: 'T01', name: 'Bold Poster', mood: '담대함 · 선포 · 믿음 · 승리' },
+    { id: 'T03', name: 'Magazine', mood: '시편 · 묵상 · 평안 · 은혜' },
+    { id: 'T09', name: 'Modern Worship', mood: '소망 · 회복 · 빛 · 예배' },
+    { id: 'T13', name: 'Daily Grace', mood: 'QT · 묵상 · 일상 · 감사' },
+    { id: 'T17', name: 'Beige Minimal', mood: '은혜 · 쉼 · 평안' },
+    { id: 'T20', name: 'Light & Shadow', mood: '묵상 · 기도 · 고요함' },
+  ];
+
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+
+  const renderAutoTemplate = () => {
+    const handleGenerate = async () => {
+      if (!selectedTemplateId) { toast.error('템플릿을 선택해주세요'); return; }
+      if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
+      setIsGenerating(true);
+      setTemplateIndex(0);
+      try {
+        const res = await fetch('/api/generate-image', {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateId: selectedTemplateId }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({ error: '오류' }));
+          if (res.status === 429) { toast.error('API 요청 한도 초과', { description: '잠시 후 다시 시도해주세요.' }); return; }
+          throw new Error(err.error || '생성 실패');
+        }
+        const data = await res.json();
+        setAutoResult(data);
+        setFlowStep('auto-preview');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '카드 생성에 실패했습니다.');
+      } finally {
+        setIsGenerating(false);
+      }
+    };
+
+    return (
+      <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
+        <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">템플릿 선택</h2>
+        <div className="grid grid-cols-2 gap-3">
+          {TEMPLATE_INFO.map(({ id, name, mood }) => (
+            <button
+              key={id}
+              onClick={() => setSelectedTemplateId(id)}
+              className={`p-4 rounded-xl border-2 text-left transition-colors ${
+                selectedTemplateId === id
+                  ? 'border-[#1F1F1F] bg-[#1F1F1F]/5'
+                  : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
+              }`}
+            >
+              <p className="text-xs font-semibold text-[#7E7C78] mb-1">{id}</p>
+              <p className="text-sm font-semibold text-[#1F1F1F]">{name}</p>
+              <p className="text-xs text-[#9E9C98] mt-1 leading-relaxed">{mood}</p>
+            </button>
+          ))}
+        </div>
+        <button
+          onClick={handleGenerate}
+          disabled={isGenerating || !selectedTemplateId}
+          className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333] disabled:opacity-40 flex items-center justify-center gap-2"
+        >
+          {isGenerating
+            ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />AI가 카드를 만드는 중...</>
+            : 'AI로 카드 만들기'}
+        </button>
+      </div>
+    );
+  };
 
   // Auto Preview 화면
   const PREVIEW_FONT: Record<string, string> = {
@@ -1298,7 +1346,8 @@ export default function Designer() {
           <div className="flex-1 flex items-center justify-center">
             <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
               {flowStep === 'entry' ? '말씀카드 만들기' :
-               flowStep === 'record' ? '말씀 입력' :
+               flowStep === 'record' ? '카드 내용 입력' :
+               flowStep === 'auto-template' ? '템플릿 선택' :
                flowStep === 'auto-preview' ? '미리보기' :
                flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
             </h1>
@@ -1308,6 +1357,7 @@ export default function Designer() {
         {flowStep === 'entry' && renderEntry()}
         {flowStep === 'photo-upload' && renderPhotoUpload()}
         {flowStep === 'record' && renderRecord()}
+        {flowStep === 'auto-template' && renderAutoTemplate()}
         {flowStep === 'auto-preview' && renderAutoPreview()}
       </div>
     );
