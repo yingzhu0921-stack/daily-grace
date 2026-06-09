@@ -67,6 +67,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
   // ── auto-complete: 말씀 분석 + 템플릿 선택 + 배경 생성 ──
   if (action === 'auto-complete') {
+    try {
     const { verse, templateIndex = 0, cachedAnalysis, templateId } = body;
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
@@ -153,6 +154,10 @@ CRITICAL: Extract only from the user's input. Never invent, complete, or add Bib
       mood: analysis.mood,
       recommendedTemplates: templates,
     });
+    } catch (err: any) {
+      console.error('auto-complete error:', err);
+      return Response.json({ error: err?.message || '카드 생성에 실패했습니다.' }, { status: 500 });
+    }
   }
 
   // ── photo-text: 업로드된 사진에 AI로 텍스트 배치 ──
