@@ -372,9 +372,9 @@ export default function Designer() {
     image: string;
     template: string;
     fonts: { primary: string; secondary: string };
-    mainPhrase: string;
-    secondaryPhrase: string;
-    reference: string;
+    lines: { text: string; scale: number }[];
+    textAlign: 'left' | 'center';
+    useBrush: boolean;
     mood: string;
     recommendedTemplates: string[];
     backgroundConcept?: string;
@@ -1690,6 +1690,12 @@ export default function Designer() {
     const secondaryFont = PREVIEW_FONT[autoResult.fonts.secondary] || 'sans-serif';
     const typography = autoResult.typography || getAutoTypography(autoResult.template);
     const previewRatio = autoResult.ratio || meta.ratio;
+    const previewAlign: 'left' | 'center' = autoResult.textAlign === 'left' ? 'left' : 'center';
+    const previewLines = (autoResult.lines && autoResult.lines.length)
+      ? autoResult.lines
+      : [{ text: verseInput, scale: 1 }];
+    // scale 1.0 기준 폰트 크기 (줄별 scale을 곱해 위계 표현)
+    const previewBase = 'clamp(1.15rem, 4.4vw, 1.95rem)';
 
     const getPreviewDimensions = () => {
       switch (previewRatio) {
@@ -1789,43 +1795,40 @@ export default function Designer() {
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
         const centerX = width / 2;
-        const maxTextWidth = width * 0.76;
         const scale = width / 1000;
-        const mainSize = Math.max(42, typography.editFontSize * 2.35 * scale);
-        const subSize = Math.max(24, mainSize * 0.38);
-        const refSize = Math.max(20, mainSize * 0.32);
-        const mainLineHeight = mainSize * typography.lineHeight;
-        const subLineHeight = subSize * 1.55;
-        const refLineHeight = refSize * 1.35;
-        const mainFont = `${typography.bold ? 700 : 500} ${mainSize}px ${primaryFont}`;
-        const subFont = `400 ${subSize}px ${secondaryFont}`;
-        const refFont = `400 ${refSize}px ${secondaryFont}`;
+        const align: 'left' | 'center' = autoResult.textAlign === 'left' ? 'left' : 'center';
+        const layoutLines = (autoResult.lines && autoResult.lines.length)
+          ? autoResult.lines
+          : [{ text: verseInput, scale: 1 }];
+        const maxTextWidth = width * (align === 'left' ? 0.82 : 0.8);
+        const baseFontPx = Math.max(34, width * 0.058);
+        const lineGap = baseFontPx * 0.22;
+        const weight = typography.bold ? 700 : 500;
 
-        ctx.textAlign = 'center';
+        // 각 줄을 자기 크기(scale)로 줄바꿈 처리해 렌더 라인 생성
+        const renderLines: { text: string; size: number }[] = [];
+        layoutLines.forEach((l) => {
+          const size = baseFontPx * (l.scale || 1);
+          ctx.font = `${weight} ${size}px ${primaryFont}`;
+          wrapPreviewText(ctx, l.text, maxTextWidth).forEach((wl) => renderLines.push({ text: wl, size }));
+        });
+
+        const lh = (s: number) => s * (typography.lineHeight || 1.2);
+        let totalH = renderLines.reduce((sum, rl, i) => sum + lh(rl.size) + (i > 0 ? lineGap : 0), 0);
+        const maxH = height * 0.82;
+        const shrink = totalH > maxH ? maxH / totalH : 1;
+        const textX = align === 'left' ? (width - maxTextWidth) / 2 : centerX;
+
+        ctx.textAlign = align;
         ctx.textBaseline = 'top';
-        ctx.font = mainFont;
-        const mainLines = wrapPreviewText(ctx, autoResult.mainPhrase, maxTextWidth);
-        ctx.font = subFont;
-        const subLines = autoResult.secondaryPhrase ? wrapPreviewText(ctx, autoResult.secondaryPhrase, maxTextWidth * 0.82) : [];
-        ctx.font = refFont;
-        const refLines = autoResult.reference ? wrapPreviewText(ctx, autoResult.reference, maxTextWidth * 0.7) : [];
-        const gap1 = subLines.length ? mainSize * 0.34 : 0;
-        const gap2 = refLines.length ? mainSize * 0.18 : 0;
-        const textHeight =
-          mainLines.length * mainLineHeight +
-          gap1 +
-          subLines.length * subLineHeight +
-          gap2 +
-          refLines.length * refLineHeight;
-        const startY = (height - textHeight) / 2;
 
         if (typography.box?.enabled) {
           const padding = typography.box.padding * 2.2 * scale;
           const boxW = maxTextWidth + padding * 2;
-          const boxH = textHeight + padding * 2;
+          const boxH = totalH * shrink + padding * 2;
           ctx.fillStyle = hexToRgba(typography.box.color, typography.box.opacity / 100);
           ctx.beginPath();
-          ctx.roundRect(centerX - boxW / 2, startY - padding, boxW, boxH, typography.box.radius * 2 * scale);
+          ctx.roundRect(centerX - boxW / 2, (height - totalH * shrink) / 2 - padding, boxW, boxH, typography.box.radius * 2 * scale);
           ctx.fill();
         }
 
@@ -1833,27 +1836,15 @@ export default function Designer() {
         ctx.shadowOffsetX = typography.editShadow.x * scale;
         ctx.shadowOffsetY = typography.editShadow.y * scale;
         ctx.shadowBlur = typography.editShadow.blur * scale;
-
-        let y = startY;
-        ctx.font = mainFont;
         ctx.fillStyle = typography.color;
-        mainLines.forEach((line) => {
-          ctx.fillText(line, centerX, y);
-          y += mainLineHeight;
-        });
-        y += gap1;
-        ctx.font = subFont;
-        ctx.fillStyle = typography.secondaryColor;
-        subLines.forEach((line) => {
-          ctx.fillText(line, centerX, y);
-          y += subLineHeight;
-        });
-        y += gap2;
-        ctx.font = refFont;
-        ctx.fillStyle = typography.referenceColor;
-        refLines.forEach((line) => {
-          ctx.fillText(line, centerX, y);
-          y += refLineHeight;
+
+        let y = (height - totalH * shrink) / 2;
+        renderLines.forEach((rl, i) => {
+          if (i > 0) y += lineGap * shrink;
+          const size = rl.size * shrink;
+          ctx.font = `${weight} ${size}px ${primaryFont}`;
+          ctx.fillText(rl.text, textX, y);
+          y += lh(size);
         });
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -1865,7 +1856,7 @@ export default function Designer() {
           ratio: previewRatio,
           bg: autoResult.image,
           text: verseInput,
-          ref: autoResult.reference || '',
+          ref: '',
           tags: [],
           imageDataUrl: dataUrl,
           editorState: {
@@ -1916,9 +1907,9 @@ export default function Designer() {
             ratio: previewRatio,
             templateIndex: nextIndex,
             cachedAnalysis: {
-              mainPhrase: autoResult.mainPhrase,
-              secondaryPhrase: autoResult.secondaryPhrase,
-              reference: autoResult.reference,
+              lines: autoResult.lines,
+              textAlign: autoResult.textAlign,
+              useBrush: autoResult.useBrush,
               mood: autoResult.mood,
               templates: autoResult.recommendedTemplates,
               backgroundConcept: autoResult.backgroundConcept,
@@ -1951,29 +1942,37 @@ export default function Designer() {
         <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-gray-200 overflow-hidden">
           <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: ratioToAspect(previewRatio), maxHeight: '100%', maxWidth: '100%' }}>
             <img src={autoResult.image} alt="card" className="w-full h-full object-cover" />
-            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
+            <div
+              className="absolute inset-0 flex flex-col justify-center p-8"
+              style={{ alignItems: previewAlign === 'left' ? 'flex-start' : 'center' }}
+            >
               <div
                 style={{
-                  maxWidth: '88%',
+                  maxWidth: '90%',
+                  textAlign: previewAlign,
                   borderRadius: typography.box?.enabled ? typography.box.radius : undefined,
                   padding: typography.box?.enabled ? typography.box.padding : undefined,
                   backgroundColor: typography.box?.enabled ? hexToRgba(typography.box.color, typography.box.opacity / 100) : undefined,
                   backdropFilter: typography.box?.enabled ? 'blur(2px)' : undefined,
                 }}
               >
-                <p style={{ fontFamily: primaryFont, fontSize: typography.mainSize, lineHeight: typography.lineHeight, color: typography.color, textShadow: typography.shadow, whiteSpace: 'pre-line', wordBreak: 'keep-all', fontWeight: typography.weight, letterSpacing: 0 }}>
-                  {autoResult.mainPhrase}
-                </p>
-                {autoResult.secondaryPhrase && (
-                  <p style={{ fontFamily: secondaryFont, fontSize: typography.subSize, marginTop: '0.8rem', color: typography.secondaryColor, textShadow: typography.shadow, wordBreak: 'keep-all', lineHeight: 1.55, letterSpacing: 0 }}>
-                    {autoResult.secondaryPhrase}
+                {previewLines.map((line, i) => (
+                  <p
+                    key={i}
+                    style={{
+                      fontFamily: primaryFont,
+                      fontSize: `calc(${previewBase} * ${line.scale})`,
+                      lineHeight: line.scale >= 1.4 ? 1.06 : typography.lineHeight,
+                      color: typography.color,
+                      textShadow: typography.shadow,
+                      fontWeight: typography.weight,
+                      wordBreak: 'keep-all',
+                      margin: 0,
+                    }}
+                  >
+                    {line.text}
                   </p>
-                )}
-                {autoResult.reference && (
-                  <p style={{ fontFamily: secondaryFont, fontSize: typography.refSize, marginTop: '0.45rem', color: typography.referenceColor, textShadow: typography.shadow, letterSpacing: 0 }}>
-                    {autoResult.reference}
-                  </p>
-                )}
+                ))}
               </div>
             </div>
           </div>

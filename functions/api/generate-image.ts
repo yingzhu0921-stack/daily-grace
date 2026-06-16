@@ -55,10 +55,13 @@ const ratioGuidance: Record<string, string> = {
   '4:3': 'Landscape card composition (4:3). Keep the central horizontal area clean for typography.',
 };
 
+type TypoLine = { text: string; scale: number };
+
 type AutoCardAnalysis = {
-  mainPhrase: string;
-  secondaryPhrase: string;
-  reference: string;
+  // 타이포 레이아웃 (원문 전체를 줄 단위로, 각 줄 크기 배율 scale 포함)
+  lines: TypoLine[];
+  textAlign: 'left' | 'center';
+  useBrush: boolean;
   mood: string;
   templates: string[];
   backgroundConcept?: string;
@@ -69,7 +72,33 @@ type AutoCardAnalysis = {
   typographyTone?: string;
   fontMood?: 'bold' | 'editorial' | 'lyrical' | 'quiet' | 'handwritten' | 'modern';
   avoidImagery?: string[];
+  // 하위호환(과거 캐시) — 더 이상 직접 사용하지 않음
+  mainPhrase?: string;
+  secondaryPhrase?: string;
+  reference?: string;
 };
+
+// 공백을 무시하고 같은 문자열인지 (원문 보존 검증용)
+const normalizeForCompare = (s: string) => s.replace(/\s+/g, '');
+
+// GPT가 만든 lines가 사용자 원문을 그대로 보존하는지 검증. 아니면 안전한 폴백 레이아웃 생성.
+function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLine[] {
+  const original = verse.trim();
+  if (Array.isArray(gptLines) && gptLines.length) {
+    const joined = gptLines.map((l) => l?.text ?? '').join('');
+    if (normalizeForCompare(joined) === normalizeForCompare(original)) {
+      // 원문 보존됨 — scale 정규화 (0.4~2.4 범위로 클램프)
+      return gptLines.map((l) => ({
+        text: String(l.text ?? ''),
+        scale: Math.max(0.4, Math.min(2.4, Number(l.scale) || 1)),
+      }));
+    }
+  }
+  // 폴백: 사용자가 입력한 줄바꿈 기준, 없으면 통짜 한 줄
+  const fallback = original.split('\n').map((t) => t.trim()).filter(Boolean);
+  const arr = fallback.length ? fallback : [original];
+  return arr.map((text) => ({ text, scale: 1 }));
+}
 
 async function gpt(apiKey: string, messages: any[], maxTokens = 500): Promise<string> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -197,26 +226,31 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `You analyze user-provided Korean faith text for card design. Return JSON only:
-{"mainPhrase":"","secondaryPhrase":"","reference":"","mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
-CRITICAL: Extract only from the user's input. Never invent, complete, or add Bible text that is not in the input.
-- mainPhrase: 2-6 word key phrase extracted directly from the user's input (most impactful part)
-- secondaryPhrase: remaining supporting phrase extracted from the user's input, or empty string if nothing left to extract
-- reference: Bible reference if explicitly present in the input (e.g. "시편 23:1"), otherwise empty string
+          content: `You are an art director for "Daily Grace" faith cards. The card's HERO is the user's text rendered as beautiful poster typography — the background is only support. Return JSON only:
+{"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
+
+ABSOLUTE TEXT RULE — never modify the user's words:
+- You may ONLY change line breaks, grouping, and per-line size. You may NOT change, summarize, paraphrase, translate, shorten, or replace any word.
+- "lines" MUST reproduce the user's input EXACTLY in order. Concatenating every line's "text" (ignoring spaces) must equal the user's input (ignoring spaces). If unsure, put the whole input as one line.
+- Do NOT add a Bible reference or any text the user did not type.
+
+TYPOGRAPHY (lines + scale) — text is the hero, make it poster-like:
+- Split the input into poster-style lines. Bold, dramatic line breaks are encouraged. Avoid putting everything on one centered uniform line.
+- "scale" is each line's relative size: hero keyword line ≈ 1.7–2.3, normal line ≈ 1.0, small/quiet line (like a reference the user typed) ≈ 0.55–0.7.
+- Length rules: 1–6 chars → one giant hero line (scale ~2.2). 7–20 chars → poster line breaks, emphasize 1–2 key lines larger. 20+ chars → prioritize readability, keep most lines ~1.0, enlarge only the single most important line.
+- "textAlign": "left" for bold/declarative/asymmetric poster feel, "center" for calm/gentle verses.
+- "useBrush": true ONLY for short, strong declarations (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for long meditative or peaceful text.
+
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
-- backgroundConcept: one sentence in English describing a beautiful personalized background scene inspired by the meaning, not a generic church card
-- visualMotifs: 3-5 concrete but subtle visual motifs in English, inferred from the text's meaning
-- palette: refined color direction in English, personalized to the text
-- lighting: lighting direction in English
-- composition: composition direction in English, including where important objects should sit so the center remains readable
-- typographyTone: English typography direction matching the emotional tone
-- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern
-- avoidImagery: generic or cliché imagery to avoid. Avoid obvious crosses, church buildings, Bibles, doves, and hands unless the user's text explicitly mentions them.
-Design should feel premium, poetic, and personally connected to the user's words while remaining beautiful and uncluttered.`,
+- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern, chosen by emotion+length (strong/victory→bold, grace/peace→editorial or quiet, joy/worship→lyrical, daily/QT→modern)
+- backgroundConcept: one sentence (English) — fresh editorial visual storytelling of the text's meaning. Avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics). Keep large typography-safe negative space.
+- visualMotifs: 3-5 subtle concrete motifs (English) from the meaning
+- palette / lighting / composition / typographyTone: short English direction strings; composition must keep the center clean for text
+- avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text`,
         },
         { role: 'user', content: verse.trim() },
-      ], 700);
+      ], 800);
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
         analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
@@ -224,6 +258,11 @@ Design should feel premium, poetic, and personally connected to the user's words
         return Response.json({ error: '말씀 분석에 실패했습니다.' }, { status: 500 });
       }
     }
+
+    // 원문 보존 검증 후 안전한 lines 확정 (캐시된 분석엔 verse가 없을 수 있어 lines 그대로 사용)
+    const safeLines = verse?.trim()
+      ? buildSafeLines(verse, analysis.lines)
+      : (Array.isArray(analysis.lines) && analysis.lines.length ? analysis.lines : []);
 
     const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T09'];
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
@@ -269,7 +308,7 @@ Design should feel premium, poetic, and personally connected to the user's words
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
     const personalizedBrief = [
-      `Personalized content brief based on the user's Korean text: "${verse?.trim() || analysis.mainPhrase}".`,
+      `Personalized content brief based on the user's Korean text: "${verse?.trim() || safeLines.map((l) => l.text).join(' ')}".`,
       analysis.backgroundConcept ? `Core background concept: ${analysis.backgroundConcept}` : '',
       analysis.visualMotifs?.length ? `Subtle visual motifs to weave in: ${analysis.visualMotifs.join(', ')}.` : '',
       analysis.palette ? `Personalized palette: ${analysis.palette}.` : '',
@@ -307,9 +346,9 @@ Design should feel premium, poetic, and personally connected to the user's words
       image: `data:image/png;base64,${b64}`,
       template: selectedTemplate,
       fonts: selectedFonts,
-      mainPhrase: analysis.mainPhrase,
-      secondaryPhrase: analysis.secondaryPhrase,
-      reference: analysis.reference,
+      lines: safeLines,
+      textAlign: analysis.textAlign === 'left' ? 'left' : 'center',
+      useBrush: !!analysis.useBrush,
       mood: analysis.mood,
       backgroundConcept: analysis.backgroundConcept,
       visualMotifs: analysis.visualMotifs,
