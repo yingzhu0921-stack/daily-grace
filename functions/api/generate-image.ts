@@ -134,8 +134,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
-        backgroundPrompt: 'IVORY AND WARM CREAM TONES ONLY. Soft off-white to light beige palette. Luxury editorial magazine aesthetic. Premium ivory paper with delicate photographic shadows. Elegant natural lighting. High-end fashion magazine atmosphere. NO strong colors. NO dark backgrounds. NO gradients. Sophisticated and quiet.',
-        styleLock: 'T03 ABSOLUTE RULE: ivory/cream only, photographic soft shadow quality, magazine luxury, no bold colors, no dark backgrounds. Must feel like an expensive editorial print.',
+        backgroundPrompt: 'Luxury editorial magazine aesthetic. Warm ivory, soft cream, natural beige, soft sand — very limited color, no saturated colors, no dramatic gradients. Premium paper texture, natural daylight, soft realistic shadows. Minimal still-life composition inspired by Kinfolk, Cereal Magazine, Aesop, MUJI and editorial photography. Prefer real objects, light, texture, space and architectural details — window light, paper, chair, table, linen fabric, ceramic or glass objects, dried flowers, books, natural materials. Quiet and sophisticated with large typography-safe negative space.',
+        styleLock: 'T03 ABSOLUTE RULE: must feel like a premium editorial magazine / luxury lifestyle photography / modern contemplative design — curated, NOT decorative. Must NOT feel like wallpaper, a wedding invitation, an Instagram quote background, or a devotional stock image. Avoid decorative flower borders, fantasy scenery, romantic wallpaper, greeting-card aesthetics, stock photography, sunset/beach cliches, and excessive florals. Background creates atmosphere, never competes with the text.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       'T09': {
@@ -280,9 +280,11 @@ TYPOGRAPHY (lines + scale) — text is the hero, make it poster-like:
         'COLOR: Dark brown (#2e241c) background with warm beige (#e3d4bd). Earthy premium editorial poster.',
       ],
       T03: [
-        'Soft ivory editorial spread, delicate fabric-like shadow, high-end devotional magazine mood.',
-        'Warm natural shadow on premium paper, understated luxury, quiet negative space.',
-        'Elegant cream surface with subtle depth, refined print design, serene visual balance.',
+        'Still life: a ceramic vase and a few dried flowers on a linen-covered table, soft window daylight, ivory tones, generous empty space.',
+        'Still life: an open book and a glass of water on warm beige paper, gentle realistic shadows, MUJI-like restraint.',
+        'Architectural detail: soft daylight falling across a cream wall and a wooden chair, quiet Kinfolk editorial mood.',
+        'Still life: folded linen fabric and a single ceramic bowl on a sand-toned surface, Aesop-like minimal composition.',
+        'Soft natural light on a stack of paper and dried botanicals, Cereal-magazine stillness, sophisticated negative space.',
       ],
       T09: [
         'Deep worship gradient with soft light bloom, cinematic but uncluttered, center-safe.',
