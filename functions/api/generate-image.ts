@@ -248,6 +248,12 @@ TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not mere
 
 VARIETY (important): Do NOT default to one composition. For similar messages, vary the line breaks, alignment, scale relationships, hierarchy, font mood, and background structure so each card feels intentionally art-directed and distinct.
 
+SCENE PRINCIPLE (the background must stay connected to the text):
+- The scene must originate from the MEANING of the user's text. Consider the important symbols, imagery, metaphors, locations, objects and themes contained in the text.
+- Do NOT reduce every message to a generic emotional atmosphere. The scene should remain recognizably connected to the original message.
+- The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
+- When the text has strong symbolic imagery, the symbol may be read literally, symbolically, or emotionally — but important symbols must NOT be ignored. Do NOT keep replacing meaningful imagery with generic visuals like sunsets, flowers, beaches, clouds, or abstract light.
+
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
 - fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern. Choose by emotional tone, message intent, text length and composition — never randomly, and avoid always using the same mood for similar messages:
