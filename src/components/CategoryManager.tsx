@@ -264,12 +264,12 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: normalizeCategoryColor(category.color) }}
+                        style={{ backgroundColor: `${normalizeCategoryColor(category.color)}28` }}
                       >
                         {category.icon ? (
-                          <AppIcon name={category.icon as IconName} size={20} color="white" strokeWidth={2} />
+                          <AppIcon name={category.icon as IconName} size={20} color={normalizeCategoryColor(category.color)} strokeWidth={2} />
                         ) : (
-                          <span className="text-white text-[14px] font-medium">
+                          <span className="text-[14px] font-medium" style={{ color: normalizeCategoryColor(category.color) }}>
                             {category.name.charAt(0)}
                           </span>
                         )}
