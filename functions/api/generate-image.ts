@@ -234,8 +234,10 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
           content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) decide the typography hierarchy, (3) plan the layout, (4) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
 {"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
-ABSOLUTE TEXT RULE — never modify the user's words:
-- You may ONLY change line breaks, grouping, and per-line size. You may NOT change, summarize, paraphrase, translate, shorten, or replace any word.
+ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words:
+- BEFORE describing the background, plan the typography: identify key phrases, the dominant idea, and supporting text, then build the hierarchy and layout.
+- You MAY freely redesign line breaks, grouping, emphasis, per-line size, hierarchy, alignment, positioning, and composition to maximize impact and readability. Rearranging the PRESENTATION is encouraged.
+- You may NOT change, summarize, paraphrase, translate, shorten, reorder, add, or remove any word. The words and their reading order stay identical.
 - "lines" MUST reproduce the user's input EXACTLY in order. Concatenating every line's "text" (ignoring spaces) must equal the user's input (ignoring spaces). If unsure, put the whole input as one line.
 - Do NOT add a Bible reference or any text the user did not type.
 
