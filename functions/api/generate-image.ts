@@ -243,23 +243,28 @@ ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words
 
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
-- "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, small/quiet (e.g. a reference like "[고후5:17]" the user typed) ≈ 0.5–0.65.
+- "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, Bible reference / caption ≈ 0.35–0.55.
+- THINK IN VISUAL BLOCKS, NOT SENTENCES: do not just split text at sentence boundaries or wrap it. A dominant phrase may span multiple lines; a single important word may become its own line. Typography should feel designed, with rhythm and emphasis.
+- INTERNAL HIERARCHY: even within one phrase, separate key words / dominant concepts from supporting words and size them differently. Typography should communicate meaning, not merely display text.
 - MANDATORY HIERARCHY — never output all lines at the same scale: every card MUST have clear size contrast. Pick the 1–2 most meaningful phrases and make them clearly the largest; shrink connective/intro words and any reference. If you find yourself giving everything ~1.0, you are wrong — choose what matters most and enlarge it.
 - Length adapts but hierarchy is ALWAYS required:
   · SHORT → one giant hero line.
   · MEDIUM → 1–2 big key lines, supporting lines smaller.
-  · LONG → still enlarge the 1–2 most important phrases (≈1.5–1.9), keep connective lines smaller (≈0.85), and put any reference at ≈0.55. Break the text into meaningful phrase-groups, not even paragraph blocks.
-- Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": reference "[고후5:17]" scale 0.55, "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.7, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.7 (exact words unchanged, only grouped and resized).
+  · LONG → still enlarge the 1–2 most important phrases (≈1.5–1.9), keep connective lines smaller (≈0.85), and put any reference at ≈0.45. Break the text into meaningful phrase-groups, not even paragraph blocks.
+- A Bible reference is METADATA (a caption/signature), never the main message — keep it at ≈0.35–0.55 and never let it compete with the message.
+- Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": reference "[고후5:17]" scale 0.45, "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.8, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.8 (exact words unchanged, only grouped and resized).
 - "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
 - "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
 
 VARIETY (important): Do NOT default to one composition. For similar messages, vary the line breaks, alignment, scale relationships, hierarchy, font mood, and background structure so each card feels intentionally art-directed and distinct.
 
-SCENE PRINCIPLE (the background must stay connected to the text):
-- The scene must originate from the MEANING of the user's text. Consider the important symbols, imagery, metaphors, locations, objects and themes contained in the text.
-- Do NOT reduce every message to a generic emotional atmosphere. The scene should remain recognizably connected to the original message.
+SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
+- Do NOT visualize "Christianity". Visualize what THIS specific message means. Do not ask "what does Christianity look like?" — ask "what does this exact sentence mean?". The backgroundConcept must emerge from the user's message itself.
+- MEANING BEFORE MOOD: first identify the symbols, imagery, metaphors, locations, actions, themes and emotional direction in the text; only then choose the scene. Do not reduce every message to generic positive emotions/atmosphere.
+- SYMBOL PRESERVATION: when meaningful imagery exists in the text, preserve it and let strong symbols drive the scene — interpreted literally, symbolically, environmentally, or emotionally. Goal: meaningful visual translation, not literal illustration.
+- FRESH INTERPRETATION: many valid images exist for one message — do not chase a single "correct" image; pick a fresh, specific interpretation and avoid reusing the same metaphor for similar messages.
+- AVOID GENERIC CHRISTIAN DEFAULTS: never auto-default to flowers, butterflies, rivers, beaches, sunsets, mountains, clouds, or abstract sunlight unless they are genuinely connected to this message. These must NOT be your fallback solution.
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
-- When the text has strong symbolic imagery, the symbol may be read literally, symbolically, or emotionally — but important symbols must NOT be ignored. Do NOT default to generic Christian imagery (flowers, butterflies, sunsets, streams, beaches, clouds, abstract light) unless it is meaningfully connected to the text. The visual concept should emerge from the message itself.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
@@ -358,6 +363,7 @@ SCENE PRINCIPLE (the background must stay connected to the text):
       analysis.typographyTone ? `Typography mood to support later overlay: ${analysis.typographyTone}.` : '',
       analysis.avoidImagery?.length ? `Avoid these generic/cliche visuals unless essential: ${analysis.avoidImagery.join(', ')}.` : '',
       'The background must feel meaningfully connected to the specific words, not interchangeable.',
+      'Visualize the specific MEANING of these words, not generic Christianity. Do NOT default to flowers, butterflies, rivers, beaches, sunsets, mountains, clouds, or abstract sunlight unless this exact message truly calls for them.',
       'Use metaphorical, atmospheric, or symbolic imagery rather than literal religious stock imagery.',
     ].filter(Boolean).join('\n');
     const bgPromptFinal = [
