@@ -22,6 +22,34 @@ type Category = {
 
 type TabType = 'records' | 'cards';
 
+const LEGACY_COLOR_MAP: Record<string, string> = {
+  '#4F8A5B': '#7DB87D',
+  '#7A6BB8': '#A57DB8',
+  '#C89B3C': '#E8C87D',
+  '#D97B5D': '#DD957D',
+  '#6B9BD1': '#8DABA8',
+  '#E17B8C': '#C7A0B2',
+  '#C9A86A': '#D8BE82',
+  '#9B87BE': '#A57DB8',
+  '#D4886E': '#DD957D',
+  '#7AA3B5': '#9AB8C6',
+  '#B88FA3': '#C7A0B2',
+};
+
+const RGBA_COLOR_MAP: Record<string, string> = {
+  'rgba(125,184,125,1)': '#7DB87D',
+  'rgba(165,125,184,1)': '#A57DB8',
+  'rgba(232,200,125,1)': '#E8C87D',
+  'rgba(221,149,125,1)': '#DD957D',
+};
+
+const normalizeCategoryColor = (color?: string) => {
+  if (!color) return '#7DB87D';
+  if (color.startsWith('rgba')) return RGBA_COLOR_MAP[color.replace(/\s/g, '')] || color;
+  const upper = color.toUpperCase();
+  return LEGACY_COLOR_MAP[upper] || color;
+};
+
 const Records: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -36,10 +64,10 @@ const Records: React.FC = () => {
   const [isLoadingCards, setIsLoadingCards] = useState(false);
 
   const defaultCategories = [
-    { id: '1', label: 'Q.T', icon: 'bookOpen', route: routes.qt, color: 'rgba(125,184,125,1)', desc: '오늘의 말씀을 나눠보세요' },
-    { id: '2', label: '기도', icon: 'heart', route: routes.prayer, color: 'rgba(165,125,184,1)', desc: '하루의 기도를 적어보세요' },
-    { id: '3', label: '감사', icon: 'sparkles', route: routes.thanks, color: 'rgba(232,200,125,1)', desc: '감사했던 순간을 떠올려보세요' },
-    { id: '4', label: '일기', icon: 'pencilLine', route: routes.diary, color: 'rgba(221,149,125,1)', desc: '오늘의 마음을 기록해보세요' },
+    { id: '1', label: 'Q.T', icon: 'bookOpen', route: routes.qt, color: '#7DB87D', desc: '오늘의 말씀을 나눠보세요' },
+    { id: '2', label: '기도', icon: 'heart', route: routes.prayer, color: '#A57DB8', desc: '하루의 기도를 적어보세요' },
+    { id: '3', label: '감사', icon: 'star', route: routes.thanks, color: '#E8C87D', desc: '감사했던 순간을 떠올려보세요' },
+    { id: '4', label: '일기', icon: 'pencilLine', route: routes.diary, color: '#DD957D', desc: '오늘의 마음을 기록해보세요' },
   ];
 
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
@@ -52,7 +80,7 @@ const Records: React.FC = () => {
     setSearchParams(newSearchParams);
   };
 
-  // 커스텀 카테고리 로드 (Supabase에서)
+  // 커스텀 카테고리 로드
   useEffect(() => {
     const loadCustomCategories = async () => {
       try {
@@ -61,7 +89,7 @@ const Records: React.FC = () => {
         if (cached) {
           try {
             const cachedData = JSON.parse(cached);
-            setCustomCategories(cachedData);
+            setCustomCategories(cachedData.map((cat: Category) => ({ ...cat, color: normalizeCategoryColor(cat.color) })));
           } catch (e) {
             console.error('Cache parse error:', e);
           }
@@ -70,7 +98,9 @@ const Records: React.FC = () => {
         // 백그라운드에서 최신 데이터 가져오기
         const categories = await categoryStorage.list();
         // user_id가 있는 것만 커스텀 카테고리 (기본 카테고리는 user_id가 null)
-        const customs = categories.filter((cat: any) => cat.user_id != null);
+        const customs = categories
+          .filter((cat: any) => cat.user_id != null)
+          .map((cat: Category) => ({ ...cat, color: normalizeCategoryColor(cat.color) }));
 
         // 캐시 업데이트
         sessionStorage.setItem('custom_categories', JSON.stringify(customs));
@@ -209,7 +239,7 @@ const Records: React.FC = () => {
             <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
+                className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
                   selectedCategory === 'all'
                     ? 'bg-[#1F1F1F] text-white'
                     : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
@@ -221,30 +251,33 @@ const Records: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
+                  className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
                     selectedCategory === cat.id
-                      ? 'text-white'
+                      ? 'text-[#2E2E2E]'
                       : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
                   }`}
-                  style={selectedCategory === cat.id ? { backgroundColor: cat.color } : {}}
+                  style={selectedCategory === cat.id ? { backgroundColor: `${cat.color}28`, border: `1.5px solid ${cat.color}` } : {}}
                 >
                   {cat.label}
                 </button>
               ))}
-              {customCategories.map(cat => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors ${
-                    selectedCategory === cat.id
-                      ? 'text-white'
-                      : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
-                  }`}
-                  style={selectedCategory === cat.id ? { backgroundColor: cat.color } : {}}
-                >
-                  {cat.name}
-                </button>
-              ))}
+              {customCategories.map(cat => {
+                const color = normalizeCategoryColor(cat.color);
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => setSelectedCategory(cat.id)}
+                    className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
+                      selectedCategory === cat.id
+                        ? 'text-[#2E2E2E]'
+                        : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
+                    }`}
+                    style={selectedCategory === cat.id ? { backgroundColor: `${color}28`, border: `1.5px solid ${color}` } : {}}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Records List */}
