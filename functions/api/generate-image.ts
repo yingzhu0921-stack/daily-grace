@@ -139,8 +139,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Bold editorial poster aesthetic. Strong graphic composition, high contrast, museum-quality print design, powerful visual hierarchy, premium poster craftsmanship, confident visual energy. The background VISUALIZES the message itself — transformation looks like transformation, victory like victory, calling like calling, faith like action — purposeful, not decorative. Large typography-safe areas. Allow stronger contrast, deeper tones and dramatic lighting; avoid soft pastel dominance and weak visual energy.',
-        styleLock: 'T01 ABSOLUTE RULE: the card must feel like a bold poster — strong, confident, declarative, memorable, with typography dominating. Must NOT feel like gentle devotional wallpaper, scrapbook, greeting card, or a generic inspirational / Christian background image (if it does, the template has failed). The background supports and reinforces the message; avoid decorative imagery and generic devotional aesthetics (flowers, butterflies, peaceful streams, decorative nature scenes) unless the message specifically requires them.',
+        backgroundPrompt: 'Bold GRAPHIC POSTER design — NOT a literal illustration or scenic landscape. Render the message\'s energy through abstract texture and graphic contrast: torn paper, cracks, bold shapes, ink strokes, rough grain, layered print texture, light breaking through darkness, strong high-contrast composition. Premium editorial poster craftsmanship, powerful visual hierarchy, large intentional negative space. The background supports a dominant headline and must never dominate the text.',
+        styleLock: 'T01 ABSOLUTE RULE: a bold graphic poster / editorial campaign / faith declaration — strong, confident, declarative. Express the message through abstract GRAPHIC treatment (contrast, rupture, emergence, transition, old layer breaking, new light entering, texture), NOT through literal scenes or obvious symbolic objects. For transformation / renewal / new creation / victory, use before/after energy and bold visual change — NEVER butterflies, flowers, or sunrise. The template FAILS if it looks like a pretty devotional wallpaper, a scenic landscape, gentle soft-pastel nature, if flowers/butterflies/rivers/sunsets appear, if the verse is one heavy centered block, or if the reference competes with the headline. The viewer must feel: "this message is being declared."',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -310,11 +310,11 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
     const templateVariations: Record<string, string[]> = {
       T01: [
-        'COLOR: Deep navy (#1b2a4a) background with warm ivory (#efe6d2) negative space. Editorial navy poster, strong calm contrast.',
-        'COLOR: Charcoal (#2b2b2e) background with muted gold (#b9975b) accents. Premium charcoal and gold poster.',
-        'COLOR: Deep forest green (#1f3a2c) background with cream (#efe7d6). Rich dark-green editorial poster.',
-        'COLOR: Black ink (#161513) on aged paper (#e7dcc4) texture. Inky letterpress poster mood.',
-        'COLOR: Dark brown (#2e241c) background with warm beige (#e3d4bd). Earthy premium editorial poster.',
+        'Deep navy (#1b2a4a) with warm ivory (#efe6d2) negative space; torn-paper edges, rough ink grain, light breaking through dark, bold poster contrast.',
+        'Charcoal (#2b2b2e) with muted gold (#b9975b); cracked layered texture and strong graphic shapes, high-contrast editorial poster.',
+        'Deep forest green (#1f3a2c) with cream (#efe7d6); rough print grain and bold negative space, emergent light, graphic declaration.',
+        'Black ink (#161513) on aged paper (#e7dcc4); inky strokes, letterpress rupture, stark high contrast.',
+        'Dark brown (#2e241c) with warm beige (#e3d4bd); layered paper texture and breaking light, raw graphic energy.',
       ],
       T03: [
         'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
