@@ -123,7 +123,11 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
   // ── auto-complete: 말씀 분석 + 템플릿 선택 + 배경 생성 ──
   if (action === 'auto-complete') {
     try {
-    const { verse, templateIndex = 0, cachedAnalysis, templateId } = body;
+    const { verse, templateIndex = 0, cachedAnalysis, templateId, regenerate, avoidFontMood, avoidAlign } = body;
+    // 재생성 시 변주를 유도하는 힌트 (다양성 규칙)
+    const varietyNote = regenerate
+      ? `(Regeneration — produce a DISTINCTLY different art direction than before: different line breaks, alignment, scale hierarchy, fontMood, and background composition.${avoidFontMood ? ` Avoid fontMood "${avoidFontMood}".` : ''}${avoidAlign ? ` Prefer a textAlign other than "${avoidAlign}".` : ''})`
+      : '';
     const requestedRatio = typeof ratio === 'string' && ratioToSize[ratio] ? ratio : '4:5';
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
@@ -220,7 +224,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography card background. No text. No letters. No words. No typography. No logos. Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end card design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
 
     let analysis: AutoCardAnalysis;
-    if (cachedAnalysis?.templates?.length) {
+    // 재생성일 땐 캐시를 무시하고 새로 분석해 매번 다른 아트디렉션을 만든다
+    if (cachedAnalysis?.templates?.length && !regenerate) {
       analysis = cachedAnalysis;
     } else {
       const raw = await gpt(env.OPENAI_API_KEY, [
@@ -234,22 +239,28 @@ ABSOLUTE TEXT RULE — never modify the user's words:
 - "lines" MUST reproduce the user's input EXACTLY in order. Concatenating every line's "text" (ignoring spaces) must equal the user's input (ignoring spaces). If unsure, put the whole input as one line.
 - Do NOT add a Bible reference or any text the user did not type.
 
-TYPOGRAPHY (lines + scale) — text is the hero, make it poster-like:
-- Split the input into poster-style lines. Bold, dramatic line breaks are encouraged. Avoid putting everything on one centered uniform line.
-- "scale" is each line's relative size: hero keyword line ≈ 1.7–2.3, normal line ≈ 1.0, small/quiet line (like a reference the user typed) ≈ 0.55–0.7.
-- Length rules: 1–6 chars → one giant hero line (scale ~2.2). 7–20 chars → poster line breaks, emphasize 1–2 key lines larger. 20+ chars → prioritize readability, keep most lines ~1.0, enlarge only the single most important line.
-- "textAlign": "left" for bold/declarative/asymmetric poster feel, "center" for calm/gentle verses.
-- "useBrush": true ONLY for short, strong declarations (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for long meditative or peaceful text.
+TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
+- Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
+- "scale" is each line's relative size: hero keyword ≈ 1.7–2.3, normal ≈ 1.0, small/quiet (e.g. a reference the user typed) ≈ 0.55–0.7.
+- Length is adaptive, NO fixed formula: SHORT text → prioritize impact (big hero line). MEDIUM → balance impact and readability. LONG → prioritize readability while preserving hierarchy (enlarge only the most important line). Let typography adapt to the content.
+- "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
+- "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
+
+VARIETY (important): Do NOT default to one composition. For similar messages, vary the line breaks, alignment, scale relationships, hierarchy, font mood, and background structure so each card feels intentionally art-directed and distinct.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
-- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern, chosen by emotion+length (strong/victory→bold, grace/peace→editorial or quiet, joy/worship→lyrical, daily/QT→modern)
-- backgroundConcept: one sentence (English) — fresh editorial visual storytelling of the text's meaning. Avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics). Keep large typography-safe negative space.
-- visualMotifs: 3-5 subtle concrete motifs (English) from the meaning
+- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern. Choose by emotional tone, message intent, text length and composition — never randomly, and avoid always using the same mood for similar messages:
+  · Strong / declaration → bold (PaperBlack/KBLJump/GangwonTunTun)
+  · Grace / peace / reflection → editorial or quiet (RidiBatang/PaperLight/SeoulHangang)
+  · Joy / worship / gratitude → lyrical (Taenada/Hyunok/Kkubullim)
+  · Daily journal / QT → modern (JeonnamBarun/PaperLight/SeoulHangang)
+- backgroundConcept: one sentence (English). The background may be symbolic, direct, abstract, or narrative depending on the message. Fresh editorial storytelling — avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics) and avoid repeating the same motif. Keep large typography-safe negative space. Goal: emotional/visual resonance, not literal illustration.
+- visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
 - palette / lighting / composition / typographyTone: short English direction strings; composition must keep the center clean for text
 - avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text`,
         },
-        { role: 'user', content: verse.trim() },
+        { role: 'user', content: verse.trim() + (varietyNote ? `\n\n${varietyNote}` : '') },
       ], 800);
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);

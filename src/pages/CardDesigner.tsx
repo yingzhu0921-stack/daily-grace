@@ -1906,21 +1906,10 @@ export default function Designer() {
             verse: verseInput.trim(),
             ratio: previewRatio,
             templateIndex: nextIndex,
-            cachedAnalysis: {
-              lines: autoResult.lines,
-              textAlign: autoResult.textAlign,
-              useBrush: autoResult.useBrush,
-              mood: autoResult.mood,
-              templates: autoResult.recommendedTemplates,
-              backgroundConcept: autoResult.backgroundConcept,
-              visualMotifs: autoResult.visualMotifs,
-              palette: autoResult.palette,
-              lighting: autoResult.lighting,
-              composition: autoResult.composition,
-              typographyTone: autoResult.typographyTone,
-              fontMood: autoResult.fontMood,
-              avoidImagery: autoResult.avoidImagery,
-            },
+            // 다양성 규칙: 재생성마다 새로 분석해 다른 아트디렉션 생성
+            regenerate: true,
+            avoidFontMood: autoResult.fontMood,
+            avoidAlign: autoResult.textAlign,
           }),
         });
         if (!res.ok) {
