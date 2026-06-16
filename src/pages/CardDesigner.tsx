@@ -47,7 +47,7 @@ type Align = 'left' | 'center' | 'right';
 
 type TextStyle = {
   content: string;
-  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora' | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada' | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo' | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush';
+  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora' | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada' | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo' | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush' | 'Cafe24SuperMagic';
   fontSize: number;         // px
   lineHeight: number;       // 1.2 ~ 1.8
   letterSpacing: number;    // -1 ~ 2(px)
@@ -773,6 +773,7 @@ export default function Designer() {
       t.fontFamily === 'Incheon' ? `'Incheon', sans-serif` :
       t.fontFamily === 'Limelight' ? `'Limelight', cursive` :
       t.fontFamily === 'CaveatBrush' ? `'Caveat Brush', cursive` :
+      t.fontFamily === 'Cafe24SuperMagic' ? `'Cafe24SuperMagic', sans-serif` :
       `'Lora', serif`,
     fontSize: t.fontSize,
     fontWeight: t.bold ? 700 : 400,
@@ -1491,6 +1492,7 @@ export default function Designer() {
     'Incheon': "'Incheon', sans-serif",
     'Limelight': "'Limelight', cursive",
     'CaveatBrush': "'Caveat Brush', cursive",
+    'Cafe24SuperMagic': "'Cafe24SuperMagic', sans-serif",
   };
 
   const AUTO_TYPOGRAPHY: Record<string, AutoTypography> = {
@@ -2264,6 +2266,7 @@ export default function Designer() {
                       t.fontFamily === 'Incheon' ? 'Incheon, sans-serif' :
                       t.fontFamily === 'Limelight' ? 'Limelight, cursive' :
                       t.fontFamily === 'CaveatBrush' ? 'Caveat Brush, cursive' :
+                      t.fontFamily === 'Cafe24SuperMagic' ? 'Cafe24SuperMagic, sans-serif' :
                       'Lora, serif';
                     
                     const fontWeight = t.bold ? 'bold' : 'normal';

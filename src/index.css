@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Limelight&family=Caveat+Brush&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Limelight&family=Caveat+Brush&display=swap');
 
 @font-face { font-family: 'KBLJump'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-5@1.0/KBLJump_EB_ExtendedTTF.woff2') format('woff2'); }
 @font-face { font-family: 'GangwonTunTun'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduPowerExtraBoldA.woff') format('woff'); }
@@ -17,6 +17,8 @@
 @font-face { font-family: 'Keris'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2601-3@1.0/KERISKEDU_B.woff2') format('woff2'); font-weight: 700; }
 @font-face { font-family: 'JeonnamBarun'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-1@1.0/JNE-Bareun-TTF-Bold.woff2') format('woff2'); font-weight: 700; }
 @font-face { font-family: 'Incheon'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/iceJaram-Rg.woff2') format('woff2'); }
+@font-face { font-family: 'Cafe24SuperMagic'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/Cafe24Supermagic-Regular-v1.0.woff2') format('woff2'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'Cafe24SuperMagic'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2307-2@1.0/Cafe24Supermagic-Bold-v1.0.woff2') format('woff2'); font-weight: 700; font-display: swap; }
 
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.

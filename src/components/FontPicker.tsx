@@ -5,7 +5,11 @@ export type FontFamily =
   | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower'
   | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang'
   | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung'
-  | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora';
+  | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora'
+  | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada'
+  | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo'
+  | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush'
+  | 'Cafe24SuperMagic';
 
 export interface FontOption {
   value: FontFamily;
@@ -14,6 +18,30 @@ export interface FontOption {
 }
 
 export const fontOptions: FontOption[] = [
+  // ── 말씀카드 추천 ──
+  // 초강렬 헤드라인
+  { value: 'KBLJump', label: 'KBL점프', family: 'KBLJump' },
+  { value: 'GangwonTunTun', label: '강원튼튼', family: 'GangwonTunTun' },
+  // 개성/힙
+  { value: 'Kkubullim', label: '꾸불림', family: 'Kkubullim' },
+  { value: 'Taenada', label: '태나다', family: 'Taenada' },
+  { value: 'Cafe24SuperMagic', label: '카페24슈퍼매직', family: 'Cafe24SuperMagic' },
+  // 깔끔한 고딕
+  { value: 'PaperBlack', label: '페이퍼블랙', family: 'PaperBlack' },
+  { value: 'PaperLight', label: '페이퍼라이트', family: 'PaperLight' },
+  { value: 'SeoulHangang', label: '서울한강', family: 'SeoulHangang' },
+  { value: 'GangwonModoo', label: '강원모두', family: 'GangwonModoo' },
+  { value: 'JeonnamBarun', label: '전남바른', family: 'JeonnamBarun' },
+  // 손글씨/감성
+  { value: 'Hyunok', label: '현옥샘', family: 'Hyunok' },
+  { value: 'Incheon', label: '인천자람', family: 'Incheon' },
+  // 세리프/명조 · 교육체 개성
+  { value: 'RidiBatang', label: '리디바탕', family: 'RidiBatang' },
+  { value: 'Keris', label: '케리스', family: 'Keris' },
+  // 영문 (레트로/브러시)
+  { value: 'Limelight', label: 'Limelight', family: 'Limelight' },
+  { value: 'CaveatBrush', label: 'Caveat Brush', family: 'Caveat Brush' },
+
   // 고딕/명조 (Basic)
   { value: 'NotoSans', label: 'Noto Sans KR', family: 'Noto Sans KR' },
   { value: 'SerifKR', label: 'Noto Serif KR', family: 'Noto Serif KR' },

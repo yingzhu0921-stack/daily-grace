@@ -132,53 +132,59 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     };
 
     const TEMPLATE_FONT_OPTIONS: Record<string, Record<string, { primary: string; secondary: string }>> = {
+      // T01 Bold Poster — 초강렬 헤드라인 중심
       T01: {
-        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        editorial: { primary: 'PaperBlack', secondary: 'SeoulHangang' },
+        bold: { primary: 'KBLJump', secondary: 'PaperLight' },
+        editorial: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
         lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
-        quiet: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+        quiet: { primary: 'GangwonModoo', secondary: 'PaperLight' },
         handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
         modern: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
+      // T03 Magazine — 세리프/명조 우아
       T03: {
         bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
         editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
         lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        handwritten: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
       },
+      // T09 Modern Worship — 개성/힙
       T09: {
         bold: { primary: 'Taenada', secondary: 'PaperLight' },
         editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Cafe24SuperMagic', secondary: 'SeoulHangang' },
         quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
         handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'Taenada', secondary: 'PaperLight' },
+        modern: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
       },
+      // T13 Daily Grace — 손글씨/감성 저널
       T13: {
-        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        bold: { primary: 'GangwonModoo', secondary: 'SeoulHangang' },
         editorial: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Incheon', secondary: 'SeoulHangang' },
+        quiet: { primary: 'GangwonModoo', secondary: 'PaperLight' },
+        handwritten: { primary: 'Incheon', secondary: 'SeoulHangang' },
         modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
       },
+      // T17 Beige Minimal — 깔끔한 고딕 미니멀
       T17: {
         bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        editorial: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
         lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
         handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+        modern: { primary: 'GangwonModoo', secondary: 'PaperLight' },
       },
+      // T20 Light & Shadow — 세리프/명조 + 손글씨 잔잔
       T20: {
         bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        editorial: { primary: 'Keris', secondary: 'SeoulHangang' },
         lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+        handwritten: { primary: 'Incheon', secondary: 'SeoulHangang' },
+        modern: { primary: 'Keris', secondary: 'SeoulHangang' },
       },
     };
 
