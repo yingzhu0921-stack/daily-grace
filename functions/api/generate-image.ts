@@ -78,15 +78,21 @@ type AutoCardAnalysis = {
   reference?: string;
 };
 
-// 공백을 무시하고 같은 문자열인지 (원문 보존 검증용)
+// 성경 출처 패턴 (대괄호/소괄호 유무, 책 약어 + 장:절). 예: [고후5:17] (시23:1) 마 5:14 요3:16 시편 23:1
+const BIBLE_REF_RE = /[\[\(]?\s*[가-힣]{1,5}\s*\d{1,3}\s*[:：]\s*\d{1,3}\s*[\]\)]?/g;
+// 공백 무시 비교 (원문 보존 검증용)
 const normalizeForCompare = (s: string) => s.replace(/\s+/g, '');
+// 본문 비교용: 성경 출처는 재포맷 허용이므로 비교 전 제거
+const bodyForCompare = (s: string) => normalizeForCompare(s.replace(BIBLE_REF_RE, ''));
 
-// GPT가 만든 lines가 사용자 원문을 그대로 보존하는지 검증. 아니면 안전한 폴백 레이아웃 생성.
+// GPT가 만든 lines가 사용자 원문(본문)을 보존하는지 검증. 출처 재포맷은 허용. 아니면 안전 폴백.
 function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLine[] {
   const original = verse.trim();
   if (Array.isArray(gptLines) && gptLines.length) {
     const joined = gptLines.map((l) => l?.text ?? '').join('');
-    if (normalizeForCompare(joined) === normalizeForCompare(original)) {
+    // 1) 정확히 일치하거나 2) 출처를 제외한 본문이 일치하면 통과
+    if (normalizeForCompare(joined) === normalizeForCompare(original)
+      || bodyForCompare(joined) === bodyForCompare(original)) {
       // 원문 보존됨 — scale 정규화 (0.4~2.4 범위로 클램프)
       return gptLines.map((l) => ({
         text: String(l.text ?? ''),
@@ -231,7 +237,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) decide the typography hierarchy, (3) plan the layout, (4) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
+          content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) detect any Bible reference, (3) decide the typography hierarchy, (4) plan the layout, (5) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
 {"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
 ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words:
@@ -240,10 +246,11 @@ ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words
 - You may NOT change, summarize, paraphrase, translate, shorten, reorder, add, or remove any word. The words and their reading order stay identical.
 - "lines" MUST reproduce the user's input EXACTLY in order. Concatenating every line's "text" (ignoring spaces) must equal the user's input (ignoring spaces). If unsure, put the whole input as one line.
 - Do NOT add a Bible reference or any text the user did not type.
+- BIBLE REFERENCE EXCEPTION: a Bible reference (e.g. [고후5:17], (시23:1), 마 5:14, 요3:16) is metadata, not the message — it is the ONLY text you may reformat for visual quality. You may remove brackets, adjust spacing, or abbreviate/expand the book naturally (meaning unchanged): "[고후5:17]"→"고후 5:17", "[시23:1]"→"시편 23:1", "요3:16"→"요 3:16". Treat it as a small caption/signature line at scale 0.25–0.50, in a corner or under the message — never let it compete with the message.
 
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
-- "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, Bible reference / caption ≈ 0.35–0.55.
+- "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, Bible reference / caption ≈ 0.25–0.50.
 - THINK IN VISUAL BLOCKS, NOT SENTENCES: do not just split text at sentence boundaries or wrap it. A dominant phrase may span multiple lines; a single important word may become its own line. Typography should feel designed, with rhythm and emphasis.
 - INTERNAL HIERARCHY: even within one phrase, separate key words / dominant concepts from supporting words and size them differently. Typography should communicate meaning, not merely display text.
 - MANDATORY HIERARCHY — never output all lines at the same scale: every card MUST have clear size contrast. Pick the 1–2 most meaningful phrases and make them clearly the largest; shrink connective/intro words and any reference. If you find yourself giving everything ~1.0, you are wrong — choose what matters most and enlarge it.
@@ -264,6 +271,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
 - SYMBOL PRESERVATION: when meaningful imagery exists in the text, preserve it and let strong symbols drive the scene — interpreted literally, symbolically, environmentally, or emotionally. Goal: meaningful visual translation, not literal illustration.
 - FRESH INTERPRETATION: many valid images exist for one message — do not chase a single "correct" image; pick a fresh, specific interpretation and avoid reusing the same metaphor for similar messages.
 - AVOID GENERIC CHRISTIAN DEFAULTS: never auto-default to flowers, butterflies, rivers, beaches, sunsets, mountains, clouds, or abstract sunlight unless they are genuinely connected to this message. These must NOT be your fallback solution.
+- AVOID SIMPLISTIC SYMBOL SUBSTITUTION: do not replace a concept with the first obvious symbol (weak: renewal→butterfly, hope→sunrise, peace→flowers, faith→mountain). Prefer richer storytelling — environments, transitions, atmosphere, journeys, transformations, meaningful scenes — over obvious symbolic objects.
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
