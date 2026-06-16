@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
+import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { RecordSelectorModal } from '@/components/RecordSelectorModal';
 import { CardSaveSuccessModal } from '@/components/CardSaveSuccessModal';
 import { LoginModal } from '@/components/LoginModal';
@@ -77,6 +78,30 @@ type Meta = {
   bgBlur: number; // 배경 흐리게 (0-8, blur radius in px)
 };
 
+type GenerationKey = 'auto' | 'regenerate' | 'photo' | 'prompt' | 'background';
+
+type AutoTypography = {
+  color: string;
+  secondaryColor: string;
+  referenceColor: string;
+  shadow: string;
+  editShadow: { x: number; y: number; blur: number; color: string };
+  mainSize: string;
+  subSize: string;
+  refSize: string;
+  lineHeight: number;
+  editFontSize: number;
+  weight: React.CSSProperties['fontWeight'];
+  bold: boolean;
+  box?: {
+    enabled: boolean;
+    color: string;
+    opacity: number;
+    padding: number;
+    radius: number;
+  };
+};
+
 const PALETTE = ['#FFFFFF','#000000','#7E7C78','#1F1F1F','#A57DB8','#E8C87D','#DD957D'];
 
 /** ─────────────────────────────────────────────────────────
@@ -95,6 +120,71 @@ const RatioBox: React.FC<{ ratio: Ratio; className?: string; style?: React.CSSPr
 };
 
 function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(n, max)); }
+
+// 카드 이미지를 기기에 저장. 모바일은 공유 시트("이미지 저장")로 사진 앱 저장 유도, 그 외는 다운로드.
+// 주의: 공유 시트는 사용자 제스처가 필요하므로 긴 await 이전(클릭 직후)에 호출해야 함.
+async function downloadCardToDevice(dataUrl: string) {
+  const filename = `말씀카드-${Date.now()}.jpg`;
+  try {
+    if (navigator.share && navigator.canShare) {
+      const blob = await fetch(dataUrl).then(r => r.blob());
+      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: '말씀카드' });
+        return; // 공유 시트로 처리됨
+      }
+    }
+  } catch (e: any) {
+    // 사용자가 공유를 취소한 경우는 정상 동작 — 폴백하지 않음
+    if (e?.name === 'AbortError') return;
+    console.warn('Share failed, falling back to download:', e);
+  }
+  try {
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = dataUrl;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (e) {
+    console.error('Download failed:', e);
+  }
+}
+
+function ratioToAspect(ratio: Ratio | string) {
+  const [w, h] = ratio.split(':').map(Number);
+  return w && h ? `${w}/${h}` : '4/5';
+}
+
+function hexToRgba(hex: string, opacity: number) {
+  const normalized = hex.replace('#', '');
+  const value = normalized.length === 3
+    ? normalized.split('').map(char => char + char).join('')
+    : normalized;
+  const num = parseInt(value, 16);
+  if (Number.isNaN(num)) return `rgba(0,0,0,${opacity})`;
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
+function readLocalRecordList(key: string, type: string) {
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]').map((record: any) => ({ ...record, type }));
+  } catch {
+    return [];
+  }
+}
+
+function getLocalRecordsForSelector() {
+  return [
+    ...readLocalRecordList('meditations', 'meditation'),
+    ...readLocalRecordList('prayers', 'prayer'),
+    ...readLocalRecordList('gratitudes', 'gratitude'),
+    ...readLocalRecordList('diaries', 'diary'),
+  ];
+}
 
 /**
  * Crop image to specified aspect ratio (center crop)
@@ -187,8 +277,7 @@ const wrapCanvasText = (
  * ───────────────────────────────────────────────────────── */
 export default function Designer() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, user } = useAuth();
+  const { requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, user, loading } = useAuth();
   
   // 메타/텍스트 상태
   const [meta, setMeta] = useState<Meta>({ 
@@ -241,6 +330,12 @@ export default function Designer() {
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [generationProgress, setGenerationProgress] = useState<{
+    key: GenerationKey;
+    startedAt: number;
+    durationMs: number;
+  } | null>(null);
+  const [progressNow, setProgressNow] = useState(Date.now());
 
   // Track keyboard height for iOS: pad the bottom so panel stays above keyboard
   useEffect(() => {
@@ -259,6 +354,12 @@ export default function Designer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!generationProgress) return;
+    const timer = window.setInterval(() => setProgressNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [generationProgress]);
+
   // ── 멀티스텝 플로우 ──
   type FlowStep = 'entry' | 'record' | 'auto-template' | 'auto-preview' | 'edit' | 'photo-upload';
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
@@ -276,6 +377,16 @@ export default function Designer() {
     reference: string;
     mood: string;
     recommendedTemplates: string[];
+    backgroundConcept?: string;
+    visualMotifs?: string[];
+    palette?: string;
+    lighting?: string;
+    composition?: string;
+    typographyTone?: string;
+    fontMood?: string;
+    avoidImagery?: string[];
+    ratio?: Ratio;
+    typography?: AutoTypography;
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -283,6 +394,108 @@ export default function Designer() {
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
   const panelCollapsedBeforeEdit = useRef(true);
+
+  const isPlaceholderText = t.content === '텍스트를 입력하세요.';
+  const isTextEmpty = !t.content.trim() || isPlaceholderText;
+
+  const openBackgroundSheet = (tab: typeof bgTab = 'ai') => {
+    setBgTab(tab);
+    setBgOpen(true);
+  };
+  const showCardLoginNudge = useCallback(() => setShowLoginModal(true), [setShowLoginModal]);
+
+  const startGenerationProgress = useCallback((key: GenerationKey, durationMs: number) => {
+    const now = Date.now();
+    setProgressNow(now);
+    setGenerationProgress({ key, startedAt: now, durationMs });
+  }, []);
+
+  const stopGenerationProgress = useCallback((key: GenerationKey) => {
+    setGenerationProgress(current => current?.key === key ? null : current);
+  }, []);
+
+  const getGenerationProgress = (key: GenerationKey) => {
+    if (generationProgress?.key !== key) {
+      return { active: false, percent: 0, remainingSeconds: 0 };
+    }
+    const elapsed = Math.max(0, progressNow - generationProgress.startedAt);
+    const rawPercent = elapsed / generationProgress.durationMs;
+    const percent = Math.min(95, Math.max(8, Math.round(rawPercent * 100)));
+    const remainingSeconds = Math.max(1, Math.ceil((generationProgress.durationMs - elapsed) / 1000));
+    return { active: true, percent, remainingSeconds };
+  };
+
+  const renderGenerationContent = (
+    key: GenerationKey,
+    idleLabel: string,
+    activeLabel: string,
+    icon?: React.ReactNode,
+    dark = true
+  ) => {
+    const progress = getGenerationProgress(key);
+    if (!progress.active) {
+      return (
+        <>
+          {icon}
+          {idleLabel}
+        </>
+      );
+    }
+
+    return (
+      <div className="w-full flex flex-col gap-1.5">
+        <div className="flex items-center justify-center gap-2">
+          <div className={`w-4 h-4 border-2 rounded-full animate-spin ${dark ? 'border-white/30 border-t-white' : 'border-[#1F1F1F]/30 border-t-[#1F1F1F]'}`} />
+          <span>{activeLabel}</span>
+          <span className={dark ? 'text-white/70' : 'text-[#7E7C78]'}>
+            약 {progress.remainingSeconds}초
+          </span>
+        </div>
+        <div className={`h-1.5 w-full overflow-hidden rounded-full ${dark ? 'bg-white/20' : 'bg-[#E3E2E0]'}`}>
+          <div
+            className={`h-full rounded-full transition-[width] duration-300 ${dark ? 'bg-white' : 'bg-[#1F1F1F]'}`}
+            style={{ width: `${progress.percent}%` }}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  useLoginNudge({
+    user,
+    loading,
+    storageKey: 'login_nudge_card_designer',
+    show: showCardLoginNudge,
+    delay: 700,
+  });
+
+  const startTextEditing = () => {
+    if (isBgEditMode) return;
+    if (isPlaceholderText) {
+      setT(s => ({ ...s, content: '' }));
+      if (textRef.current) textRef.current.innerText = '';
+    }
+    setIsEditing(true);
+    requestAnimationFrame(() => {
+      textRef.current?.focus();
+    });
+  };
+
+  const startCardFlow = (track: 'auto' | 'manual' | 'photo') => {
+    requireAuth(() => {
+      setActiveTrack(track);
+      if (track === 'auto') {
+        setFlowStep('record');
+        return;
+      }
+      if (track === 'manual') {
+        setFlowStep('edit');
+        setIsPanelCollapsed(false);
+        return;
+      }
+      setFlowStep('photo-upload');
+    }, window.location.pathname);
+  };
 
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -329,77 +542,6 @@ export default function Designer() {
       }
     }
   }, []);
-
-  // 로그인 후 자동으로 레코드 선택 모달 열기
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const action = params.get('action');
-    
-    if (action === 'openRecordSelector' && user) {
-      console.log('🔄 Auto-opening record selector after login');
-      // 쿼리 파라미터 제거
-      params.delete('action');
-      const newSearch = params.toString();
-      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}`, { replace: true });
-      // 직접 모달 열기
-      setTimeout(async () => {
-        try {
-          const { supabase } = await import('@/integrations/supabase/client');
-          const { data: { session } } = await supabase.auth.getSession();
-          
-          let allRecords: any[] = [];
-
-          if (session?.user) {
-            const [meditations, prayers, gratitudes, diaries] = await Promise.all([
-              supabase
-                .from('meditation_notes')
-                .select('id, title, content, passage, date, created_at')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false })
-                .limit(3),
-              supabase
-                .from('prayer_notes')
-                .select('id, title, content, date, created_at')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false })
-                .limit(3),
-              supabase
-                .from('gratitude_entries')
-                .select('id, items, date, created_at')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false })
-                .limit(3),
-              supabase
-                .from('diary_entries')
-                .select('id, content, date, created_at')
-                .eq('user_id', session.user.id)
-                .order('created_at', { ascending: false })
-                .limit(3)
-            ]);
-
-            allRecords = [
-              ...(meditations.data || []).map(r => ({ ...r, type: 'meditation' })),
-              ...(prayers.data || []).map(r => ({ ...r, type: 'prayer' })),
-              ...(gratitudes.data || []).map(r => ({ ...r, type: 'gratitude' })),
-              ...(diaries.data || []).map(r => ({ ...r, type: 'diary' }))
-            ];
-          }
-
-          allRecords = allRecords
-            .sort((a, b) => new Date(b.created_at || b.createdAt || b.date).getTime() - new Date(a.created_at || a.createdAt || a.date).getTime())
-            .slice(0, 8);
-          
-          console.log('📋 Setting records:', allRecords.length);
-          setAvailableRecords(allRecords);
-          setRecordSelectorOpen(true);
-          console.log('✅ Modal opened');
-        } catch (error) {
-          console.error('Error in auto-open:', error);
-          toast.error('기록을 불러오는데 실패했습니다.');
-        }
-      }, 500);
-    }
-  }, [location.search, user, navigate]);
 
   // 하단 패널 스와이프 제스처
   const panelSwipeRef = useRef<{ startY: number; didSwipe: boolean }>();
@@ -491,8 +633,8 @@ export default function Designer() {
       // 리사이즈 모드
       let newW = currentDrag.sw;
       let newH = currentDrag.sh;
-      let newX = currentDrag.sx;
-      let newY = currentDrag.sy;
+      const newX = currentDrag.sx;
+      const newY = currentDrag.sy;
       
       if (currentDrag.mode === 'resize-tl') {
         newW = clamp(currentDrag.sw - dx * 2, 30, 95);
@@ -667,82 +809,12 @@ export default function Designer() {
   const fetchRecordsForSelector = useCallback(async () => {
     try {
       console.log('🔄 Fetching records...');
-      const { supabase } = await import('@/integrations/supabase/client');
-      const { data: { session } } = await supabase.auth.getSession();
-
-      let supabaseRecords: any[] = [];
-      let localRecords: any[] = [];
-
-      // localStorage에서 먼저 가져오기 (올바른 키 사용!)
-      console.log('📦 Fetching from localStorage...');
-      const localMeditationsRaw = localStorage.getItem('meditations');  // ✅ 'meditations'
-      const localPrayersRaw = localStorage.getItem('prayers');          // ✅ 'prayers'
-      const localGratitudesRaw = localStorage.getItem('gratitudes');    // ✅ 'gratitudes'
-      const localDiariesRaw = localStorage.getItem('diaries');          // ✅ 'diaries'
-
-      console.log('📦 Raw localStorage data:', {
-        meditation: localMeditationsRaw ? JSON.parse(localMeditationsRaw).length : 0,
-        prayer: localPrayersRaw ? JSON.parse(localPrayersRaw).length : 0,
-        gratitude: localGratitudesRaw ? JSON.parse(localGratitudesRaw).length : 0,
-        diary: localDiariesRaw ? JSON.parse(localDiariesRaw).length : 0
-      });
-
-      const localMeditations = JSON.parse(localMeditationsRaw || '[]').map((r: any) => ({ ...r, type: 'meditation' }));
-      const localPrayers = JSON.parse(localPrayersRaw || '[]').map((r: any) => ({ ...r, type: 'prayer' }));
-      const localGratitudes = JSON.parse(localGratitudesRaw || '[]').map((r: any) => ({ ...r, type: 'gratitude' }));
-      const localDiaries = JSON.parse(localDiariesRaw || '[]').map((r: any) => ({ ...r, type: 'diary' }));
-
-      localRecords = [...localMeditations, ...localPrayers, ...localGratitudes, ...localDiaries];
-      console.log('📦 localStorage total records:', localRecords.length);
-
-      if (session?.user) {
-        // Supabase에서 가져오기
-        const [meditations, prayers, gratitudes, diaries] = await Promise.all([
-          supabase
-            .from('meditation_notes')
-            .select('id, title, content, passage, date, created_at')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(10),
-          supabase
-            .from('prayer_notes')
-            .select('id, title, content, date, created_at')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(10),
-          supabase
-            .from('gratitude_entries')
-            .select('id, items, date, created_at')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(10),
-          supabase
-            .from('diary_entries')
-            .select('id, content, date, created_at')
-            .eq('user_id', session.user.id)
-            .order('created_at', { ascending: false })
-            .limit(10)
-        ]);
-
-        supabaseRecords = [
-          ...(meditations.data || []).map(r => ({ ...r, type: 'meditation' })),
-          ...(prayers.data || []).map(r => ({ ...r, type: 'prayer' })),
-          ...(gratitudes.data || []).map(r => ({ ...r, type: 'gratitude' })),
-          ...(diaries.data || []).map(r => ({ ...r, type: 'diary' }))
-        ];
-        console.log('✅ Supabase records fetched:', supabaseRecords.length);
-      }
 
       // 병합: localStorage 우선 (최신일 가능성 높음)
       const recordMap = new Map();
 
-      // Supabase 먼저 추가
-      supabaseRecords.forEach(record => {
-        recordMap.set(record.id, record);
-      });
-
       // localStorage로 덮어쓰기 (최신 데이터 우선)
-      localRecords.forEach(record => {
+      getLocalRecordsForSelector().forEach(record => {
         recordMap.set(record.id, {
           ...record,
           // localStorage 데이터 필드명 통일
@@ -754,7 +826,7 @@ export default function Designer() {
       });
 
       // 정렬 후 최근 12개
-      let allRecords = Array.from(recordMap.values())
+      const allRecords = Array.from(recordMap.values())
         .sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || a.date).getTime();
           const dateB = new Date(b.created_at || b.createdAt || b.date).getTime();
@@ -779,12 +851,8 @@ export default function Designer() {
   }, []); // 빈 배열: 컴포넌트 생명주기 동안 함수 참조 유지
 
   const openRecordSelector = async () => {
-    const callback = async () => {
-      await fetchRecordsForSelector();
-      setRecordSelectorOpen(true);
-    };
-    
-    requireAuth(callback, '/cards/designer?action=openRecordSelector');
+    await fetchRecordsForSelector();
+    setRecordSelectorOpen(true);
   };
 
   const analyzeSelectedRecord = async (record: any) => {
@@ -851,6 +919,7 @@ export default function Designer() {
 
     setLastGenerateTime(now);
     setIsExpandingPrompt(true);
+    startGenerationProgress('prompt', 12000);
     try {
       const response = await fetch('/api/generate-image', {
         method: 'POST',
@@ -885,6 +954,7 @@ export default function Designer() {
       toast.error(error instanceof Error ? error.message : '프롬프트 확장에 실패했습니다.');
     } finally {
       setIsExpandingPrompt(false);
+      stopGenerationProgress('prompt');
     }
   };
 
@@ -910,6 +980,7 @@ export default function Designer() {
 
     setLastGenerateTime(now);
     setIsGenerating(true);
+    startGenerationProgress('background', 38000);
     try {
       const response = await fetch('/api/generate-image', {
         method: 'POST',
@@ -969,6 +1040,7 @@ export default function Designer() {
       toast.error(error instanceof Error ? error.message : '이미지 생성에 실패했습니다.');
     } finally {
       setIsGenerating(false);
+      stopGenerationProgress('background');
     }
   };
 
@@ -987,42 +1059,101 @@ export default function Designer() {
     }
   };
 
+  const renderFlowProgress = (current: FlowStep) => {
+    const steps = activeTrack === 'auto'
+      ? [
+          { id: 'record', label: '내용' },
+          { id: 'auto-template', label: '템플릿' },
+          { id: 'auto-preview', label: '확인' },
+          { id: 'edit', label: '편집' },
+        ]
+      : activeTrack === 'photo'
+      ? [
+          { id: 'photo-upload', label: '사진' },
+          { id: 'edit', label: '편집' },
+        ]
+      : [
+          { id: 'edit', label: '편집' },
+        ];
+
+    const currentIndex = Math.max(0, steps.findIndex(step => step.id === current));
+
+    return (
+      <div className="px-4 sm:px-5 py-3 bg-white">
+        <div className="mx-auto flex max-w-md items-center gap-2">
+          {steps.map((step, index) => {
+            const active = index <= currentIndex;
+            return (
+              <React.Fragment key={step.id}>
+                <div className="flex items-center gap-1.5">
+                  <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-semibold ${
+                    active ? 'bg-[#1F1F1F] text-white' : 'bg-[#EEEDEB] text-[#7E7C78]'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <span className={`text-[12px] font-medium ${active ? 'text-[#2E2E2E]' : 'text-[#9E9C98]'}`}>
+                    {step.label}
+                  </span>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`h-px flex-1 ${index < currentIndex ? 'bg-[#1F1F1F]' : 'bg-[#E3E2E0]'}`} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   // Entry 화면
   const renderEntry = () => (
-    <div className="flex-1 min-h-0 flex flex-col items-center justify-start px-4 pt-12 pb-8 bg-white gap-6">
-      <div className="w-full max-w-sm">
-        <h2 className="text-2xl font-bold text-[#2E2E2E] mb-1">말씀카드 만들기</h2>
-        <p className="text-sm text-[#7E7C78]">어떻게 만들까요?</p>
+    <div className="flex-1 min-h-0 flex flex-col bg-white overflow-y-auto">
+      <div className="w-full max-w-md mx-auto px-5 pt-10 pb-6">
+        <h2 className="text-[26px] font-semibold leading-tight text-[#2E2E2E]">말씀카드 만들기</h2>
+        <p className="mt-2 text-[14px] leading-6 text-[#7E7C78]">시작 방식을 고르면 바로 제작 화면으로 이어집니다.</p>
       </div>
-      <div className="flex flex-col gap-3 w-full max-w-sm">
+
+      <div className="w-full max-w-md mx-auto px-5 pb-8 space-y-2.5">
         <button
-          onClick={() => { setActiveTrack('auto'); setFlowStep('record'); }}
-          className="flex items-center gap-3 p-5 border-2 border-[#1F1F1F] rounded-2xl hover:bg-[#1F1F1F]/5"
+          onClick={() => startCardFlow('auto')}
+          className="w-full flex items-center gap-4 p-4 border border-[#1F1F1F] bg-[#1F1F1F] text-white rounded-lg text-left transition-colors hover:bg-[#333333]"
         >
-          <Wand2 className="w-6 h-6 text-[#1F1F1F]" />
-          <div className="text-left">
-            <p className="font-semibold text-[#2E2E2E]">자동 완성</p>
-            <p className="text-xs text-[#7E7C78]">말씀 선택하면 카드까지 자동 완성</p>
+          <div className="h-10 w-10 rounded-lg bg-white/12 flex items-center justify-center shrink-0">
+            <Wand2 className="w-5 h-5" />
+          </div>
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <p className="font-semibold">자동 완성</p>
+              <span className="text-[11px] px-1.5 py-0.5 rounded bg-white/16">추천</span>
+            </div>
+            <p className="mt-1 text-[12px] leading-5 text-white/72">문구 입력, 템플릿 선택, AI 배경 생성까지 한 흐름으로 진행합니다.</p>
           </div>
         </button>
+
         <button
-          onClick={() => { setActiveTrack('manual'); setFlowStep('edit'); setBgOpen(true); }}
-          className="flex items-center gap-3 p-5 border-2 border-[#1F1F1F] rounded-2xl hover:bg-[#1F1F1F]/5"
+          onClick={() => startCardFlow('manual')}
+          className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
         >
-          <Type className="w-6 h-6 text-[#1F1F1F]" />
-          <div className="text-left">
+          <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
+            <Type className="w-5 h-5 text-[#1F1F1F]" />
+          </div>
+          <div className="min-w-0">
             <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
-            <p className="text-xs text-[#7E7C78]">배경 고르고 텍스트는 내가 입력</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">빈 캔버스에서 배경, 문구, 글꼴을 직접 조정합니다.</p>
           </div>
         </button>
+
         <button
-          onClick={() => { setActiveTrack('photo'); setFlowStep('photo-upload'); }}
-          className="flex items-center gap-3 p-5 border-2 border-[#1F1F1F] rounded-2xl hover:bg-[#1F1F1F]/5"
+          onClick={() => startCardFlow('photo')}
+          className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
         >
-          <ImageIcon className="w-6 h-6 text-[#1F1F1F]" />
-          <div className="text-left">
-            <p className="font-semibold text-[#2E2E2E]">사진 + AI 텍스트</p>
-            <p className="text-xs text-[#7E7C78]">사진 위에 AI가 텍스트 자동 생성</p>
+          <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
+            <ImageIcon className="w-5 h-5 text-[#1F1F1F]" />
+          </div>
+          <div className="min-w-0">
+            <p className="font-semibold text-[#2E2E2E]">사진으로 시작</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">사진을 올리고 문구를 얹어 카드로 다듬습니다.</p>
           </div>
         </button>
       </div>
@@ -1042,6 +1173,7 @@ export default function Designer() {
     const handleGenerate = async () => {
       if (!photoData || !photoText.trim()) return;
       setIsGeneratingPhoto(true);
+      startGenerationProgress('photo', 30000);
       try {
         const res = await fetch('/api/generate-image', {
           method: 'POST',
@@ -1058,6 +1190,7 @@ export default function Designer() {
         alert(err.message || '이미지 생성에 실패했습니다.');
       } finally {
         setIsGeneratingPhoto(false);
+        stopGenerationProgress('photo');
       }
     };
 
@@ -1109,19 +1242,9 @@ export default function Designer() {
         <button
           onClick={handleGenerate}
           disabled={!photoData || !photoText.trim() || isGeneratingPhoto}
-          className="w-full h-12 rounded-full bg-[#1F1F1F] text-white font-semibold text-[15px] disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full min-h-12 py-2 rounded-full bg-[#1F1F1F] text-white font-semibold text-[15px] disabled:opacity-40 flex items-center justify-center gap-2"
         >
-          {isGeneratingPhoto ? (
-            <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              AI가 카드를 만드는 중...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              AI로 카드 완성하기
-            </>
-          )}
+          {renderGenerationContent('photo', 'AI로 카드 완성하기', 'AI가 카드를 만드는 중...', <Sparkles className="w-4 h-4" />)}
         </button>
       </div>
     );
@@ -1131,7 +1254,10 @@ export default function Designer() {
 
   const renderRecord = () => (
     <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
-      <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">카드 내용 입력</h2>
+      <div>
+        <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">카드 내용 입력</h2>
+        <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">카드에 들어갈 핵심 문구를 넣어주세요.</p>
+      </div>
       <textarea
         value={verseInput}
         onChange={(e) => {
@@ -1140,34 +1266,109 @@ export default function Designer() {
           if (textRef.current) textRef.current.innerText = e.target.value;
         }}
         placeholder="말씀, 찬양 가사, 기도, 감사 내용을 입력해주세요"
-        className="flex-1 min-h-[150px] p-4 border border-[#E3E2E0] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none"
+        className="flex-1 min-h-[190px] p-4 border border-[#E3E2E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none text-[15px] leading-7"
       />
-      <button
-        onClick={openRecordSelector}
-        className="px-4 py-2 text-sm font-medium border border-[#1F1F1F] text-[#1F1F1F] rounded-xl hover:bg-[#1F1F1F]/5"
-      >
-        내 기록에서 선택
-      </button>
-      <button
-        onClick={() => {
-          if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
-          setFlowStep('auto-template');
-        }}
-        className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333]"
-      >
-        다음
-      </button>
+      <div className="grid grid-cols-[auto,1fr] gap-2">
+        <button
+          onClick={openRecordSelector}
+          className="px-4 py-3 text-sm font-medium border border-[#1F1F1F] text-[#1F1F1F] rounded-lg hover:bg-[#1F1F1F]/5"
+        >
+          내 기록
+        </button>
+        <button
+          onClick={() => {
+            if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
+            if (!selectedTemplateId) setSelectedTemplateId('T13');
+            setFlowStep('auto-template');
+          }}
+          className="px-4 py-3 bg-[#1F1F1F] text-white rounded-lg font-medium hover:bg-[#333333]"
+        >
+          템플릿 선택
+        </button>
+      </div>
     </div>
   );
 
   // Auto Template 선택 화면
   const TEMPLATE_INFO = [
-    { id: 'T01', name: 'Bold Poster', mood: '담대함 · 선포 · 믿음 · 승리' },
-    { id: 'T03', name: 'Magazine', mood: '시편 · 묵상 · 평안 · 은혜' },
-    { id: 'T09', name: 'Modern Worship', mood: '소망 · 회복 · 빛 · 예배' },
-    { id: 'T13', name: 'Daily Grace', mood: 'QT · 묵상 · 일상 · 감사' },
-    { id: 'T17', name: 'Beige Minimal', mood: '은혜 · 쉼 · 평안' },
-    { id: 'T20', name: 'Light & Shadow', mood: '묵상 · 기도 · 고요함' },
+    {
+      id: 'T01',
+      name: 'Bold Poster',
+      mood: '담대함 · 선포 · 믿음 · 승리',
+      example: '믿음으로 서다',
+      hint: '강한 문장, 포스터 느낌',
+      preview: {
+        background: 'linear-gradient(135deg, #F8F5ED 0%, #ECE6D9 58%, #252525 59%, #252525 100%)',
+        color: '#1F1F1F',
+        accent: '#1F1F1F',
+        font: "'PaperBlack', sans-serif",
+      },
+    },
+    {
+      id: 'T03',
+      name: 'Magazine',
+      mood: '시편 · 묵상 · 평안 · 은혜',
+      example: '은혜가 머무는 곳',
+      hint: '고급 잡지, 부드러운 여백',
+      preview: {
+        background: 'linear-gradient(145deg, #F7F0E5 0%, #FEFCF8 55%, #D8C8AD 100%)',
+        color: '#4C3B2A',
+        accent: '#C8A96A',
+        font: "'RidiBatang', serif",
+      },
+    },
+    {
+      id: 'T09',
+      name: 'Modern Worship',
+      mood: '소망 · 회복 · 빛 · 예배',
+      example: '다시 빛으로',
+      hint: '빛, 컬러, 예배 앨범',
+      preview: {
+        background: 'radial-gradient(circle at 25% 20%, #FFE6A7 0%, transparent 32%), linear-gradient(135deg, #3F2E7E 0%, #C56DA3 52%, #68A4D9 100%)',
+        color: '#FFFFFF',
+        accent: '#FFE6A7',
+        font: "'Taenada', sans-serif",
+      },
+    },
+    {
+      id: 'T13',
+      name: 'Daily Grace',
+      mood: 'QT · 묵상 · 일상 · 감사',
+      example: '오늘의 작은 은혜',
+      hint: '저널, 따뜻한 일상',
+      preview: {
+        background: 'linear-gradient(135deg, #FBF3E8 0%, #F3DFC3 100%)',
+        color: '#5A4635',
+        accent: '#D0A56E',
+        font: "'Hyunok', sans-serif",
+      },
+    },
+    {
+      id: 'T17',
+      name: 'Beige Minimal',
+      mood: '은혜 · 쉼 · 평안',
+      example: '잠잠히 머물다',
+      hint: '절제된 베이지, 차분함',
+      preview: {
+        background: 'linear-gradient(135deg, #EFE7D8 0%, #FAF7EF 100%)',
+        color: '#3D3328',
+        accent: '#CBB994',
+        font: "'PaperLight', sans-serif",
+      },
+    },
+    {
+      id: 'T20',
+      name: 'Light & Shadow',
+      mood: '묵상 · 기도 · 고요함',
+      example: '빛 가운데 고요히',
+      hint: '창가 빛, 그림자, 기도',
+      preview: {
+        background: 'linear-gradient(115deg, #F8EBD7 0%, #FFFDF8 42%, #B79569 43%, #5A4632 100%)',
+        color: '#FFF8EA',
+        accent: '#8E6A45',
+        font: "'RidiBatang', serif",
+      },
+    },
   ];
 
   const renderAutoTemplate = () => {
@@ -1176,11 +1377,12 @@ export default function Designer() {
       if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
       setIsGenerating(true);
       setTemplateIndex(0);
+      startGenerationProgress('auto', 45000);
       try {
         const res = await fetch('/api/generate-image', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateId: selectedTemplateId }),
+          body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateId: selectedTemplateId, ratio: meta.ratio }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: '오류' }));
@@ -1188,43 +1390,85 @@ export default function Designer() {
           throw new Error(err.error || '생성 실패');
         }
         const data = await res.json();
-        setAutoResult(data);
+        setAutoResult(await buildAdaptiveAutoResult(data));
         setFlowStep('auto-preview');
       } catch (e) {
         toast.error(e instanceof Error ? e.message : '카드 생성에 실패했습니다.');
       } finally {
         setIsGenerating(false);
+        stopGenerationProgress('auto');
       }
     };
 
     return (
       <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
-        <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">템플릿 선택</h2>
+        <div>
+          <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">템플릿 선택</h2>
+          <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">분위기에 가까운 스타일을 고르면 AI가 배경과 구도를 만듭니다.</p>
+        </div>
+        <div>
+          <h3 className="text-sm font-semibold text-[#1F1F1F] mb-2">카드 비율</h3>
+          <div className="grid grid-cols-4 gap-2">
+            {(['4:5', '9:16', '1:1', '16:9'] as Ratio[]).map((ratio) => (
+              <button
+                key={ratio}
+                onClick={() => setMeta(m => ({ ...m, ratio }))}
+                className={`h-10 rounded-lg border text-sm font-semibold transition-colors ${
+                  meta.ratio === ratio
+                    ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white'
+                    : 'border-[#E3E2E0] text-[#4A4A4A] hover:border-[#1F1F1F]/40'
+                }`}
+              >
+                {ratio}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-3">
-          {TEMPLATE_INFO.map(({ id, name, mood }) => (
+          {TEMPLATE_INFO.map(({ id, name, mood, example, hint, preview }) => (
             <button
               key={id}
               onClick={() => setSelectedTemplateId(id)}
-              className={`p-4 rounded-xl border-2 text-left transition-colors ${
+              className={`p-3 rounded-lg border text-left transition-colors ${
                 selectedTemplateId === id
                   ? 'border-[#1F1F1F] bg-[#1F1F1F]/5'
                   : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
               }`}
             >
-              <p className="text-xs font-semibold text-[#7E7C78] mb-1">{id}</p>
-              <p className="text-sm font-semibold text-[#1F1F1F]">{name}</p>
-              <p className="text-xs text-[#9E9C98] mt-1 leading-relaxed">{mood}</p>
+              <div
+                className="relative h-24 rounded-md overflow-hidden mb-3 shadow-sm"
+                style={{ background: preview.background }}
+              >
+                <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #000 1px, transparent 1px)', backgroundSize: '9px 9px' }} />
+                <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
+                  <p
+                    className="text-[14px] leading-tight"
+                    style={{ color: preview.color, fontFamily: preview.font, textShadow: id === 'T09' || id === 'T20' ? '0 2px 8px rgba(0,0,0,.24)' : 'none' }}
+                  >
+                    {example}
+                  </p>
+                  <div className="mt-2 h-1 w-10 rounded-full" style={{ backgroundColor: preview.accent }} />
+                </div>
+              </div>
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-[#7E7C78] mb-0.5">{id}</p>
+                  <p className="text-sm font-semibold text-[#1F1F1F] leading-tight">{name}</p>
+                </div>
+                <span className="shrink-0 max-w-[82px] text-[10px] leading-3 px-1.5 py-0.5 rounded-md bg-[#F3F2F1] text-[#7E7C78] text-right">
+                  {hint}
+                </span>
+              </div>
+              <p className="text-xs text-[#9E9C98] mt-2 leading-relaxed">{mood}</p>
             </button>
           ))}
         </div>
         <button
           onClick={handleGenerate}
           disabled={isGenerating || !selectedTemplateId}
-          className="px-4 py-3 bg-[#1F1F1F] text-white rounded-xl font-medium hover:bg-[#333333] disabled:opacity-40 flex items-center justify-center gap-2"
+          className="px-4 py-3 min-h-12 bg-[#1F1F1F] text-white rounded-lg font-medium hover:bg-[#333333] disabled:opacity-40 flex items-center justify-center gap-2"
         >
-          {isGenerating
-            ? <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />AI가 카드를 만드는 중...</>
-            : 'AI로 카드 만들기'}
+          {renderGenerationContent('auto', 'AI로 카드 만들기', 'AI가 카드를 만드는 중...')}
         </button>
       </div>
     );
@@ -1249,15 +1493,417 @@ export default function Designer() {
     'CaveatBrush': "'Caveat Brush', cursive",
   };
 
+  const AUTO_TYPOGRAPHY: Record<string, AutoTypography> = {
+    T01: {
+      color: '#171717',
+      secondaryColor: 'rgba(23,23,23,0.72)',
+      referenceColor: 'rgba(23,23,23,0.52)',
+      shadow: '0 1px 0 rgba(255,255,255,0.8)',
+      editShadow: { x: 0, y: 1, blur: 0, color: 'rgba(255,255,255,.8)' },
+      mainSize: 'clamp(1.65rem, 5.8vw, 2.75rem)',
+      subSize: 'clamp(0.78rem, 2.1vw, 0.96rem)',
+      refSize: 'clamp(0.7rem, 1.8vw, 0.82rem)',
+      lineHeight: 1.12,
+      editFontSize: 20,
+      weight: 800,
+      bold: true,
+    },
+    T03: {
+      color: '#473728',
+      secondaryColor: 'rgba(71,55,40,0.68)',
+      referenceColor: 'rgba(71,55,40,0.5)',
+      shadow: '0 1px 2px rgba(255,255,255,0.55)',
+      editShadow: { x: 0, y: 1, blur: 2, color: 'rgba(255,255,255,.55)' },
+      mainSize: 'clamp(1.35rem, 4.7vw, 2.15rem)',
+      subSize: 'clamp(0.82rem, 2.2vw, 0.96rem)',
+      refSize: 'clamp(0.72rem, 1.9vw, 0.84rem)',
+      lineHeight: 1.32,
+      editFontSize: 17,
+      weight: 600,
+      bold: false,
+    },
+    T09: {
+      color: '#FFFFFF',
+      secondaryColor: 'rgba(255,255,255,0.86)',
+      referenceColor: 'rgba(255,255,255,0.7)',
+      shadow: '0 3px 14px rgba(27,12,60,0.38)',
+      editShadow: { x: 0, y: 3, blur: 14, color: 'rgba(27,12,60,.38)' },
+      mainSize: 'clamp(1.55rem, 5.3vw, 2.55rem)',
+      subSize: 'clamp(0.8rem, 2.2vw, 0.96rem)',
+      refSize: 'clamp(0.7rem, 1.9vw, 0.84rem)',
+      lineHeight: 1.18,
+      editFontSize: 19,
+      weight: 700,
+      bold: true,
+    },
+    T13: {
+      color: '#4E3D2D',
+      secondaryColor: 'rgba(78,61,45,0.66)',
+      referenceColor: 'rgba(78,61,45,0.48)',
+      shadow: '0 1px 1px rgba(255,255,255,0.45)',
+      editShadow: { x: 0, y: 1, blur: 1, color: 'rgba(255,255,255,.45)' },
+      mainSize: 'clamp(1.45rem, 5vw, 2.35rem)',
+      subSize: 'clamp(0.82rem, 2.25vw, 0.98rem)',
+      refSize: 'clamp(0.72rem, 1.9vw, 0.84rem)',
+      lineHeight: 1.34,
+      editFontSize: 18,
+      weight: 500,
+      bold: false,
+    },
+    T17: {
+      color: '#3D3328',
+      secondaryColor: 'rgba(61,51,40,0.58)',
+      referenceColor: 'rgba(61,51,40,0.44)',
+      shadow: 'none',
+      editShadow: { x: 0, y: 0, blur: 0, color: 'rgba(0,0,0,0)' },
+      mainSize: 'clamp(1.2rem, 4.2vw, 1.92rem)',
+      subSize: 'clamp(0.78rem, 2vw, 0.9rem)',
+      refSize: 'clamp(0.68rem, 1.8vw, 0.8rem)',
+      lineHeight: 1.48,
+      editFontSize: 15,
+      weight: 400,
+      bold: false,
+    },
+    T20: {
+      color: '#FDF9F1',
+      secondaryColor: 'rgba(253,249,241,0.82)',
+      referenceColor: 'rgba(253,249,241,0.66)',
+      shadow: '0 2px 10px rgba(48,34,22,0.32)',
+      editShadow: { x: 0, y: 2, blur: 10, color: 'rgba(48,34,22,.32)' },
+      mainSize: 'clamp(1.28rem, 4.5vw, 2.08rem)',
+      subSize: 'clamp(0.82rem, 2.15vw, 0.96rem)',
+      refSize: 'clamp(0.72rem, 1.85vw, 0.82rem)',
+      lineHeight: 1.36,
+      editFontSize: 16,
+      weight: 600,
+      bold: false,
+    },
+  };
+
+  const getAutoTypography = (template: string) => AUTO_TYPOGRAPHY[template] || AUTO_TYPOGRAPHY.T13;
+
+  const analyzeBackgroundForTypography = (imageSrc: string, base: AutoTypography): Promise<AutoTypography> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const width = 80;
+        const height = 80;
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        if (!ctx) {
+          resolve(base);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        const sampleX = 16;
+        const sampleY = 18;
+        const sampleW = 48;
+        const sampleH = 44;
+        const pixels = ctx.getImageData(sampleX, sampleY, sampleW, sampleH).data;
+        const luminance: number[] = [];
+        let warm = 0;
+        let cool = 0;
+
+        for (let i = 0; i < pixels.length; i += 4) {
+          const r = pixels[i];
+          const g = pixels[i + 1];
+          const b = pixels[i + 2];
+          luminance.push(0.2126 * r + 0.7152 * g + 0.0722 * b);
+          warm += Math.max(0, r - b);
+          cool += Math.max(0, b - r);
+        }
+
+        const avg = luminance.reduce((sum, value) => sum + value, 0) / luminance.length;
+        const variance = luminance.reduce((sum, value) => sum + Math.pow(value - avg, 2), 0) / luminance.length;
+        const contrast = Math.sqrt(variance);
+        const isBright = avg >= 158;
+        const isDark = avg <= 98;
+        const isComplex = contrast >= 42;
+        const isWarm = warm > cool * 1.15;
+
+        const darkInk = isWarm ? '#332A22' : '#24272B';
+        const lightInk = isWarm ? '#FFF8EA' : '#F8FBFF';
+        const color = isBright && !isDark ? darkInk : lightInk;
+        const secondaryColor = isBright && !isDark
+          ? hexToRgba(color, 0.72)
+          : hexToRgba(color, 0.84);
+        const referenceColor = isBright && !isDark
+          ? hexToRgba(color, 0.52)
+          : hexToRgba(color, 0.66);
+        const shadowColor = isBright && !isDark
+          ? 'rgba(255,255,255,0.72)'
+          : 'rgba(18,14,10,0.52)';
+        const shadow = isComplex
+          ? (isBright && !isDark ? '0 2px 10px rgba(255,255,255,0.85)' : '0 3px 16px rgba(0,0,0,0.62)')
+          : (isBright && !isDark ? '0 1px 2px rgba(255,255,255,0.7)' : '0 2px 10px rgba(0,0,0,0.42)');
+
+        resolve({
+          ...base,
+          color,
+          secondaryColor,
+          referenceColor,
+          shadow,
+          editShadow: {
+            x: 0,
+            y: isComplex ? 3 : 2,
+            blur: isComplex ? 16 : 10,
+            color: shadowColor,
+          },
+          box: isComplex
+            ? {
+                enabled: true,
+                color: isBright && !isDark ? '#FFFFFF' : '#000000',
+                opacity: isBright && !isDark ? 28 : 32,
+                padding: 18,
+                radius: 14,
+              }
+            : undefined,
+        });
+      };
+      img.onerror = () => resolve(base);
+      img.src = imageSrc;
+    });
+  };
+
+  const buildAdaptiveAutoResult = async (data: any) => {
+    const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
+    const base = getAutoTypography(data?.template || selectedTemplateId || 'T13');
+    const typography = data?.image
+      ? await analyzeBackgroundForTypography(data.image, base)
+      : base;
+
+    return {
+      ...data,
+      ratio: resultRatio,
+      typography,
+    };
+  };
+
   const renderAutoPreview = () => {
     if (!autoResult) return null;
     const primaryFont = PREVIEW_FONT[autoResult.fonts.primary] || 'sans-serif';
     const secondaryFont = PREVIEW_FONT[autoResult.fonts.secondary] || 'sans-serif';
+    const typography = autoResult.typography || getAutoTypography(autoResult.template);
+    const previewRatio = autoResult.ratio || meta.ratio;
+
+    const getPreviewDimensions = () => {
+      switch (previewRatio) {
+        case '9:16': return { width: 900, height: 1600 };
+        case '16:9': return { width: 1600, height: 900 };
+        case '1:1': return { width: 1200, height: 1200 };
+        case '4:3': return { width: 1200, height: 900 };
+        case '4:5': return { width: 1000, height: 1250 };
+        case '3:4': return { width: 900, height: 1200 };
+        case '2:3': return { width: 900, height: 1350 };
+        default: return { width: 1000, height: 1250 };
+      }
+    };
+
+    const wrapPreviewText = (ctx: CanvasRenderingContext2D, text: string, maxWidth: number) => {
+      const chunks = text.includes(' ') ? text.split(' ') : Array.from(text);
+      const lines: string[] = [];
+      let current = '';
+      chunks.forEach((chunk) => {
+        const test = text.includes(' ') ? (current ? `${current} ${chunk}` : chunk) : current + chunk;
+        if (ctx.measureText(test).width > maxWidth && current) {
+          lines.push(current);
+          current = chunk;
+        } else {
+          current = test;
+        }
+      });
+      if (current) lines.push(current);
+      return lines;
+    };
+
+    const applyPreviewEditState = () => {
+      const typography = autoResult.typography || getAutoTypography(autoResult.template);
+      setMeta(m => ({ ...m, ratio: previewRatio, bgImageUrl: autoResult.image, bgScale: 100 }));
+      setT(s => ({
+        ...s,
+        content: verseInput,
+        fontFamily: autoResult.fonts.primary as any,
+        fontSize: typography.editFontSize,
+        lineHeight: typography.lineHeight,
+        color: typography.color,
+        bold: typography.bold,
+        shadow: {
+          enabled: typography.shadow !== 'none',
+          x: typography.editShadow.x,
+          y: typography.editShadow.y,
+          blur: typography.editShadow.blur,
+          color: typography.editShadow.color,
+        },
+        box: typography.box ? {
+          enabled: typography.box.enabled,
+          color: typography.box.color,
+          opacity: typography.box.opacity,
+          padding: typography.box.padding,
+          radius: typography.box.radius,
+        } : {
+          ...s.box,
+          enabled: false,
+        },
+      }));
+      if (textRef.current) textRef.current.innerText = verseInput;
+    };
+
+    const handleSaveAutoPreview = async () => {
+      setIsSaving(true);
+      try {
+        await document.fonts?.ready;
+        const { width, height } = getPreviewDimensions();
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) throw new Error('Canvas context not available');
+
+        const img = new Image();
+        await new Promise<void>((resolve, reject) => {
+          img.onload = () => resolve();
+          img.onerror = () => reject(new Error('이미지를 불러오지 못했습니다.'));
+          img.src = autoResult.image;
+        });
+
+        const sourceRatio = img.width / img.height;
+        const targetRatio = width / height;
+        let drawW = width;
+        let drawH = height;
+        let drawX = 0;
+        let drawY = 0;
+        if (sourceRatio > targetRatio) {
+          drawH = height;
+          drawW = height * sourceRatio;
+          drawX = (width - drawW) / 2;
+        } else {
+          drawW = width;
+          drawH = width / sourceRatio;
+          drawY = (height - drawH) / 2;
+        }
+        ctx.drawImage(img, drawX, drawY, drawW, drawH);
+
+        const centerX = width / 2;
+        const maxTextWidth = width * 0.76;
+        const scale = width / 1000;
+        const mainSize = Math.max(42, typography.editFontSize * 2.35 * scale);
+        const subSize = Math.max(24, mainSize * 0.38);
+        const refSize = Math.max(20, mainSize * 0.32);
+        const mainLineHeight = mainSize * typography.lineHeight;
+        const subLineHeight = subSize * 1.55;
+        const refLineHeight = refSize * 1.35;
+        const mainFont = `${typography.bold ? 700 : 500} ${mainSize}px ${primaryFont}`;
+        const subFont = `400 ${subSize}px ${secondaryFont}`;
+        const refFont = `400 ${refSize}px ${secondaryFont}`;
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.font = mainFont;
+        const mainLines = wrapPreviewText(ctx, autoResult.mainPhrase, maxTextWidth);
+        ctx.font = subFont;
+        const subLines = autoResult.secondaryPhrase ? wrapPreviewText(ctx, autoResult.secondaryPhrase, maxTextWidth * 0.82) : [];
+        ctx.font = refFont;
+        const refLines = autoResult.reference ? wrapPreviewText(ctx, autoResult.reference, maxTextWidth * 0.7) : [];
+        const gap1 = subLines.length ? mainSize * 0.34 : 0;
+        const gap2 = refLines.length ? mainSize * 0.18 : 0;
+        const textHeight =
+          mainLines.length * mainLineHeight +
+          gap1 +
+          subLines.length * subLineHeight +
+          gap2 +
+          refLines.length * refLineHeight;
+        const startY = (height - textHeight) / 2;
+
+        if (typography.box?.enabled) {
+          const padding = typography.box.padding * 2.2 * scale;
+          const boxW = maxTextWidth + padding * 2;
+          const boxH = textHeight + padding * 2;
+          ctx.fillStyle = hexToRgba(typography.box.color, typography.box.opacity / 100);
+          ctx.beginPath();
+          ctx.roundRect(centerX - boxW / 2, startY - padding, boxW, boxH, typography.box.radius * 2 * scale);
+          ctx.fill();
+        }
+
+        ctx.shadowColor = typography.editShadow.color;
+        ctx.shadowOffsetX = typography.editShadow.x * scale;
+        ctx.shadowOffsetY = typography.editShadow.y * scale;
+        ctx.shadowBlur = typography.editShadow.blur * scale;
+
+        let y = startY;
+        ctx.font = mainFont;
+        ctx.fillStyle = typography.color;
+        mainLines.forEach((line) => {
+          ctx.fillText(line, centerX, y);
+          y += mainLineHeight;
+        });
+        y += gap1;
+        ctx.font = subFont;
+        ctx.fillStyle = typography.secondaryColor;
+        subLines.forEach((line) => {
+          ctx.fillText(line, centerX, y);
+          y += subLineHeight;
+        });
+        y += gap2;
+        ctx.font = refFont;
+        ctx.fillStyle = typography.referenceColor;
+        refLines.forEach((line) => {
+          ctx.fillText(line, centerX, y);
+          y += refLineHeight;
+        });
+
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+        // 핸드폰에도 저장 (보관함과 동시에)
+        await downloadCardToDevice(dataUrl);
+        await saveCard({
+          id: Date.now().toString(),
+          createdAt: new Date().toISOString(),
+          ratio: previewRatio,
+          bg: autoResult.image,
+          text: verseInput,
+          ref: autoResult.reference || '',
+          tags: [],
+          imageDataUrl: dataUrl,
+          editorState: {
+            meta: {
+              ...meta,
+              ratio: previewRatio,
+              bgImageUrl: autoResult.image,
+              bgScale: 100,
+            },
+            textStyle: {
+              ...t,
+              content: verseInput,
+              fontFamily: autoResult.fonts.primary,
+              fontSize: typography.editFontSize,
+              lineHeight: typography.lineHeight,
+              color: typography.color,
+              bold: typography.bold,
+              shadow: {
+                enabled: typography.shadow !== 'none',
+                ...typography.editShadow,
+              },
+              box: typography.box || { ...t.box, enabled: false },
+            },
+          },
+        });
+        setSavedCardData({ imageDataUrl: dataUrl, text: verseInput });
+        setSaveSuccessOpen(true);
+        toast.success('카드가 저장되었어요!');
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : '저장에 실패했습니다.');
+      } finally {
+        setIsSaving(false);
+      }
+    };
 
     const handleRegenerate = async () => {
       setIsGenerating(true);
       const nextIndex = templateIndex + 1;
       setTemplateIndex(nextIndex);
+      startGenerationProgress('regenerate', 42000);
       try {
         const res = await fetch('/api/generate-image', {
           method: 'POST', credentials: 'include',
@@ -1265,6 +1911,7 @@ export default function Designer() {
           body: JSON.stringify({
             action: 'auto-complete',
             verse: verseInput.trim(),
+            ratio: previewRatio,
             templateIndex: nextIndex,
             cachedAnalysis: {
               mainPhrase: autoResult.mainPhrase,
@@ -1272,6 +1919,14 @@ export default function Designer() {
               reference: autoResult.reference,
               mood: autoResult.mood,
               templates: autoResult.recommendedTemplates,
+              backgroundConcept: autoResult.backgroundConcept,
+              visualMotifs: autoResult.visualMotifs,
+              palette: autoResult.palette,
+              lighting: autoResult.lighting,
+              composition: autoResult.composition,
+              typographyTone: autoResult.typographyTone,
+              fontMood: autoResult.fontMood,
+              avoidImagery: autoResult.avoidImagery,
             },
           }),
         });
@@ -1280,54 +1935,71 @@ export default function Designer() {
           if (res.status === 429) { toast.error('API 요청 한도 초과'); return; }
           throw new Error(err.error || '생성 실패');
         }
-        setAutoResult(await res.json());
+        setAutoResult(await buildAdaptiveAutoResult(await res.json()));
       } catch (e) {
         toast.error(e instanceof Error ? e.message : '재생성에 실패했습니다.');
       } finally {
         setIsGenerating(false);
+        stopGenerationProgress('regenerate');
       }
     };
 
     return (
       <div className="flex-1 min-h-0 flex flex-col">
         <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-gray-200 overflow-hidden">
-          <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: '4/5', maxHeight: '100%', maxWidth: '100%' }}>
+          <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: ratioToAspect(previewRatio), maxHeight: '100%', maxWidth: '100%' }}>
             <img src={autoResult.image} alt="card" className="w-full h-full object-cover" />
             <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center">
-              <p style={{ fontFamily: primaryFont, fontSize: 'clamp(1.8rem, 6vw, 2.8rem)', lineHeight: 1.15, color: 'white', textShadow: '0 2px 12px rgba(0,0,0,0.5)', whiteSpace: 'pre-line', wordBreak: 'keep-all' }}>
-                {autoResult.mainPhrase}
-              </p>
-              {autoResult.secondaryPhrase && (
-                <p style={{ fontFamily: secondaryFont, fontSize: 'clamp(0.85rem, 2.5vw, 1rem)', marginTop: '1rem', color: 'rgba(255,255,255,0.92)', textShadow: '0 1px 6px rgba(0,0,0,0.5)', wordBreak: 'keep-all' }}>
-                  {autoResult.secondaryPhrase}
+              <div
+                style={{
+                  maxWidth: '88%',
+                  borderRadius: typography.box?.enabled ? typography.box.radius : undefined,
+                  padding: typography.box?.enabled ? typography.box.padding : undefined,
+                  backgroundColor: typography.box?.enabled ? hexToRgba(typography.box.color, typography.box.opacity / 100) : undefined,
+                  backdropFilter: typography.box?.enabled ? 'blur(2px)' : undefined,
+                }}
+              >
+                <p style={{ fontFamily: primaryFont, fontSize: typography.mainSize, lineHeight: typography.lineHeight, color: typography.color, textShadow: typography.shadow, whiteSpace: 'pre-line', wordBreak: 'keep-all', fontWeight: typography.weight, letterSpacing: 0 }}>
+                  {autoResult.mainPhrase}
                 </p>
-              )}
-              {autoResult.reference && (
-                <p style={{ fontFamily: secondaryFont, fontSize: 'clamp(0.75rem, 2vw, 0.875rem)', marginTop: '0.4rem', color: 'rgba(255,255,255,0.75)', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-                  {autoResult.reference}
-                </p>
-              )}
+                {autoResult.secondaryPhrase && (
+                  <p style={{ fontFamily: secondaryFont, fontSize: typography.subSize, marginTop: '0.8rem', color: typography.secondaryColor, textShadow: typography.shadow, wordBreak: 'keep-all', lineHeight: 1.55, letterSpacing: 0 }}>
+                    {autoResult.secondaryPhrase}
+                  </p>
+                )}
+                {autoResult.reference && (
+                  <p style={{ fontFamily: secondaryFont, fontSize: typography.refSize, marginTop: '0.45rem', color: typography.referenceColor, textShadow: typography.shadow, letterSpacing: 0 }}>
+                    {autoResult.reference}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
-        <div className="shrink-0 flex gap-2 p-4 border-t bg-white">
+        <div className="shrink-0 grid grid-cols-[1fr,0.72fr,1.35fr] gap-2 p-4 border-t bg-white">
           <button
             onClick={handleRegenerate}
-            disabled={isGenerating}
-            className="flex-1 px-4 py-2 border border-[#1F1F1F] text-[#1F1F1F] rounded-xl font-medium disabled:opacity-40 flex items-center justify-center gap-2"
+            disabled={isGenerating || isSaving}
+            className="flex-1 px-4 py-2 min-h-12 border border-[#1F1F1F] text-[#1F1F1F] rounded-xl font-medium disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {isGenerating ? <><div className="w-3.5 h-3.5 border-2 border-[#1F1F1F]/30 border-t-[#1F1F1F] rounded-full animate-spin" />생성 중...</> : '다시 생성'}
+            {renderGenerationContent('regenerate', '다시 생성', '다시 만드는 중...', undefined, false)}
           </button>
           <button
             onClick={() => {
-              setMeta(m => ({ ...m, bgImageUrl: autoResult.image, bgScale: 100 }));
-              setT(s => ({ ...s, content: verseInput, fontFamily: autoResult.fonts.primary as any }));
-              if (textRef.current) textRef.current.innerText = verseInput;
+              applyPreviewEditState();
               setFlowStep('edit');
             }}
-            className="flex-1 px-4 py-2 bg-[#1F1F1F] text-white rounded-xl font-medium"
+            disabled={isGenerating || isSaving}
+            className="px-3 py-2 bg-white border border-[#D8D6D2] text-[#2E2E2E] rounded-xl font-medium disabled:opacity-40"
           >
-            편집하기
+            편집
+          </button>
+          <button
+            onClick={handleSaveAutoPreview}
+            disabled={isGenerating || isSaving}
+            className="px-4 py-2 bg-[#1F1F1F] text-white rounded-xl font-medium disabled:opacity-40"
+          >
+            {isSaving ? '저장 중...' : '저장하기'}
           </button>
         </div>
       </div>
@@ -1337,28 +2009,38 @@ export default function Designer() {
   // 멀티스텝 플로우 - entry, record, auto-style, auto-preview일 때 간단한 구조 표시
   if (flowStep !== 'edit') {
     return (
-      <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
-        <header className="flex-none h-12 bg-white border-b border-[#EDEDED] z-10 flex items-center gap-2 px-4 sm:px-5">
-          <button onClick={goBack} className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0">
-            <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E2E2E]" />
-          </button>
-          <div className="flex-1 flex items-center justify-center">
-            <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
-              {flowStep === 'entry' ? '말씀카드 만들기' :
-               flowStep === 'record' ? '카드 내용 입력' :
-               flowStep === 'auto-template' ? '템플릿 선택' :
-               flowStep === 'auto-preview' ? '미리보기' :
-               flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
-            </h1>
-          </div>
-          <div className="w-12" />
-        </header>
-        {flowStep === 'entry' && renderEntry()}
-        {flowStep === 'photo-upload' && renderPhotoUpload()}
-        {flowStep === 'record' && renderRecord()}
-        {flowStep === 'auto-template' && renderAutoTemplate()}
-        {flowStep === 'auto-preview' && renderAutoPreview()}
-      </div>
+      <>
+        <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
+          <header className="flex-none h-12 bg-white border-b border-[#EDEDED] z-10 flex items-center gap-2 px-4 sm:px-5">
+            <button onClick={goBack} className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0">
+              <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E2E2E]" />
+            </button>
+            <div className="flex-1 flex items-center justify-center">
+              <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
+                {flowStep === 'entry' ? '말씀카드 만들기' :
+                 flowStep === 'record' ? '카드 내용 입력' :
+                 flowStep === 'auto-template' ? '템플릿 선택' :
+                 flowStep === 'auto-preview' ? '미리보기' :
+                 flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
+              </h1>
+            </div>
+            <div className="w-12" />
+          </header>
+          {flowStep !== 'entry' && renderFlowProgress(flowStep)}
+          {flowStep === 'entry' && renderEntry()}
+          {flowStep === 'photo-upload' && renderPhotoUpload()}
+          {flowStep === 'record' && renderRecord()}
+          {flowStep === 'auto-template' && renderAutoTemplate()}
+          {flowStep === 'auto-preview' && renderAutoPreview()}
+        </div>
+        <RecordSelectorModal
+          open={recordSelectorOpen}
+          onClose={() => setRecordSelectorOpen(false)}
+          records={availableRecords}
+          onConfirm={analyzeSelectedRecord}
+          onRefetch={fetchRecordsForSelector}
+        />
+      </>
     );
   }
 
@@ -1413,7 +2095,7 @@ export default function Designer() {
             </button>
           )}
           <button
-            onClick={() => setBgOpen(true)}
+            onClick={() => openBackgroundSheet('ai')}
             className="h-8 sm:h-9 px-2.5 sm:px-3 rounded-full border-2 border-[#1F1F1F] bg-white text-[#1F1F1F] hover:bg-[#1F1F1F]/10 text-xs sm:text-sm font-medium transition-colors"
           >
             배경
@@ -1641,7 +2323,7 @@ export default function Designer() {
                     const totalTextHeight = allLines.length * lineHeight;
                     
                     // Calculate starting Y to center text vertically
-                    let startY = textY - (totalTextHeight / 2);
+                    const startY = textY - (totalTextHeight / 2);
                     
                     // Adjust X based on alignment
                     let drawX = textX;
@@ -1677,7 +2359,10 @@ export default function Designer() {
                   }
                   
                   console.log('✅ Image generated successfully');
-                  
+
+                  // ===== STEP 5a: Save to Device (핸드폰에도 저장) =====
+                  await downloadCardToDevice(dataUrl);
+
                   // ===== STEP 5: Save to Database =====
                   console.log('💾 Saving to database...');
                   const editCardId = sessionStorage.getItem('edit_card_id');
@@ -1743,6 +2428,12 @@ export default function Designer() {
           </button>
         </div>
       </header>
+
+      {activeTrack && (
+        <div className="flex-none border-b border-[#EDEDED]">
+          {renderFlowProgress(flowStep)}
+        </div>
+      )}
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
@@ -1863,6 +2554,40 @@ export default function Designer() {
                     드래그로 이동 • 핀치로 확대/축소
                   </div>
                 )}
+
+                {!meta.bgImageUrl && !t.content.trim() && !isEditing && !isBgEditMode && (
+                  <div className="absolute inset-0 z-20 flex items-center justify-center px-6 pointer-events-none">
+                    <div className="w-full max-w-[280px] pointer-events-auto">
+                      <div className="text-center text-white drop-shadow mb-4">
+                        <p className="text-[17px] font-semibold">배경을 먼저 선택하세요</p>
+                        <p className="mt-1 text-[12px] leading-5 text-white/78">AI 생성, 사진 업로드, 단색 배경 중 선택할 수 있습니다.</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button
+                          onClick={() => openBackgroundSheet('ai')}
+                          className="h-16 rounded-lg bg-white/92 backdrop-blur text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                        >
+                          <Wand2 className="w-4 h-4" />
+                          AI
+                        </button>
+                        <button
+                          onClick={() => openBackgroundSheet('photo')}
+                          className="h-16 rounded-lg bg-white/92 backdrop-blur text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                        >
+                          <Upload className="w-4 h-4" />
+                          사진
+                        </button>
+                        <button
+                          onClick={() => openBackgroundSheet('color')}
+                          className="h-16 rounded-lg bg-white/92 backdrop-blur text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                        >
+                          <Palette className="w-4 h-4" />
+                          컬러
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 
                 {/* 세이프 가이드 - 드래그 중일 때만 표시 */}
                 {meta.safeGuide && !isEditing && !!dragRef.current && (
@@ -1892,13 +2617,27 @@ export default function Designer() {
                     padding: '20px',
                     boxSizing: 'border-box',
                     pointerEvents: isBgEditMode ? 'none' : 'auto',
-                    cursor: isEditing ? 'text' : (isBgEditMode ? 'default' : 'grab'),
+                    cursor: isEditing || isTextEmpty ? 'text' : (isBgEditMode ? 'default' : 'grab'),
                   }}
                   onMouseDown={(e) => {
-                    if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
+                    if (isBgEditMode || isEditing) return;
+                    if (isTextEmpty) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      startTextEditing();
+                      return;
+                    }
+                    onDragStart(e, 'move');
                   }}
                   onTouchStart={(e) => {
-                    if (!isEditing && !isBgEditMode) onDragStart(e, 'move');
+                    if (isBgEditMode || isEditing) return;
+                    if (isTextEmpty) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      startTextEditing();
+                      return;
+                    }
+                    onDragStart(e, 'move');
                   }}
                 >
                   {/* 선택 시 Dashed Border */}
@@ -1923,8 +2662,7 @@ export default function Designer() {
                     onDoubleClick={(e) => {
                       if (!isEditing) {
                         e.stopPropagation();
-                        textRef.current?.focus();
-                        setIsEditing(true);
+                        startTextEditing();
                       }
                     }}
                     onTouchEnd={(e) => {
@@ -1932,12 +2670,11 @@ export default function Designer() {
                       const now = Date.now();
                       if (now - lastTapRef.current < 300) {
                         e.preventDefault();
-                        textRef.current?.focus();
-                        setIsEditing(true);
+                        startTextEditing();
                       }
                       lastTapRef.current = now;
                     }}
-                    style={{ cursor: isEditing ? 'text' : 'grab' }}
+                    style={{ cursor: isEditing || isTextEmpty ? 'text' : 'grab' }}
                   >
                     {/* 실제 텍스트 (contenteditable) */}
                     <div
@@ -1977,8 +2714,20 @@ export default function Designer() {
                   </div>
 
                   {/* 빈 상태 힌트 */}
-                  {!isEditing && !t.content.trim() || (!isEditing && t.content === '텍스트를 입력하세요.') ? (
-                    <div className="ui-control absolute -bottom-7 left-0 right-0 flex items-center justify-center pointer-events-none">
+                  {!isEditing && isTextEmpty ? (
+                    <div
+                      className="ui-control absolute -bottom-7 left-0 right-0 flex items-center justify-center"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        startTextEditing();
+                      }}
+                      onTouchStart={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        startTextEditing();
+                      }}
+                    >
                       <span className="text-white/60 text-[11px] bg-black/20 px-2 py-0.5 rounded-full">탭하여 텍스트 입력</span>
                     </div>
                   ) : null}
@@ -2262,16 +3011,9 @@ export default function Designer() {
                     <Button
                       onClick={expandPrompt}
                       disabled={isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
-                      className="w-full h-11 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
                     >
-                      {isExpandingPrompt ? (
-                        '프롬프트 만드는 중...'
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 mr-2" />
-                          프롬프트 미리보기
-                        </>
-                      )}
+                      {renderGenerationContent('prompt', '프롬프트 미리보기', '프롬프트 만드는 중...', <Wand2 className="w-4 h-4 mr-2" />)}
                     </Button>
                   ) : meta.bgImageUrl && bgTab === 'ai' ? (
                     <Button
@@ -2284,16 +3026,9 @@ export default function Designer() {
                     <Button
                       onClick={generateBackground}
                       disabled={isGenerating}
-                      className="w-full h-11 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
+                      className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
                     >
-                      {isGenerating ? (
-                        '이미지 생성 중...'
-                      ) : (
-                        <>
-                          <Wand2 className="w-4 h-4 mr-2" />
-                          배경 이미지 생성하기
-                        </>
-                      )}
+                      {renderGenerationContent('background', '배경 이미지 생성하기', '이미지 생성 중...', <Wand2 className="w-4 h-4 mr-2" />)}
                     </Button>
                   )}
                 </div>
@@ -2516,7 +3251,7 @@ export default function Designer() {
         onClose={() => setShowLoginModal(false)}
         callbackUrl={loginCallbackUrl}
         title="로그인이 필요해요"
-        description="내 기록으로 배경을 만들려면 로그인이 필요합니다."
+        description="카드를 만들고 저장하려면 먼저 로그인해주세요."
       />
 
       {/* Record Selector Modal */}

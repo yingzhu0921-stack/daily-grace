@@ -65,7 +65,7 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
             카드가 저장되었습니다!
           </h2>
           <p className="text-sm text-gray-600 text-center mb-6 px-4">
-            📱 현재 기기에만 저장됩니다. 클라우드 백업은 추후 지원 예정이에요.
+            📱 보관함과 기기에 저장되었어요. 저장이 안 됐다면 아래 버튼으로 다시 저장할 수 있어요.
           </p>
 
           {/* Card Preview */}
