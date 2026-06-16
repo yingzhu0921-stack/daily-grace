@@ -231,7 +231,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `You are an art director for "Daily Grace" faith cards. The card's HERO is the user's text rendered as beautiful poster typography — the background is only support. Return JSON only:
+          content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) decide the typography hierarchy, (3) plan the layout, (4) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
 {"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
 ABSOLUTE TEXT RULE — never modify the user's words:
@@ -264,7 +264,7 @@ SCENE PRINCIPLE (the background must stay connected to the text):
   · Daily journal / QT → modern (JeonnamBarun/PaperLight/SeoulHangang)
 - backgroundConcept: one sentence (English). The background may be symbolic, direct, abstract, or narrative depending on the message. Fresh editorial storytelling — avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics) and avoid repeating the same motif. Keep large typography-safe negative space. Goal: emotional/visual resonance, not literal illustration.
 - visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
-- palette / lighting / composition / typographyTone: short English direction strings; composition must keep the center clean for text
+- palette / lighting / composition / typographyTone: short English direction strings; composition must leave clear, calm, low-contrast space exactly where the typography will sit (match your chosen textAlign) and push focal interest away from the text
 - avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text`,
         },
         { role: 'user', content: verse.trim() + (varietyNote ? `\n\n${varietyNote}` : '') },
@@ -333,6 +333,15 @@ SCENE PRINCIPLE (the background must stay connected to the text):
     const variation = variations[Math.abs(templateIndex) % variations.length];
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
+
+    // 파이프라인: 메시지 분석 → 타이포 위계 → 레이아웃 → (여기서) 배경이 그 레이아웃에 맞춰 적응
+    const layoutAlign = analysis.textAlign === 'left' ? 'left' : 'center';
+    const layoutTotalChars = safeLines.reduce((n, l) => n + (l.text?.length || 0), 0);
+    const layoutMaxScale = Math.max(1, ...safeLines.map((l) => l.scale || 1));
+    const layoutHeavy = layoutTotalChars <= 14 || layoutMaxScale >= 1.8;
+    const clearRegion = layoutAlign === 'left' ? 'the left and center-left, plus the vertical middle' : 'the central column and the vertical middle';
+    const interestRegion = layoutAlign === 'left' ? 'the right side and the upper/lower edges' : 'the edges — top, bottom, and corners';
+    const layoutDirective = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned, vertically centered, and ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${interestRegion}, never directly behind the main text.`;
     const personalizedBrief = [
       `Personalized content brief based on the user's Korean text: "${verse?.trim() || safeLines.map((l) => l.text).join(' ')}".`,
       analysis.backgroundConcept ? `Core background concept: ${analysis.backgroundConcept}` : '',
@@ -351,6 +360,7 @@ SCENE PRINCIPLE (the background must stay connected to the text):
       personalizedBrief,
       variation,
       moodHint,
+      layoutDirective,
       ratioPrompt,
       GLOBAL_BG_PROMPT,
     ].filter(Boolean).join('\n\n');
