@@ -24,14 +24,32 @@ type Category = {
 
 // 기본 카테고리 (하드코딩, 삭제 불가)
 const DEFAULT_CATEGORIES: Category[] = [
-  { id: '1', name: 'QT', color: '#4F8A5B', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', name: '기도', color: '#7A6BB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', name: '감사', color: '#C89B3C', icon: 'star', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '4', name: '일기', color: '#D97B5D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', name: '기도', color: '#A57DB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', name: '감사', color: '#E8C87D', icon: 'star', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
-// 기존 카테고리 색상(초록, 보라, 노랑, 오렌지)과 겹치지 않는 다양한 색상 (텍스트 가독성 고려)
-const COLORS = ['#6B9BD1', '#E17B8C', '#8DABA8', '#C9A86A', '#9B87BE', '#D4886E', '#7AA3B5', '#B88FA3'];
+const COLORS = ['#7DB87D', '#A57DB8', '#E8C87D', '#DD957D', '#8DABA8', '#D8BE82', '#9AB8C6', '#C7A0B2'];
+const LEGACY_COLOR_MAP: Record<string, string> = {
+  '#4F8A5B': '#7DB87D',
+  '#7A6BB8': '#A57DB8',
+  '#C89B3C': '#E8C87D',
+  '#D97B5D': '#DD957D',
+  '#6B9BD1': '#8DABA8',
+  '#E17B8C': '#C7A0B2',
+  '#C9A86A': '#D8BE82',
+  '#9B87BE': '#A57DB8',
+  '#D4886E': '#DD957D',
+  '#7AA3B5': '#9AB8C6',
+  '#B88FA3': '#C7A0B2',
+};
+
+const normalizeCategoryColor = (color?: string) => {
+  if (!color) return COLORS[0];
+  const upper = color.toUpperCase();
+  return LEGACY_COLOR_MAP[upper] || color;
+};
 
 const AVAILABLE_ICONS: IconName[] = [
   'bookOpen', 'heart', 'sparkles', 'pencilLine', 'book', 'sun', 
@@ -66,7 +84,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   const [editIncludeInGoal, setEditIncludeInGoal] = useState(true);
   const [editActiveDays, setEditActiveDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
-  // Load categories from Supabase
+  // Load categories
   useEffect(() => {
     loadCategories();
   }, []);
@@ -82,7 +100,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
       // ID로 중복 제거 (같은 ID가 여러 번 나타나는 경우 첫 번째만 유지)
       const uniqueCustomCategories = customCategories.reduce((acc: Category[], cat: any) => {
         if (!acc.find(c => c.id === cat.id)) {
-          acc.push(cat as Category);
+          acc.push({ ...cat, color: normalizeCategoryColor(cat.color) } as Category);
         }
         return acc;
       }, []);
@@ -246,7 +264,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       <div
                         className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: category.color }}
+                        style={{ backgroundColor: normalizeCategoryColor(category.color) }}
                       >
                         {category.icon ? (
                           <AppIcon name={category.icon as IconName} size={20} color="white" strokeWidth={2} />
@@ -443,7 +461,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                           setSelectedFields(selectedFields.filter(f => f !== field.id));
                         }
                       }}
-                      className="w-5 h-5 rounded border-[#EDEDED] text-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
+                      className="w-5 h-5 rounded border-[#EDEDED] accent-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
                     />
                     <div className="flex-1">
                       <div className="text-[14px] font-medium text-[#2E2E2E] mb-0.5">
@@ -465,7 +483,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={includeInGoal}
                   onChange={(e) => setIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#EDEDED] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
+                  className="w-5 h-5 rounded border-[#EDEDED] accent-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
@@ -610,7 +628,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   type="checkbox"
                   checked={editIncludeInGoal}
                   onChange={(e) => setEditIncludeInGoal(e.target.checked)}
-                  className="w-5 h-5 rounded border-[#EDEDED] text-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
+                  className="w-5 h-5 rounded border-[#EDEDED] accent-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
                   <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
