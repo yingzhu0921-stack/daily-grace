@@ -100,11 +100,11 @@ function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLi
   return arr.map((text) => ({ text, scale: 1 }));
 }
 
-async function gpt(apiKey: string, messages: any[], maxTokens = 500): Promise<string> {
+async function gpt(apiKey: string, messages: any[], maxTokens = 500, model = 'gpt-4o-mini'): Promise<string> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ model: 'gpt-4o-mini', messages, max_tokens: maxTokens }),
+    body: JSON.stringify({ model, messages, max_tokens: maxTokens }),
   });
   const data = await res.json<any>();
   if (!res.ok) throw new Error(data.error?.message || 'GPT error');
@@ -270,7 +270,7 @@ SCENE PRINCIPLE (the background must stay connected to the text):
 - avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text`,
         },
         { role: 'user', content: verse.trim() + (varietyNote ? `\n\n${varietyNote}` : '') },
-      ], 800);
+      ], 900, 'gpt-4o');
       try {
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
         analysis = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
