@@ -129,8 +129,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Bold editorial poster aesthetic. Strong graphic composition. High contrast. Museum-quality print design. Heavy paper grain texture. Large typography-safe area. Powerful and confident visual energy.',
-        styleLock: 'T01 ABSOLUTE RULE: bold poster energy, strong contrast, graphic confidence, premium print quality. Soft pastel or gentle devotional aesthetics = template failure.',
+        backgroundPrompt: 'Premium editorial poster aesthetic. Typography-first composition with large typography-safe negative space. Rich paper texture, heavy grain, subtle ink marks, soft atmospheric depth. Strong contrast, premium print quality, modern museum poster design. Minimal but powerful — the background only supports the typography. Avoid literal illustration; prefer emotional atmosphere, symbolic strength, editorial composition, and visual impact.',
+        styleLock: 'T01 ABSOLUTE RULE: typography must dominate — the background must NEVER be more visually important than the text. Must feel like a modern editorial poster / premium conference branding / luxury print design, NOT a church banner, stock Christian artwork, fantasy illustration, or generic quote card. Avoid cliche Christian poster imagery and predictable visual combinations; prefer fresh, unique, emotionally resonant editorial interpretation. NO pastels, NO candy colors, NO rainbow gradients, NO overly decorative color.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -161,14 +161,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     };
 
     const TEMPLATE_FONT_OPTIONS: Record<string, Record<string, { primary: string; secondary: string }>> = {
-      // T01 Bold Poster — 초강렬 헤드라인 중심
+      // T01 Bold Poster — Primary: PaperBlack / Secondary: KBLJump·GangwonTunTun / Taenada(선포 전용)
       T01: {
-        bold: { primary: 'KBLJump', secondary: 'PaperLight' },
-        editorial: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
         lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
-        quiet: { primary: 'GangwonModoo', secondary: 'PaperLight' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        quiet: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+        handwritten: { primary: 'KBLJump', secondary: 'PaperLight' },
+        modern: { primary: 'KBLJump', secondary: 'PaperLight' },
       },
       // T03 Magazine — 세리프/명조 우아
       T03: {
@@ -273,9 +273,11 @@ TYPOGRAPHY (lines + scale) — text is the hero, make it poster-like:
     const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
     const templateVariations: Record<string, string[]> = {
       T01: [
-        'COLOR: Deep navy blue (#1a2744) dominant background. Off-white negative space. Strong navy and white contrast. Bold editorial navy poster.',
-        'COLOR: Deep forest green (#1c3a2a) dominant background. Cream and gold accents. Rich dark green editorial poster quality.',
-        'COLOR: Dark charcoal (#2a2a2a) with warm gold (#c9a84c) accent highlights. Charcoal and gold premium poster aesthetic.',
+        'COLOR: Deep navy (#1b2a4a) background with warm ivory (#efe6d2) negative space. Editorial navy poster, strong calm contrast.',
+        'COLOR: Charcoal (#2b2b2e) background with muted gold (#b9975b) accents. Premium charcoal and gold poster.',
+        'COLOR: Deep forest green (#1f3a2c) background with cream (#efe7d6). Rich dark-green editorial poster.',
+        'COLOR: Black ink (#161513) on aged paper (#e7dcc4) texture. Inky letterpress poster mood.',
+        'COLOR: Dark brown (#2e241c) background with warm beige (#e3d4bd). Earthy premium editorial poster.',
       ],
       T03: [
         'Soft ivory editorial spread, delicate fabric-like shadow, high-end devotional magazine mood.',
