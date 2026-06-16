@@ -80,30 +80,74 @@ type AutoCardAnalysis = {
 
 // 성경 출처 패턴 (대괄호/소괄호 유무, 책 약어 + 장:절). 예: [고후5:17] (시23:1) 마 5:14 요3:16 시편 23:1
 const BIBLE_REF_RE = /[\[\(]?\s*[가-힣]{1,5}\s*\d{1,3}\s*[:：]\s*\d{1,3}\s*[\]\)]?/g;
-// 공백 무시 비교 (원문 보존 검증용)
-const normalizeForCompare = (s: string) => s.replace(/\s+/g, '');
-// 본문 비교용: 성경 출처는 재포맷 허용이므로 비교 전 제거
-const bodyForCompare = (s: string) => normalizeForCompare(s.replace(BIBLE_REF_RE, ''));
+const BIBLE_REF_ONE = /[\[\(]?\s*[가-힣]{1,5}\s*\d{1,3}\s*[:：]\s*\d{1,3}\s*[\]\)]?/;
+// 본문 비교용: 출처·공백·문장부호 제거 후 비교 (출처 재포맷/부호 차이는 허용, 단어는 보존)
+const bodyForCompare = (s: string) =>
+  s.replace(BIBLE_REF_RE, '').replace(/[\s.,!?;:'"“”‘’()[\]·…~\-—]/g, '');
 
-// GPT가 만든 lines가 사용자 원문(본문)을 보존하는지 검증. 출처 재포맷은 허용. 아니면 안전 폴백.
+// 한 줄 전체가 성경 출처인지
+const isRefLine = (s: string) => new RegExp(`^${BIBLE_REF_ONE.source}$`).test(s.trim());
+
+// 본문을 포스터형 줄로 분할 (대략 11자 기준 그룹핑)
+function splitBodyIntoLines(body: string): string[] {
+  const words = body.trim().split(/\s+/).filter(Boolean);
+  if (words.length <= 1) return words.length ? words : [];
+  const lines: string[] = [];
+  let cur = '';
+  for (const w of words) {
+    const test = cur ? `${cur} ${w}` : w;
+    if (cur && test.replace(/\s/g, '').length > 11) { lines.push(cur); cur = w; }
+    else cur = test;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+// 위계가 평평하면(또는 폴백) 출처를 작게, 마지막 구절을 크게 만들어 대비를 보장
+function enforceHierarchy(lines: TypoLine[]): TypoLine[] {
+  if (!lines.length) return lines;
+  const marked = lines.map((l) => ({ text: l.text, scale: l.scale, ref: isRefLine(l.text) }));
+  marked.forEach((l) => { if (l.ref) l.scale = Math.min(l.scale, 0.45); });
+  const content = marked.filter((l) => !l.ref);
+  const scales = content.map((l) => l.scale);
+  const flat = content.length > 0 && (Math.max(...scales) - Math.min(...scales) < 0.3);
+  if (flat) {
+    if (content.length === 1) {
+      content[0].scale = 1.6;
+    } else {
+      content.forEach((l, i) => { l.scale = i === content.length - 1 ? 1.7 : 0.95; });
+    }
+  }
+  return marked.map(({ text, scale }) => ({ text, scale }));
+}
+
+// GPT가 만든 lines가 사용자 원문(본문)을 보존하는지 검증. 출처 재포맷은 허용. 아니면 위계 있는 폴백.
 function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLine[] {
   const original = verse.trim();
   if (Array.isArray(gptLines) && gptLines.length) {
     const joined = gptLines.map((l) => l?.text ?? '').join('');
-    // 1) 정확히 일치하거나 2) 출처를 제외한 본문이 일치하면 통과
-    if (normalizeForCompare(joined) === normalizeForCompare(original)
-      || bodyForCompare(joined) === bodyForCompare(original)) {
-      // 원문 보존됨 — scale 정규화 (0.4~2.4 범위로 클램프)
-      return gptLines.map((l) => ({
+    if (bodyForCompare(joined) === bodyForCompare(original)) {
+      const cleaned = gptLines.map((l) => ({
         text: String(l.text ?? ''),
         scale: Math.max(0.4, Math.min(2.4, Number(l.scale) || 1)),
       }));
+      return enforceHierarchy(cleaned); // gpt가 평평하면 보정
     }
   }
-  // 폴백: 사용자가 입력한 줄바꿈 기준, 없으면 통짜 한 줄
-  const fallback = original.split('\n').map((t) => t.trim()).filter(Boolean);
-  const arr = fallback.length ? fallback : [original];
-  return arr.map((text) => ({ text, scale: 1 }));
+  // 폴백: 출처를 분리해 작게, 본문은 구절 단위로 나눠 마지막을 강조
+  let body = original;
+  let refText = '';
+  const startRef = original.match(new RegExp(`^\\s*${BIBLE_REF_ONE.source}`));
+  if (startRef) { refText = startRef[0].trim(); body = original.slice(startRef[0].length).trim(); }
+  const bodyLines = body ? splitBodyIntoLines(body) : [];
+  const out: TypoLine[] = [];
+  if (refText) out.push({ text: refText, scale: 0.45 });
+  if (bodyLines.length) {
+    bodyLines.forEach((t, i) => out.push({ text: t, scale: i === bodyLines.length - 1 ? 1.7 : 0.95 }));
+  } else {
+    out.push({ text: original, scale: 1.3 });
+  }
+  return out;
 }
 
 async function gpt(apiKey: string, messages: any[], maxTokens = 500, model = 'gpt-4o-mini'): Promise<string> {
