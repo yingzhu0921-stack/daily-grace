@@ -243,9 +243,13 @@ ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words
 
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
-- "scale" is each line's relative size: hero keyword ≈ 1.7–2.3, normal ≈ 1.0, small/quiet (e.g. a reference the user typed) ≈ 0.55–0.7.
-- VISUAL HIERARCHY: not all words deserve equal weight. Identify the strongest phrase / emotional peak / key words and make one or two of them the DOMINANT visual headline (largest scale); supporting words may be smaller. Never give every line the same size.
-- Length is adaptive, NO fixed formula: SHORT text → prioritize impact (big hero line). MEDIUM → balance impact and readability. LONG → prioritize readability while preserving hierarchy (enlarge only the most important line). Let typography adapt to the content.
+- "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, small/quiet (e.g. a reference like "[고후5:17]" the user typed) ≈ 0.5–0.65.
+- MANDATORY HIERARCHY — never output all lines at the same scale: every card MUST have clear size contrast. Pick the 1–2 most meaningful phrases and make them clearly the largest; shrink connective/intro words and any reference. If you find yourself giving everything ~1.0, you are wrong — choose what matters most and enlarge it.
+- Length adapts but hierarchy is ALWAYS required:
+  · SHORT → one giant hero line.
+  · MEDIUM → 1–2 big key lines, supporting lines smaller.
+  · LONG → still enlarge the 1–2 most important phrases (≈1.5–1.9), keep connective lines smaller (≈0.85), and put any reference at ≈0.55. Break the text into meaningful phrase-groups, not even paragraph blocks.
+- Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": reference "[고후5:17]" scale 0.55, "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.7, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.7 (exact words unchanged, only grouped and resized).
 - "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
 - "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
 
