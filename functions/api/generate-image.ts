@@ -148,9 +148,9 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T13': {
-        backgroundPrompt: 'WARM GOLDEN MORNING LIGHT. Soft cream and golden yellow tones. Cozy notebook or journal paper texture with visible grain. Gentle morning sunlight from the side. Handcrafted devotional atmosphere. Warm amber and honey tones. Intimate and personal feeling. Large empty space. NO cool tones. NO dark colors. NO bold graphics.',
-        styleLock: 'T13 ABSOLUTE RULE: warm golden/cream morning light, tactile journal paper texture, cozy intimate mood. Cool tones or dark backgrounds = template failure.',
-        fonts: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        backgroundPrompt: 'Warm and intimate atmosphere — a small moment of grace within an ordinary day. Soft morning light, gentle natural colors (warm cream, soft beige, honey gold, warm white, muted earth tones), subtle textures. Personal and relatable, comforting and familiar; quiet beauty found in everyday life. Large typography-safe negative space. Feel personal, not grand.',
+        styleLock: 'T13 ABSOLUTE RULE: must feel like gratitude / warmth / comfort / closeness / everyday grace — personal and relatable, beautifully ordinary. Must NOT feel like a luxury magazine (T03), worship album artwork (T09), an inspirational poster, stock devotional wallpaper, or dramatic scenery. The scene comes from the user text\'s meaning, preferring the more personal/intimate/relatable interpretation (literal, symbolic, emotional, or experiential). LAYOUT DIVERSITY: avoid always using beaches, flower fields, sunsets, mountains, or identical indoor scenes; vary environments, seasons, textures and lighting — no single visual solution dominates. Avoid epic landscapes, fantasy, dramatic symbolism, heroic imagery, worship-concert looks, luxury editorial styling, poster compositions, excessive effects, and generic inspirational wallpapers.',
+        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
       },
       'T17': {
         backgroundPrompt: 'PURE BEIGE. Flat warm beige or sand background. Extremely minimal. Japanese wabi-sabi aesthetic. Almost no objects — only the faintest suggestion of texture or shadow. Maximum negative space. Neutral muted tones only. Clean and sparse. NO dramatic lighting. NO strong shadows. NO objects. NO color. Near-empty composition.',
@@ -192,13 +192,13 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         handwritten: { primary: 'Taenada', secondary: 'PaperLight' },
         modern: { primary: 'Taenada', secondary: 'PaperLight' },
       },
-      // T13 Daily Grace — 손글씨/감성 저널
+      // T13 Daily Grace — Primary: PaperLight·SeoulHangang·JeonnamBarun / Secondary: Hyunok·RidiBatang
       T13: {
-        bold: { primary: 'GangwonModoo', secondary: 'SeoulHangang' },
-        editorial: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Incheon', secondary: 'SeoulHangang' },
-        quiet: { primary: 'GangwonModoo', secondary: 'PaperLight' },
-        handwritten: { primary: 'Incheon', secondary: 'SeoulHangang' },
+        bold: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+        editorial: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
+        quiet: { primary: 'RidiBatang', secondary: 'PaperLight' },
+        handwritten: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
       },
       // T17 Beige Minimal — 깔끔한 고딕 미니멀
@@ -305,9 +305,11 @@ VARIETY (important): Do NOT default to one composition. For similar messages, va
         'Luminous light blooming in fog, silver and soft violet, minimal and powerful negative space.',
       ],
       T13: [
-        'Quiet journaling paper, soft notebook texture, warm morning light, handcrafted devotional mood.',
-        'Cream journal page with gentle imperfections, cozy reflection atmosphere, lots of empty space.',
-        'Soft paper grain and faint desk-light shadow, intimate daily grace journaling feeling.',
+        'A small everyday moment in soft morning light on a simple home surface, warm cream tones, intimate and quiet.',
+        'Gentle daylight across an ordinary desk or kitchen corner, honey-gold warmth on humble objects, relatable and comforting.',
+        'A quiet seasonal detail of daily life, soft texture and warm white light, personal and unhurried.',
+        'Warm muted earth tones in a familiar indoor nook, gentle shadows, beautifully ordinary stillness.',
+        'Soft natural light on a humble everyday scene, comforting beige palette, generous space for text.',
       ],
       T17: [
         'Minimal beige editorial scene, restrained natural shadow, clean premium simplicity.',
