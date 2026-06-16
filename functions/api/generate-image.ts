@@ -133,8 +133,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Premium editorial poster aesthetic. Typography-first composition with large typography-safe negative space. Rich paper texture, heavy grain, subtle ink marks, soft atmospheric depth. Strong contrast, premium print quality, modern museum poster design. Minimal but powerful — the background only supports the typography. Avoid literal illustration; prefer emotional atmosphere, symbolic strength, editorial composition, and visual impact.',
-        styleLock: 'T01 ABSOLUTE RULE: typography must dominate — the background must NEVER be more visually important than the text. Must feel like a modern editorial poster / premium conference branding / luxury print design, NOT a church banner, stock Christian artwork, fantasy illustration, or generic quote card. Avoid cliche Christian poster imagery and predictable visual combinations; prefer fresh, unique, emotionally resonant editorial interpretation. NO pastels, NO candy colors, NO rainbow gradients, NO overly decorative color.',
+        backgroundPrompt: 'Bold editorial poster aesthetic. Strong graphic composition, high contrast, museum-quality print design, powerful visual hierarchy, premium poster craftsmanship, confident visual energy. The background VISUALIZES the message itself — transformation looks like transformation, victory like victory, calling like calling, faith like action — purposeful, not decorative. Large typography-safe areas. Allow stronger contrast, deeper tones and dramatic lighting; avoid soft pastel dominance and weak visual energy.',
+        styleLock: 'T01 ABSOLUTE RULE: the card must feel like a bold poster — strong, confident, declarative, memorable, with typography dominating. Must NOT feel like gentle devotional wallpaper, scrapbook, greeting card, or a generic inspirational / Christian background image (if it does, the template has failed). The background supports and reinforces the message; avoid decorative imagery and generic devotional aesthetics (flowers, butterflies, peaceful streams, decorative nature scenes) unless the message specifically requires them.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -165,14 +165,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     };
 
     const TEMPLATE_FONT_OPTIONS: Record<string, Record<string, { primary: string; secondary: string }>> = {
-      // T01 Bold Poster — Primary: PaperBlack / Secondary: KBLJump·GangwonTunTun / Taenada(선포 전용)
+      // T01 Bold Poster — Primary: KBLJump·GangwonTunTun·PaperBlack / Secondary: Taenada·Cafe24SuperMagic
       T01: {
-        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        bold: { primary: 'KBLJump', secondary: 'PaperLight' },
         editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
         lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
         quiet: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
-        handwritten: { primary: 'KBLJump', secondary: 'PaperLight' },
-        modern: { primary: 'KBLJump', secondary: 'PaperLight' },
+        handwritten: { primary: 'Cafe24SuperMagic', secondary: 'PaperLight' },
+        modern: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
       },
       // T03 Editorial Magazine — Primary: RidiBatang·PaperLight / Secondary: SeoulHangang (Limelight=영문 전용)
       T03: {
@@ -242,6 +242,7 @@ ABSOLUTE TEXT RULE — never modify the user's words:
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
 - "scale" is each line's relative size: hero keyword ≈ 1.7–2.3, normal ≈ 1.0, small/quiet (e.g. a reference the user typed) ≈ 0.55–0.7.
+- VISUAL HIERARCHY: not all words deserve equal weight. Identify the strongest phrase / emotional peak / key words and make one or two of them the DOMINANT visual headline (largest scale); supporting words may be smaller. Never give every line the same size.
 - Length is adaptive, NO fixed formula: SHORT text → prioritize impact (big hero line). MEDIUM → balance impact and readability. LONG → prioritize readability while preserving hierarchy (enlarge only the most important line). Let typography adapt to the content.
 - "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
 - "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
@@ -252,7 +253,7 @@ SCENE PRINCIPLE (the background must stay connected to the text):
 - The scene must originate from the MEANING of the user's text. Consider the important symbols, imagery, metaphors, locations, objects and themes contained in the text.
 - Do NOT reduce every message to a generic emotional atmosphere. The scene should remain recognizably connected to the original message.
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
-- When the text has strong symbolic imagery, the symbol may be read literally, symbolically, or emotionally — but important symbols must NOT be ignored. Do NOT keep replacing meaningful imagery with generic visuals like sunsets, flowers, beaches, clouds, or abstract light.
+- When the text has strong symbolic imagery, the symbol may be read literally, symbolically, or emotionally — but important symbols must NOT be ignored. Do NOT default to generic Christian imagery (flowers, butterflies, sunsets, streams, beaches, clouds, abstract light) unless it is meaningfully connected to the text. The visual concept should emerge from the message itself.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
