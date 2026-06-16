@@ -138,8 +138,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
-        backgroundPrompt: 'Luxury editorial magazine aesthetic — quiet, sophisticated, timeless and refined. Warm ivory, soft cream, natural beige, sand, muted stone — restrained limited color, no saturated colors, no dramatic gradients. Premium paper texture, natural daylight, soft realistic shadows, minimal art-directed composition inspired by Kinfolk, Cereal Magazine, Aesop, MUJI and luxury editorial photography. Focus on HOW the scene is presented (composition, materials, texture, depth, atmosphere, stillness), not what it is. Large typography-safe negative space.',
-        styleLock: 'T03 ABSOLUTE RULE: must feel like a premium editorial magazine / luxury lifestyle photography / art-directed, museum-quality visual direction — curated, NOT decorative. Must NOT feel like wallpaper, wedding invitation, Instagram quote background, devotional stock image, or generic aesthetic photo. The scene must come from the user text\'s meaning; T03 only applies editorial styling. LAYOUT DIVERSITY: do not over-rely on flowers, window shadows, books, chairs, ceramic objects, or linen fabric — no single motif may dominate; vary compositions, materials, architecture, textures and treatments. Avoid romantic wallpaper, greeting-card looks, stock photography, sunset/beach cliches, Pinterest-wallpaper and coffee-shop lifestyle cliches. Background creates atmosphere, never competes with the text.',
+        backgroundPrompt: 'Premium editorial photography with luxury magazine visual language. Sophisticated composition, intentional storytelling, elegant atmosphere, museum-quality art direction — feels like a high-end editorial feature or magazine cover, elevated visual storytelling (not a simple background, not minimal symbolism). Meaningful landscapes, symbolic environments, dramatic natural settings with a strong cinematic focal point. Rich but restrained palette: warm ivory, stone, sand, deep charcoal, muted earth tones — elegant rather than colorful. Large typography-safe negative space.',
+        styleLock: 'T03 ABSOLUTE RULE: must feel like luxury editorial photography / premium magazine cover / sophisticated visual storytelling with thoughtful composition. Must NOT feel like stock devotional imagery, casual lifestyle photography, worship-concert artwork, scrapbook aesthetics, or simple wallpaper. The scene must originate from the user text\'s meaning — keep important symbols, imagery, locations and objects recognizable; do NOT reduce the message to abstract symbols or replace meaningful imagery with generic scenery (no generic sunsets, flower fields, beaches, clouds, or abstract light). Maintain a clear focal point occupying a meaningful portion of the frame, avoid clutter and decorative elements, keep generous space for typography — image and typography stay balanced, neither overpowering the other.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       'T09': {
@@ -297,11 +297,11 @@ SCENE PRINCIPLE (the background must stay connected to the text):
         'COLOR: Dark brown (#2e241c) background with warm beige (#e3d4bd). Earthy premium editorial poster.',
       ],
       T03: [
-        'Art-directed editorial composition with intentional negative space and soft natural daylight, warm ivory, refined and timeless.',
-        'Close study of premium natural material and texture (stone, plaster or paper) in muted sand tones, quiet depth, museum-quality direction.',
-        'Architectural detail — a clean cream surface with a soft shadow gradient and layered depth, contemplative stillness, large empty space.',
-        'Minimal composition arranged with deliberate restraint on a beige ground, soft realistic shadow, Aesop/MUJI sensibility.',
-        'Atmospheric editorial scene with layered light and subtle texture, muted stone palette, calm sophisticated negative space.',
+        'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
+        'Dramatic natural setting rendered as a premium editorial feature, muted earth tones, intentional composition and depth.',
+        'Symbolic environment with refined art direction and a clear focal point, deep charcoal accents over sand tones, elegant restraint.',
+        'Cinematic landscape framed like a luxury magazine spread, soft directional light, rich but restrained palette, generous negative space.',
+        'Atmospheric editorial scene with strong visual hierarchy and a meaningful focal element, stone and warm ivory, sophisticated stillness.',
       ],
       T09: [
         'Volumetric light beams cutting through soft haze, deep indigo into warm white, spacious and luminous, large empty center.',
