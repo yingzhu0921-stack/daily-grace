@@ -27,13 +27,17 @@ const LEGACY_COLOR_MAP: Record<string, string> = {
   '#7A6BB8': '#A57DB8',
   '#C89B3C': '#E8C87D',
   '#D97B5D': '#DD957D',
-  '#6B9BD1': '#8DABA8',
-  '#E17B8C': '#C7A0B2',
-  '#C9A86A': '#D8BE82',
+  '#6B9BD1': '#7BA8DB',
+  '#E17B8C': '#C58BB8',
+  '#C9A86A': '#D9B36B',
   '#9B87BE': '#A57DB8',
   '#D4886E': '#DD957D',
-  '#7AA3B5': '#9AB8C6',
-  '#B88FA3': '#C7A0B2',
+  '#7AA3B5': '#7BA8DB',
+  '#B88FA3': '#C58BB8',
+  '#8DABA8': '#7BA8DB',
+  '#9AB8C6': '#7BA8DB',
+  '#D8BE82': '#D9B36B',
+  '#C7A0B2': '#C58BB8',
 };
 
 const RGBA_COLOR_MAP: Record<string, string> = {

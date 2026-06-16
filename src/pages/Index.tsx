@@ -26,6 +26,30 @@ type Category = {
   subColor?: string;
 };
 
+const LEGACY_COLOR_MAP: Record<string, string> = {
+  '#4F8A5B': '#7DB87D',
+  '#7A6BB8': '#A57DB8',
+  '#C89B3C': '#E8C87D',
+  '#D97B5D': '#DD957D',
+  '#6B9BD1': '#7BA8DB',
+  '#E17B8C': '#C58BB8',
+  '#C9A86A': '#D9B36B',
+  '#9B87BE': '#A57DB8',
+  '#D4886E': '#DD957D',
+  '#7AA3B5': '#7BA8DB',
+  '#B88FA3': '#C58BB8',
+  '#8DABA8': '#7BA8DB',
+  '#9AB8C6': '#7BA8DB',
+  '#D8BE82': '#D9B36B',
+  '#C7A0B2': '#C58BB8',
+};
+
+const normalizeCategoryColor = (color?: string) => {
+  if (!color) return '#7DB87D';
+  const upper = color.toUpperCase();
+  return LEGACY_COLOR_MAP[upper] || color;
+};
+
 const IndexNew = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -48,10 +72,10 @@ const IndexNew = () => {
 
   // 기본 카테고리
   const defaultCategories = [
-    { id: '1', name: 'Q.T', color: '#4F8A5B', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
-    { id: '2', name: '기도', color: '#7A6BB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
-    { id: '3', name: '감사', color: '#C89B3C', icon: 'star' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
-    { id: '4', name: '일기', color: '#D97B5D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
+    { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
+    { id: '2', name: '기도', color: '#A57DB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
+    { id: '3', name: '감사', color: '#E8C87D', icon: 'star' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
+    { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
   // Goal/Streak 계산
@@ -84,7 +108,7 @@ const IndexNew = () => {
         if (cached) {
           try {
             const cachedData = JSON.parse(cached);
-            setCustomCategories(cachedData);
+            setCustomCategories(cachedData.map((cat: any) => ({ ...cat, color: normalizeCategoryColor(cat.color) })));
             console.log('⚡ Loaded from cache:', cachedData);
           } catch (e) {
             console.error('Cache parse error:', e);
@@ -96,7 +120,9 @@ const IndexNew = () => {
         console.log('✅ Loaded categories from DB:', dbCategories);
 
         // user_id가 있는 것만 커스텀 카테고리 (기본 카테고리는 user_id가 null)
-        const customs = dbCategories.filter((cat: any) => cat.user_id != null);
+        const customs = dbCategories
+          .filter((cat: any) => cat.user_id != null)
+          .map((cat: any) => ({ ...cat, color: normalizeCategoryColor(cat.color) }));
         console.log('🎯 Custom categories filtered:', customs);
 
         // 캐시 업데이트
@@ -191,15 +217,15 @@ const IndexNew = () => {
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Goal Progress */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#4F8A5B40' }}>
-              <Leaf className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#4F8A5B' }} strokeWidth={1.5} />
-              <span className="text-[12px] font-medium" style={{ color: '#4F8A5B' }}>{goalProgress.completed}/{goalProgress.total} 완료</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#7DB87D40' }}>
+              <Leaf className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#7DB87D' }} strokeWidth={1.5} />
+              <span className="text-[12px] font-medium" style={{ color: '#7DB87D' }}>{goalProgress.completed}/{goalProgress.total} 완료</span>
             </div>
 
             {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#C89B3C40' }}>
-              <Flame className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#C89B3C' }} strokeWidth={1.5} />
-              <span className="text-[12px] font-medium" style={{ color: '#C89B3C' }}>{streakDays}일 연속</span>
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#E8C87D40' }}>
+              <Flame className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8C87D' }} strokeWidth={1.5} />
+              <span className="text-[12px] font-medium" style={{ color: '#C49A3D' }}>{streakDays}일 연속</span>
             </div>
           </div>
 
@@ -302,7 +328,7 @@ const IndexNew = () => {
           onClick={() => navigate('/cards/designer')}
         >
           <div>
-            <p className="text-[11px] font-medium text-[#4F8A5B] mb-1 tracking-wide">카드 만들기</p>
+            <p className="text-[11px] font-medium text-[#7DB87D] mb-1 tracking-wide">카드 만들기</p>
             <h3 className="text-[15px] font-semibold text-[#1F1F1F] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
             <p className="text-[12px] text-[#7A7A7A]">AI 자동 완성 · 직접 꾸미기</p>
           </div>

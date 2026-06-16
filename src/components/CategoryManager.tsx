@@ -33,20 +33,24 @@ const DEFAULT_CATEGORIES: Category[] = [
 // 기본 4개 카테고리 색상 (고정)
 const DEFAULT_COLORS = ['#7DB87D', '#A57DB8', '#E8C87D', '#DD957D'];
 // 카테고리 추가용 팔레트 — 기본 4색을 제외한, 같은 톤의 다른 색상들
-const ADD_COLORS = ['#8FB4D9', '#6FC2AE', '#D99BB5', '#B49BD9', '#C9A96B', '#C7A0B2', '#7BA7C9', '#CDA0C9'];
+const ADD_COLORS = ['#7BA8DB', '#5FBFB0', '#E093B0', '#C58BB8', '#D9B36B', '#9D8DD4', '#6FC3D9', '#E0A07A'];
 const COLORS = [...DEFAULT_COLORS, ...ADD_COLORS];
 const LEGACY_COLOR_MAP: Record<string, string> = {
   '#4F8A5B': '#7DB87D',
   '#7A6BB8': '#A57DB8',
   '#C89B3C': '#E8C87D',
   '#D97B5D': '#DD957D',
-  '#6B9BD1': '#8DABA8',
-  '#E17B8C': '#C7A0B2',
-  '#C9A86A': '#D8BE82',
+  '#6B9BD1': '#7BA8DB',
+  '#E17B8C': '#C58BB8',
+  '#C9A86A': '#D9B36B',
   '#9B87BE': '#A57DB8',
   '#D4886E': '#DD957D',
-  '#7AA3B5': '#9AB8C6',
-  '#B88FA3': '#C7A0B2',
+  '#7AA3B5': '#7BA8DB',
+  '#B88FA3': '#C58BB8',
+  '#8DABA8': '#7BA8DB',
+  '#9AB8C6': '#7BA8DB',
+  '#D8BE82': '#D9B36B',
+  '#C7A0B2': '#C58BB8',
 };
 
 const normalizeCategoryColor = (color?: string) => {
