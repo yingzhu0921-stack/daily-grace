@@ -30,7 +30,11 @@ const DEFAULT_CATEGORIES: Category[] = [
   { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
-const COLORS = ['#7DB87D', '#A57DB8', '#E8C87D', '#DD957D', '#8DABA8', '#D8BE82', '#9AB8C6', '#C7A0B2'];
+// 기본 4개 카테고리 색상 (고정)
+const DEFAULT_COLORS = ['#7DB87D', '#A57DB8', '#E8C87D', '#DD957D'];
+// 카테고리 추가용 팔레트 — 기본 4색을 제외한, 같은 톤의 다른 색상들
+const ADD_COLORS = ['#8FB4D9', '#6FC2AE', '#D99BB5', '#B49BD9', '#C9A96B', '#C7A0B2', '#7BA7C9', '#CDA0C9'];
+const COLORS = [...DEFAULT_COLORS, ...ADD_COLORS];
 const LEGACY_COLOR_MAP: Record<string, string> = {
   '#4F8A5B': '#7DB87D',
   '#7A6BB8': '#A57DB8',
@@ -70,7 +74,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   const [loading, setLoading] = useState(true);
   const [showNewDialog, setShowNewDialog] = useState(false);
   const [newName, setNewName] = useState('');
-  const [newColor, setNewColor] = useState(COLORS[0]);
+  const [newColor, setNewColor] = useState(ADD_COLORS[0]);
   const [newIcon, setNewIcon] = useState<IconName>('bookOpen');
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
@@ -148,7 +152,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
       await loadCategories();
 
       setNewName('');
-      setNewColor(COLORS[0]);
+      setNewColor(ADD_COLORS[0]);
       setNewIcon('bookOpen');
       setSelectedFields(['title', 'content']);
       setIncludeInGoal(true);
@@ -348,7 +352,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setShowNewDialog(false);
                 setNewName('');
                 setNewDescription('');
-                setNewColor(COLORS[0]);
+                setNewColor(ADD_COLORS[0]);
                 setNewIcon('bookOpen');
                 setSelectedFields(['title', 'content']);
                 setIncludeInGoal(true);
@@ -398,8 +402,8 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
                 카테고리 색상
               </label>
-              <div className="flex gap-2.5">
-                {COLORS.map(color => (
+              <div className="flex flex-wrap gap-2.5">
+                {ADD_COLORS.map(color => (
                   <button
                     key={color}
                     onClick={() => setNewColor(color)}
@@ -543,7 +547,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setShowNewDialog(false);
                 setNewName('');
                 setNewDescription('');
-                setNewColor(COLORS[0]);
+                setNewColor(ADD_COLORS[0]);
                 setNewIcon('bookOpen');
                 setSelectedFields(['title', 'content']);
                 setIncludeInGoal(true);
