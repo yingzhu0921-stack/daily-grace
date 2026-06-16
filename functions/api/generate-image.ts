@@ -138,8 +138,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
-        backgroundPrompt: 'Luxury editorial magazine aesthetic. Warm ivory, soft cream, natural beige, soft sand — very limited color, no saturated colors, no dramatic gradients. Premium paper texture, natural daylight, soft realistic shadows. Minimal still-life composition inspired by Kinfolk, Cereal Magazine, Aesop, MUJI and editorial photography. Prefer real objects, light, texture, space and architectural details — window light, paper, chair, table, linen fabric, ceramic or glass objects, dried flowers, books, natural materials. Quiet and sophisticated with large typography-safe negative space.',
-        styleLock: 'T03 ABSOLUTE RULE: must feel like a premium editorial magazine / luxury lifestyle photography / modern contemplative design — curated, NOT decorative. Must NOT feel like wallpaper, a wedding invitation, an Instagram quote background, or a devotional stock image. Avoid decorative flower borders, fantasy scenery, romantic wallpaper, greeting-card aesthetics, stock photography, sunset/beach cliches, and excessive florals. Background creates atmosphere, never competes with the text.',
+        backgroundPrompt: 'Luxury editorial magazine aesthetic — quiet, sophisticated, timeless and refined. Warm ivory, soft cream, natural beige, sand, muted stone — restrained limited color, no saturated colors, no dramatic gradients. Premium paper texture, natural daylight, soft realistic shadows, minimal art-directed composition inspired by Kinfolk, Cereal Magazine, Aesop, MUJI and luxury editorial photography. Focus on HOW the scene is presented (composition, materials, texture, depth, atmosphere, stillness), not what it is. Large typography-safe negative space.',
+        styleLock: 'T03 ABSOLUTE RULE: must feel like a premium editorial magazine / luxury lifestyle photography / art-directed, museum-quality visual direction — curated, NOT decorative. Must NOT feel like wallpaper, wedding invitation, Instagram quote background, devotional stock image, or generic aesthetic photo. The scene must come from the user text\'s meaning; T03 only applies editorial styling. LAYOUT DIVERSITY: do not over-rely on flowers, window shadows, books, chairs, ceramic objects, or linen fabric — no single motif may dominate; vary compositions, materials, architecture, textures and treatments. Avoid romantic wallpaper, greeting-card looks, stock photography, sunset/beach cliches, Pinterest-wallpaper and coffee-shop lifestyle cliches. Background creates atmosphere, never competes with the text.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       'T09': {
@@ -174,14 +174,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         handwritten: { primary: 'KBLJump', secondary: 'PaperLight' },
         modern: { primary: 'KBLJump', secondary: 'PaperLight' },
       },
-      // T03 Magazine — 세리프/명조 우아
+      // T03 Editorial Magazine — Primary: RidiBatang·PaperLight / Secondary: SeoulHangang (Limelight=영문 전용)
       T03: {
         bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
         editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
+        lyrical: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        handwritten: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        modern: { primary: 'PaperLight', secondary: 'SeoulHangang' },
       },
       // T09 Light & Presence — Primary: PaperBlack·Taenada / Secondary: RidiBatang·PaperLight
       T09: {
@@ -291,11 +291,11 @@ VARIETY (important): Do NOT default to one composition. For similar messages, va
         'COLOR: Dark brown (#2e241c) background with warm beige (#e3d4bd). Earthy premium editorial poster.',
       ],
       T03: [
-        'Still life: a ceramic vase and a few dried flowers on a linen-covered table, soft window daylight, ivory tones, generous empty space.',
-        'Still life: an open book and a glass of water on warm beige paper, gentle realistic shadows, MUJI-like restraint.',
-        'Architectural detail: soft daylight falling across a cream wall and a wooden chair, quiet Kinfolk editorial mood.',
-        'Still life: folded linen fabric and a single ceramic bowl on a sand-toned surface, Aesop-like minimal composition.',
-        'Soft natural light on a stack of paper and dried botanicals, Cereal-magazine stillness, sophisticated negative space.',
+        'Art-directed editorial composition with intentional negative space and soft natural daylight, warm ivory, refined and timeless.',
+        'Close study of premium natural material and texture (stone, plaster or paper) in muted sand tones, quiet depth, museum-quality direction.',
+        'Architectural detail — a clean cream surface with a soft shadow gradient and layered depth, contemplative stillness, large empty space.',
+        'Minimal composition arranged with deliberate restraint on a beige ground, soft realistic shadow, Aesop/MUJI sensibility.',
+        'Atmospheric editorial scene with layered light and subtle texture, muted stone palette, calm sophisticated negative space.',
       ],
       T09: [
         'Volumetric light beams cutting through soft haze, deep indigo into warm white, spacious and luminous, large empty center.',
