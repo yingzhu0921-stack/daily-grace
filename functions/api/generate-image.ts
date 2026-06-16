@@ -143,9 +143,9 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       'T09': {
-        backgroundPrompt: 'BOLD COLOR GRADIENT REQUIRED. Deep purple transitioning to soft pink and blue. Luminous glow effects. Contemporary worship album cover energy. Rich saturated colors. Soft light bloom. Cinematic color atmosphere. Modern Christian creative direction. NO paper textures. NO beige. NO black and white. Must be visually vibrant and colorful.',
-        styleLock: 'T09 ABSOLUTE RULE: must have rich color gradient (purple/pink/blue), glowing atmosphere, album-cover energy. Beige or paper textures = template failure.',
-        fonts: { primary: 'Taenada', secondary: 'PaperLight' },
+        backgroundPrompt: 'Contemporary worship aesthetic — light-driven atmosphere, NOT scenery. Volumetric light, soft haze, atmospheric depth, subtle glow, premium cinematic lighting. Spacious, hopeful, emotionally uplifting; emotion before scenery — quiet but powerful, minimal but immersive. Use color as atmosphere, not decoration: deep indigo, midnight blue, soft violet, warm white, silver light, with sparing rose glow or muted lavender. Large typography-safe negative space.',
+        styleLock: 'T09 ABSOLUTE RULE: must feel like modern worship creative / premium album artwork / cinematic atmosphere of light and presence — communicate emotion through atmosphere, not decoration. Must NOT feel like wallpaper, floral background, stock nature image, Instagram quote background, or church event poster. The scene comes from the text\'s meaning; the template only controls lighting, atmosphere, color and rendering. Avoid making every image a sunset / purple sky / ocean / flowers; avoid rainbow gradients, candy colors, oversaturated pinks, neon, and repeated motifs. Focus on atmosphere, not objects.',
+        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T13': {
         backgroundPrompt: 'WARM GOLDEN MORNING LIGHT. Soft cream and golden yellow tones. Cozy notebook or journal paper texture with visible grain. Gentle morning sunlight from the side. Handcrafted devotional atmosphere. Warm amber and honey tones. Intimate and personal feeling. Large empty space. NO cool tones. NO dark colors. NO bold graphics.',
@@ -183,14 +183,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         handwritten: { primary: 'Hyunok', secondary: 'SeoulHangang' },
         modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
       },
-      // T09 Modern Worship — 개성/힙
+      // T09 Light & Presence — Primary: PaperBlack·Taenada / Secondary: RidiBatang·PaperLight
       T09: {
-        bold: { primary: 'Taenada', secondary: 'PaperLight' },
+        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
         editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        lyrical: { primary: 'Cafe24SuperMagic', secondary: 'SeoulHangang' },
-        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+        lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
+        quiet: { primary: 'RidiBatang', secondary: 'PaperLight' },
+        handwritten: { primary: 'Taenada', secondary: 'PaperLight' },
+        modern: { primary: 'Taenada', secondary: 'PaperLight' },
       },
       // T13 Daily Grace — 손글씨/감성 저널
       T13: {
@@ -298,9 +298,11 @@ VARIETY (important): Do NOT default to one composition. For similar messages, va
         'Soft natural light on a stack of paper and dried botanicals, Cereal-magazine stillness, sophisticated negative space.',
       ],
       T09: [
-        'Deep worship gradient with soft light bloom, cinematic but uncluttered, center-safe.',
-        'Modern worship album-cover atmosphere, luminous color field, subtle depth and glow.',
-        'Contemporary praise-night palette, gentle radiant haze, clean typography-safe center.',
+        'Volumetric light beams cutting through soft haze, deep indigo into warm white, spacious and luminous, large empty center.',
+        'Atmospheric depth with faint floating light particles, midnight blue with a quiet silver glow, immersive stillness.',
+        'Soft diffused glow across an open dark space, muted lavender and warm white, hopeful and weightless.',
+        'Cinematic side light through gentle mist, deep indigo with a faint rose glow, emotional and uplifting.',
+        'Luminous light blooming in fog, silver and soft violet, minimal and powerful negative space.',
       ],
       T13: [
         'Quiet journaling paper, soft notebook texture, warm morning light, handcrafted devotional mood.',
