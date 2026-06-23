@@ -191,8 +191,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Bold expressive TYPOGRAPHIC POSTER where the lettering IS the hero and fills most of the frame. Confident display or hand-lettering, strong graphic composition, screenprint / risograph energy, flat vibrant color, premium poster craft. Playful yet powerful — the type dominates with minimal supporting graphics. Think modern lettering-poster (Pinterest/StudioDoy/Kittl energy), not a scenic background.',
-        styleLock: 'T01 ABSOLUTE RULE: a bold, VIBRANT typographic poster — the lettering dominates and fills the frame with confidence and energy. Embrace strong FLAT color and expressive type, and VARY the palette boldly every time (warm brown, cobalt, multicolor, cyan, purple, orange — not always dark navy). Must NOT be a gentle devotional wallpaper, a scenic landscape, muted/dark grunge, or generic Christian scenery. The viewer must feel: "this message is being declared."',
+        backgroundPrompt: 'Clean, refined TYPOGRAPHIC POSTER: bold expressive lettering fills most of the frame on a SINGLE solid color or subtle gradient background. Minimal or no extra graphics — let the type itself be the whole design (modern lettering-poster, Pinterest/editorial/screenprint energy). Two-tone or limited palette, confident and premium. May mix a bold display face with a small script or serif accent.',
+        styleLock: 'T01 ABSOLUTE RULE: a bold, type-driven poster — the lettering dominates a clean SOLID or subtly-gradient background with minimal supporting graphics (no busy scenes, no maps, no swirls, no clutter). Use RICH but REFINED color (NOT neon, NOT over-saturated), and VARY the palette every time (warm brown, cobalt, terracotta, teal, plum, mustard, forest, cream). Two-tone, editorial, premium. Must NOT be a gentle devotional wallpaper, a busy scenic landscape, dark grunge, or generic Christian scenery.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -362,13 +362,14 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
     const templateVariations: Record<string, string[]> = {
       T01: [
-        'Warm cream lettering packed tightly on a deep warm-brown (#3a2418) background, retro condensed display poster.',
-        'Bold cobalt-blue (#1c39bb) lettering on warm off-white paper, clean editorial poster with a tiny barcode accent.',
-        'Playful multicolor hand-lettering (hot pink, sunny yellow, leaf green, red) on a near-black (#141414) background, lively screenprint poster.',
-        'Cream and bright-red lettering on a vivid cyan (#1fb6d6) background with small starburst accents, energetic vintage poster.',
-        'Bold black lettering on a vivid purple (#7b3ff2) background with neon-yellow underline and circle accents, modern graphic poster.',
-        'Chunky cream lettering on a burnt-orange (#d2551f) background, warm risograph poster energy.',
-        'Deep navy lettering on a soft butter-yellow (#f2d65c) background, punchy mid-century poster.',
+        'Warm cream lettering on a deep warm-brown (#3a2418) background, retro condensed display poster.',
+        'Deep cobalt-blue (#27408b) lettering on warm off-white paper (#f2ede2), clean editorial poster.',
+        'Curated muted-multicolor hand-lettering (dusty coral, mustard, sage, slate blue) on charcoal (#23232a), refined screenprint poster.',
+        'Cream and brick-red lettering on a muted teal (#2f7d78) background, calm vintage poster.',
+        'Soft black lettering on a dusty plum (#5b4a82) background with subtle gold accents, sophisticated graphic poster.',
+        'Chunky cream lettering on a terracotta (#b4592e) background, warm risograph poster energy.',
+        'Deep navy lettering on a muted mustard (#cda94a) background, punchy mid-century poster.',
+        'Ivory lettering on a deep forest-green (#234034) background, classic premium poster.',
       ],
       T03: [
         'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
@@ -434,13 +435,25 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const hierarchyHint = safeLines
       .map((l) => `"${l.text}"(${(l.scale || 1) >= 1.4 ? 'LARGE' : (l.scale || 1) <= 0.6 ? 'small caption' : 'medium'})`)
       .join(', ');
+    // 메시지 무드에 어울리는 레터링 스타일 (붓글씨/귀여운/볼드/우아/손글씨/모던)
+    const letteringByMood: Record<string, string> = {
+      bold: 'bold, heavy display lettering with strong powerful presence',
+      editorial: 'refined editorial lettering, elegant clean and premium',
+      lyrical: 'playful, friendly, slightly rounded hand-lettering — cute and warm',
+      quiet: 'calm, gentle, softly elegant lettering',
+      handwritten: 'natural casual handwriting, personal and warm',
+      modern: 'clean modern display lettering, confident and contemporary',
+    };
+    const letteringStyle = analysis.useBrush
+      ? 'expressive Korean brush-calligraphy lettering with energetic ink strokes'
+      : (letteringByMood[analysis.fontMood || ''] || 'bold, confident poster lettering');
     const aiTextBlock = [
       'RENDER THE KOREAN TEXT AS THE HERO TYPOGRAPHY, beautifully integrated into the poster (not a plain overlay).',
       `CRITICAL: spell every Korean character EXACTLY and legibly. Do NOT change, omit, add, or misspell any character. The full text is: "${safeLines.map((l) => l.text).join(' ')}".`,
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
-      `Text alignment: ${layoutAlign}. ${analysis.useBrush ? 'Use expressive Korean brush-calligraphy lettering (ink strokes).' : 'Use bold, confident poster lettering.'}`,
-      'Typography is the focal point and must dominate; integrate it with the texture and contrast. Keep Korean spelling perfect.',
+      `Text alignment: ${layoutAlign}. Lettering style (match it to the message): ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
+      'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, editorial design quality, modern premium aesthetic, clean composition, high-end poster craft, subtle texture. The Korean typography must be accurate, legible, and the clear focal point.';
 
