@@ -189,95 +189,40 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const requestedRatio = typeof ratio === 'string' && ratioToSize[ratio] ? ratio : '4:5';
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
+    // ── 5개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
+      // T01 — 붓글씨 선포
       'T01': {
-        backgroundPrompt: 'Clean, refined TYPOGRAPHIC POSTER: bold expressive lettering fills most of the frame on a SINGLE solid color or subtle gradient background. Minimal or no extra graphics — let the type itself be the whole design (modern lettering-poster, Pinterest/editorial/screenprint energy). Two-tone or limited palette, confident and premium. May mix a bold display face with a small script or serif accent.',
-        styleLock: 'T01 ABSOLUTE RULE: a bold, type-driven poster — the lettering dominates a clean SOLID or subtly-gradient background with minimal supporting graphics (no busy scenes, no maps, no swirls, no clutter). Use RICH but REFINED color (NOT neon, NOT over-saturated), and VARY the palette every time (warm brown, cobalt, terracotta, teal, plum, mustard, forest, cream). Two-tone, editorial, premium. Must NOT be a gentle devotional wallpaper, a busy scenic landscape, dark grunge, or generic Christian scenery.',
+        backgroundPrompt: 'Bold Korean brush-calligraphy faith poster. The energetic ink-brush lettering is the hero on a rich, deep solid background with subtle texture. Powerful, declarative, dynamic ink strokes. Minimal supporting graphics.',
+        styleLock: 'T01 = BRUSH DECLARATION: powerful Korean brush calligraphy (ink strokes) on a rich deep background. Bold, energetic, declarative. NOT gentle, NOT pastel, NOT a photo scene.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
+      // T02 — 레트로 포스터
+      'T02': {
+        backgroundPrompt: 'Retro / vintage display-typography poster. The lettering fills the frame on a FLAT vintage color (or lightly textured) background with tasteful grain. Confident, characterful, premium retro poster. Minimal extra graphics — type-driven.',
+        styleLock: 'T02 = RETRO POSTER: vintage display typography on a flat retro color with grain. Bold condensed display mixed with a cursive script accent word. Type-driven and clean — no busy scenery, no photo.',
+        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
+      },
+      // T03 — 에디토리얼 세리프
       'T03': {
-        backgroundPrompt: 'Premium editorial photography with luxury magazine visual language. Sophisticated composition, intentional storytelling, elegant atmosphere, museum-quality art direction — feels like a high-end editorial feature or magazine cover, elevated visual storytelling (not a simple background, not minimal symbolism). Meaningful landscapes, symbolic environments, dramatic natural settings with a strong cinematic focal point. Rich but restrained palette: warm ivory, stone, sand, deep charcoal, muted earth tones — elegant rather than colorful. Large typography-safe negative space.',
-        styleLock: 'T03 ABSOLUTE RULE: must feel like luxury editorial photography / premium magazine cover / sophisticated visual storytelling with thoughtful composition. Must NOT feel like stock devotional imagery, casual lifestyle photography, worship-concert artwork, scrapbook aesthetics, or simple wallpaper. The scene must originate from the user text\'s meaning — keep important symbols, imagery, locations and objects recognizable; do NOT reduce the message to abstract symbols or replace meaningful imagery with generic scenery (no generic sunsets, flower fields, beaches, clouds, or abstract light). Maintain a clear focal point occupying a meaningful portion of the frame, avoid clutter and decorative elements, keep generous space for typography — image and typography stay balanced, neither overpowering the other.',
+        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography over a muted solid color or a soft atmospheric photograph. Magazine quality, calm and sophisticated, generous negative space.',
+        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif over a muted refined palette or soft atmospheric photo, magazine sophistication. Calm and premium, never loud, never neon.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
-      'T09': {
-        backgroundPrompt: 'Contemporary worship aesthetic — light-driven atmosphere, NOT scenery. Volumetric light, soft haze, atmospheric depth, subtle glow, premium cinematic lighting. Spacious, hopeful, emotionally uplifting; emotion before scenery — quiet but powerful, minimal but immersive. Use color as atmosphere, not decoration: deep indigo, midnight blue, soft violet, warm white, silver light, with sparing rose glow or muted lavender. Large typography-safe negative space.',
-        styleLock: 'T09 ABSOLUTE RULE: must feel like modern worship creative / premium album artwork / cinematic atmosphere of light and presence — communicate emotion through atmosphere, not decoration. Must NOT feel like wallpaper, floral background, stock nature image, Instagram quote background, or church event poster. The scene comes from the text\'s meaning; the template only controls lighting, atmosphere, color and rendering. Avoid making every image a sunset / purple sky / ocean / flowers; avoid rainbow gradients, candy colors, oversaturated pinks, neon, and repeated motifs. Focus on atmosphere, not objects.',
+      // T04 — 미니멀
+      'T04': {
+        backgroundPrompt: 'Minimal poster: clean simple lettering with generous negative space on a soft cream / off-white / light solid background. At most one small quiet graphic element. Calm, refined, breathable.',
+        styleLock: 'T04 = MINIMAL: lots of negative space, clean simple type, soft light palette, at most one tiny accent. Quiet and refined — never busy, never dark, never loud.',
+        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+      },
+      // T05 — 모던 워십
+      'T05': {
+        backgroundPrompt: 'Modern worship poster: bold confident lettering over an atmospheric photograph or a luminous gradient with soft cinematic light and glow. Hopeful, spacious, emotionally uplifting.',
+        styleLock: 'T05 = MODERN WORSHIP: atmospheric photo or luminous gradient with soft glow, bold clean lettering, hopeful uplifting mood. NOT flat paper, NOT grunge, NOT neon.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
-      },
-      'T13': {
-        backgroundPrompt: 'Warm and intimate atmosphere — a small moment of grace within an ordinary day. Soft morning light, gentle natural colors (warm cream, soft beige, honey gold, warm white, muted earth tones), subtle textures. Personal and relatable, comforting and familiar; quiet beauty found in everyday life. Large typography-safe negative space. Feel personal, not grand.',
-        styleLock: 'T13 ABSOLUTE RULE: must feel like gratitude / warmth / comfort / closeness / everyday grace — personal and relatable, beautifully ordinary. Must NOT feel like a luxury magazine (T03), worship album artwork (T09), an inspirational poster, stock devotional wallpaper, or dramatic scenery. The scene comes from the user text\'s meaning, preferring the more personal/intimate/relatable interpretation (literal, symbolic, emotional, or experiential). LAYOUT DIVERSITY: avoid always using beaches, flower fields, sunsets, mountains, or identical indoor scenes; vary environments, seasons, textures and lighting — no single visual solution dominates. Avoid epic landscapes, fantasy, dramatic symbolism, heroic imagery, worship-concert looks, luxury editorial styling, poster compositions, excessive effects, and generic inspirational wallpapers.',
-        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-      },
-      'T17': {
-        backgroundPrompt: 'PURE BEIGE. Flat warm beige or sand background. Extremely minimal. Japanese wabi-sabi aesthetic. Almost no objects — only the faintest suggestion of texture or shadow. Maximum negative space. Neutral muted tones only. Clean and sparse. NO dramatic lighting. NO strong shadows. NO objects. NO color. Near-empty composition.',
-        styleLock: 'T17 ABSOLUTE RULE: pure beige/sand, near-empty, extreme minimalism. Any dramatic element or strong color = template failure.',
-        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-      },
-      'T20': {
-        backgroundPrompt: 'STRONG WINDOW LIGHT AND SHADOWS. Dramatic natural sunlight streaming through a window. Clear shadow patterns cast on a surface — organic, geometric, or plant-shadow. Warm golden hour light. High contrast between light and shadow areas. Photographic realism. Contemplative quiet room. NO flat backgrounds. NO gradients. Must have visible, beautiful shadow patterns.',
-        styleLock: 'T20 ABSOLUTE RULE: must have actual window light with clear shadow patterns, photographic realism, cinematic contrast. Flat or gradient backgrounds = template failure.',
-        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
     };
 
-    const TEMPLATE_FONT_OPTIONS: Record<string, Record<string, { primary: string; secondary: string }>> = {
-      // T01 Bold Poster — Primary: KBLJump·GangwonTunTun·PaperBlack / Secondary: Taenada·Cafe24SuperMagic
-      T01: {
-        bold: { primary: 'KBLJump', secondary: 'PaperLight' },
-        editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
-        quiet: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
-        handwritten: { primary: 'Cafe24SuperMagic', secondary: 'PaperLight' },
-        modern: { primary: 'GangwonTunTun', secondary: 'PaperLight' },
-      },
-      // T03 Editorial Magazine — Primary: RidiBatang·PaperLight / Secondary: SeoulHangang (Limelight=영문 전용)
-      T03: {
-        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        editorial: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-        handwritten: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        modern: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-      },
-      // T09 Light & Presence — Primary: PaperBlack·Taenada / Secondary: RidiBatang·PaperLight
-      T09: {
-        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        editorial: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        lyrical: { primary: 'Taenada', secondary: 'PaperLight' },
-        quiet: { primary: 'RidiBatang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Taenada', secondary: 'PaperLight' },
-        modern: { primary: 'Taenada', secondary: 'PaperLight' },
-      },
-      // T13 Daily Grace — Primary: PaperLight·SeoulHangang·JeonnamBarun / Secondary: Hyunok·RidiBatang
-      T13: {
-        bold: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
-        editorial: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        quiet: { primary: 'RidiBatang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        modern: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
-      },
-      // T17 Beige Minimal — 깔끔한 고딕 미니멀
-      T17: {
-        bold: { primary: 'PaperBlack', secondary: 'PaperLight' },
-        editorial: { primary: 'JeonnamBarun', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        quiet: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-        handwritten: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
-        modern: { primary: 'GangwonModoo', secondary: 'PaperLight' },
-      },
-      // T20 Light & Shadow — 세리프/명조 + 손글씨 잔잔
-      T20: {
-        bold: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
-        editorial: { primary: 'Keris', secondary: 'SeoulHangang' },
-        lyrical: { primary: 'Hyunok', secondary: 'SeoulHangang' },
-        quiet: { primary: 'SeoulHangang', secondary: 'PaperLight' },
-        handwritten: { primary: 'Incheon', secondary: 'SeoulHangang' },
-        modern: { primary: 'Keris', secondary: 'SeoulHangang' },
-      },
-    };
 
     const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography card background. No text. No letters. No words. No typography. No logos. Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end card design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
 
@@ -290,7 +235,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         {
           role: 'system',
           content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) detect any Bible reference, (3) decide the typography hierarchy, (4) plan the layout, (5) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
-{"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T17"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
+{"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T05"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
 ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words:
 - BEFORE describing the background, plan the typography: identify key phrases, the dominant idea, and supporting text, then build the hierarchy and layout.
@@ -327,12 +272,13 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
-- templates: exactly 3 IDs from T01,T03,T09,T13,T17,T20 best matching the mood
-- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern. Choose by emotional tone, message intent, text length and composition — never randomly, and avoid always using the same mood for similar messages:
-  · Strong / declaration → bold (PaperBlack/KBLJump/GangwonTunTun)
-  · Grace / peace / reflection → editorial or quiet (RidiBatang/PaperLight/SeoulHangang)
-  · Joy / worship / gratitude → lyrical (Taenada/Hyunok/Kkubullim)
-  · Daily journal / QT → modern (JeonnamBarun/PaperLight/SeoulHangang)
+- templates: exactly 3 IDs from T01,T02,T03,T04,T05 best matching the message:
+  · T01 = 붓글씨 선포 (brush calligraphy, bold declaration) → 담대/선포/승리/믿음
+  · T02 = 레트로 포스터 (bold vintage display) → strong, punchy, energetic messages
+  · T03 = 에디토리얼 세리프 (elegant serif) → 묵상/평안/은혜/reflection
+  · T04 = 미니멀 (clean, lots of space) → 쉼/고요/short quiet phrases
+  · T05 = 모던 워십 (atmospheric light) → 소망/예배/빛/회복
+- fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern (best emotional tone of the text)
 - backgroundConcept: one sentence (English). The background may be symbolic, direct, abstract, or narrative depending on the message. Fresh editorial storytelling — avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics) and avoid repeating the same motif. Keep large typography-safe negative space. Goal: emotional/visual resonance, not literal illustration.
 - visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
 - palette / lighting / composition / typographyTone: short English direction strings; composition must leave clear, calm, low-contrast space exactly where the typography will sit (match your chosen textAlign) and push focal interest away from the text
@@ -353,59 +299,61 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       ? buildSafeLines(verse, analysis.lines)
       : (Array.isArray(analysis.lines) && analysis.lines.length ? analysis.lines : []);
 
-    const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T09'];
+    const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T05'];
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
-    const fontMood = analysis.fontMood && TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[analysis.fontMood]
-      ? analysis.fontMood
-      : 'editorial';
-    const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
+    const fontMood = analysis.fontMood || 'editorial';
+    const selectedFonts = config.fonts;
     const templateVariations: Record<string, string[]> = {
+      // T01 붓글씨 선포 — 진한 배경 + 밝은 붓글씨
       T01: [
+        'Antique-gold ink-brush lettering on a deep ink-navy (#16233a) background.',
+        'Cream ink-brush lettering on a deep charcoal (#1f1f24) background.',
+        'Cream ink-brush lettering on a deep wine-burgundy (#4a1f2a) background.',
+        'Warm-gold ink-brush lettering on a deep oxblood-brown (#2a1813) background.',
+        'Pale-gold ink-brush lettering on a near-black (#141414) background.',
+        'Cream ink-brush lettering on a deep teal-charcoal (#143230) background.',
+      ],
+      // T02 레트로 포스터 — 빈티지 플랫 컬러
+      T02: [
         'Warm cream lettering on a deep warm-brown (#3a2418) background, retro condensed display poster.',
         'Deep cobalt-blue (#27408b) lettering on warm off-white paper (#f2ede2), clean editorial poster.',
         'Cream lettering on a rich editorial red (#b5342f) background, clean two-tone poster.',
         'Cream and brick-red lettering on a muted teal (#2f7d78) background, calm vintage poster.',
-        'Soft black lettering on a dusty plum (#5b4a82) background with subtle gold accents, sophisticated graphic poster.',
-        'Chunky cream lettering on a terracotta (#b4592e) background, warm risograph poster energy.',
+        'Soft black lettering on a dusty plum (#5b4a82) background with subtle gold accents.',
+        'Chunky cream lettering on a terracotta (#b4592e) background, warm risograph poster.',
         'Deep navy lettering on a muted mustard (#cda94a) background, punchy mid-century poster.',
         'Cream lettering on a deep wine-burgundy (#5e2a36) background, premium poster.',
         'Soft black lettering on a warm sand (#dcc9a8) background, clean minimal poster.',
         'Ivory lettering on a deep charcoal-navy (#1f2633) background, refined premium poster.',
       ],
+      // T03 에디토리얼 세리프 — 차분한 단색/사진
       T03: [
-        'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
-        'Dramatic natural setting rendered as a premium editorial feature, muted earth tones, intentional composition and depth.',
-        'Symbolic environment with refined art direction and a clear focal point, deep charcoal accents over sand tones, elegant restraint.',
-        'Cinematic landscape framed like a luxury magazine spread, soft directional light, rich but restrained palette, generous negative space.',
-        'Atmospheric editorial scene with strong visual hierarchy and a meaningful focal element, stone and warm ivory, sophisticated stillness.',
+        'Muted ivory (#efe9dd) background with elegant serif and soft daylight, magazine sophistication.',
+        'Soft muted-stone (#cfc7b8) editorial background, calm and refined.',
+        'A soft atmospheric photograph (calm muted landscape) behind the serif, gentle directional light.',
+        'Muted sage-gray (#a7ad9f) editorial background, sophisticated stillness.',
+        'Deep muted plum (#5a4658) editorial background with ivory serif.',
+        'Warm taupe (#b8a892) editorial background, restrained elegance.',
       ],
-      T09: [
-        'Volumetric light beams cutting through soft haze, deep indigo into warm white, spacious and luminous, large empty center.',
-        'Atmospheric depth with faint floating light particles, midnight blue with a quiet silver glow, immersive stillness.',
-        'Soft diffused glow across an open dark space, muted lavender and warm white, hopeful and weightless.',
-        'Cinematic side light through gentle mist, deep indigo with a faint rose glow, emotional and uplifting.',
-        'Luminous light blooming in fog, silver and soft violet, minimal and powerful negative space.',
+      // T04 미니멀 — 밝은 여백
+      T04: [
+        'Soft cream (#efe9dd) background, minimal with generous space.',
+        'Warm off-white (#f3efe6) background with one tiny accent element.',
+        'Pale sand (#e6dcc8) minimal background.',
+        'Soft greige (#e0ddd6) minimal background.',
+        'Light blush-ivory (#f0e7e2) minimal background.',
       ],
-      T13: [
-        'A small everyday moment in soft morning light on a simple home surface, warm cream tones, intimate and quiet.',
-        'Gentle daylight across an ordinary desk or kitchen corner, honey-gold warmth on humble objects, relatable and comforting.',
-        'A quiet seasonal detail of daily life, soft texture and warm white light, personal and unhurried.',
-        'Warm muted earth tones in a familiar indoor nook, gentle shadows, beautifully ordinary stillness.',
-        'Soft natural light on a humble everyday scene, comforting beige palette, generous space for text.',
-      ],
-      T17: [
-        'Minimal beige editorial scene, restrained natural shadow, clean premium simplicity.',
-        'Warm neutral paper field, Japanese minimal balance, soft tactile grain.',
-        'Calm beige composition with subtle tonal variation, very sparse and contemplative.',
-      ],
-      T20: [
-        'Sunlight through a window casting quiet organic shadows, contemplative room atmosphere.',
-        'Soft side light and gentle shadow pattern, warm stillness, meditative negative space.',
-        'Window-lit surface with nuanced shadow, quiet prayer-room mood, uncluttered center.',
+      // T05 모던 워십 — 분위기 사진/그라데이션 빛
+      T05: [
+        'Luminous indigo-to-warm-white gradient with soft glow, spacious.',
+        'Atmospheric sky or mountain photograph with soft cinematic light.',
+        'Soft violet and silver light, hazy and hopeful.',
+        'Warm golden-hour atmospheric light over a soft landscape.',
+        'Deep blue gradient with a gentle radiant glow, uplifting.',
       ],
     };
-    const variations = templateVariations[selectedTemplate] || templateVariations.T13;
+    const variations = templateVariations[selectedTemplate] || templateVariations.T02;
     const variation = variations[Math.abs(templateIndex) % variations.length];
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
@@ -437,31 +385,25 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const hierarchyHint = safeLines
       .map((l) => `"${l.text}"(${(l.scale || 1) >= 1.4 ? 'LARGE' : (l.scale || 1) <= 0.6 ? 'small caption' : 'medium'})`)
       .join(', ');
-    // 메시지 무드에 어울리는 레터링 스타일 (붓글씨/귀여운/볼드/우아/손글씨/모던)
-    const letteringByMood: Record<string, string> = {
-      bold: 'bold, heavy display lettering with strong powerful presence',
-      editorial: 'elegant high-contrast SERIF lettering, refined magazine-editorial quality (mix upright serif with an occasional italic word)',
-      lyrical: 'playful, friendly, slightly rounded hand-lettering — cute and warm',
-      quiet: 'calm, softly elegant serif lettering, gentle and refined',
-      handwritten: 'natural casual handwriting, personal and warm',
-      modern: 'clean modern display lettering, confident and contemporary',
+    // 템플릿마다 고정된 레터링 스타일 (한 템플릿 = 한 스타일, 일관성 유지)
+    const letteringByTemplate: Record<string, string> = {
+      T01: 'expressive Korean brush-calligraphy lettering with energetic, powerful ink strokes',
+      T02: 'retro display lettering: a bold condensed display style for the main lines mixed with a flowing cursive SCRIPT for ONE key word, vintage character with tasteful grain',
+      T03: 'elegant high-contrast SERIF lettering, refined magazine-editorial quality with an occasional italic word',
+      T04: 'clean minimal sans lettering, calm and simple with generous space',
+      T05: 'bold modern sans lettering, confident and luminous',
     };
-    const letteringStyle = analysis.useBrush
-      ? 'expressive Korean brush-calligraphy lettering with energetic ink strokes'
-      : selectedTemplate === 'T03'
-        ? letteringByMood.editorial // T03는 우아한 에디토리얼 세리프 고정
-        : (letteringByMood[analysis.fontMood || ''] || 'bold, confident poster lettering');
+    const letteringStyle = letteringByTemplate[selectedTemplate] || letteringByTemplate.T02;
     const aiTextBlock = [
       'RENDER THE KOREAN TEXT AS THE HERO TYPOGRAPHY, beautifully integrated into the poster (not a plain overlay).',
       `CRITICAL: spell every Korean character EXACTLY and legibly. Do NOT change, omit, add, or misspell any character. The full text is: "${safeLines.map((l) => l.text).join(' ')}".`,
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
-      `Text alignment: ${layoutAlign}. Lettering style (match it to the message): ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
-      'RETRO DISPLAY-POSTER CHARACTER: vintage poster typography with subtle grain. MIX a strong bold/condensed display style for the main lines with a flowing cursive/script treatment for ONE key emphasis word (choose a meaningful word FROM the text) for contrast — like a premium retro lettering poster. Do NOT add any words that are not in the text.',
+      `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
       'CRITICAL FIT: keep ALL text fully INSIDE the frame with comfortable margins on every side. Never crop, cut off, or run any letter past the edges — scale the lettering down so the longest line fits with margin.',
-      'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect.',
+      'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
-    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster with retro / vintage display-typography character and tasteful grain. High-end poster craft, strong composition, expressive type. The Korean typography must be accurate, legible, and the clear focal point.';
+    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, high-end craft, strong composition, expressive type. The Korean typography must be accurate, legible, and the clear focal point.';
 
     const bgPromptFinal = [
       config.backgroundPrompt,
