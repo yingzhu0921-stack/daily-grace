@@ -457,10 +457,11 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
       `Text alignment: ${layoutAlign}. Lettering style (match it to the message): ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
+      'RETRO DISPLAY-POSTER CHARACTER: vintage poster typography with subtle grain. MIX a strong bold/condensed display style for the main lines with a flowing cursive/script treatment for ONE key emphasis word (choose a meaningful word FROM the text) for contrast — like a premium retro lettering poster. Do NOT add any words that are not in the text.',
       'CRITICAL FIT: keep ALL text fully INSIDE the frame with comfortable margins on every side. Never crop, cut off, or run any letter past the edges — scale the lettering down so the longest line fits with margin.',
       'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect.',
     ].filter(Boolean).join('\n');
-    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, editorial design quality, modern premium aesthetic, clean composition, high-end poster craft, subtle texture. The Korean typography must be accurate, legible, and the clear focal point.';
+    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster with retro / vintage display-typography character and tasteful grain. High-end poster craft, strong composition, expressive type. The Korean typography must be accurate, legible, and the clear focal point.';
 
     const bgPromptFinal = [
       config.backgroundPrompt,
