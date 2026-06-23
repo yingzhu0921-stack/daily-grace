@@ -205,8 +205,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       },
       // T03 — 에디토리얼 세리프
       'T03': {
-        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography over a muted solid color or a soft atmospheric photograph. Magazine quality, calm and sophisticated, generous negative space.',
-        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif over a muted refined palette or soft atmospheric photo, magazine sophistication. Calm and premium, never loud, never neon.',
+        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography on a muted, refined FLAT color background with a subtle paper texture. Magazine quality, calm and sophisticated, generous negative space. No photograph.',
+        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif on a muted refined FLAT palette, magazine sophistication. Calm and premium, never loud, never neon, never a dramatic photo.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       // T04 — 미니멀
@@ -217,8 +217,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       },
       // T05 — 모던 워십
       'T05': {
-        backgroundPrompt: 'Modern worship poster: bold confident lettering over an atmospheric photograph or a luminous gradient with soft cinematic light and glow. Hopeful, spacious, emotionally uplifting.',
-        styleLock: 'T05 = MODERN WORSHIP: atmospheric photo or luminous gradient with soft glow, bold clean lettering, hopeful uplifting mood. NOT flat paper, NOT grunge, NOT neon.',
+        backgroundPrompt: 'Modern worship poster: bold confident clean lettering on a smooth LUMINOUS GRADIENT with soft glow (no photograph). Hopeful, spacious, emotionally uplifting, contemporary and refined.',
+        styleLock: 'T05 = MODERN WORSHIP: a smooth luminous color gradient with soft glow, bold clean modern lettering, hopeful uplifting mood. NOT a dramatic photo, NOT grunge, NOT neon, NOT a church poster.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
     };
@@ -327,14 +327,14 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
         'Soft black lettering on a warm sand (#dcc9a8) background, clean minimal poster.',
         'Ivory lettering on a deep charcoal-navy (#1f2633) background, refined premium poster.',
       ],
-      // T03 에디토리얼 세리프 — 차분한 단색/사진
+      // T03 에디토리얼 세리프 — 차분한 플랫 단색
       T03: [
-        'Muted ivory (#efe9dd) background with elegant serif and soft daylight, magazine sophistication.',
-        'Soft muted-stone (#cfc7b8) editorial background, calm and refined.',
-        'A soft atmospheric photograph (calm muted landscape) behind the serif, gentle directional light.',
-        'Muted sage-gray (#a7ad9f) editorial background, sophisticated stillness.',
-        'Deep muted plum (#5a4658) editorial background with ivory serif.',
-        'Warm taupe (#b8a892) editorial background, restrained elegance.',
+        'Muted ivory (#efe9dd) flat background, elegant serif, subtle paper texture, magazine sophistication.',
+        'Soft muted-stone (#cfc7b8) flat editorial background, calm and refined.',
+        'Warm taupe (#b8a892) flat editorial background, restrained elegance.',
+        'Muted sage-gray (#a7ad9f) flat editorial background, sophisticated stillness.',
+        'Deep muted plum (#5a4658) flat editorial background with ivory serif.',
+        'Dusty rose (#cbb0ad) flat editorial background, soft and refined.',
       ],
       // T04 미니멀 — 밝은 여백
       T04: [
@@ -344,13 +344,13 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
         'Soft greige (#e0ddd6) minimal background.',
         'Light blush-ivory (#f0e7e2) minimal background.',
       ],
-      // T05 모던 워십 — 분위기 사진/그라데이션 빛
+      // T05 모던 워십 — 매끈한 빛 그라데이션 (사진 X)
       T05: [
-        'Luminous indigo-to-warm-white gradient with soft glow, spacious.',
-        'Atmospheric sky or mountain photograph with soft cinematic light.',
-        'Soft violet and silver light, hazy and hopeful.',
-        'Warm golden-hour atmospheric light over a soft landscape.',
-        'Deep blue gradient with a gentle radiant glow, uplifting.',
+        'Smooth luminous indigo-to-warm-white gradient with a soft glow, spacious.',
+        'Smooth soft violet-to-silver gradient, hazy and hopeful.',
+        'Smooth deep-blue gradient with a gentle radiant center glow, uplifting.',
+        'Smooth warm peach-to-cream gradient with soft light, gentle and modern.',
+        'Smooth teal-to-soft-white gradient, calm and luminous.',
       ],
     };
     const variations = templateVariations[selectedTemplate] || templateVariations.T02;
@@ -366,18 +366,12 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const clearRegion = layoutAlign === 'left' ? 'the left and center-left, plus the vertical middle' : 'the central column and the vertical middle';
     const interestRegion = layoutAlign === 'left' ? 'the right side and the upper/lower edges' : 'the edges — top, bottom, and corners';
     const layoutDirective = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned, vertically centered, and ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${interestRegion}, never directly behind the main text.`;
+    // 깔끔한 모던 플랫 디자인 강제 + 촌스러운 AI 교회포스터 금지
     const personalizedBrief = [
-      `Personalized content brief based on the user's Korean text: "${verse?.trim() || safeLines.map((l) => l.text).join(' ')}".`,
-      analysis.backgroundConcept ? `Core background concept: ${analysis.backgroundConcept}` : '',
-      analysis.visualMotifs?.length ? `Subtle visual motifs to weave in: ${analysis.visualMotifs.join(', ')}.` : '',
-      analysis.palette ? `Personalized palette: ${analysis.palette}.` : '',
-      analysis.lighting ? `Lighting: ${analysis.lighting}.` : '',
-      analysis.composition ? `Composition: ${analysis.composition}.` : '',
-      analysis.typographyTone ? `Typography mood to support later overlay: ${analysis.typographyTone}.` : '',
-      analysis.avoidImagery?.length ? `Avoid these generic/cliche visuals unless essential: ${analysis.avoidImagery.join(', ')}.` : '',
-      'The background must feel meaningfully connected to the specific words, not interchangeable.',
-      'Visualize the specific MEANING of these words, not generic Christianity. Do NOT default to flowers, butterflies, rivers, beaches, sunsets, mountains, clouds, or abstract sunlight unless this exact message truly calls for them.',
-      'Use metaphorical, atmospheric, or symbolic imagery rather than literal religious stock imagery.',
+      'This is a CLEAN, MODERN, DESIGN-FORWARD typography poster — premium editorial / contemporary graphic-design quality (think Pinterest design posters), NOT a photographic scene and NOT a church poster.',
+      'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture.',
+      'Keep the background a CLEAN flat color or a very subtle gradient/texture as defined by the template. Let the beautiful typography be the whole design — modern, tasteful, restrained, premium.',
+      analysis.palette ? `Optional palette inspiration (keep it refined): ${analysis.palette}.` : '',
     ].filter(Boolean).join('\n');
     // ── AI가 글자까지 그리는 모드 (기본 ON) ──
     const aiText = body.aiText !== false;
@@ -400,10 +394,10 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
       `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
-      'CRITICAL FIT: keep ALL text fully INSIDE the frame with comfortable margins on every side. Never crop, cut off, or run any letter past the edges — scale the lettering down so the longest line fits with margin.',
+      'CRITICAL FIT: every line of text must stay fully INSIDE the frame with at least 8% empty margin on the left and right edges. The longest line must NOT touch or cross the edges — if needed, scale ALL the lettering down until the widest line fits comfortably with margin. Cropped/cut-off letters are a failure.',
       'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
-    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, high-end craft, strong composition, expressive type. The Korean typography must be accurate, legible, and the clear focal point.';
+    const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos. The Korean typography is accurate, legible, and the clear focal point.';
 
     const bgPromptFinal = [
       config.backgroundPrompt,
