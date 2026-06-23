@@ -1377,13 +1377,15 @@ export default function Designer() {
       if (!selectedTemplateId) { toast.error('템플릿을 선택해주세요'); return; }
       if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
       setIsGenerating(true);
-      setTemplateIndex(0);
+      // 새 생성마다 색상 변주를 랜덤하게 시작 (매번 같은 색 방지)
+      const startIndex = Math.floor(Math.random() * 5);
+      setTemplateIndex(startIndex);
       startGenerationProgress('auto', 45000);
       try {
         const res = await fetch('/api/generate-image', {
           method: 'POST', credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateId: selectedTemplateId, ratio: meta.ratio }),
+          body: JSON.stringify({ action: 'auto-complete', verse: verseInput.trim(), templateId: selectedTemplateId, ratio: meta.ratio, templateIndex: startIndex }),
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: '오류' }));
