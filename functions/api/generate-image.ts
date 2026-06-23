@@ -364,12 +364,14 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       T01: [
         'Warm cream lettering on a deep warm-brown (#3a2418) background, retro condensed display poster.',
         'Deep cobalt-blue (#27408b) lettering on warm off-white paper (#f2ede2), clean editorial poster.',
-        'Curated muted-multicolor hand-lettering (dusty coral, mustard, sage, slate blue) on charcoal (#23232a), refined screenprint poster.',
+        'Cream lettering on a rich editorial red (#b5342f) background, clean two-tone poster.',
         'Cream and brick-red lettering on a muted teal (#2f7d78) background, calm vintage poster.',
         'Soft black lettering on a dusty plum (#5b4a82) background with subtle gold accents, sophisticated graphic poster.',
         'Chunky cream lettering on a terracotta (#b4592e) background, warm risograph poster energy.',
         'Deep navy lettering on a muted mustard (#cda94a) background, punchy mid-century poster.',
-        'Ivory lettering on a deep forest-green (#234034) background, classic premium poster.',
+        'Cream lettering on a deep wine-burgundy (#5e2a36) background, premium poster.',
+        'Soft black lettering on a warm sand (#dcc9a8) background, clean minimal poster.',
+        'Ivory lettering on a deep charcoal-navy (#1f2633) background, refined premium poster.',
       ],
       T03: [
         'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
@@ -455,6 +457,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
       `Text alignment: ${layoutAlign}. Lettering style (match it to the message): ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
+      'CRITICAL FIT: keep ALL text fully INSIDE the frame with comfortable margins on every side. Never crop, cut off, or run any letter past the edges — scale the lettering down so the longest line fits with margin.',
       'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, editorial design quality, modern premium aesthetic, clean composition, high-end poster craft, subtle texture. The Korean typography must be accurate, legible, and the clear focal point.';
