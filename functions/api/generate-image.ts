@@ -103,22 +103,29 @@ function splitBodyIntoLines(body: string): string[] {
   return lines;
 }
 
-// 위계가 평평하면(또는 폴백) 출처를 작게, 마지막 구절을 크게 만들어 대비를 보장
+// 성경 출처 표기 정리: 대괄호/소괄호 제거 + 책이름과 장:절 사이 공백. "[막16:15]"→"막 16:15"
+function formatReference(s: string): string {
+  return s.replace(/[\[\]()（）]/g, '').replace(/([가-힣])\s*(\d)/, '$1 $2').trim();
+}
+
+// 위계 보정 + 출처는 대괄호 제거하고 맨 마지막(하단)에 작은 캡션으로 배치
 function enforceHierarchy(lines: TypoLine[]): TypoLine[] {
   if (!lines.length) return lines;
-  const marked = lines.map((l) => ({ text: l.text, scale: l.scale, ref: isRefLine(l.text) }));
-  marked.forEach((l) => { if (l.ref) l.scale = Math.min(l.scale, 0.45); });
-  const content = marked.filter((l) => !l.ref);
+  const refLines: TypoLine[] = [];
+  const content: TypoLine[] = [];
+  for (const l of lines) {
+    if (isRefLine(l.text)) refLines.push({ text: formatReference(l.text), scale: Math.min(l.scale, 0.45) });
+    else content.push({ text: l.text, scale: l.scale });
+  }
+  // 본문이 평평하면 마지막 구절 강조
   const scales = content.map((l) => l.scale);
   const flat = content.length > 0 && (Math.max(...scales) - Math.min(...scales) < 0.3);
   if (flat) {
-    if (content.length === 1) {
-      content[0].scale = 1.6;
-    } else {
-      content.forEach((l, i) => { l.scale = i === content.length - 1 ? 1.7 : 0.95; });
-    }
+    if (content.length === 1) content[0].scale = 1.6;
+    else content.forEach((l, i) => { l.scale = i === content.length - 1 ? 1.7 : 0.95; });
   }
-  return marked.map(({ text, scale }) => ({ text, scale }));
+  // 출처는 맨 아래
+  return [...content, ...refLines];
 }
 
 // GPT가 만든 lines가 사용자 원문(본문)을 보존하는지 검증. 출처 재포맷은 허용. 아니면 위계 있는 폴백.
@@ -141,12 +148,13 @@ function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLi
   if (startRef) { refText = startRef[0].trim(); body = original.slice(startRef[0].length).trim(); }
   const bodyLines = body ? splitBodyIntoLines(body) : [];
   const out: TypoLine[] = [];
-  if (refText) out.push({ text: refText, scale: 0.45 });
   if (bodyLines.length) {
     bodyLines.forEach((t, i) => out.push({ text: t, scale: i === bodyLines.length - 1 ? 1.7 : 0.95 }));
   } else {
     out.push({ text: original, scale: 1.3 });
   }
+  // 출처는 대괄호 제거하고 맨 아래 캡션으로
+  if (refText) out.push({ text: formatReference(refText), scale: 0.42 });
   return out;
 }
 
@@ -290,7 +298,7 @@ ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words
 - You may NOT change, summarize, paraphrase, translate, shorten, reorder, add, or remove any word. The words and their reading order stay identical.
 - "lines" MUST reproduce the user's input EXACTLY in order. Concatenating every line's "text" (ignoring spaces) must equal the user's input (ignoring spaces). If unsure, put the whole input as one line.
 - Do NOT add a Bible reference or any text the user did not type.
-- BIBLE REFERENCE EXCEPTION: a Bible reference (e.g. [고후5:17], (시23:1), 마 5:14, 요3:16) is metadata, not the message — it is the ONLY text you may reformat for visual quality. You may remove brackets, adjust spacing, or abbreviate/expand the book naturally (meaning unchanged): "[고후5:17]"→"고후 5:17", "[시23:1]"→"시편 23:1", "요3:16"→"요 3:16". Treat it as a small caption/signature line at scale 0.25–0.50, in a corner or under the message — never let it compete with the message.
+- BIBLE REFERENCE EXCEPTION: a Bible reference (e.g. [고후5:17], (시23:1), 마 5:14, 요3:16) is metadata, not the message — it is the ONLY text you may reformat for visual quality. ALWAYS remove the brackets and add a space: "[고후5:17]"→"고후 5:17", "[시23:1]"→"시편 23:1", "요3:16"→"요 3:16". Put it as the LAST line (bottom), a small caption/signature at scale 0.25–0.50 — never at the top, never competing with the message.
 
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
@@ -303,7 +311,7 @@ TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not mere
   · MEDIUM → 1–2 big key lines, supporting lines smaller.
   · LONG → still enlarge the 1–2 most important phrases (≈1.5–1.9), keep connective lines smaller (≈0.85), and put any reference at ≈0.45. Break the text into meaningful phrase-groups, not even paragraph blocks.
 - A Bible reference is METADATA (a caption/signature), never the main message — keep it at ≈0.35–0.55 and never let it compete with the message.
-- Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": reference "[고후5:17]" scale 0.45, "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.8, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.8 (exact words unchanged, only grouped and resized).
+- Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.8, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.8, then the reference LAST as "고후 5:17" scale 0.45 (brackets removed, words otherwise unchanged, only grouped and resized).
 - "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
 - "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
 
