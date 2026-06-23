@@ -191,8 +191,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       'T01': {
-        backgroundPrompt: 'Bold GRAPHIC POSTER design — NOT a literal illustration or scenic landscape. Render the message\'s energy through abstract texture and graphic contrast: torn paper, cracks, bold shapes, ink strokes, rough grain, layered print texture, light breaking through darkness, strong high-contrast composition. Premium editorial poster craftsmanship, powerful visual hierarchy, large intentional negative space. The background supports a dominant headline and must never dominate the text.',
-        styleLock: 'T01 ABSOLUTE RULE: a bold graphic poster / editorial campaign / faith declaration — strong, confident, declarative. Express the message through abstract GRAPHIC treatment (contrast, rupture, emergence, transition, old layer breaking, new light entering, texture), NOT through literal scenes or obvious symbolic objects. For transformation / renewal / new creation / victory, use before/after energy and bold visual change — NEVER butterflies, flowers, or sunrise. The template FAILS if it looks like a pretty devotional wallpaper, a scenic landscape, gentle soft-pastel nature, if flowers/butterflies/rivers/sunsets appear, if the verse is one heavy centered block, or if the reference competes with the headline. The viewer must feel: "this message is being declared."',
+        backgroundPrompt: 'Bold expressive TYPOGRAPHIC POSTER where the lettering IS the hero and fills most of the frame. Confident display or hand-lettering, strong graphic composition, screenprint / risograph energy, flat vibrant color, premium poster craft. Playful yet powerful — the type dominates with minimal supporting graphics. Think modern lettering-poster (Pinterest/StudioDoy/Kittl energy), not a scenic background.',
+        styleLock: 'T01 ABSOLUTE RULE: a bold, VIBRANT typographic poster — the lettering dominates and fills the frame with confidence and energy. Embrace strong FLAT color and expressive type, and VARY the palette boldly every time (warm brown, cobalt, multicolor, cyan, purple, orange — not always dark navy). Must NOT be a gentle devotional wallpaper, a scenic landscape, muted/dark grunge, or generic Christian scenery. The viewer must feel: "this message is being declared."',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       'T03': {
@@ -362,11 +362,13 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const selectedFonts = TEMPLATE_FONT_OPTIONS[selectedTemplate]?.[fontMood] || config.fonts;
     const templateVariations: Record<string, string[]> = {
       T01: [
-        'Deep navy (#1b2a4a) with warm ivory (#efe6d2) negative space; torn-paper edges, rough ink grain, light breaking through dark, bold poster contrast.',
-        'Charcoal (#2b2b2e) with muted gold (#b9975b); cracked layered texture and strong graphic shapes, high-contrast editorial poster.',
-        'Deep forest green (#1f3a2c) with cream (#efe7d6); rough print grain and bold negative space, emergent light, graphic declaration.',
-        'Black ink (#161513) on aged paper (#e7dcc4); inky strokes, letterpress rupture, stark high contrast.',
-        'Dark brown (#2e241c) with warm beige (#e3d4bd); layered paper texture and breaking light, raw graphic energy.',
+        'Warm cream lettering packed tightly on a deep warm-brown (#3a2418) background, retro condensed display poster.',
+        'Bold cobalt-blue (#1c39bb) lettering on warm off-white paper, clean editorial poster with a tiny barcode accent.',
+        'Playful multicolor hand-lettering (hot pink, sunny yellow, leaf green, red) on a near-black (#141414) background, lively screenprint poster.',
+        'Cream and bright-red lettering on a vivid cyan (#1fb6d6) background with small starburst accents, energetic vintage poster.',
+        'Bold black lettering on a vivid purple (#7b3ff2) background with neon-yellow underline and circle accents, modern graphic poster.',
+        'Chunky cream lettering on a burnt-orange (#d2551f) background, warm risograph poster energy.',
+        'Deep navy lettering on a soft butter-yellow (#f2d65c) background, punchy mid-century poster.',
       ],
       T03: [
         'Editorial wide shot with a single strong focal subject and cinematic framing, warm ivory and stone, magazine-cover sophistication.',
