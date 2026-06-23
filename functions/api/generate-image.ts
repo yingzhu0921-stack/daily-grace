@@ -205,8 +205,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       },
       // T03 — 에디토리얼 세리프
       'T03': {
-        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography on a muted, refined FLAT color background with a subtle paper texture. Magazine quality, calm and sophisticated, generous negative space. No photograph.',
-        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif on a muted refined FLAT palette, magazine sophistication. Calm and premium, never loud, never neon, never a dramatic photo.',
+        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography on a muted refined background — either a flat color with subtle paper texture, OR a tasteful editorial still-life / soft atmospheric backdrop featuring ONE meaningful object that fits the message (Kinfolk/Aesop quality). Magazine sophistication, calm, generous negative space.',
+        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif over a muted refined palette OR a tasteful editorial object/atmosphere. Magazine sophistication, calm and premium. Never loud, never neon, never a dramatic/cheesy landscape photo.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       // T04 — 미니멀
@@ -366,12 +366,14 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const clearRegion = layoutAlign === 'left' ? 'the left and center-left, plus the vertical middle' : 'the central column and the vertical middle';
     const interestRegion = layoutAlign === 'left' ? 'the right side and the upper/lower edges' : 'the edges — top, bottom, and corners';
     const layoutDirective = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned, vertically centered, and ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${interestRegion}, never directly behind the main text.`;
-    // 깔끔한 모던 플랫 디자인 강제 + 촌스러운 AI 교회포스터 금지
+    // 메시지 맞춤 배경 — 세련된 에디토리얼 톤, 촌스러운 AI 교회포스터 금지
     const personalizedBrief = [
-      'This is a CLEAN, MODERN, DESIGN-FORWARD typography poster — premium editorial / contemporary graphic-design quality (think Pinterest design posters), NOT a photographic scene and NOT a church poster.',
-      'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture.',
-      'Keep the background a CLEAN flat color or a very subtle gradient/texture as defined by the template. Let the beautiful typography be the whole design — modern, tasteful, restrained, premium.',
-      analysis.palette ? `Optional palette inspiration (keep it refined): ${analysis.palette}.` : '',
+      'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
+      analysis.backgroundConcept
+        ? `Background matched to the message meaning: ${analysis.backgroundConcept}. Render it TASTEFULLY and modern. It may be (a) simply a refined flat color or smooth gradient, OR (b) ONE elegant, meaningful object / subtle motif (editorial still-life or simple graphic), OR (c) a soft, refined atmospheric backdrop — choose whatever fits this message and VARY it across cards. Not every card needs a literal scene.`
+        : '',
+      analysis.palette ? `Refined palette: ${analysis.palette}.` : '',
+      'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture, NO over-saturation. Keep it modern, refined and design-led; the typography stays the hero.',
     ].filter(Boolean).join('\n');
     // ── AI가 글자까지 그리는 모드 (기본 ON) ──
     const aiText = body.aiText !== false;
