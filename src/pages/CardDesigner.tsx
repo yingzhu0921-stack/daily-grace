@@ -1685,7 +1685,7 @@ export default function Designer() {
       ? autoResult.lines
       : [{ text: verseInput, scale: 1 }];
     // scale 1.0 기준 폰트 크기 (줄별 scale을 곱해 위계 표현)
-    const previewBase = 'clamp(1.15rem, 4.4vw, 1.95rem)';
+    const previewBase = 'clamp(0.95rem, 3.5vw, 1.55rem)';
 
     const getPreviewDimensions = () => {
       switch (previewRatio) {
@@ -1793,8 +1793,8 @@ export default function Designer() {
           ? autoResult.lines
           : [{ text: verseInput, scale: 1 }];
         const maxTextWidth = width * (align === 'left' ? 0.82 : 0.8);
-        const baseFontPx = Math.max(34, width * 0.058);
-        const lineGap = baseFontPx * 0.22;
+        const baseFontPx = Math.max(28, width * 0.046);
+        const lineGap = baseFontPx * 0.16;
         const weight = typography.bold ? 700 : 500;
 
         // 각 줄을 자기 크기(scale)로 줄바꿈 처리해 렌더 라인 생성
@@ -1805,7 +1805,7 @@ export default function Designer() {
           wrapPreviewText(ctx, l.text, maxTextWidth).forEach((wl) => renderLines.push({ text: wl, size }));
         });
 
-        const lh = (s: number) => s * (typography.lineHeight || 1.2);
+        const lh = (s: number) => s * Math.min(typography.lineHeight || 1.2, 1.2);
         let totalH = renderLines.reduce((sum, rl, i) => sum + lh(rl.size) + (i > 0 ? lineGap : 0), 0);
         const maxH = height * 0.82;
         const shrink = totalH > maxH ? maxH / totalH : 1;
@@ -1945,7 +1945,7 @@ export default function Designer() {
                     style={{
                       fontFamily: primaryFont,
                       fontSize: `calc(${previewBase} * ${line.scale})`,
-                      lineHeight: line.scale >= 1.4 ? 1.06 : typography.lineHeight,
+                      lineHeight: line.scale >= 1.4 ? 1.0 : Math.min(typography.lineHeight, 1.2),
                       color: typography.color,
                       textShadow: typography.shadow,
                       fontWeight: typography.weight,

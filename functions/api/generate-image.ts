@@ -375,8 +375,8 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       analysis.palette ? `Refined palette: ${analysis.palette}.` : '',
       'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture, NO over-saturation. Keep it modern, refined and design-led; the typography stays the hero.',
     ].filter(Boolean).join('\n');
-    // ── AI가 글자까지 그리는 모드 (기본 ON) ──
-    const aiText = body.aiText !== false;
+    // ── 글자 렌더링: T01(붓글씨)·T02(레트로)만 AI가 직접 그림. 나머지는 폰트 오버레이(사장님 폰트) ──
+    const aiText = body.aiText !== false && (selectedTemplate === 'T01' || selectedTemplate === 'T02');
     const heroLine = safeLines.reduce((a, b) => ((b.scale || 1) > (a.scale || 1) ? b : a), safeLines[0] || { text: '', scale: 1 });
     const hierarchyHint = safeLines
       .map((l) => `"${l.text}"(${(l.scale || 1) >= 1.4 ? 'LARGE' : (l.scale || 1) <= 0.6 ? 'small caption' : 'medium'})`)
@@ -396,7 +396,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
       `Size hierarchy by line: ${hierarchyHint}.`,
       `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
-      'CRITICAL FIT: every line of text must stay fully INSIDE the frame with at least 8% empty margin on the left and right edges. The longest line must NOT touch or cross the edges — if needed, scale ALL the lettering down until the widest line fits comfortably with margin. Cropped/cut-off letters are a failure.',
+      'SIZE & SPACING: do NOT make the text gigantic. The whole text block should occupy about 55–65% of the card with clear empty margins all around. Use TIGHT line spacing (lines close together, not airy). Keep at least 8% empty margin on the left and right — the longest line must NOT touch or cross the edges; scale ALL the lettering down until the widest line fits with margin. Cropped/cut-off letters are a failure.',
       'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos. The Korean typography is accurate, legible, and the clear focal point.';
