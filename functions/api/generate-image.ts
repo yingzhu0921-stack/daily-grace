@@ -438,15 +438,17 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     // 메시지 무드에 어울리는 레터링 스타일 (붓글씨/귀여운/볼드/우아/손글씨/모던)
     const letteringByMood: Record<string, string> = {
       bold: 'bold, heavy display lettering with strong powerful presence',
-      editorial: 'refined editorial lettering, elegant clean and premium',
+      editorial: 'elegant high-contrast SERIF lettering, refined magazine-editorial quality (mix upright serif with an occasional italic word)',
       lyrical: 'playful, friendly, slightly rounded hand-lettering — cute and warm',
-      quiet: 'calm, gentle, softly elegant lettering',
+      quiet: 'calm, softly elegant serif lettering, gentle and refined',
       handwritten: 'natural casual handwriting, personal and warm',
       modern: 'clean modern display lettering, confident and contemporary',
     };
     const letteringStyle = analysis.useBrush
       ? 'expressive Korean brush-calligraphy lettering with energetic ink strokes'
-      : (letteringByMood[analysis.fontMood || ''] || 'bold, confident poster lettering');
+      : selectedTemplate === 'T03'
+        ? letteringByMood.editorial // T03는 우아한 에디토리얼 세리프 고정
+        : (letteringByMood[analysis.fontMood || ''] || 'bold, confident poster lettering');
     const aiTextBlock = [
       'RENDER THE KOREAN TEXT AS THE HERO TYPOGRAPHY, beautifully integrated into the poster (not a plain overlay).',
       `CRITICAL: spell every Korean character EXACTLY and legibly. Do NOT change, omit, add, or misspell any character. The full text is: "${safeLines.map((l) => l.text).join(' ')}".`,
