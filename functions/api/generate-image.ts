@@ -426,15 +426,31 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       'Visualize the specific MEANING of these words, not generic Christianity. Do NOT default to flowers, butterflies, rivers, beaches, sunsets, mountains, clouds, or abstract sunlight unless this exact message truly calls for them.',
       'Use metaphorical, atmospheric, or symbolic imagery rather than literal religious stock imagery.',
     ].filter(Boolean).join('\n');
+    // ── AI가 글자까지 그리는 모드 (기본 ON) ──
+    const aiText = body.aiText !== false;
+    const heroLine = safeLines.reduce((a, b) => ((b.scale || 1) > (a.scale || 1) ? b : a), safeLines[0] || { text: '', scale: 1 });
+    const hierarchyHint = safeLines
+      .map((l) => `"${l.text}"(${(l.scale || 1) >= 1.4 ? 'LARGE' : (l.scale || 1) <= 0.6 ? 'small caption' : 'medium'})`)
+      .join(', ');
+    const aiTextBlock = [
+      'RENDER THE KOREAN TEXT AS THE HERO TYPOGRAPHY, beautifully integrated into the poster (not a plain overlay).',
+      `CRITICAL: spell every Korean character EXACTLY and legibly. Do NOT change, omit, add, or misspell any character. The full text is: "${safeLines.map((l) => l.text).join(' ')}".`,
+      heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
+      `Size hierarchy by line: ${hierarchyHint}.`,
+      `Text alignment: ${layoutAlign}. ${analysis.useBrush ? 'Use expressive Korean brush-calligraphy lettering (ink strokes).' : 'Use bold, confident poster lettering.'}`,
+      'Typography is the focal point and must dominate; integrate it with the texture and contrast. Keep Korean spelling perfect.',
+    ].filter(Boolean).join('\n');
+    const GLOBAL_WITH_TEXT = '\n\nPremium faith poster, editorial design quality, modern premium aesthetic, clean composition, high-end poster craft, subtle texture. The Korean typography must be accurate, legible, and the clear focal point.';
+
     const bgPromptFinal = [
       config.backgroundPrompt,
       config.styleLock,
       personalizedBrief,
       variation,
       moodHint,
-      layoutDirective,
+      aiText ? aiTextBlock : layoutDirective,
       ratioPrompt,
-      GLOBAL_BG_PROMPT,
+      aiText ? GLOBAL_WITH_TEXT : GLOBAL_BG_PROMPT,
     ].filter(Boolean).join('\n\n');
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
@@ -455,6 +471,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       template: selectedTemplate,
       fonts: selectedFonts,
       lines: safeLines,
+      aiText,
       textAlign: analysis.textAlign === 'left' ? 'left' : 'center',
       useBrush: !!analysis.useBrush,
       mood: analysis.mood,

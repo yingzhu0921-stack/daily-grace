@@ -373,6 +373,7 @@ export default function Designer() {
     template: string;
     fonts: { primary: string; secondary: string };
     lines: { text: string; scale: number }[];
+    aiText?: boolean;
     textAlign: 'left' | 'center';
     useBrush: boolean;
     mood: string;
@@ -1796,6 +1797,8 @@ export default function Designer() {
         }
         ctx.drawImage(img, drawX, drawY, drawW, drawH);
 
+        // AI가 글자를 이미지에 직접 그린 경우, 폰트 오버레이를 그리지 않음
+        if (!autoResult.aiText) {
         const centerX = width / 2;
         const scale = width / 1000;
         const align: 'left' | 'center' = autoResult.textAlign === 'left' ? 'left' : 'center';
@@ -1848,6 +1851,7 @@ export default function Designer() {
           ctx.fillText(rl.text, textX, y);
           y += lh(size);
         });
+        }
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
         // 핸드폰에도 저장 (보관함과 동시에)
@@ -1933,6 +1937,7 @@ export default function Designer() {
         <div className="flex-1 min-h-0 flex items-center justify-center p-4 bg-gray-200 overflow-hidden">
           <div className="relative rounded-2xl overflow-hidden shadow-xl" style={{ aspectRatio: ratioToAspect(previewRatio), maxHeight: '100%', maxWidth: '100%' }}>
             <img src={autoResult.image} alt="card" className="w-full h-full object-cover" />
+            {!autoResult.aiText && (
             <div
               className="absolute inset-0 flex flex-col justify-center p-8"
               style={{ alignItems: previewAlign === 'left' ? 'flex-start' : 'center' }}
@@ -1966,8 +1971,14 @@ export default function Designer() {
                 ))}
               </div>
             </div>
+            )}
           </div>
         </div>
+        {autoResult.aiText && (
+          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
+            ⚠️ AI가 글자를 직접 그렸어요. 글자가 틀리거나 깨질 수 있으니 꼭 확인하세요.
+          </div>
+        )}
         <div className="shrink-0 grid grid-cols-[1fr,0.72fr,1.35fr] gap-2 p-4 border-t bg-white">
           <button
             onClick={handleRegenerate}
