@@ -215,11 +215,11 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         styleLock: 'T04 = MINIMAL: lots of negative space, clean simple type, soft light palette, at most one tiny accent. Quiet and refined — never busy, never dark, never loud.',
         fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
       },
-      // T05 — 모던 워십
+      // T05 — 모던 워십 (잔잔한 필름 사진 + 세리프 포인트)
       'T05': {
-        backgroundPrompt: 'Modern worship poster: bold confident clean lettering on a smooth LUMINOUS GRADIENT with soft glow (no photograph). Hopeful, spacious, emotionally uplifting, contemporary and refined.',
-        styleLock: 'T05 = MODERN WORSHIP: a smooth luminous color gradient with soft glow, bold clean modern lettering, hopeful uplifting mood. NOT a dramatic photo, NOT grunge, NOT neon, NOT a church poster.',
-        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        backgroundPrompt: 'Soft atmospheric FILM photograph: quiet muted nature (rolling green hills, big soft sky, clouds, a blurred flower, a wide calm field) with fine film grain and vintage muted tones. Gentle, dreamy, understated — like an analog photo from a quiet morning. Large calm area for typography.',
+        styleLock: 'T05 = FILM WORSHIP: a muted, film-grain analog photograph of quiet nature — soft, dreamy, understated vintage tones (desaturated blue, sage green, warm haze). Calm and emotional, NEVER epic or dramatic: no storm, no sunrise light rays, no glowing horizon, no oversaturated colors, no fantasy. Feels like a still from an indie film, not a church poster.',
+        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
     };
 
@@ -277,7 +277,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
   · T02 = 레트로 포스터 (bold vintage display) → strong, punchy, energetic messages
   · T03 = 에디토리얼 세리프 (elegant serif) → 묵상/평안/은혜/reflection
   · T04 = 미니멀 (clean, lots of space) → 쉼/고요/short quiet phrases
-  · T05 = 모던 워십 (atmospheric light) → 소망/예배/빛/회복
+  · T05 = 모던 워십 (quiet film photo + serif accent) → 소망/예배/빛/회복
 - fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern (best emotional tone of the text)
 - backgroundConcept: one sentence (English). The background may be symbolic, direct, abstract, or narrative depending on the message. Fresh editorial storytelling — avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics) and avoid repeating the same motif. Keep large typography-safe negative space. Goal: emotional/visual resonance, not literal illustration.
 - visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
@@ -344,13 +344,14 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
         'Soft greige (#e0ddd6) minimal background.',
         'Light blush-ivory (#f0e7e2) minimal background.',
       ],
-      // T05 모던 워십 — 매끈한 빛 그라데이션 (사진 X)
+      // T05 모던 워십 — 잔잔한 필름 사진 (레퍼런스: 흐린 꽃/초원/구름/하늘)
       T05: [
-        'Smooth luminous indigo-to-warm-white gradient with a soft glow, spacious.',
-        'Smooth soft violet-to-silver gradient, hazy and hopeful.',
-        'Smooth deep-blue gradient with a gentle radiant center glow, uplifting.',
-        'Smooth warm peach-to-cream gradient with soft light, gentle and modern.',
-        'Smooth teal-to-soft-white gradient, calm and luminous.',
+        'Quiet rolling green hills with soft light and shadow bands, muted vintage film tones, fine grain.',
+        'A muted dusty-blue sky with soft haze, calm and airy, film grain.',
+        'Big soft clouds over a quiet green hill, slightly halftone print texture, muted vintage blue.',
+        'A single wildflower against a muted blue sky, soft vintage film photo.',
+        'Softly blurred flowers in pale warm light, dreamy analog blur, gentle and quiet.',
+        'A wide calm grass field in soft late-afternoon light, desaturated warm film tones.',
       ],
     };
     const variations = templateVariations[selectedTemplate] || templateVariations.T02;

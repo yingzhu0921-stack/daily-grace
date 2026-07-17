@@ -1350,12 +1350,12 @@ export default function Designer() {
       name: '모던 워십',
       mood: '소망 · 예배 · 빛 · 회복',
       example: '다시 빛으로',
-      hint: '분위기 사진/빛 + 볼드',
+      hint: '잔잔한 필름 사진 + 세리프',
       preview: {
-        background: 'linear-gradient(135deg, #2a3b6e 0%, #6b7fc4 60%, #cdd6ec 100%)',
-        color: '#FFFFFF',
-        accent: '#E6ECFA',
-        font: "'PaperBlack', sans-serif",
+        background: 'linear-gradient(160deg, #7f96ad 0%, #5d7466 55%, #43584a 100%)',
+        color: '#EFE08C',
+        accent: '#EFE08C',
+        font: "'RidiBatang', serif",
       },
     },
   ];
@@ -1509,40 +1509,26 @@ export default function Designer() {
       mainSize: 'clamp(1.35rem, 4.7vw, 2.15rem)',
       subSize: 'clamp(0.82rem, 2.2vw, 0.96rem)',
       refSize: 'clamp(0.72rem, 1.9vw, 0.84rem)',
-      lineHeight: 1.32,
-      editFontSize: 17,
+      lineHeight: 1.24,
+      editFontSize: 16,
       weight: 600,
       bold: false,
     },
-    T09: {
-      color: '#FFFFFF',
-      secondaryColor: 'rgba(255,255,255,0.86)',
-      referenceColor: 'rgba(255,255,255,0.7)',
-      shadow: '0 3px 14px rgba(27,12,60,0.38)',
-      editShadow: { x: 0, y: 3, blur: 14, color: 'rgba(27,12,60,.38)' },
+    T02: {
+      color: '#F2E8D8',
+      secondaryColor: 'rgba(242,232,216,0.86)',
+      referenceColor: 'rgba(242,232,216,0.7)',
+      shadow: '0 2px 8px rgba(20,16,12,0.35)',
+      editShadow: { x: 0, y: 2, blur: 8, color: 'rgba(20,16,12,.35)' },
       mainSize: 'clamp(1.55rem, 5.3vw, 2.55rem)',
       subSize: 'clamp(0.8rem, 2.2vw, 0.96rem)',
       refSize: 'clamp(0.7rem, 1.9vw, 0.84rem)',
-      lineHeight: 1.18,
-      editFontSize: 19,
+      lineHeight: 1.15,
+      editFontSize: 18,
       weight: 700,
       bold: true,
     },
-    T13: {
-      color: '#4E3D2D',
-      secondaryColor: 'rgba(78,61,45,0.66)',
-      referenceColor: 'rgba(78,61,45,0.48)',
-      shadow: '0 1px 1px rgba(255,255,255,0.45)',
-      editShadow: { x: 0, y: 1, blur: 1, color: 'rgba(255,255,255,.45)' },
-      mainSize: 'clamp(1.45rem, 5vw, 2.35rem)',
-      subSize: 'clamp(0.82rem, 2.25vw, 0.98rem)',
-      refSize: 'clamp(0.72rem, 1.9vw, 0.84rem)',
-      lineHeight: 1.34,
-      editFontSize: 18,
-      weight: 500,
-      bold: false,
-    },
-    T17: {
+    T04: {
       color: '#3D3328',
       secondaryColor: 'rgba(61,51,40,0.58)',
       referenceColor: 'rgba(61,51,40,0.44)',
@@ -1551,30 +1537,30 @@ export default function Designer() {
       mainSize: 'clamp(1.2rem, 4.2vw, 1.92rem)',
       subSize: 'clamp(0.78rem, 2vw, 0.9rem)',
       refSize: 'clamp(0.68rem, 1.8vw, 0.8rem)',
-      lineHeight: 1.48,
-      editFontSize: 15,
+      lineHeight: 1.3,
+      editFontSize: 14,
       weight: 400,
       bold: false,
     },
-    T20: {
-      color: '#FDF9F1',
-      secondaryColor: 'rgba(253,249,241,0.82)',
-      referenceColor: 'rgba(253,249,241,0.66)',
-      shadow: '0 2px 10px rgba(48,34,22,0.32)',
-      editShadow: { x: 0, y: 2, blur: 10, color: 'rgba(48,34,22,.32)' },
+    T05: {
+      color: '#EFE08C',
+      secondaryColor: 'rgba(239,224,140,0.85)',
+      referenceColor: 'rgba(239,224,140,0.68)',
+      shadow: '0 1px 8px rgba(30,32,24,0.35)',
+      editShadow: { x: 0, y: 1, blur: 8, color: 'rgba(30,32,24,.35)' },
       mainSize: 'clamp(1.28rem, 4.5vw, 2.08rem)',
       subSize: 'clamp(0.82rem, 2.15vw, 0.96rem)',
       refSize: 'clamp(0.72rem, 1.85vw, 0.82rem)',
-      lineHeight: 1.36,
+      lineHeight: 1.22,
       editFontSize: 16,
       weight: 600,
       bold: false,
     },
   };
 
-  const getAutoTypography = (template: string) => AUTO_TYPOGRAPHY[template] || AUTO_TYPOGRAPHY.T13;
+  const getAutoTypography = (template: string) => AUTO_TYPOGRAPHY[template] || AUTO_TYPOGRAPHY.T03;
 
-  const analyzeBackgroundForTypography = (imageSrc: string, base: AutoTypography): Promise<AutoTypography> => {
+  const analyzeBackgroundForTypography = (imageSrc: string, base: AutoTypography, template?: string): Promise<AutoTypography> => {
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
@@ -1616,8 +1602,9 @@ export default function Designer() {
         const isComplex = contrast >= 42;
         const isWarm = warm > cool * 1.15;
 
-        const darkInk = isWarm ? '#332A22' : '#24272B';
-        const lightInk = isWarm ? '#FFF8EA' : '#F8FBFF';
+        // T05(필름 워십)는 레퍼런스처럼 버터옐로 세리프 포인트 컬러 사용
+        const darkInk = template === 'T05' ? '#4A4526' : (isWarm ? '#332A22' : '#24272B');
+        const lightInk = template === 'T05' ? '#EFE08C' : (isWarm ? '#FFF8EA' : '#F8FBFF');
         const color = isBright && !isDark ? darkInk : lightInk;
         const secondaryColor = isBright && !isDark
           ? hexToRgba(color, 0.72)
@@ -1662,9 +1649,9 @@ export default function Designer() {
 
   const buildAdaptiveAutoResult = async (data: any) => {
     const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
-    const base = getAutoTypography(data?.template || selectedTemplateId || 'T13');
+    const base = getAutoTypography(data?.template || selectedTemplateId || 'T03');
     const typography = data?.image
-      ? await analyzeBackgroundForTypography(data.image, base)
+      ? await analyzeBackgroundForTypography(data.image, base, data?.template || selectedTemplateId)
       : base;
 
     return {
