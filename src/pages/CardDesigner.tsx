@@ -1321,14 +1321,14 @@ export default function Designer() {
     },
     {
       id: 'T03',
-      name: '에디토리얼 세리프',
-      mood: '묵상 · 평안 · 은혜',
+      name: '감성 세리프',
+      mood: '묵상 · 평안 · 은혜 · 소망',
       example: '은혜가 머무는 곳',
-      hint: '우아한 세리프 + 차분한 톤',
+      hint: '필름 사진 + 우아한 세리프',
       preview: {
-        background: 'linear-gradient(145deg, #efe9dd 0%, #cfc7b8 100%)',
-        color: '#4C3B2A',
-        accent: '#8a7a64',
+        background: 'linear-gradient(160deg, #7f96ad 0%, #5d7466 55%, #43584a 100%)',
+        color: '#EFE08C',
+        accent: '#EFE08C',
         font: "'RidiBatang', serif",
       },
     },
@@ -1343,19 +1343,6 @@ export default function Designer() {
         color: '#3D3328',
         accent: '#b9ab92',
         font: "'PaperLight', sans-serif",
-      },
-    },
-    {
-      id: 'T05',
-      name: '모던 워십',
-      mood: '소망 · 예배 · 빛 · 회복',
-      example: '다시 빛으로',
-      hint: '잔잔한 필름 사진 + 세리프',
-      preview: {
-        background: 'linear-gradient(160deg, #7f96ad 0%, #5d7466 55%, #43584a 100%)',
-        color: '#EFE08C',
-        accent: '#EFE08C',
-        font: "'RidiBatang', serif",
       },
     },
   ];
@@ -1542,20 +1529,6 @@ export default function Designer() {
       weight: 400,
       bold: false,
     },
-    T05: {
-      color: '#EFE08C',
-      secondaryColor: 'rgba(239,224,140,0.85)',
-      referenceColor: 'rgba(239,224,140,0.68)',
-      shadow: '0 1px 8px rgba(30,32,24,0.35)',
-      editShadow: { x: 0, y: 1, blur: 8, color: 'rgba(30,32,24,.35)' },
-      mainSize: 'clamp(1.28rem, 4.5vw, 2.08rem)',
-      subSize: 'clamp(0.82rem, 2.15vw, 0.96rem)',
-      refSize: 'clamp(0.72rem, 1.85vw, 0.82rem)',
-      lineHeight: 1.22,
-      editFontSize: 16,
-      weight: 600,
-      bold: false,
-    },
   };
 
   const getAutoTypography = (template: string) => AUTO_TYPOGRAPHY[template] || AUTO_TYPOGRAPHY.T03;
@@ -1602,9 +1575,9 @@ export default function Designer() {
         const isComplex = contrast >= 42;
         const isWarm = warm > cool * 1.15;
 
-        // T05(필름 워십)는 레퍼런스처럼 버터옐로 세리프 포인트 컬러 사용
-        const darkInk = template === 'T05' ? '#4A4526' : (isWarm ? '#332A22' : '#24272B');
-        const lightInk = template === 'T05' ? '#EFE08C' : (isWarm ? '#FFF8EA' : '#F8FBFF');
+        // T03(감성 세리프)는 레퍼런스처럼 버터옐로 세리프 포인트 컬러 사용 (어두운 배경일 때)
+        const darkInk = template === 'T03' ? '#4A4526' : (isWarm ? '#332A22' : '#24272B');
+        const lightInk = template === 'T03' ? '#EFE08C' : (isWarm ? '#FFF8EA' : '#F8FBFF');
         const color = isBright && !isDark ? darkInk : lightInk;
         const secondaryColor = isBright && !isDark
           ? hexToRgba(color, 0.72)

@@ -189,7 +189,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const requestedRatio = typeof ratio === 'string' && ratioToSize[ratio] ? ratio : '4:5';
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
-    // ── 5개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
+    // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       // T01 — 붓글씨 선포
       'T01': {
@@ -203,10 +203,10 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         styleLock: 'T02 = RETRO POSTER: vintage display typography on a flat retro color with grain. Bold condensed display mixed with a cursive script accent word. Type-driven and clean — no busy scenery, no photo.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
-      // T03 — 에디토리얼 세리프
+      // T03 — 감성 세리프 (필름 사진/무드 배경 + 우아한 세리프) ※ 세리프+워십 통합
       'T03': {
-        backgroundPrompt: 'Elegant editorial poster: refined high-contrast SERIF typography on a muted refined background — either a flat color with subtle paper texture, OR a tasteful editorial still-life / soft atmospheric backdrop featuring ONE meaningful object that fits the message (Kinfolk/Aesop quality). Magazine sophistication, calm, generous negative space.',
-        styleLock: 'T03 = EDITORIAL SERIF: elegant high-contrast serif over a muted refined palette OR a tasteful editorial object/atmosphere. Magazine sophistication, calm and premium. Never loud, never neon, never a dramatic/cheesy landscape photo.',
+        backgroundPrompt: 'Emotional editorial poster: elegant serif typography over a soft atmospheric FILM photograph of quiet nature (rolling green hills, big soft sky, clouds, a blurred flower, a calm field) with fine film grain and muted vintage tones — dreamy and understated, like an analog still. Sometimes instead a refined muted FLAT color. Large calm area for the serif typography.',
+        styleLock: 'T03 = EMOTIONAL SERIF (감성 타이포): elegant refined serif over a soft, muted film-grain photograph of quiet nature OR a refined muted flat color. Dreamy, calm, understated vintage mood. NEVER epic or dramatic: no storm, no sunrise light rays, no glowing horizon, no oversaturation, no fantasy, no church-poster look. Feels like an indie-film still with beautiful serif type.',
         fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
       // T04 — 미니멀
@@ -214,12 +214,6 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         backgroundPrompt: 'Minimal poster: clean simple lettering with generous negative space on a soft cream / off-white / light solid background. At most one small quiet graphic element. Calm, refined, breathable.',
         styleLock: 'T04 = MINIMAL: lots of negative space, clean simple type, soft light palette, at most one tiny accent. Quiet and refined — never busy, never dark, never loud.',
         fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
-      },
-      // T05 — 모던 워십 (잔잔한 필름 사진 + 세리프 포인트)
-      'T05': {
-        backgroundPrompt: 'Soft atmospheric FILM photograph: quiet muted nature (rolling green hills, big soft sky, clouds, a blurred flower, a wide calm field) with fine film grain and vintage muted tones. Gentle, dreamy, understated — like an analog photo from a quiet morning. Large calm area for typography.',
-        styleLock: 'T05 = FILM WORSHIP: a muted, film-grain analog photograph of quiet nature — soft, dreamy, understated vintage tones (desaturated blue, sage green, warm haze). Calm and emotional, NEVER epic or dramatic: no storm, no sunrise light rays, no glowing horizon, no oversaturated colors, no fantasy. Feels like a still from an indie film, not a church poster.',
-        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
       },
     };
 
@@ -235,7 +229,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         {
           role: 'system',
           content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) detect any Bible reference, (3) decide the typography hierarchy, (4) plan the layout, (5) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
-{"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T05"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
+{"lines":[{"text":"","scale":1}],"textAlign":"center","useBrush":false,"mood":"","templates":["T01","T03","T04"],"backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
 ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words:
 - BEFORE describing the background, plan the typography: identify key phrases, the dominant idea, and supporting text, then build the hierarchy and layout.
@@ -272,12 +266,11 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
-- templates: exactly 3 IDs from T01,T02,T03,T04,T05 best matching the message:
+- templates: exactly 3 IDs from T01,T02,T03,T04 best matching the message:
   · T01 = 붓글씨 선포 (brush calligraphy, bold declaration) → 담대/선포/승리/믿음
   · T02 = 레트로 포스터 (bold vintage display) → strong, punchy, energetic messages
-  · T03 = 에디토리얼 세리프 (elegant serif) → 묵상/평안/은혜/reflection
+  · T03 = 감성 세리프 (elegant serif over soft film photo or muted flat color) → 묵상/평안/은혜/소망/예배/reflection
   · T04 = 미니멀 (clean, lots of space) → 쉼/고요/short quiet phrases
-  · T05 = 모던 워십 (quiet film photo + serif accent) → 소망/예배/빛/회복
 - fontMood: one of bold/editorial/lyrical/quiet/handwritten/modern (best emotional tone of the text)
 - backgroundConcept: one sentence (English). The background may be symbolic, direct, abstract, or narrative depending on the message. Fresh editorial storytelling — avoid generic Christian poster clichés (no soldier+shield+flag, no cross+sunrise, no busy fantasy battle, no stock church graphics) and avoid repeating the same motif. Keep large typography-safe negative space. Goal: emotional/visual resonance, not literal illustration.
 - visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
@@ -299,7 +292,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       ? buildSafeLines(verse, analysis.lines)
       : (Array.isArray(analysis.lines) && analysis.lines.length ? analysis.lines : []);
 
-    const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T05'];
+    const templates = analysis.templates?.length ? analysis.templates : ['T01', 'T03', 'T04'];
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
     const fontMood = analysis.fontMood || 'editorial';
@@ -327,14 +320,16 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
         'Soft black lettering on a warm sand (#dcc9a8) background, clean minimal poster.',
         'Ivory lettering on a deep charcoal-navy (#1f2633) background, refined premium poster.',
       ],
-      // T03 에디토리얼 세리프 — 차분한 플랫 단색
+      // T03 감성 세리프 — 잔잔한 필름 사진 위주 + 무광 플랫 몇 개
       T03: [
-        'Muted ivory (#efe9dd) flat background, elegant serif, subtle paper texture, magazine sophistication.',
-        'Soft muted-stone (#cfc7b8) flat editorial background, calm and refined.',
-        'Warm taupe (#b8a892) flat editorial background, restrained elegance.',
-        'Muted sage-gray (#a7ad9f) flat editorial background, sophisticated stillness.',
-        'Deep muted plum (#5a4658) flat editorial background with ivory serif.',
-        'Dusty rose (#cbb0ad) flat editorial background, soft and refined.',
+        'Quiet rolling green hills with soft light and shadow bands, muted vintage film tones, fine grain.',
+        'A muted dusty-blue sky with soft haze, calm and airy, film grain.',
+        'Big soft clouds over a quiet green hill, slightly halftone print texture, muted vintage blue.',
+        'A single wildflower against a muted blue sky, soft vintage film photo.',
+        'Softly blurred flowers in pale warm light, dreamy analog blur, gentle and quiet.',
+        'A wide calm grass field in soft late-afternoon light, desaturated warm film tones.',
+        'A muted flat ivory (#efe9dd) editorial background with subtle paper grain, calm and refined.',
+        'A muted flat sage-gray (#a7ad9f) editorial background, sophisticated stillness.',
       ],
       // T04 미니멀 — 밝은 여백
       T04: [
@@ -343,15 +338,6 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
         'Pale sand (#e6dcc8) minimal background.',
         'Soft greige (#e0ddd6) minimal background.',
         'Light blush-ivory (#f0e7e2) minimal background.',
-      ],
-      // T05 모던 워십 — 잔잔한 필름 사진 (레퍼런스: 흐린 꽃/초원/구름/하늘)
-      T05: [
-        'Quiet rolling green hills with soft light and shadow bands, muted vintage film tones, fine grain.',
-        'A muted dusty-blue sky with soft haze, calm and airy, film grain.',
-        'Big soft clouds over a quiet green hill, slightly halftone print texture, muted vintage blue.',
-        'A single wildflower against a muted blue sky, soft vintage film photo.',
-        'Softly blurred flowers in pale warm light, dreamy analog blur, gentle and quiet.',
-        'A wide calm grass field in soft late-afternoon light, desaturated warm film tones.',
       ],
     };
     const variations = templateVariations[selectedTemplate] || templateVariations.T02;
@@ -386,9 +372,8 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const letteringByTemplate: Record<string, string> = {
       T01: 'expressive Korean brush-calligraphy lettering with energetic, powerful ink strokes',
       T02: 'retro display lettering: a bold condensed display style for the main lines mixed with a flowing cursive SCRIPT for ONE key word, vintage character with tasteful grain',
-      T03: 'elegant high-contrast SERIF lettering, refined magazine-editorial quality with an occasional italic word',
+      T03: 'elegant high-contrast SERIF lettering, refined and emotional with an occasional italic word',
       T04: 'clean minimal sans lettering, calm and simple with generous space',
-      T05: 'bold modern sans lettering, confident and luminous',
     };
     const letteringStyle = letteringByTemplate[selectedTemplate] || letteringByTemplate.T02;
     const aiTextBlock = [
