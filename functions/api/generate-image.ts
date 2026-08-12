@@ -108,24 +108,104 @@ function formatReference(s: string): string {
   return s.replace(/[\[\]()（）]/g, '').replace(/([가-힣])\s*(\d)/, '$1 $2').trim();
 }
 
+function semanticScoreLine(text: string): number {
+  const compact = text.replace(/\s/g, '');
+  let score = 0;
+  if (/(우로나|좌로나|치우치지|치우치지말라|좌로나치우치지말라)/.test(compact)) score += 8;
+  if (/(율법|다지켜|지켜행|기록된대로|묵상|평탄|형통)/.test(compact)) score += 4;
+  if (/(말라그리하면|그리하면어디로|어디로가든지|말라그리|그리하면)/.test(compact)) score -= 8;
+  if (/(그리하면|그러하면|그리고|그러나|또한|이에|하여|하며|하고|로다)$/.test(compact)) score -= 4;
+  if (/^(그리하면|그러하면|그리고|그러나|또한|이에)/.test(compact)) score -= 4;
+  const strongWords = [
+    '하나님', '예수', '주님', '주의', '주께', '그리스도', '성령',
+    '사랑', '은혜', '구원', '믿음', '소망', '평안', '회복', '새롭게',
+    '찬송', '감사', '기도', '영광', '복음', '생명', '빛', '진리',
+    '능력', '담대', '승리', '지워', '정직한영', '창조', '함께',
+    '제사', '드리며', '서원', '갚으며', '헌신', '예배',
+  ];
+  for (const word of strongWords) {
+    if (compact.includes(word)) score += word.length >= 3 ? 3 : 2;
+  }
+  if (/(주소서|하소서|하라|하리라|말라|두려워|찬송|전파|선포|감사|기도|믿으|사랑|드리|갚으|서원|제사)/.test(compact)) score += 3;
+  if (/(그러므로|그런즉|그리고|그러나|이에|에게|에서|으로|하며|하고|므로)$/.test(compact)) score -= 2;
+  if (compact.length >= 4 && compact.length <= 14) score += 1;
+  if (compact.length > 22) score -= 1;
+  return score;
+}
+
+function strongestContentIndex(lines: TypoLine[]): number {
+  if (!lines.length) return 0;
+  let bestIndex = 0;
+  let bestScore = -Infinity;
+  lines.forEach((line, index) => {
+    // 아주 마지막 줄로 쉽게 쏠리지 않도록 동점이면 앞쪽 의미 단위를 우선한다.
+    const positionPenalty = index === lines.length - 1 && lines.length > 1 ? 0.75 : 0;
+    const score = semanticScoreLine(line.text) - positionPenalty;
+    if (score > bestScore) {
+      bestScore = score;
+      bestIndex = index;
+    }
+  });
+  return bestIndex;
+}
+
+function isBadEmphasisFragment(text: string): boolean {
+  const compact = text.replace(/\s/g, '');
+  return /(말라그리하면|그리하면어디로|그리하면|그러하면|그리고|그러나|또한)$/.test(compact)
+    || /^(그리하면|그러하면|그리고|그러나|또한|이에)/.test(compact);
+}
+
+function repairEmphasisFragments(lines: TypoLine[]): TypoLine[] {
+  if (lines.length < 2) return lines;
+  return lines.map((line, index) => {
+    if ((line.scale || 1) < 1.35 || !isBadEmphasisFragment(line.text)) return line;
+    const replacementIndex = lines.findIndex((candidate) => {
+      const compact = candidate.text.replace(/\s/g, '');
+      return /(치우치지|다지켜|지켜행|기록된대로|묵상|평탄|형통)/.test(compact);
+    });
+    if (replacementIndex >= 0 && replacementIndex !== index) {
+      return { ...line, scale: Math.min(line.scale, 1.0) };
+    }
+    return { ...line, scale: Math.min(line.scale, 1.05) };
+  }).map((line, index, all) => {
+    const largest = Math.max(...all.map((l) => l.scale || 1));
+    if (largest > 1.2) return line;
+    const replacementIndex = all.findIndex((candidate) => {
+      const compact = candidate.text.replace(/\s/g, '');
+      return /(치우치지|다지켜|지켜행|기록된대로|묵상|평탄|형통)/.test(compact);
+    });
+    return index === replacementIndex ? { ...line, scale: 1.55 } : line;
+  });
+}
+
 // 위계 보정 + 출처는 대괄호 제거하고 맨 마지막(하단)에 작은 캡션으로 배치
 function enforceHierarchy(lines: TypoLine[]): TypoLine[] {
   if (!lines.length) return lines;
   const refLines: TypoLine[] = [];
   const content: TypoLine[] = [];
   for (const l of lines) {
-    if (isRefLine(l.text)) refLines.push({ text: formatReference(l.text), scale: Math.min(l.scale, 0.45) });
+    if (isRefLine(l.text)) refLines.push({ text: formatReference(l.text), scale: Math.max(0.58, Math.min(l.scale || 0.62, 0.72)) });
     else content.push({ text: l.text, scale: l.scale });
   }
-  // 본문이 평평하면 마지막 구절 강조
+  const semanticHeroIndex = strongestContentIndex(content);
+  // 본문이 평평하면 마지막 구절이 아니라 의미 점수가 가장 높은 구절 강조
   const scales = content.map((l) => l.scale);
   const flat = content.length > 0 && (Math.max(...scales) - Math.min(...scales) < 0.3);
   if (flat) {
     if (content.length === 1) content[0].scale = 1.6;
-    else content.forEach((l, i) => { l.scale = i === content.length - 1 ? 1.7 : 0.95; });
+    else content.forEach((l, i) => { l.scale = i === semanticHeroIndex ? 1.7 : 0.95; });
+  } else if (content.length > 1) {
+    const largestIndex = content.reduce((best, line, index) => ((line.scale || 1) > (content[best].scale || 1) ? index : best), 0);
+    const largestIsLast = largestIndex === content.length - 1;
+    const semanticGap = semanticScoreLine(content[semanticHeroIndex].text) - semanticScoreLine(content[largestIndex].text);
+    if (largestIsLast && semanticHeroIndex !== largestIndex && semanticGap >= 2) {
+      const previousLargest = content[largestIndex].scale || 1;
+      content[semanticHeroIndex].scale = Math.max(content[semanticHeroIndex].scale || 1, Math.min(previousLargest, 1.7));
+      content[largestIndex].scale = Math.min(previousLargest, 1.05);
+    }
   }
   // 출처는 맨 아래
-  return [...content, ...refLines];
+  return [...repairEmphasisFragments(content), ...refLines];
 }
 
 // GPT가 만든 lines가 사용자 원문(본문)을 보존하는지 검증. 출처 재포맷은 허용. 아니면 위계 있는 폴백.
@@ -149,12 +229,13 @@ function buildSafeLines(verse: string, gptLines: TypoLine[] | undefined): TypoLi
   const bodyLines = body ? splitBodyIntoLines(body) : [];
   const out: TypoLine[] = [];
   if (bodyLines.length) {
-    bodyLines.forEach((t, i) => out.push({ text: t, scale: i === bodyLines.length - 1 ? 1.7 : 0.95 }));
+    const heroIndex = strongestContentIndex(bodyLines.map((text) => ({ text, scale: 1 })));
+    bodyLines.forEach((t, i) => out.push({ text: t, scale: i === heroIndex ? 1.7 : 0.95 }));
   } else {
     out.push({ text: original, scale: 1.3 });
   }
   // 출처는 대괄호 제거하고 맨 아래 캡션으로
-  if (refText) out.push({ text: formatReference(refText), scale: 0.42 });
+  if (refText) out.push({ text: formatReference(refText), scale: 0.62 });
   return out;
 }
 
@@ -191,11 +272,11 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
-      // T01 — 붓글씨 선포
+      // T01 — 귀여운 손글씨 (파스텔 + doodle)
       'T01': {
-        backgroundPrompt: 'Bold Korean brush-calligraphy faith poster. The energetic ink-brush lettering is the hero on a rich, deep solid background with subtle texture. Powerful, declarative, dynamic ink strokes. Minimal supporting graphics.',
-        styleLock: 'T01 = BRUSH DECLARATION: powerful Korean brush calligraphy (ink strokes) on a rich deep background. Bold, energetic, declarative. NOT gentle, NOT pastel, NOT a photo scene.',
-        fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
+        backgroundPrompt: 'Cute handwritten scripture card: soft pastel illustration or paper texture with playful childlike hand lettering. Use only a FEW tiny simple doodles (a small flower, leaf, or object) near the edges, crayon/marker/watercolor texture, and lots of calm empty space. Cozy, gentle, sweet, handmade, restrained. NO smiley faces, no cluttered stickers. NOT a brush-calligraphy poster.',
+        styleLock: 'T01 = CUTE HANDWRITING (귀여운 손글씨): warm pastel devotional card, handwritten Korean lettering, small doodles, flowers/clouds/simple illustrated scenery, playful but clean. Gentle and cozy. NOT dramatic, NOT dark, NOT photo-realistic, NOT ink-brush calligraphy, NOT bold proclamation, NOT a church poster.',
+        fonts: { primary: 'Kkubullim', secondary: 'SeoulHangang' },
       },
       // T02 — 레트로 포스터
       'T02': {
@@ -205,9 +286,9 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       },
       // T03 — 감성 세리프 (필름 사진/무드 배경 + 우아한 세리프) ※ 세리프+워십 통합
       'T03': {
-        backgroundPrompt: 'Emotional editorial poster: elegant serif typography over a soft atmospheric FILM photograph of quiet nature (rolling green hills, big soft sky, clouds, a blurred flower, a calm field) with fine film grain and muted vintage tones — dreamy and understated, like an analog still. Sometimes instead a refined muted FLAT color. Large calm area for the serif typography.',
-        styleLock: 'T03 = EMOTIONAL SERIF (감성 타이포): elegant refined serif over a soft, muted film-grain photograph of quiet nature OR a refined muted flat color. Dreamy, calm, understated vintage mood. NEVER epic or dramatic: no storm, no sunrise light rays, no glowing horizon, no oversaturation, no fantasy, no church-poster look. Feels like an indie-film still with beautiful serif type.',
-        fonts: { primary: 'RidiBatang', secondary: 'SeoulHangang' },
+        backgroundPrompt: 'Emotional editorial scripture poster: a soft atmospheric FILM photograph chosen from the exact meaning of the verse, integrated with refined Korean serif typography as a finished poster. Prefer a calm graphic photo composition with one scripture-connected subject or landscape and a large low-contrast negative-space area for typography. Fine film grain, muted vintage blue/green/ivory tones, soft natural light, restrained contrast.',
+        styleLock: 'T03 = EMOTIONAL SERIF (감성 세리프): refined editorial faith poster, like modern Christian poster references. The scene MUST connect to the verse meaning, not generic pretty nature. Keep the photo beautiful but quiet; typography must remain important but not always oversized. Avoid busy water spray, high-detail texture, strong highlights directly behind text, postcard-like scenic landscapes, and close-up scenery that competes with typography. Muted blue/green/ivory palette, subtle film grain. NEVER epic or dramatic.',
+        fonts: { primary: 'Hahmlet', secondary: 'SeoulHangang' },
       },
       // T04 — 미니멀
       'T04': {
@@ -240,6 +321,10 @@ ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words
 - BIBLE REFERENCE EXCEPTION: a Bible reference (e.g. [고후5:17], (시23:1), 마 5:14, 요3:16) is metadata, not the message — it is the ONLY text you may reformat for visual quality. ALWAYS remove the brackets and add a space: "[고후5:17]"→"고후 5:17", "[시23:1]"→"시편 23:1", "요3:16"→"요 3:16". Put it as the LAST line (bottom), a small caption/signature at scale 0.25–0.50 — never at the top, never competing with the message.
 
 TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not merely placed:
+- EMPHASIS MUST COME FROM MEANING, NOT POSITION: do NOT automatically emphasize the final phrase. First identify the spiritual/semantic center of the verse: the main subject (God/Jesus/Lord/Spirit), the main action/command/promise, and the emotional conclusion. Emphasize the phrase that carries that center, even if it is at the beginning or middle.
+- Before choosing the largest line, ask: "If only one phrase could be remembered, which phrase carries the message?" That phrase becomes the dominant line. The final line should be largest ONLY when it truly carries the core meaning.
+- Avoid the lazy pattern "supporting lines + huge final line." Vary emphasis across beginning/middle/end depending on the verse.
+- NEVER emphasize broken connector fragments. Do not make phrases like "말라 그리하면", "그리하면 어디로", "그러므로/그리하면/그리고/그러나" large. Emphasis must be a complete meaningful command/promise/image. For Joshua 1 style text, keep "우로나 좌로나 치우치지 말라" together as a meaning unit, or emphasize "기록된 대로 다 지켜 행하라" / "치우치지 말라" / "형통하리라", not the connector words.
 - Split the input into poster-style lines. Encourage dramatic line breaks, oversized keywords, asymmetric hierarchy, dynamic spacing, large negative space. Avoid centering everything, identical sizing, tiny text, or decorative typography without purpose.
 - "scale" is each line's relative size: dominant headline ≈ 1.7–2.3, key phrase ≈ 1.4–1.7, normal/connective ≈ 0.85–1.0, Bible reference / caption ≈ 0.25–0.50.
 - THINK IN VISUAL BLOCKS, NOT SENTENCES: do not just split text at sentence boundaries or wrap it. A dominant phrase may span multiple lines; a single important word may become its own line. Typography should feel designed, with rhythm and emphasis.
@@ -249,7 +334,7 @@ TYPOGRAPHY (lines + scale) — text is the hero, make it feel designed, not mere
   · SHORT → one giant hero line.
   · MEDIUM → 1–2 big key lines, supporting lines smaller.
   · LONG → still enlarge the 1–2 most important phrases (≈1.5–1.9), keep connective lines smaller (≈0.85), and put any reference at ≈0.45. Break the text into meaningful phrase-groups, not even paragraph blocks.
-- A Bible reference is METADATA (a caption/signature), never the main message — keep it at ≈0.35–0.55 and never let it compete with the message.
+- A Bible reference is METADATA (a caption/signature), never the main message — keep it visible at ≈0.58–0.72 like a poster credit, and never let it disappear or compete with the message.
 - Example for a long verse "[고후5:17] 그런즉 누구든지 그리스도 안에 있으면 새로운 피조물이라 이전 것은 지나갔으니 보라 새 것이 되었도다": "그런즉 누구든지 그리스도 안에 있으면" scale 0.9, "새로운 피조물이라" scale 1.8, "이전 것은 지나갔으니" scale 0.9, "보라 새 것이 되었도다" scale 1.8, then the reference LAST as "고후 5:17" scale 0.45 (brackets removed, words otherwise unchanged, only grouped and resized).
 - "textAlign": "left" for bold/declarative/asymmetric feel, "center" for calm/gentle verses.
 - "useBrush": true selectively for short text with strong declaration/conviction/proclamation energy (e.g. 강하고 담대하라 / 나는 주님의 군대! / 두려워 말라). false for meditative or peaceful text. Use sparingly, not every time.
@@ -265,9 +350,31 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
 - AVOID SIMPLISTIC SYMBOL SUBSTITUTION: do not replace a concept with the first obvious symbol (weak: renewal→butterfly, hope→sunrise, peace→flowers, faith→mountain). Prefer richer storytelling — environments, transitions, atmosphere, journeys, transformations, meaningful scenes — over obvious symbolic objects.
 - The template only sets visual style / composition / atmosphere / lighting / rendering — it does NOT decide the scene. The same message may look different across templates while preserving its core meaning.
 
+T03 EMOTIONAL SERIF ART DIRECTION:
+- For T03, the backgroundConcept must be more than a mood. It must name a concrete visual scene tied to the verse's imagery or action.
+- Preserve all user-entered words in "lines"; do not shorten a long verse to make the design prettier. Solve long text through smaller elegant typography, hierarchy, and negative space.
+- Use editorial reference energy: quiet film photograph, muted blue/green/ivory, refined yellow or ivory text later, one symbolic subject, lots of breathing room.
+- If the text mentions waters/rivers/overwhelm → choose sea, ocean, river, boat, sail, or deep teal water. If it mentions help/mountains/lifting eyes → mountains, forest, alpine distance, or a small cabin. If it mentions prayer/calling → open sky, cloud, branch, window light, or quiet room edge. If it mentions time/waiting → framed landscape, horizon, train/window, field in late light. If it mentions strength/stand/restoration → steady hill, grounded rock, calm horizon, or wind-softened field. If no concrete symbol exists, derive a subtle visual metaphor from the main verb.
+- If the text mentions lips/mouth/voice/singing/praise/proclaim/preach/spread/send/go ("입술", "입", "찬송", "전파", "선포", "복음", "보내소서", "가라") → show a directional metaphor: wind moving through tall grass, a path or ridge leading outward, sound-like ripples in clouds/water, distant open valley, birds or small sails moving away, or light spreading across layered hills. The scene should imply a voice/message going outward, not merely a pretty sky.
+- If the text mentions thanks/offering/sacrifice/vow/fulfillment ("감사", "제사", "드리", "서원", "갚으", "헌신", "예배") → do NOT default to sunset or generic landscape. Prefer a quiet offering/thanksgiving visual: hands placing a flower or note, a candle on a simple table, folded linen, bread/cup, an open window with morning light, a small still-life of devotion, or a humble altar-like table without church clichés. The scene should feel like giving thanks or fulfilling a vow.
+- For declarative/proclamation verses inside T03, prefer stronger editorial hierarchy: one large decisive phrase, tighter grouping, slight asymmetry, and a more intentional poster layout. It can still be elegant, but not timid.
+- T03 typography should feel like an emotional poster: cohesive serif typography, a clear but controlled hierarchy, a visible Bible-reference credit, tasteful accent color when useful, and generous negative space. Do not always make one huge headline; sometimes use a smaller quiet block, asymmetric magazine layout, vertical reference, or medium stacked scripture layout. Do not mix a gothic/sans headline with a serif hero; use family cohesion and vary weight/scale instead.
+- For T03, SMALLER IS MORE PREMIUM. Avoid huge Korean type. Favor refined poster typography that occupies roughly one quarter of the card, with large breathing room. A single word should almost never fill the width.
+- For T03, vary the serif feeling across generations: thin literary serif, classic book myeongjo, modern magazine serif, soft calligraphic serif, restrained display serif, or old-book serif. Do not repeat the same heavy Korean serif every time.
+- T03 must NOT use decorative divider lines, horizontal rules, stars, leaf ornaments, floral separators, quote marks, frames, or faux logo marks around the text. Those make the image feel like an AI template. Let the poster feel designed through typography, photo, color, and spacing only.
+- Avoid generic flower/meadow/sky fallback unless it is specifically connected to the verse. The image should feel personally chosen for the words.
+
+T01 CUTE HANDWRITING ART DIRECTION:
+- T01 is not brush calligraphy. It is a cute pastel handwritten devotional card.
+- Use broad hand-drawn illustration language: paper grain, crayon, marker, watercolor, memo paper, tape scraps, sticker shapes, pastel blocks, tiny objects, simple maps/signposts, cups/books/lamps/windows, hills/paths only when meaningful.
+- Lettering should feel like a handmade note and MUST vary across generations: thick rounded marker, chunky crayon, sticker-like block letters, bubbly doodle letters, felt-tip poster letters, watercolor brush handwriting, or mixed cute lettering. Avoid making every font thin. Never use powerful ink strokes.
+- Vary the design heavily across generations: blue speckled paper, pink border, yellow path illustration, cream marker note, big crayon shape, mint object scene, notebook memo, chunky cute word card, sticker collage, cozy desk doodle.
+- Keep text modest and friendly, not huge. Lots of empty space is part of the style.
+- A cute accent may be used ONLY on the single key word (a soft highlight or underline), sparingly and intentionally — never on ordinary words, never on every line, no smiley faces. For verses about paths/ways/turning, a small path, signpost, or road motif may fit.
+
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T02,T03,T04 best matching the message:
-  · T01 = 붓글씨 선포 (brush calligraphy, bold declaration) → 담대/선포/승리/믿음
+  · T01 = 귀여운 손글씨 (pastel doodle handwriting) → 따뜻함/일상/감사/부드러운 묵상
   · T02 = 레트로 포스터 (bold vintage display) → strong, punchy, energetic messages
   · T03 = 감성 세리프 (elegant serif over soft film photo or muted flat color) → 묵상/평안/은혜/소망/예배/reflection
   · T04 = 미니멀 (clean, lots of space) → 쉼/고요/short quiet phrases
@@ -296,16 +403,51 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
     const fontMood = analysis.fontMood || 'editorial';
-    const selectedFonts = config.fonts;
+    const fontMoodOffset: Record<string, number> = {
+      editorial: 0,
+      lyrical: 1,
+      quiet: 2,
+      handwritten: 3,
+      modern: 4,
+      bold: 5,
+    };
+    const fontPresetsByTemplate: Record<string, { primary: string; secondary: string }[]> = {
+      T03: [
+        { primary: 'Hahmlet', secondary: 'Hahmlet' },
+        { primary: 'GowunBatang', secondary: 'GowunBatang' },
+        { primary: 'NanumMyeongjo', secondary: 'NanumMyeongjo' },
+        { primary: 'SongMyung', secondary: 'GowunBatang' },
+        { primary: 'SerifKR', secondary: 'SerifKR' },
+        { primary: 'RidiBatang', secondary: 'RidiBatang' },
+      ],
+      T04: [
+        { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        { primary: 'GowunDodum', secondary: 'SeoulHangang' },
+        { primary: 'SeoulHangang', secondary: 'GowunBatang' },
+      ],
+      T02: [
+        { primary: 'PaperBlack', secondary: 'PaperLight' },
+        { primary: 'Taenada', secondary: 'PaperLight' },
+        { primary: 'GangwonTunTun', secondary: 'PaperLight' },
+      ],
+    };
+    const fontPresets = fontPresetsByTemplate[selectedTemplate];
+    const selectedFonts = fontPresets?.length
+      ? fontPresets[(Math.abs(templateIndex) + (fontMoodOffset[fontMood] ?? 0)) % fontPresets.length]
+      : config.fonts;
     const templateVariations: Record<string, string[]> = {
-      // T01 붓글씨 선포 — 진한 배경 + 밝은 붓글씨
+      // T01 귀여운 손글씨 — 파스텔 낙서/수채화/크레용
       T01: [
-        'Antique-gold ink-brush lettering on a deep ink-navy (#16233a) background.',
-        'Cream ink-brush lettering on a deep charcoal (#1f1f24) background.',
-        'Cream ink-brush lettering on a deep wine-burgundy (#4a1f2a) background.',
-        'Warm-gold ink-brush lettering on a deep oxblood-brown (#2a1813) background.',
-        'Pale-gold ink-brush lettering on a near-black (#141414) background.',
-        'Cream ink-brush lettering on a deep teal-charcoal (#143230) background.',
+        'Pastel blue paper card with tiny speckles and white/cream Korean handwritten lettering; use only a few tiny doodles.',
+        'Soft pink illustrated border card with hand-drawn leaves/berries/daisies around the edges and a clean center.',
+        'Warm butter-yellow childlike landscape card with a simple hill, path, cloud, sun, or tiny object related to the verse.',
+        'Cream paper marker-note card with a couple of small tasteful marker accents (underline or circle) only on a key word.',
+        'Off-white card with one large soft crayon blob, sticker shape, or hand-painted letter-shape behind the text.',
+        'Light mint/sky-blue simple scene card with a tiny bike, path, window, table, cup, candle, book, or map motif related to the verse.',
+        'Minimal notebook/memo card: warm paper, tape scraps, tiny check marks, pencil dots, and compact handwritten note typography.',
+        'Playful chunky word card: mostly blank cream background, bold rounded key words, a soft pastel highlight behind ONE key word.',
+        'Cute object card: one simple illustrated object such as a mug, loaf, lamp, envelope, small house, umbrella, or backpack, chosen from the verse meaning.',
+        'Soft geometric doodle card: pastel blocks, rounded rectangles, sticker-like shapes, one or two tiny simple shapes only, no smileys.',
       ],
       // T02 레트로 포스터 — 빈티지 플랫 컬러
       T02: [
@@ -322,14 +464,12 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       ],
       // T03 감성 세리프 — 잔잔한 필름 사진 위주 + 무광 플랫 몇 개
       T03: [
-        'Quiet rolling green hills with soft light and shadow bands, muted vintage film tones, fine grain.',
-        'A muted dusty-blue sky with soft haze, calm and airy, film grain.',
-        'Big soft clouds over a quiet green hill, slightly halftone print texture, muted vintage blue.',
-        'A single wildflower against a muted blue sky, soft vintage film photo.',
-        'Softly blurred flowers in pale warm light, dreamy analog blur, gentle and quiet.',
-        'A wide calm grass field in soft late-afternoon light, desaturated warm film tones.',
-        'A muted flat ivory (#efe9dd) editorial background with subtle paper grain, calm and refined.',
-        'A muted flat sage-gray (#a7ad9f) editorial background, sophisticated stillness.',
+        'T03 POSTER ARCHETYPE A — object photo poster: one verse-linked object or gesture (hands, flower, open window, sail, branch, fabric, candlelight, path detail) with a bold flat color field such as dusty blue, deep green, ivory, or muted yellow. Strong graphic poster feeling, not a generic landscape.',
+        'T03 POSTER ARCHETYPE B — grass/field graphic poster: close or overhead view of grass, meadow texture, hill shadow, or one tiny symbolic subject in a large green field. Use punchy yellow/ivory serif typography. Avoid sunrise and generic scenic horizon.',
+        'T03 POSTER ARCHETYPE C — sky/cloud poster: large blue sky or dramatic but clean cloud shape tied to the verse, halftone/film grain texture, compact typography placed inside the clean sky. Avoid decorative dividers.',
+        'T03 POSTER ARCHETYPE D — color-and-flower/object poster: single flower, branch, cup, book edge, or small still-life subject against a saturated muted color background. More graphic and poster-like than cinematic.',
+        'T03 POSTER ARCHETYPE E — minimal solid-color scripture poster: mostly flat muted blue/green/cream background with paper grain and very simple serif typography; maybe one small symbolic mark from the verse, but no ornamental lines.',
+        'T03 POSTER ARCHETYPE F — cinematic landscape poster: only when the verse truly calls for landscape. Use a distinctive water, mountain, road, or horizon scene with small-to-medium typography and strong negative space; avoid repeating the same foggy forest/sunrise formula.',
       ],
       // T04 미니멀 — 밝은 여백
       T04: [
@@ -341,7 +481,60 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       ],
     };
     const variations = templateVariations[selectedTemplate] || templateVariations.T02;
-    const variation = variations[Math.abs(templateIndex) % variations.length];
+    const variationIndex = Math.abs(templateIndex) % variations.length;
+    const variation = variations[variationIndex];
+    const t01DesignArchetypes = [
+      'T01 DESIGN A — blue paper poem card: dusty sky-blue paper texture, tiny speckles, white or cream small handwritten Korean text centered with lots of empty space; almost no illustration.',
+      'T01 DESIGN B — pink illustrated border card: blush-pink background, hand-drawn leaves/berries/daisies around the edges, small centered Korean diary handwriting in the open middle.',
+      'T01 DESIGN C — yellow path card: butter-yellow sky, soft hill/path/sun/cloud if meaning fits, cheerful but sparse, handwritten text floating in the sky.',
+      'T01 DESIGN D — marker doodle note: warm cream paper, playful marker handwriting, a couple of tiny marker accents only on a key word.',
+      'T01 DESIGN E — big crayon shape card: off-white background with one large soft pastel blob, sticker, or painted letter-shape; handwritten Korean text placed inside or beside it.',
+      'T01 DESIGN F — tiny object scene card: mint or pale blue paper with one simple object from the verse meaning (bike/path/window/book/cup/candle/map/signpost), casual handwriting.',
+      'T01 DESIGN G — notebook memo card: warm paper, tape scraps, pencil dots, a couple of small margin doodles, compact handwritten note typography, no flower/cloud default.',
+      'T01 DESIGN H — chunky cute word card: mostly blank cream background, thick rounded hand-lettered key words, a soft pastel highlight behind ONE key word only.',
+      'T01 DESIGN I — sticker collage card: a few simple sticker-like shapes, small label, soft blocks of color, and playful hand lettering; avoid floral border.',
+      'T01 DESIGN J — cozy desk doodle card: tiny illustrated mug, lamp, open book, envelope, or candle in a corner with handwritten note text; calm and cute.',
+    ];
+    const t01TypographyStyles = [
+      'FONT A: thick rounded Korean marker lettering, friendly and bold, medium-large strokes; not thin',
+      'FONT B: chunky childlike crayon lettering with wax texture and uneven pressure; thick and playful',
+      'FONT C: bold sticker-like Korean block handwriting, rounded corners, wide letter spacing, colorful key words',
+      'FONT D: small diary pen handwriting, narrow and compact, used only for quiet memo-style cards',
+      'FONT E: big bubbly doodle lettering for key words, smaller handwritten supporting text; intentionally uneven and cute',
+      'FONT F: soft watercolor brush handwriting with thicker pooled edges, not too thin, gentle and organic',
+      'FONT G: felt-tip pen note lettering, dark gray or navy, casual but weighty, like a handwritten classroom poster',
+      'FONT H: pastel highlighter lettering with thick hand-drawn strokes and simple colored accents',
+      'FONT I: pencil handwriting with slightly heavy sketch lines, imperfect but readable, not pale or too thin',
+      'FONT J: mixed cute lettering: one chunky word, one small note line, and one colored reference line',
+    ];
+    const t01Layout = selectedTemplate === 'T01'
+      ? t01DesignArchetypes[Math.abs(templateIndex) % t01DesignArchetypes.length]
+      : '';
+    const t01TypographyStyle = selectedTemplate === 'T01'
+      ? t01TypographyStyles[Math.abs(templateIndex) % t01TypographyStyles.length]
+      : '';
+    const t03TypographyLayouts = [
+      'T03 TYPOGRAPHY VARIANT A: TOP-CENTER poster. Place the entire text block near the upper third, centered, small and calm. Background subject sits lower. Do NOT place text in the left middle. No lines, no divider, no star.',
+      'T03 TYPOGRAPHY VARIANT B: LOWER-RIGHT editorial poster. Place a compact right-aligned text block in the lower-right quadrant, leaving the left side mostly empty. Reference sits just under the block. No centered or left-column layout.',
+      'T03 TYPOGRAPHY VARIANT C: BOTTOM-CENTER caption poster. Place the text as a refined small caption block near the bottom center, over a clean color/sky/field area. Emphasis is subtle. No left paragraph layout.',
+      'T03 TYPOGRAPHY VARIANT D: RIGHT-SIDE magazine layout. Place the text in the upper-right or middle-right third, right-aligned or centered within that right column. Optional vertical Bible reference on far right. No left-side text block.',
+      'T03 TYPOGRAPHY VARIANT E: TINY FLOATING TYPOGRAPHY. Use very small premium typography, almost like an art-photo caption, placed in a quiet empty area. Let the photograph dominate. No large headline, no left manuscript block.',
+      'T03 TYPOGRAPHY VARIANT F: FULL POSTER WORDMARK LAYOUT. Use a short meaningful phrase as a modest graphic wordmark across the middle or lower third, with remaining lines much smaller around it. This should feel like a modern Christian poster, not a scripture paragraph.',
+    ];
+    const t03TypographyLayout = selectedTemplate === 'T03'
+      ? t03TypographyLayouts[Math.abs(templateIndex) % t03TypographyLayouts.length]
+      : '';
+    const t03FontStyles = [
+      'DISTINCT FONT STYLE A: very thin literary Korean serif with long elegant strokes, airy tracking, quiet book-poetry feeling',
+      'DISTINCT FONT STYLE B: classic printed-book Korean myeongjo serif, modest contrast, compact leading, calm devotional tone',
+      'DISTINCT FONT STYLE C: modern narrow editorial Korean serif, magazine-caption feeling, crisp and restrained',
+      'DISTINCT FONT STYLE D: soft calligraphic Korean serif with gentle brush influence, organic stroke endings, still clean and readable',
+      'DISTINCT FONT STYLE E: refined fashion-display Korean serif used sparingly, high contrast, paired with tiny understated serif captions',
+      'DISTINCT FONT STYLE F: minimal old-book Korean serif, small scale, slightly aged ink texture, calm tracking, no flourishes',
+    ];
+    const t03FontStyle = selectedTemplate === 'T03'
+      ? t03FontStyles[Math.abs(templateIndex) % t03FontStyles.length]
+      : '';
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
 
@@ -357,35 +550,80 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
     const personalizedBrief = [
       'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
       analysis.backgroundConcept
-        ? `Background matched to the message meaning: ${analysis.backgroundConcept}. Render it TASTEFULLY and modern. It may be (a) simply a refined flat color or smooth gradient, OR (b) ONE elegant, meaningful object / subtle motif (editorial still-life or simple graphic), OR (c) a soft, refined atmospheric backdrop — choose whatever fits this message and VARY it across cards. Not every card needs a literal scene.`
+        ? `Background matched to the message meaning: ${analysis.backgroundConcept}. Render it TASTEFULLY and modern. The scene must feel personally chosen for the user's words. It may be (a) simply a refined flat color or smooth gradient, OR (b) ONE elegant, meaningful object / subtle motif (editorial still-life or simple graphic), OR (c) a soft, refined atmospheric backdrop — choose whatever fits this message and VARY it across cards. Not every card needs a literal scene.`
+        : '',
+      Array.isArray(analysis.visualMotifs) && analysis.visualMotifs.length
+        ? `Meaningful visual motifs to consider: ${analysis.visualMotifs.join(', ')}. Use only the motifs that strengthen the verse; do not decorate randomly.`
         : '',
       analysis.palette ? `Refined palette: ${analysis.palette}.` : '',
+      analysis.lighting ? `Lighting direction: ${analysis.lighting}.` : '',
+      analysis.composition ? `Composition direction: ${analysis.composition}.` : '',
+      selectedTemplate === 'T03'
+        ? 'T03 SPECIFIC: create a reference-worthy emotional serif poster background. The background must be chosen from the verse meaning, not from generic devotional scenery. Prefer graphic poster variety: object close-up, hands/gesture, single flower, grass texture, bold blue sky, cloud shape, flat color field, water/boat/path only when meaning fits. For thanks/offering/vow verses, prefer quiet still-life/devotion objects or hands offering something, not sunset landscapes. Avoid generic meadow/flower/sky unless the verse itself points there. ABSOLUTELY NO decorative divider lines, horizontal rules, star symbols, leaf ornaments, floral separators, frame lines, quote marks, faux logo marks, or ornamental swashes.'
+        : '',
       'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture, NO over-saturation. Keep it modern, refined and design-led; the typography stays the hero.',
     ].filter(Boolean).join('\n');
-    // ── 글자 렌더링: T01(붓글씨)·T02(레트로)만 AI가 직접 그림. 나머지는 폰트 오버레이(사장님 폰트) ──
-    const aiText = body.aiText !== false && (selectedTemplate === 'T01' || selectedTemplate === 'T02');
+    // ── 글자 렌더링: T01/T02/T03은 AI가 직접 한 장의 포스터처럼 그림. 나머지는 폰트 오버레이 ──
+    const aiText = body.aiText !== false && (selectedTemplate === 'T01' || selectedTemplate === 'T02' || selectedTemplate === 'T03');
     const heroLine = safeLines.reduce((a, b) => ((b.scale || 1) > (a.scale || 1) ? b : a), safeLines[0] || { text: '', scale: 1 });
     const hierarchyHint = safeLines
       .map((l) => `"${l.text}"(${(l.scale || 1) >= 1.4 ? 'LARGE' : (l.scale || 1) <= 0.6 ? 'small caption' : 'medium'})`)
       .join(', ');
     // 템플릿마다 고정된 레터링 스타일 (한 템플릿 = 한 스타일, 일관성 유지)
     const letteringByTemplate: Record<string, string> = {
-      T01: 'expressive Korean brush-calligraphy lettering with energetic, powerful ink strokes',
+      T01: `cute Korean hand-lettering: ${t01TypographyStyle || 'small friendly handwritten note style'}, follow this exact font variant and do not default to the same rounded marker font, never brush calligraphy`,
       T02: 'retro display lettering: a bold condensed display style for the main lines mixed with a flowing cursive SCRIPT for ONE key word, vintage character with tasteful grain',
-      T03: 'elegant high-contrast SERIF lettering, refined and emotional with an occasional italic word',
+      T03: `emotional Korean serif poster typography: ${t03FontStyle || 'cohesive refined serif family'}, controlled small-scale hierarchy, tasteful accent color when useful, no default gothic/sans mixing`,
       T04: 'clean minimal sans lettering, calm and simple with generous space',
     };
     const letteringStyle = letteringByTemplate[selectedTemplate] || letteringByTemplate.T02;
     const aiTextBlock = [
       'RENDER THE KOREAN TEXT AS THE HERO TYPOGRAPHY, beautifully integrated into the poster (not a plain overlay).',
       `CRITICAL: spell every Korean character EXACTLY and legibly. Do NOT change, omit, add, or misspell any character. The full text is: "${safeLines.map((l) => l.text).join(' ')}".`,
-      heroLine?.text ? `Dominant headline (largest): "${heroLine.text}".` : '',
+      heroLine?.text
+        ? selectedTemplate === 'T03'
+          ? `Meaningful emphasis phrase: "${heroLine.text}". Keep it only slightly larger, not gigantic.`
+          : `Dominant headline (largest): "${heroLine.text}".`
+        : '',
+      selectedTemplate === 'T03'
+        ? 'For T03, avoid loud headline scale. The emphasis should feel like refined editorial hierarchy, not a title slide.'
+        : 'The dominant headline above was selected by semantic meaning, not by line position. Do not make the last line biggest unless it is truly the core message.',
       `Size hierarchy by line: ${hierarchyHint}.`,
-      `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
-      'SIZE & SPACING: do NOT make the text gigantic. The whole text block should occupy about 55–65% of the card with clear empty margins all around. Use TIGHT line spacing (lines close together, not airy). Keep at least 8% empty margin on the left and right — the longest line must NOT touch or cross the edges; scale ALL the lettering down until the widest line fits with margin. Cropped/cut-off letters are a failure.',
+      selectedTemplate === 'T03'
+        ? `Follow the T03 typography variant EXACTLY, including placement and alignment. Ignore the earlier analysis textAlign if it conflicts. Lettering style for this generation: ${letteringStyle}. The letterform must look noticeably different from other T03 generations.`
+        : `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
+      selectedTemplate === 'T01'
+        ? [
+            'T01 CUTE HANDWRITING MODE: a sweet handmade pastel devotional card with cute Korean handwriting and lots of calm empty space.',
+            t01Layout,
+            `T01 FONT VARIANT: ${t01TypographyStyle}.`,
+            `VARIATION SEED: ${templateIndex}. Vary the background color, doodle type, lettering weight/width, and composition from other T01 generations.`,
+            'FONT DIVERSITY RULE: avoid thin lettering unless the variant says diary pen. Prefer stronger, more visible cute lettering.',
+            'BACKGROUND DIVERSITY RULE: do not default to flowers and clouds; follow the selected design and verse meaning.',
+            heroLine?.text
+              ? `EMPHASIS RULE (IMPORTANT): apply a soft color highlight OR a colored underline to ONLY the single most important phrase "${heroLine.text}" (at most one additional truly key word). Do NOT underline, highlight, or circle ordinary/connective words, and do NOT mark every line — most lines must have NO decoration under them. Emphasis must land on the meaning, not random words.`
+              : 'EMPHASIS RULE: emphasize at most one key word; most lines have no markers.',
+            'DECORATION RULE (IMPORTANT): keep decorations minimal and tasteful — at most 2 or 3 tiny simple doodles TOTAL, placed near the edges/corners. NO smiley faces, NO scattered hearts, NO water splashes, NO sparkle/confetti clutter. Quiet, clean, restrained, with lots of empty pastel space.',
+            'Use pastel crayon/marker/watercolor texture and modest handwriting. ABSOLUTELY NO brush calligraphy, no ink strokes, no dark dramatic background, no bold proclamation poster, no realistic photo.',
+          ].filter(Boolean).join(' ')
+        : '',
+      selectedTemplate === 'T03'
+        ? [
+            'T03 DIRECT POSTER MODE: make this look like a complete emotional Korean scripture poster, not a generated background with plain text laid on top. Use one cohesive serif family, a visible Bible reference credit, tasteful accent color only when it improves the design, and composition similar to refined Christian editorial poster references. The full Korean text must remain present and readable.',
+            t03TypographyLayout,
+            `VARIATION SEED: ${templateIndex}. This generation must not reuse a left-middle scripture paragraph layout. Vary placement, scale, color, reference placement, photo subject, crop, and background archetype from previous attempts. The layout should be immediately visually different at thumbnail size.`,
+            'DECORATION BAN: do not draw horizontal lines, divider rules, stars, leaf dividers, floral separators, brackets, frames, quote marks, or tiny logo-like ornaments around the text. Use only typography, spacing, color, and the photo itself.',
+          ].filter(Boolean).join(' ')
+        : '',
+      selectedTemplate === 'T03'
+        ? 'SIZE & SPACING FOR T03: make the typography MUCH SMALLER and more premium. The whole text block should usually occupy only about 16–28% of the card area; for long verses up to 32% maximum. No single Korean word should dominate the card. Keep at least 14% empty margin on all sides. Prefer refined poster/caption scale over loud title scale. The Bible reference must be readable but modest. Cropped/cut-off letters are a failure.'
+        : selectedTemplate === 'T01'
+          ? 'SIZE & SPACING FOR T01: keep the handwriting cute and modest, not huge. Most designs should use a text block around 18–34% of the card area with lots of empty pastel space. Only FONT E or FONT H may have one larger chunky key phrase. Long verses should become small diary handwriting, not oversized poster type. Cropped/cut-off letters are a failure.'
+        : 'SIZE & SPACING: do NOT make the text gigantic. The whole text block should occupy about 55–65% of the card with clear empty margins all around. Use TIGHT line spacing (lines close together, not airy). Keep at least 8% empty margin on the left and right — the longest line must NOT touch or cross the edges; scale ALL the lettering down until the widest line fits with margin. Cropped/cut-off letters are a failure.',
       'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
-    const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos. The Korean typography is accurate, legible, and the clear focal point.';
+    const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
+    const T01_GLOBAL_WITH_TEXT = '\n\nCute handmade devotional card, pastel illustration quality, playful but polished. It should feel like a sweet hand-drawn encouragement card, not an editorial poster. Korean handwriting must be accurate, legible, and visibly hand-drawn. Use stronger cute lettering when appropriate; avoid overly thin pale text. Background variety matters: not always flowers/clouds.';
 
     const bgPromptFinal = [
       config.backgroundPrompt,
@@ -395,7 +633,7 @@ SCENE PRINCIPLE — VISUALIZE THE MEANING, NOT THE RELIGION:
       moodHint,
       aiText ? aiTextBlock : layoutDirective,
       ratioPrompt,
-      aiText ? GLOBAL_WITH_TEXT : GLOBAL_BG_PROMPT,
+      aiText ? (selectedTemplate === 'T01' ? T01_GLOBAL_WITH_TEXT : GLOBAL_WITH_TEXT) : GLOBAL_BG_PROMPT,
     ].filter(Boolean).join('\n\n');
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
