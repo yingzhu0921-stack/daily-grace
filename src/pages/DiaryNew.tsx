@@ -1,22 +1,30 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { ChevronLeft, Share2 } from 'lucide-react';
 import { create } from "@/utils/diaryStorage";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
+import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { diarySchema } from '@/utils/validation';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function DiaryNew() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [text, setText] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
   const canSave = text.trim().length > 0;
+
+  useLoginNudge({
+    user,
+    loading,
+    storageKey: 'login_nudge_diary_new',
+    show: showLoginNudge,
+  });
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -56,14 +64,9 @@ export default function DiaryNew() {
       return;
     }
 
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-    
     const saved = await create(text.trim());
     
-    toast.success('클라우드에 백업되었습니다.');
+    toast.success(user ? '클라우드에 백업되었습니다.' : '기기에 저장되었습니다.');
     navigate(`/diary/${saved.id}`, { replace: true });
   };
 

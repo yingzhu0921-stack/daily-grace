@@ -1,7 +1,0 @@
-project_id = "hyakkskfyeimsfmejzac"
-
-[functions.generate-image]
-verify_jwt = false
-
-[functions.analyze-records]
-verify_jwt = false

@@ -12,6 +12,26 @@ type CustomCategory = {
   icon?: IconName;
 };
 
+const LEGACY_COLOR_MAP: Record<string, string> = {
+  '#4F8A5B': '#7DB87D',
+  '#7A6BB8': '#A57DB8',
+  '#C89B3C': '#E8C87D',
+  '#D97B5D': '#DD957D',
+  '#6B9BD1': '#8DABA8',
+  '#E17B8C': '#C7A0B2',
+  '#C9A86A': '#D8BE82',
+  '#9B87BE': '#A57DB8',
+  '#D4886E': '#DD957D',
+  '#7AA3B5': '#9AB8C6',
+  '#B88FA3': '#C7A0B2',
+};
+
+const normalizeCategoryColor = (color?: string) => {
+  if (!color) return '#7DB87D';
+  const upper = color.toUpperCase();
+  return LEGACY_COLOR_MAP[upper] || color;
+};
+
 export const BottomNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -26,10 +46,10 @@ export const BottomNav: React.FC = () => {
   ];
 
   const defaultRecordTypes = [
-    { id: 'meditation', label: 'Q.T', icon: BookOpen, color: '#4F8A5B', path: '/meditation/new' },
-    { id: 'prayer', label: '기도', icon: Heart, color: '#7A6BB8', path: '/prayer/new' },
-    { id: 'gratitude', label: '감사', icon: Star, color: '#C89B3C', path: '/gratitude/new' },
-    { id: 'diary', label: '일기', icon: PencilLine, color: '#D97B5D', path: '/diary/new' },
+    { id: 'meditation', label: 'Q.T', icon: BookOpen, color: '#7DB87D', path: '/meditation/new' },
+    { id: 'prayer', label: '기도', icon: Heart, color: '#A57DB8', path: '/prayer/new' },
+    { id: 'gratitude', label: '감사', icon: Star, color: '#E8C87D', path: '/gratitude/new' },
+    { id: 'diary', label: '일기', icon: PencilLine, color: '#DD957D', path: '/diary/new' },
   ];
 
   useEffect(() => {
@@ -41,7 +61,7 @@ export const BottomNav: React.FC = () => {
           .map((cat) => ({
             id: cat.id,
             name: cat.name,
-            color: cat.color,
+            color: normalizeCategoryColor(cat.color),
             icon: cat.icon as IconName,
           }));
         setCustomCategories(customs);

@@ -5,7 +5,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
 
 export default function PrayerEdit() {

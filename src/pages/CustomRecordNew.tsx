@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Share2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { supabase } from '@/integrations/supabase/client';
+import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
 import { MultiApplicationInput } from '@/components/MultiApplicationInput';
@@ -24,7 +24,7 @@ type Category = {
 const CustomRecordNew = () => {
   const navigate = useNavigate();
   const { categoryId, recordId } = useParams<{ categoryId: string; recordId?: string }>();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   
   const [category, setCategory] = useState<Category | null>(null);
   const [formData, setFormData] = useState<Record<string, string | boolean | string[]>>({
@@ -48,6 +48,14 @@ const CustomRecordNew = () => {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   });
+  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
+
+  useLoginNudge({
+    user,
+    loading,
+    storageKey: `login_nudge_custom_${categoryId || 'new'}`,
+    show: showLoginNudge,
+  });
   
   // Refs for auto-expanding textareas
   const passageRef = useRef<HTMLTextAreaElement>(null);
@@ -65,7 +73,7 @@ const CustomRecordNew = () => {
   };
 
   useEffect(() => {
-    // Supabase에서 카테고리 정보 로드
+    // 카테고리 정보 로드
     const loadCategory = async () => {
       try {
         if (!categoryId) return;
@@ -172,11 +180,6 @@ const CustomRecordNew = () => {
         title: "내용을 입력해주세요",
         description: "최소 한 필드 이상 작성해야 합니다.",
       });
-      return;
-    }
-
-    if (!user) {
-      setShowLoginModal(true);
       return;
     }
 

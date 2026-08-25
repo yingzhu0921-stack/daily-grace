@@ -125,9 +125,21 @@ const CardsVault: React.FC = () => {
     setCards(updated);
     setSelectedCard(null);
 
-    // Show undo toast
-    let undoTimeout: NodeJS.Timeout;
+    // Actually delete after timeout
+    const undoTimeout = setTimeout(async () => {
+      try {
+        await deleteCard(id);
+      } catch (error) {
+        console.error('Failed to delete card:', error);
+        // Restore card if delete fails
+        setCards(prevCards => [...prevCards, cardToDelete].sort((a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        ));
+        toast.error('카드 삭제에 실패했어요');
+      }
+    }, 3000);
 
+    // Show undo toast
     toast.success('카드를 삭제했어요', {
       action: {
         label: '실행 취소',
@@ -141,20 +153,6 @@ const CardsVault: React.FC = () => {
       },
       duration: 3000, // 3 seconds to undo
     });
-
-    // Actually delete after timeout
-    undoTimeout = setTimeout(async () => {
-      try {
-        await deleteCard(id);
-      } catch (error) {
-        console.error('Failed to delete card:', error);
-        // Restore card if delete fails
-        setCards(prevCards => [...prevCards, cardToDelete].sort((a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        ));
-        toast.error('카드 삭제에 실패했어요');
-      }
-    }, 3000);
   };
 
   return (

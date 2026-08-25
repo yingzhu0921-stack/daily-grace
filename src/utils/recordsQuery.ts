@@ -195,7 +195,7 @@ export function getStreakDays(): number {
 
   const today = new Date();
   let streak = 0;
-  let currentDate = new Date(today);
+  const currentDate = new Date(today);
 
   while (true) {
     const dateStr = currentDate.toISOString().split('T')[0];

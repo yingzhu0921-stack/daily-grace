@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Daily Grace AI OFFICE</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div class="topbar-main">
+        <h1>Daily Grace AI OFFICE</h1>
+        <p class="project" id="projectPath">프로젝트 확인 중…</p>
+      </div>
+      <div class="agents">
+        <span class="agent pat" id="patStatus"><i></i>패트 · 대기</span>
+        <span class="agent matt" id="mattStatus"><i></i>매트 · 대기</span>
+      </div>
+    </header>
+
+    <main class="chat" id="chat" aria-live="polite">
+      <div class="msg system">
+        <p>패트에게 개발 작업을 요청하세요. "검수까지"라고 하면 매트가 read-only 검수까지 진행합니다.
+이미지는 붙여넣기(⌘V)로도 첨부할 수 있고, 실행 중에는 전송 버튼이 중단 버튼으로 바뀝니다(Esc).</p>
+      </div>
+    </main>
+
+    <div class="statusbar">
+      <span id="workStatus" class="pill">대기</span>
+      <span id="fileStatus" class="files">변경 파일 –</span>
+      <button type="button" id="deployBtn" class="deploy">배포</button>
+    </div>
+
+    <div class="quick" id="quick">
+      <button data-q="기능 구현: ">기능 구현</button>
+      <button data-q="버그 수정: ">버그 수정</button>
+      <button data-q="코드 설명: ">코드 설명</button>
+      <button data-q="검수까지 진행해줘: " data-review="1">검수까지</button>
+      <button data-q="배포 준비 점검만 해줘 (실제 배포는 하지 마): ">배포 준비</button>
+    </div>
+
+    <form class="composer" id="composer">
+      <div class="thumbs" id="thumbs" hidden></div>
+      <div class="composer-row">
+        <label class="attach" title="이미지 첨부">
+          <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp" multiple hidden />
+          <span aria-hidden="true">＋</span>
+          <span class="sr">이미지 첨부</span>
+        </label>
+        <textarea id="input" rows="1" placeholder="패트에게 요청하기… (이미지 붙여넣기 가능)" autocomplete="off"></textarea>
+        <button type="submit" id="sendBtn">전송</button>
+      </div>
+    </form>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

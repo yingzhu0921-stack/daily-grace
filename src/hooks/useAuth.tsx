@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { toast } from 'sonner';
 import { clearAllCards } from '@/utils/verseCardDB';
+import { initCustomRecordSync, stopCustomRecordSync } from '@/utils/customRecordSync';
 
 export interface DGUser {
   id: string;
@@ -44,6 +45,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       .then(r => r.json<{ user: DGUser | null }>())
       .then(({ user }) => {
         setUser(user);
+        if (user) {
+          // 로그인 상태면 커스텀 기록을 클라우드와 동기화 시작
+          initCustomRecordSync().catch(() => {});
+        }
         if (user && pendingCallbackRef.current) {
           const cb = pendingCallbackRef.current;
           pendingCallbackRef.current = null;
@@ -57,6 +62,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     setUser(null);
+    stopCustomRecordSync();
     await clearAllCards().catch(() => {});
     toast.success('로그아웃되었습니다');
     window.location.href = '/api/auth/signout';
@@ -71,6 +77,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       });
       if (!res.ok) throw new Error('삭제 실패');
       setUser(null);
+      stopCustomRecordSync();
       const keys = ['meditations','prayers','gratitudes','diaries','custom_categories','custom_records','verse_cards','verse_cards_migrated','onboarding_completed'];
       keys.forEach(k => localStorage.removeItem(k));
       await clearAllCards().catch(() => {});

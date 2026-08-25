@@ -1,5 +1,6 @@
 export interface Env {
   DB: D1Database;
+  CARDS: R2Bucket;
   RESEND_API_KEY: string;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;

@@ -33,7 +33,7 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     await env.DB.prepare(
       'INSERT INTO categories (id,user_id,name,color,icon,description,include_in_goal,active_days,fields,created_at,updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)'
     ).bind(
-      id, user.id, b.name, b.color ?? '#4F8A5B',
+      id, user.id, b.name, b.color ?? '#7DB87D',
       b.icon ?? null, b.description ?? null,
       b.includeInGoal !== false ? 1 : 0,
       JSON.stringify(b.activeDays ?? [0,1,2,3,4,5,6]),

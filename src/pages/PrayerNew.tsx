@@ -1,21 +1,29 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronLeft, Share2 } from 'lucide-react';
 import { create, createManyFromText } from '@/utils/prayerStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
+import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { prayerSchema } from '@/utils/validation';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function PrayerNew() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [text, setText] = useState('');
   const [splitLines, setSplitLines] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
+
+  useLoginNudge({
+    user,
+    loading,
+    storageKey: 'login_nudge_prayer_new',
+    show: showLoginNudge,
+  });
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -62,11 +70,6 @@ export default function PrayerNew() {
       return;
     }
 
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
     let savedPrayer;
     if (splitLines) {
       const lines = text.split('\n').filter(line => line.trim());
@@ -80,7 +83,7 @@ export default function PrayerNew() {
       ));
       savedPrayer = prayers[0];
 
-      toast.success('클라우드에 백업되었습니다.');
+      toast.success(user ? '클라우드에 백업되었습니다.' : '기기에 저장되었습니다.');
 
       navigate('/prayer', { replace: true });
       setTimeout(() => navigate(`/prayer/${savedPrayer.id}`), 0);
@@ -92,7 +95,7 @@ export default function PrayerNew() {
         answeredAt: null
       });
 
-      toast.success('클라우드에 백업되었습니다.');
+      toast.success(user ? '클라우드에 백업되었습니다.' : '기기에 저장되었습니다.');
 
       navigate('/prayer', { replace: true });
       setTimeout(() => navigate(`/prayer/${savedPrayer.id}`), 0);

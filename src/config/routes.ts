@@ -21,6 +21,7 @@ export const routes = {
   settings: '/settings',
   profileEdit: '/settings/account',
   notificationSettings: '/settings/notifications',
+  legal: '/legal',
   help: '/help',
   auth: '/auth',
 } as const;

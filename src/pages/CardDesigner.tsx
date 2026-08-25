@@ -169,6 +169,16 @@ function hexToRgba(hex: string, opacity: number) {
   return `rgba(${r},${g},${b},${opacity})`;
 }
 
+const AUTO_BIBLE_REF_RE = /^(?:[1-3]\s*)?[A-Za-z가-힣]{1,10}\.?\s*\d{1,3}\s*[:：]\s*\d{1,3}$/;
+
+function isAutoCaptionLine(text: string, scale?: number) {
+  return AUTO_BIBLE_REF_RE.test(text.trim()) || (typeof scale === 'number' && scale <= 0.55);
+}
+
+function hasProclamationTone(text: string) {
+  return /(전파|선포|찬송|찬양|입술|입을|입이|복음|보내소서|가라|외치|증거|담대)/.test(text);
+}
+
 function readLocalRecordList(key: string, type: string) {
   try {
     return JSON.parse(localStorage.getItem(key) || '[]').map((record: any) => ({ ...record, type }));
@@ -388,9 +398,12 @@ export default function Designer() {
     avoidImagery?: string[];
     ratio?: Ratio;
     typography?: AutoTypography;
+    simpleLines?: string[];
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
+  const [cardPolicyExpanded, setCardPolicyExpanded] = useState(false);
+  const [recordPickerTarget, setRecordPickerTarget] = useState<'entry-auto' | 'auto' | 'manual-text' | 'photo'>('auto');
 
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
@@ -461,6 +474,64 @@ export default function Designer() {
       </div>
     );
   };
+
+  const renderCardPolicyNotice = () => (
+    <div className="rounded-lg border border-[#E8E7E5] bg-[#F9F8F6] px-3.5 py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[12px] font-semibold text-[#2E2E2E]">
+            입력 콘텐츠 안내
+          </p>
+          <p className="mt-1 text-[11px] leading-4 text-[#7E7C78]">
+            Daily Grace는 성경 본문이나 찬양 가사 등의 콘텐츠를 직접 제공하지 않습니다. 카드에 들어가는 문구와 이미지는 사용자가 직접 입력하거나 업로드합니다.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCardPolicyExpanded(value => !value)}
+          className="shrink-0 pt-0.5 text-[11px] font-semibold text-[#4F8A5B] underline underline-offset-2"
+        >
+          {cardPolicyExpanded ? '접기' : '콘텐츠 이용 안내 보기'}
+        </button>
+      </div>
+
+      {cardPolicyExpanded && (
+        <div className="mt-2 border-t border-[#E3E2E0] pt-2">
+          <p className="text-[12px] font-semibold text-[#2E2E2E]">
+            콘텐츠 이용 안내
+          </p>
+          <div className="mt-1.5 space-y-2 text-[11px] leading-4 text-[#7E7C78]">
+            <p>
+              Daily Grace는 사용자가 직접 입력하거나 업로드한 콘텐츠를 기록하고, 카드 및 이미지 등의 형태로 디자인할 수 있도록 돕는 서비스입니다.
+            </p>
+            <p>
+              Daily Grace는 성경 번역문, 찬양·CCM 가사, 도서의 문장 등 제3자가 권리를 보유할 수 있는 콘텐츠의 원문을 직접 제공하거나 검색·자동완성하지 않습니다.
+            </p>
+            <p>
+              사용자는 직접 입력한 내용을 개인 기록, 묵상 및 카드 제작 등에 활용할 수 있습니다.
+            </p>
+            <p>
+              다만 성경 번역문, 찬양 가사, 도서의 문장, 사진 등 제3자의 저작물이 포함된 콘텐츠를 SNS 등에 공개하거나 외부에 배포·상업적으로 이용하는 경우에는 해당 콘텐츠의 저작권 및 권리자의 이용 조건이 적용될 수 있습니다.
+            </p>
+            <p>
+              Daily Grace는 사용자가 입력한 콘텐츠의 저작권을 소유한다고 주장하지 않으며, 해당 콘텐츠의 이용 가능 여부나 권리 상태를 보증하지 않습니다.
+            </p>
+            <p>
+              자세한 사항은 각 콘텐츠의 권리자 또는 공식 이용 정책을 확인해 주세요.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/legal')}
+            className="mt-1.5 text-[11px] font-semibold text-[#4F8A5B] underline underline-offset-2"
+          >
+            약관 및 정책 보기
+          </button>
+        </div>
+      )}
+
+    </div>
+  );
 
   useLoginNudge({
     user,
@@ -852,48 +923,47 @@ export default function Designer() {
     }
   }, []); // 빈 배열: 컴포넌트 생명주기 동안 함수 참조 유지
 
-  const openRecordSelector = async () => {
+  const openRecordSelector = async (target: typeof recordPickerTarget = 'auto') => {
+    setRecordPickerTarget(target);
     await fetchRecordsForSelector();
     setRecordSelectorOpen(true);
   };
 
-  const analyzeSelectedRecord = async (record: any) => {
+  const useSelectedRecordText = (record: any, selectedText: string) => {
     setRecordSelectorOpen(false);
-    setIsExpandingPrompt(true); // Use existing loading state
+    const text = selectedText.trim();
+    if (!text) return;
 
-    const loadingToast = toast.loading('기록을 분석하여 프롬프트를 생성하는 중입니다...', {
-      description: '잠시만 기다려주세요',
-    });
-
-    try {
-      const response = await fetch('/api/analyze-records', {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ records: [record] }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
-        console.error('❌ analyze-records API error:', response.status, errorData);
-        throw new Error(errorData.error || 'AI 분석에 실패했습니다');
-      }
-
-      const data = await response.json();
-      console.log('✅ analyze-records success:', data);
-      setBgPrompt(data.prompt);
-      toast.dismiss(loadingToast);
-      toast.success('기록 분석이 완료되었습니다!');
-
-      // Auto-expand prompt after analysis
-      setTimeout(() => expandPrompt(), 500);
-    } catch (error) {
-      console.error('❌ analyzeSelectedRecord error:', error);
-      toast.dismiss(loadingToast);
-      toast.error(error instanceof Error ? error.message : '기록 분석에 실패했습니다.');
-    } finally {
-      setIsExpandingPrompt(false);
+    if (recordPickerTarget === 'photo') {
+      setPhotoText(text);
+      toast.success('기록에서 문구를 가져왔어요');
+      return;
     }
+
+    if (recordPickerTarget === 'manual-text') {
+      setT(s => ({
+        ...s,
+        content: text,
+        x: s.content === '텍스트를 입력하세요.' ? 50 : s.x,
+        y: s.content === '텍스트를 입력하세요.' ? 50 : s.y,
+      }));
+      if (textRef.current) textRef.current.innerText = text;
+      setIsEditing(false);
+      toast.success('기록에서 문구를 추가했어요');
+      return;
+    }
+
+    setVerseInput(text);
+    setT(s => ({ ...s, content: text }));
+    if (textRef.current) textRef.current.innerText = text;
+
+    if (recordPickerTarget === 'entry-auto') {
+      if (!selectedTemplateId) setSelectedTemplateId('T13');
+      setFlowStep('auto-template');
+    }
+
+    const categoryName = record?.title ? `"${record.title}"` : '내 기록';
+    toast.success(`${categoryName}에서 문구를 가져왔어요`);
   };
 
   const expandPrompt = async () => {
@@ -1113,23 +1183,49 @@ export default function Designer() {
     <div className="flex-1 min-h-0 flex flex-col bg-white overflow-y-auto">
       <div className="w-full max-w-md mx-auto px-5 pt-10 pb-6">
         <h2 className="text-[26px] font-semibold leading-tight text-[#2E2E2E]">말씀카드 만들기</h2>
-        <p className="mt-2 text-[14px] leading-6 text-[#7E7C78]">시작 방식을 고르면 바로 제작 화면으로 이어집니다.</p>
+        <p className="mt-2 text-[14px] leading-6 text-[#7E7C78]">원하는 방식으로 오늘의 기록을 카드로 남겨보세요.</p>
       </div>
 
       <div className="w-full max-w-md mx-auto px-5 pb-8 space-y-2.5">
+        {renderCardPolicyNotice()}
+
+        <button
+          onClick={() => openRecordSelector('entry-auto')}
+          className="w-full p-4 rounded-xl border border-[#D9DDD5] bg-[#F7F8F4] text-left transition-colors hover:bg-[#F1F4ED]"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[15px] font-semibold text-[#2E2E2E]">
+                내 기록으로 카드 만들기
+              </p>
+              <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">
+                QT · 기도 · 감사 기록을 다시 꺼내 카드로 남겨보세요.
+              </p>
+            </div>
+            <span className="shrink-0 pt-0.5 text-[18px] text-[#4F8A5B]">→</span>
+          </div>
+          <p className="mt-3 text-[12px] font-semibold text-[#4F8A5B]">
+            내 기록에서 선택하기 →
+          </p>
+        </button>
+
+        <p className="pt-2 text-[12px] font-semibold text-[#7E7C78]">
+          새로 만들기
+        </p>
+
         <button
           onClick={() => startCardFlow('auto')}
-          className="w-full flex items-center gap-4 p-4 border border-[#1F1F1F] bg-[#1F1F1F] text-white rounded-lg text-left transition-colors hover:bg-[#333333]"
+          className="relative w-full flex items-center gap-4 p-4 pr-16 border border-[#1F1F1F] bg-[#1F1F1F] text-white rounded-lg text-left transition-colors hover:bg-[#333333]"
         >
+          <span className="absolute right-3 top-3 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/16 text-white/86">
+            추천
+          </span>
           <div className="h-10 w-10 rounded-lg bg-white/12 flex items-center justify-center shrink-0">
             <Wand2 className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <p className="font-semibold">자동 완성</p>
-              <span className="text-[11px] px-1.5 py-0.5 rounded bg-white/16">추천</span>
-            </div>
-            <p className="mt-1 text-[12px] leading-5 text-white/72">문구 입력, 템플릿 선택, AI 배경 생성까지 한 흐름으로 진행합니다.</p>
+            <p className="font-semibold">자동 완성</p>
+            <p className="mt-1 text-[12px] leading-5 text-white/72">입력한 문구를 분석해 타이포그래피와 배경까지 자동으로 완성합니다.</p>
           </div>
         </button>
 
@@ -1142,7 +1238,7 @@ export default function Designer() {
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
-            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">빈 캔버스에서 배경, 문구, 글꼴을 직접 조정합니다.</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">빈 캔버스에서 배경, 문구, 글꼴을 직접 구성합니다.</p>
           </div>
         </button>
 
@@ -1155,7 +1251,7 @@ export default function Designer() {
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[#2E2E2E]">사진으로 시작</p>
-            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">사진을 올리고 문구를 얹어 카드로 다듬습니다.</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">내 사진을 업로드하고 문구를 더해 카드로 완성합니다.</p>
           </div>
         </button>
       </div>
@@ -1231,11 +1327,20 @@ export default function Designer() {
 
         {/* 텍스트 입력 */}
         <div>
-          <label className="text-sm font-semibold text-[#1F1F1F] mb-2 block">넣고 싶은 구절 / 문구</label>
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <label className="text-sm font-semibold text-[#1F1F1F] block">넣고 싶은 문구</label>
+            <button
+              type="button"
+              onClick={() => openRecordSelector('photo')}
+              className="text-[12px] font-semibold text-[#4F8A5B] underline underline-offset-2"
+            >
+              ✨ 내 기록에서 가져오기
+            </button>
+          </div>
           <textarea
             value={photoText}
             onChange={e => setPhotoText(e.target.value)}
-            placeholder={"예) 주는 나의 목자시니 내가 부족함이 없으리로다\n시편 23:1"}
+            placeholder={"카드로 남기고 싶은 문구를 입력해주세요\n말씀 · 묵상 · 기도 · 감사 등"}
             className="w-full h-28 px-4 py-3 rounded-xl border border-[#EDEDED] text-[14px] text-[#1F1F1F] resize-none focus:outline-none focus:border-[#1F1F1F]/40"
           />
         </div>
@@ -1258,8 +1363,15 @@ export default function Designer() {
     <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
       <div>
         <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">카드 내용 입력</h2>
-        <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">카드에 들어갈 핵심 문구를 넣어주세요.</p>
+        <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">카드로 남기고 싶은 문구를 입력해주세요.</p>
       </div>
+      <button
+        type="button"
+        onClick={() => openRecordSelector('auto')}
+        className="w-full rounded-lg border border-[#D9DDD5] bg-[#F7F8F4] px-4 py-3 text-left text-[13px] font-semibold text-[#4F8A5B] hover:bg-[#F1F4ED]"
+      >
+        ✨ 내 기록에서 가져오기
+      </button>
       <textarea
         value={verseInput}
         onChange={(e) => {
@@ -1267,16 +1379,10 @@ export default function Designer() {
           setT(s => ({ ...s, content: e.target.value }));
           if (textRef.current) textRef.current.innerText = e.target.value;
         }}
-        placeholder="말씀, 찬양 가사, 기도, 감사 내용을 입력해주세요"
+        placeholder={"카드로 남기고 싶은 문구를 입력해주세요\n말씀 · 묵상 · 기도 · 감사 등"}
         className="flex-1 min-h-[190px] p-4 border border-[#E3E2E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none text-[15px] leading-7"
       />
-      <div className="grid grid-cols-[auto,1fr] gap-2">
-        <button
-          onClick={openRecordSelector}
-          className="px-4 py-3 text-sm font-medium border border-[#1F1F1F] text-[#1F1F1F] rounded-lg hover:bg-[#1F1F1F]/5"
-        >
-          내 기록
-        </button>
+      <div className="grid grid-cols-1 gap-2">
         <button
           onClick={() => {
             if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
@@ -1295,54 +1401,54 @@ export default function Designer() {
   const TEMPLATE_INFO = [
     {
       id: 'T01',
-      name: '붓글씨 선포',
-      mood: '담대 · 선포 · 승리 · 믿음',
-      example: '강하고 담대하라',
-      hint: '진한 배경 + 한글 붓글씨',
+      name: '귀여운 손글씨',
+      mood: '따뜻함 · 감사 · 일상 · 위로',
+      example: '오늘도 은혜',
+      hint: '파스텔 낙서 + 손글씨',
       preview: {
-        background: 'linear-gradient(135deg, #16233a 0%, #1f1f24 100%)',
-        color: '#EDE2C8',
-        accent: '#C9A24B',
-        font: "'GangwonTunTun', sans-serif",
+        background: 'linear-gradient(135deg, #BBD7F2 0%, #F7E0E4 52%, #F7E5A7 100%)',
+        color: '#2F5D7A',
+        accent: '#F08A9B',
+        font: "'Kkubullim', 'GowunDodum', sans-serif",
       },
     },
     {
       id: 'T02',
-      name: '레트로 포스터',
-      mood: '힘있는 · 강렬한 메시지',
+      name: '힙한 포스터',
+      mood: '힙한 · 에디토리얼 · 강렬함',
       example: '복음을 전파하라',
-      hint: '빈티지 컬러 + 볼드 타이포',
+      hint: '볼드 콘덴스드 + 그런지',
       preview: {
-        background: 'linear-gradient(135deg, #b5342f 0%, #3a2418 100%)',
-        color: '#F2E8D8',
-        accent: '#E8C87D',
+        background: 'linear-gradient(135deg, #E8623A 0%, #d4491f 100%)',
+        color: '#1A1A1A',
+        accent: '#F0E6D2',
         font: "'PaperBlack', sans-serif",
       },
     },
     {
       id: 'T03',
-      name: '감성 세리프',
+      name: '감성 타이포',
       mood: '묵상 · 평안 · 은혜 · 소망',
       example: '은혜가 머무는 곳',
-      hint: '필름 사진 + 우아한 세리프',
+      hint: '감성 사진 + 큰 타이포',
       preview: {
-        background: 'linear-gradient(160deg, #7f96ad 0%, #5d7466 55%, #43584a 100%)',
-        color: '#EFE08C',
-        accent: '#EFE08C',
-        font: "'RidiBatang', serif",
+        background: 'linear-gradient(160deg, #cfe0ec 0%, #e7d7dd 55%, #f2e6d6 100%)',
+        color: '#3E5C74',
+        accent: '#3E5C74',
+        font: "'Hahmlet', serif",
       },
     },
     {
       id: 'T04',
-      name: '미니멀',
-      mood: '쉼 · 고요 · 짧은 문구',
+      name: '감성 심플',
+      mood: '쉼 · 고요 · 감성 사진',
       example: '잠잠히 머물다',
-      hint: '여백 많은 깔끔함',
+      hint: '감성 사진 + 심플 텍스트',
       preview: {
-        background: 'linear-gradient(135deg, #efe9dd 0%, #f3efe6 100%)',
-        color: '#3D3328',
-        accent: '#b9ab92',
-        font: "'PaperLight', sans-serif",
+        background: 'linear-gradient(180deg, #f3c98f 0%, #eaa46f 55%, #d98a63 100%)',
+        color: '#FFF8EA',
+        accent: '#FFF8EA',
+        font: "'RidiBatang', serif",
       },
     },
   ];
@@ -1417,16 +1523,49 @@ export default function Designer() {
                 className="relative h-24 rounded-md overflow-hidden mb-3 shadow-sm"
                 style={{ background: preview.background }}
               >
-                <div className="absolute inset-0 opacity-[0.18]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #000 1px, transparent 1px)', backgroundSize: '9px 9px' }} />
-                <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
-                  <p
-                    className="text-[14px] leading-tight"
-                    style={{ color: preview.color, fontFamily: preview.font, textShadow: id === 'T09' || id === 'T20' ? '0 2px 8px rgba(0,0,0,.24)' : 'none' }}
-                  >
-                    {example}
-                  </p>
-                  <div className="mt-2 h-1 w-10 rounded-full" style={{ backgroundColor: preview.accent }} />
-                </div>
+                {/* 종이/스트릿 계열만 도트 질감 (사진 계열은 매끈하게) */}
+                {(id === 'T01' || id === 'T02') && (
+                  <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #000 1px, transparent 1px)', backgroundSize: '9px 9px' }} />
+                )}
+
+                {/* T01 귀여운 손글씨 — 손글씨 + 낙서 + 물결 밑줄 */}
+                {id === 'T01' && (
+                  <>
+                    <span className="absolute top-2 right-3 text-[13px] leading-none" style={{ color: preview.accent }}>✿</span>
+                    <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
+                      <p className="text-[15px] leading-tight" style={{ color: preview.color, fontFamily: preview.font }}>{example}</p>
+                      <svg width="46" height="7" viewBox="0 0 46 7" className="mt-1.5" fill="none">
+                        <path d="M1 4C6 1.5 10 6 15 3.5S25 1 30 4s10 1 15-1" stroke={preview.accent} strokeWidth="2" strokeLinecap="round" />
+                      </svg>
+                    </div>
+                  </>
+                )}
+
+                {/* T02 힙 — 볼드 콘덴스드 + 스크립트 오버레이 느낌 */}
+                {id === 'T02' && (
+                  <>
+                    <span className="absolute top-1.5 left-3 right-3 text-[6px] tracking-[0.15em] font-bold" style={{ color: preview.accent }}>믿음 —— 소망 —— 사랑</span>
+                    <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
+                      <p className="text-[20px] leading-none" style={{ color: preview.color, fontFamily: preview.font, fontWeight: 800, letterSpacing: '-0.03em' }}>{example}</p>
+                    </div>
+                  </>
+                )}
+
+                {/* T03 감성 타이포 — 세리프 큰 타이포 (위계) */}
+                {id === 'T03' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
+                    <p className="text-[9px] tracking-wide leading-none mb-0.5" style={{ color: preview.color, fontFamily: preview.font, opacity: 0.85 }}>은혜가</p>
+                    <p className="text-[19px] leading-none" style={{ color: preview.color, fontFamily: preview.font }}>머무는 곳</p>
+                  </div>
+                )}
+
+                {/* T04 감성 심플 — 세리프 작은 중앙 정렬 + 작은 출처 */}
+                {id === 'T04' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
+                    <p className="text-[13px] leading-snug" style={{ color: preview.color, fontFamily: preview.font, textShadow: '0 1px 4px rgba(0,0,0,.18)' }}>{example}</p>
+                    <p className="text-[8px] mt-1.5 tracking-wide" style={{ color: preview.color, fontFamily: preview.font, opacity: 0.8 }}>시 46:10</p>
+                  </div>
+                )}
               </div>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -1454,6 +1593,15 @@ export default function Designer() {
 
   // Auto Preview 화면
   const PREVIEW_FONT: Record<string, string> = {
+    'Inter': "'Inter', system-ui, -apple-system, sans-serif",
+    'SerifKR': "'Noto Serif KR', serif",
+    'NotoSans': "'Noto Sans KR', sans-serif",
+    'NanumGothic': "'Nanum Gothic', sans-serif",
+    'NanumMyeongjo': "'Nanum Myeongjo', serif",
+    'GowunDodum': "'Gowun Dodum', sans-serif",
+    'GowunBatang': "'Gowun Batang', serif",
+    'SongMyung': "'Song Myung', serif",
+    'Hahmlet': "'Hahmlet', serif",
     'KBLJump': "'KBLJump', sans-serif",
     'GangwonTunTun': "'GangwonTunTun', sans-serif",
     'PaperBlack': "'PaperBlack', sans-serif",
@@ -1474,31 +1622,31 @@ export default function Designer() {
 
   const AUTO_TYPOGRAPHY: Record<string, AutoTypography> = {
     T01: {
-      color: '#171717',
-      secondaryColor: 'rgba(23,23,23,0.72)',
-      referenceColor: 'rgba(23,23,23,0.52)',
+      color: '#355F7A',
+      secondaryColor: 'rgba(53,95,122,0.76)',
+      referenceColor: 'rgba(53,95,122,0.56)',
       shadow: '0 1px 0 rgba(255,255,255,0.8)',
       editShadow: { x: 0, y: 1, blur: 0, color: 'rgba(255,255,255,.8)' },
-      mainSize: 'clamp(1.65rem, 5.8vw, 2.75rem)',
-      subSize: 'clamp(0.78rem, 2.1vw, 0.96rem)',
-      refSize: 'clamp(0.7rem, 1.8vw, 0.82rem)',
-      lineHeight: 1.12,
-      editFontSize: 20,
-      weight: 800,
-      bold: true,
-    },
-    T03: {
-      color: '#473728',
-      secondaryColor: 'rgba(71,55,40,0.68)',
-      referenceColor: 'rgba(71,55,40,0.5)',
-      shadow: '0 1px 2px rgba(255,255,255,0.55)',
-      editShadow: { x: 0, y: 1, blur: 2, color: 'rgba(255,255,255,.55)' },
-      mainSize: 'clamp(1.35rem, 4.7vw, 2.15rem)',
-      subSize: 'clamp(0.82rem, 2.2vw, 0.96rem)',
-      refSize: 'clamp(0.72rem, 1.9vw, 0.84rem)',
-      lineHeight: 1.24,
+      mainSize: 'clamp(1.1rem, 3.9vw, 1.9rem)',
+      subSize: 'clamp(0.72rem, 2vw, 0.9rem)',
+      refSize: 'clamp(0.62rem, 1.6vw, 0.76rem)',
+      lineHeight: 1.28,
       editFontSize: 16,
       weight: 600,
+      bold: false,
+    },
+    T03: {
+      color: '#F1E45E',
+      secondaryColor: 'rgba(241,228,94,0.9)',
+      referenceColor: 'rgba(241,228,94,0.74)',
+      shadow: '0 2px 10px rgba(12,18,16,0.28)',
+      editShadow: { x: 0, y: 2, blur: 10, color: 'rgba(12,18,16,.28)' },
+      mainSize: 'clamp(1.05rem, 3.6vw, 1.82rem)',
+      subSize: 'clamp(0.68rem, 1.9vw, 0.9rem)',
+      refSize: 'clamp(0.58rem, 1.55vw, 0.74rem)',
+      lineHeight: 1.16,
+      editFontSize: 14,
+      weight: 500,
       bold: false,
     },
     T02: {
@@ -1575,20 +1723,26 @@ export default function Designer() {
         const isComplex = contrast >= 42;
         const isWarm = warm > cool * 1.15;
 
-        // T03(감성 세리프)는 레퍼런스처럼 버터옐로 세리프 포인트 컬러 사용 (어두운 배경일 때)
-        const darkInk = template === 'T03' ? '#4A4526' : (isWarm ? '#332A22' : '#24272B');
-        const lightInk = template === 'T03' ? '#EFE08C' : (isWarm ? '#FFF8EA' : '#F8FBFF');
-        const color = isBright && !isDark ? darkInk : lightInk;
-        const secondaryColor = isBright && !isDark
-          ? hexToRgba(color, 0.72)
-          : hexToRgba(color, 0.84);
-        const referenceColor = isBright && !isDark
-          ? hexToRgba(color, 0.52)
-          : hexToRgba(color, 0.66);
+        // T03(감성 세리프)는 레퍼런스처럼 어두운 배경엔 버터옐로, 밝은 배경엔 깊은 올리브 잉크를 사용
+        const isSerifPoster = template === 'T03';
+        const isSimplePhoto = template === 'T04';
+        const isChunky = template === 'T02';
+        const darkInk = isSerifPoster ? '#202817' : (isWarm ? '#332A22' : '#24272B');
+        const lightInk = isSerifPoster ? '#F4E66A' : (isWarm ? '#FFF8EA' : '#F8FBFF');
+        const useDarkInk = isSerifPoster ? avg >= 145 : (isBright && !isDark);
+        const color = useDarkInk ? darkInk : lightInk;
+        const secondaryColor = useDarkInk
+          ? hexToRgba(color, isSerifPoster ? 0.86 : 0.72)
+          : hexToRgba(color, isSerifPoster ? 0.92 : 0.84);
+        const referenceColor = useDarkInk
+          ? hexToRgba(color, isSerifPoster ? 0.68 : 0.52)
+          : hexToRgba(color, isSerifPoster ? 0.78 : 0.66);
         const shadowColor = isBright && !isDark
           ? 'rgba(255,255,255,0.72)'
           : 'rgba(18,14,10,0.52)';
-        const shadow = isComplex
+        const shadow = isSerifPoster
+          ? (useDarkInk ? '0 1px 4px rgba(255,255,255,0.78)' : '0 2px 12px rgba(0,0,0,0.34)')
+          : isComplex
           ? (isBright && !isDark ? '0 2px 10px rgba(255,255,255,0.85)' : '0 3px 16px rgba(0,0,0,0.62)')
           : (isBright && !isDark ? '0 1px 2px rgba(255,255,255,0.7)' : '0 2px 10px rgba(0,0,0,0.42)');
 
@@ -1600,11 +1754,15 @@ export default function Designer() {
           shadow,
           editShadow: {
             x: 0,
-            y: isComplex ? 3 : 2,
-            blur: isComplex ? 16 : 10,
-            color: shadowColor,
+            y: isSerifPoster ? 2 : (isComplex ? 3 : 2),
+            blur: isSerifPoster ? 10 : (isComplex ? 16 : 10),
+            color: isSerifPoster
+              ? (useDarkInk ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.34)')
+              : shadowColor,
           },
-          box: isComplex
+          box: (isSerifPoster || isSimplePhoto || isChunky)
+            ? undefined
+            : isComplex
             ? {
                 enabled: true,
                 color: isBright && !isDark ? '#FFFFFF' : '#000000',
@@ -1622,15 +1780,61 @@ export default function Designer() {
 
   const buildAdaptiveAutoResult = async (data: any) => {
     const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
-    const base = getAutoTypography(data?.template || selectedTemplateId || 'T03');
+    const template = data?.template || selectedTemplateId || 'T03';
+    const base = getAutoTypography(template);
     const typography = data?.image
-      ? await analyzeBackgroundForTypography(data.image, base, data?.template || selectedTemplateId)
+      ? await analyzeBackgroundForTypography(data.image, base, template)
       : base;
+
+    // T04 감성 심플: 절(clause) 단위를 원자로 보고 폭에 맞게 묶어 최소 줄수로 재배치.
+    // (절 중간은 절대 자르지 않음 → "믿지 / 않는" 같은 어색한 분리 방지)
+    let simpleLines: string[] | undefined;
+    if (template === 'T04' && Array.isArray(data?.lines) && data.lines.length) {
+      const dimMap: Record<string, number> = { '9:16': 900, '16:9': 1600, '1:1': 1200, '4:3': 1200, '4:5': 1000, '3:4': 900, '2:3': 900 };
+      const refWidth = dimMap[resultRatio] || 1000;
+      const fontPx = Math.max(20, refWidth * 0.033);
+      const maxW = refWidth * 0.86;
+      const fam = PREVIEW_FONT[data.fonts?.primary] || 'serif';
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.font = `400 ${fontPx}px ${fam}`;
+        const clauses = data.lines
+          .filter((l: any) => !isAutoCaptionLine(l.text, l.scale))
+          .map((l: any) => String(l.text).trim())
+          .filter(Boolean);
+        // 1) 절끼리 폭에 들어가는 만큼 묶기
+        const packed: string[] = [];
+        let cur = '';
+        for (const c of clauses) {
+          const t = cur ? `${cur} ${c}` : c;
+          if (ctx.measureText(t).width > maxW && cur) { packed.push(cur); cur = c; }
+          else cur = t;
+        }
+        if (cur) packed.push(cur);
+        // 2) 혼자서도 폭을 넘는 긴 절만 어절 단위로 마지막 분할
+        const finalLines: string[] = [];
+        for (const line of packed) {
+          if (ctx.measureText(line).width > maxW) {
+            const words = line.split(' ');
+            let w = '';
+            for (const word of words) {
+              const t = w ? `${w} ${word}` : word;
+              if (ctx.measureText(t).width > maxW && w) { finalLines.push(w); w = word; }
+              else w = t;
+            }
+            if (w) finalLines.push(w);
+          } else finalLines.push(line);
+        }
+        simpleLines = finalLines;
+      }
+    }
 
     return {
       ...data,
       ratio: resultRatio,
       typography,
+      simpleLines,
     };
   };
 
@@ -1640,12 +1844,32 @@ export default function Designer() {
     const secondaryFont = PREVIEW_FONT[autoResult.fonts.secondary] || 'sans-serif';
     const typography = autoResult.typography || getAutoTypography(autoResult.template);
     const previewRatio = autoResult.ratio || meta.ratio;
-    const previewAlign: 'left' | 'center' = autoResult.textAlign === 'left' ? 'left' : 'center';
+    const previewAlign: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02') ? 'left' : 'center';
     const previewLines = (autoResult.lines && autoResult.lines.length)
       ? autoResult.lines
       : [{ text: verseInput, scale: 1 }];
+    const isSerifPoster = autoResult.template === 'T03';
+    const isSimple = autoResult.template === 'T04';
+    const isChunky = autoResult.template === 'T02';
+    const isProclamationSerif = isSerifPoster && hasProclamationTone(previewLines.map((line) => line.text).join(' '));
+    const serifReferenceLine = (isSerifPoster || isSimple || isChunky) ? previewLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
+    const serifContentLinesRaw = (isSerifPoster || isSimple || isChunky) ? previewLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : previewLines;
+    // T04: 미리 계산된 절-묶음 줄(simpleLines)로 렌더 (절 중간 안 자름)
+    const serifContentLines = (isSimple && autoResult.simpleLines && autoResult.simpleLines.length)
+      ? autoResult.simpleLines.map((t) => ({ text: t, scale: 1 }))
+      : serifContentLinesRaw;
+    const posterCaptionFont = secondaryFont || primaryFont;
     // scale 1.0 기준 폰트 크기 (줄별 scale을 곱해 위계 표현)
-    const previewBase = 'clamp(0.95rem, 3.5vw, 1.55rem)';
+    const previewBase = isSerifPoster
+      ? (isProclamationSerif ? 'clamp(0.76rem, 2.75vw, 1.28rem)' : 'clamp(0.72rem, 2.55vw, 1.2rem)')
+      : isSimple
+      ? 'clamp(0.78rem, 2.65vw, 1.14rem)'
+      : isChunky
+      ? 'clamp(1.25rem, 5.2vw, 2.35rem)'
+      : 'clamp(0.95rem, 3.5vw, 1.55rem)';
+    const previewMaxWidth = isSerifPoster ? (isProclamationSerif ? '84%' : '80%') : isSimple ? '92%' : isChunky ? '88%' : '90%';
+    const previewPadding = isSerifPoster ? '2.5rem' : '2rem';
+    const previewShift = isProclamationSerif ? 'translateY(-4%)' : undefined;
 
     const getPreviewDimensions = () => {
       switch (previewRatio) {
@@ -1748,25 +1972,47 @@ export default function Designer() {
         if (!autoResult.aiText) {
         const centerX = width / 2;
         const scale = width / 1000;
-        const align: 'left' | 'center' = autoResult.textAlign === 'left' ? 'left' : 'center';
+        const align: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02') ? 'left' : 'center';
         const layoutLines = (autoResult.lines && autoResult.lines.length)
           ? autoResult.lines
           : [{ text: verseInput, scale: 1 }];
-        const maxTextWidth = width * (align === 'left' ? 0.82 : 0.8);
-        const baseFontPx = Math.max(28, width * 0.046);
-        const lineGap = baseFontPx * 0.16;
-        const weight = typography.bold ? 700 : 500;
+        const isSerifPoster = autoResult.template === 'T03';
+        const isSimple = autoResult.template === 'T04';
+        const isChunky = autoResult.template === 'T02';
+        const isProclamationSerif = isSerifPoster && hasProclamationTone(layoutLines.map((line) => line.text).join(' '));
+        const referenceLine = (isSerifPoster || isSimple || isChunky) ? layoutLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
+        const contentLines = (isSerifPoster || isSimple || isChunky) ? layoutLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : layoutLines;
+        const maxTextWidth = width * (isSerifPoster ? (isProclamationSerif ? 0.78 : (align === 'left' ? 0.74 : 0.76)) : isSimple ? 0.9 : isChunky ? 0.86 : (align === 'left' ? 0.82 : 0.8));
+        const baseFontPx = isSerifPoster ? Math.max(20, width * (isProclamationSerif ? 0.034 : 0.031)) : isSimple ? Math.max(20, width * 0.033) : isChunky ? Math.max(38, width * 0.072) : Math.max(28, width * 0.046);
+        const lineGap = baseFontPx * (isSerifPoster ? 0.16 : isSimple ? 0.4 : isChunky ? 0.2 : 0.16);
+        const defaultWeight = typography.bold ? 700 : 500;
+        const posterCaptionFont = secondaryFont || primaryFont;
 
         // 각 줄을 자기 크기(scale)로 줄바꿈 처리해 렌더 라인 생성
-        const renderLines: { text: string; size: number }[] = [];
-        layoutLines.forEach((l) => {
-          const size = baseFontPx * (l.scale || 1);
-          ctx.font = `${weight} ${size}px ${primaryFont}`;
-          wrapPreviewText(ctx, l.text, maxTextWidth).forEach((wl) => renderLines.push({ text: wl, size }));
+        // T04: 미리 계산된 절-묶음 줄을 그대로 사용 (절 중간 안 자름)
+        const sourceLines = (isSimple && autoResult.simpleLines && autoResult.simpleLines.length)
+          ? autoResult.simpleLines.map((t) => ({ text: t, scale: 1 }))
+          : contentLines;
+        const renderLines: { text: string; size: number; caption: boolean; prominent: boolean }[] = [];
+        sourceLines.forEach((l) => {
+          // T04 감성 심플: scale 무시하고 전 줄 동일 크기
+          const size = isSimple ? baseFontPx : baseFontPx * (l.scale || 1);
+          const caption = false;
+          const prominent = !isSimple && (l.scale || 1) >= 1.45;
+          const support = isSerifPoster && !caption && !prominent;
+          const weight = isSimple ? 400 : isChunky ? 800 : isSerifPoster ? (caption ? 600 : prominent ? 500 : 700) : defaultWeight;
+          const font = caption ? posterCaptionFont : (support ? posterCaptionFont : primaryFont);
+          const displaySize = isSerifPoster ? (prominent ? size * 1.12 : size * 0.9) : size;
+          ctx.font = `${weight} ${displaySize}px ${font}`;
+          if (isSimple) {
+            renderLines.push({ text: l.text, size: displaySize, caption, prominent });
+          } else {
+            wrapPreviewText(ctx, l.text, maxTextWidth).forEach((wl) => renderLines.push({ text: wl, size: displaySize, caption, prominent }));
+          }
         });
 
-        const lh = (s: number) => s * Math.min(typography.lineHeight || 1.2, 1.2);
-        let totalH = renderLines.reduce((sum, rl, i) => sum + lh(rl.size) + (i > 0 ? lineGap : 0), 0);
+        const lh = (s: number, prominent = false) => s * (isSerifPoster ? (prominent ? 1.0 : 1.12) : isSimple ? 1.4 : isChunky ? 1.16 : Math.min(typography.lineHeight || 1.2, 1.2));
+        const totalH = renderLines.reduce((sum, rl, i) => sum + lh(rl.size, rl.prominent) + (i > 0 ? lineGap : 0), 0);
         const maxH = height * 0.82;
         const shrink = totalH > maxH ? maxH / totalH : 1;
         const textX = align === 'left' ? (width - maxTextWidth) / 2 : centerX;
@@ -1774,7 +2020,7 @@ export default function Designer() {
         ctx.textAlign = align;
         ctx.textBaseline = 'top';
 
-        if (typography.box?.enabled) {
+        if (!isSerifPoster && typography.box?.enabled) {
           const padding = typography.box.padding * 2.2 * scale;
           const boxW = maxTextWidth + padding * 2;
           const boxH = totalH * shrink + padding * 2;
@@ -1788,16 +2034,33 @@ export default function Designer() {
         ctx.shadowOffsetX = typography.editShadow.x * scale;
         ctx.shadowOffsetY = typography.editShadow.y * scale;
         ctx.shadowBlur = typography.editShadow.blur * scale;
-        ctx.fillStyle = typography.color;
 
-        let y = (height - totalH * shrink) / 2;
+        let y = isProclamationSerif ? (height * 0.45 - totalH * shrink / 2) : (height - totalH * shrink) / 2;
         renderLines.forEach((rl, i) => {
           if (i > 0) y += lineGap * shrink;
           const size = rl.size * shrink;
-          ctx.font = `${weight} ${size}px ${primaryFont}`;
+          const support = isSerifPoster && !rl.caption && !rl.prominent;
+          const weight = isSimple ? 400 : isChunky ? 800 : isSerifPoster ? (rl.caption ? 600 : rl.prominent ? 500 : 700) : defaultWeight;
+          const font = rl.caption ? posterCaptionFont : (support ? posterCaptionFont : primaryFont);
+          ctx.font = `${weight} ${size}px ${font}`;
+          ctx.fillStyle = (isSimple || isChunky) ? typography.color : rl.caption ? typography.referenceColor : (rl.prominent ? typography.color : typography.secondaryColor);
           ctx.fillText(rl.text, textX, y);
-          y += lh(size);
+          y += lh(size, rl.prominent);
         });
+
+        if (referenceLine) {
+          const refSize = Math.max(16, width * 0.021) * shrink;
+          y += baseFontPx * 0.42 * shrink;
+          ctx.textAlign = align;
+          ctx.textBaseline = 'top';
+          ctx.font = `600 ${refSize}px ${posterCaptionFont}`;
+          ctx.fillStyle = typography.referenceColor;
+          ctx.shadowColor = typography.editShadow.color;
+          ctx.shadowOffsetX = typography.editShadow.x * scale;
+          ctx.shadowOffsetY = typography.editShadow.y * scale;
+          ctx.shadowBlur = typography.editShadow.blur * scale;
+          ctx.fillText(referenceLine.text, textX, y);
+        }
         }
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
@@ -1858,6 +2121,7 @@ export default function Designer() {
             action: 'auto-complete',
             verse: verseInput.trim(),
             ratio: previewRatio,
+            templateId: autoResult.template || selectedTemplateId,
             templateIndex: nextIndex,
             // 다양성 규칙: 재생성마다 새로 분석해 다른 아트디렉션 생성
             regenerate: true,
@@ -1887,35 +2151,104 @@ export default function Designer() {
             {!autoResult.aiText && (
             <div
               className="absolute inset-0 flex flex-col justify-center p-8"
-              style={{ alignItems: previewAlign === 'left' ? 'flex-start' : 'center' }}
+              style={{
+                alignItems: previewAlign === 'left' ? 'flex-start' : 'center',
+                padding: previewPadding,
+              }}
             >
               <div
                 style={{
-                  maxWidth: '90%',
+                  maxWidth: previewMaxWidth,
                   textAlign: previewAlign,
                   borderRadius: typography.box?.enabled ? typography.box.radius : undefined,
                   padding: typography.box?.enabled ? typography.box.padding : undefined,
                   backgroundColor: typography.box?.enabled ? hexToRgba(typography.box.color, typography.box.opacity / 100) : undefined,
                   backdropFilter: typography.box?.enabled ? 'blur(2px)' : undefined,
+                  transform: previewShift,
                 }}
               >
-                {previewLines.map((line, i) => (
+                {serifContentLines.map((line, i) => {
+                  const caption = false;
+                  const prominent = line.scale >= 1.45;
+                  const support = isSerifPoster && !caption && !prominent;
+                  // T02 스트릿: 청키 볼드, 도입부만 살짝 작게(scale), 균일 큰 크기
+                  if (isChunky) {
+                    return (
+                      <p
+                        key={i}
+                        style={{
+                          fontFamily: primaryFont,
+                          fontSize: `calc(${previewBase} * ${line.scale})`,
+                          lineHeight: 1.16,
+                          color: typography.color,
+                          textShadow: typography.shadow,
+                          fontWeight: 800,
+                          wordBreak: 'keep-all',
+                          letterSpacing: '-0.01em',
+                          margin: 0,
+                        }}
+                      >
+                        {line.text}
+                      </p>
+                    );
+                  }
+                  // T04 감성 심플: 강조 없이 전 줄 동일 크기·동일 색·세리프
+                  if (isSimple) {
+                    return (
+                      <p
+                        key={i}
+                        style={{
+                          fontFamily: primaryFont,
+                          fontSize: previewBase,
+                          lineHeight: 1.8,
+                          color: typography.color,
+                          textShadow: typography.shadow,
+                          fontWeight: 400,
+                          wordBreak: 'keep-all',
+                          letterSpacing: '0.01em',
+                          margin: 0,
+                        }}
+                      >
+                        {line.text}
+                      </p>
+                    );
+                  }
+                  const lineColor = caption ? typography.referenceColor : (prominent ? typography.color : typography.secondaryColor);
+                  return (
+                    <p
+                      key={i}
+                      style={{
+                        fontFamily: caption ? posterCaptionFont : (support ? posterCaptionFont : primaryFont),
+                        fontSize: `calc(${previewBase} * ${isSerifPoster ? (prominent ? line.scale * 1.12 : line.scale * 0.9) : line.scale})`,
+                        lineHeight: isSerifPoster ? (prominent ? 0.98 : 1.12) : (line.scale >= 1.4 ? 1.0 : Math.min(typography.lineHeight, 1.2)),
+                        color: lineColor,
+                        textShadow: typography.shadow,
+                        fontWeight: isSerifPoster ? (caption ? 600 : prominent ? 500 : 700) : typography.weight,
+                        wordBreak: 'keep-all',
+                        letterSpacing: isSerifPoster ? (caption ? '0.05em' : support ? '0.01em' : 0) : 0,
+                        margin: isSerifPoster && prominent ? '0.04rem 0' : 0,
+                      }}
+                    >
+                      {line.text}
+                    </p>
+                  );
+                })}
+                {serifReferenceLine && (
                   <p
-                    key={i}
                     style={{
-                      fontFamily: primaryFont,
-                      fontSize: `calc(${previewBase} * ${line.scale})`,
-                      lineHeight: line.scale >= 1.4 ? 1.0 : Math.min(typography.lineHeight, 1.2),
-                      color: typography.color,
+                      fontFamily: posterCaptionFont,
+                      fontSize: 'clamp(0.68rem, 1.9vw, 0.86rem)',
+                      lineHeight: 1.1,
+                      color: typography.referenceColor,
                       textShadow: typography.shadow,
-                      fontWeight: typography.weight,
-                      wordBreak: 'keep-all',
-                      margin: 0,
+                      fontWeight: 600,
+                      letterSpacing: '0.04em',
+                      margin: '0.55rem 0 0',
                     }}
                   >
-                    {line.text}
+                    {serifReferenceLine.text}
                   </p>
-                ))}
+                )}
               </div>
             </div>
             )}
@@ -1923,7 +2256,7 @@ export default function Designer() {
         </div>
         {autoResult.aiText && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
-            ⚠️ AI가 글자를 직접 그렸어요. 글자가 틀리거나 깨질 수 있으니 꼭 확인하세요.
+            포스터 느낌을 위해 AI가 글자까지 그렸어요. 저장 전 오탈자를 꼭 확인하세요.
           </div>
         )}
         <div className="shrink-0 grid grid-cols-[1fr,0.72fr,1.35fr] gap-2 p-4 border-t bg-white">
@@ -1987,7 +2320,7 @@ export default function Designer() {
           open={recordSelectorOpen}
           onClose={() => setRecordSelectorOpen(false)}
           records={availableRecords}
-          onConfirm={analyzeSelectedRecord}
+          onConfirm={useSelectedRecordText}
           onRefetch={fetchRecordsForSelector}
         />
       </>
@@ -2757,6 +3090,7 @@ export default function Designer() {
                 setMeta={setMeta}
                 onPanelOpen={() => setIsPanelCollapsed(false)}
                 onOpenFontPicker={() => setFontPickerOpen(true)}
+                onImportRecord={() => openRecordSelector('manual-text')}
               />
             </div>
           )}
@@ -2892,28 +3226,6 @@ export default function Designer() {
                     </div>
                   </section>
                 )}
-
-                {/* 내 기록으로 배경 만들기 */}
-                <button
-                  onClick={openRecordSelector}
-                  disabled={isGenerating || isExpandingPrompt}
-                  className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-[#F9F8F6] hover:bg-[#F3F2F1] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center">
-                      <Upload className="w-3.5 h-3.5 text-[#1F1F1F]" />
-                    </div>
-                    <div className="text-left">
-                      <h3 className="text-[12px] font-semibold text-[#2E2E2E]">
-                        내 기록으로 배경 만들기
-                      </h3>
-                      <p className="text-[10px] text-[#7E7C78]">
-                        최근 Q.T·기도·감사 기록 기반
-                      </p>
-                    </div>
-                  </div>
-                     <ChevronLeft className="w-4 h-4 text-[#D1D0CE] rotate-180" />
-                   </button>
 
                   {/* AI 생성된 이미지에 대한 필터 적용 */}
                   {meta.bgImageUrl && bgTab === 'ai' && (
@@ -3213,7 +3525,7 @@ export default function Designer() {
           setRecordSelectorOpen(false);
         }}
         records={availableRecords}
-        onConfirm={analyzeSelectedRecord}
+        onConfirm={useSelectedRecordText}
         onRefetch={fetchRecordsForSelector}
       />
 
@@ -3342,7 +3654,7 @@ export default function Designer() {
  * ───────────────────────────────────────────────────────── */
 function Toolbar({
   active, setActive,
-  t, setT, meta, setMeta, onPanelOpen, onOpenFontPicker
+  t, setT, meta, setMeta, onPanelOpen, onOpenFontPicker, onImportRecord
 }:{
   active: 'text'|'font'|'color'|'size';
   setActive: (a:any)=>void;
@@ -3350,6 +3662,7 @@ function Toolbar({
   meta: Meta; setMeta: React.Dispatch<React.SetStateAction<Meta>>;
   onPanelOpen?: () => void;
   onOpenFontPicker?: () => void;
+  onImportRecord?: () => void;
 }) {
   return (
     <div className="h-full min-h-0 flex flex-col bg-transparent">
@@ -3397,6 +3710,26 @@ function Toolbar({
         <div className="px-2 sm:px-4 py-2 sm:py-3 pb-4 sm:pb-6 flex-1 min-h-0 overflow-y-auto">
           {/* 텍스트 탭: B/I/U 버튼만 */}
           <TabsContent value="text" className="mt-0 space-y-2 sm:space-y-3 pb-0">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  if (!t.content || t.content === '텍스트를 입력하세요.') {
+                    setT(s => ({ ...s, content: '' }));
+                  }
+                  onPanelOpen?.();
+                }}
+                className="h-10 rounded-lg border border-[#E3E2E0] bg-white text-[12px] font-semibold text-[#2E2E2E] hover:border-[#1F1F1F]"
+              >
+                직접 입력
+              </button>
+              <button
+                onClick={onImportRecord}
+                className="h-10 rounded-lg border border-[#D9DDD5] bg-[#F7F8F4] text-[12px] font-semibold text-[#4F8A5B] hover:bg-[#F1F4ED]"
+              >
+                내 기록에서 가져오기
+              </button>
+            </div>
+
             {/* B/I/U 버튼 */}
             <div className="flex gap-1.5 p-1.5 rounded-xl bg-[#F7F6F5]">
               <button

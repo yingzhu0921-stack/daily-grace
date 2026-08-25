@@ -1,0 +1,10 @@
+{
+  "name": "dailygrace-ai-office",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Daily Grace 개발용 로컬 AI OFFICE (패트/매트)",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -61,7 +61,7 @@ const CustomRecordList = () => {
   };
 
   useEffect(() => {
-    // Supabase에서 카테고리 정보 로드
+    // 카테고리 정보 로드
     const loadCategory = async () => {
       try {
         if (!categoryId) return;

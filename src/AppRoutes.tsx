@@ -31,6 +31,7 @@ import Settings from "./pages/Settings";
 import ProfileEdit from "./pages/ProfileEdit";
 import NotificationSettings from "./pages/NotificationSettings";
 import Help from "./pages/Help";
+import Legal from "./pages/Legal";
 import NotFound from "./pages/NotFound";
 import CustomRecordNew from "./pages/CustomRecordNew";
 import CustomRecordList from "./pages/CustomRecordList";
@@ -86,6 +87,7 @@ export const AppRoutes = () => {
       <Route path="/settings" element={<Settings />} />
       <Route path="/settings/account" element={<ProfileEdit />} />
       <Route path="/settings/notifications" element={<NotificationSettings />} />
+      <Route path="/legal" element={<Legal />} />
       <Route path="/help" element={<Help />} />
 
       {/* 일치하는 라우트가 없을 경우 */}

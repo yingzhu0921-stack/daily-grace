@@ -2,8 +2,12 @@
  * 사용자 데이터 백업/내보내기 유틸리티
  */
 
-import { supabase } from '@/integrations/supabase/client';
 import { getAllCards } from './verseCardDB';
+import * as meditationStorage from './meditationStorage';
+import * as prayerStorage from './prayerStorage';
+import * as gratitudeStorage from './gratitudeStorage';
+import * as diaryStorage from './diaryStorage';
+import * as categoryStorage from './categoryStorage';
 import * as XLSX from 'xlsx';
 
 export interface BackupData {
@@ -24,73 +28,57 @@ export interface BackupData {
   };
 }
 
+function readLocalArray(key: string): any[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    return JSON.parse(localStorage.getItem(key) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+async function getCurrentUser() {
+  try {
+    const res = await fetch('/api/auth/me', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user ?? null;
+  } catch {
+    return null;
+  }
+}
+
+function toExportRecord(record: any) {
+  return {
+    ...record,
+    created_at: record.created_at || record.createdAt,
+    updated_at: record.updated_at || record.updatedAt,
+  };
+}
+
 /**
  * 모든 사용자 데이터를 JSON으로 내보내기
  */
 export async function exportAllData(): Promise<BackupData> {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error('User not authenticated');
-
-  // 1. Q.T 노트
-  const { data: meditations } = await supabase
-    .from('meditation_notes')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 2. 기도 제목
-  const { data: prayers } = await supabase
-    .from('prayer_notes')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 3. 감사 노트
-  const { data: gratitudes } = await supabase
-    .from('gratitude_entries')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 4. 일기
-  const { data: diaries } = await supabase
-    .from('diary_entries')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 5. 커스텀 카테고리
-  const { data: categories } = await supabase
-    .from('categories')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 6. 커스텀 레코드
-  const { data: customRecords } = await supabase
-    .from('custom_records')
-    .select('*')
-    .eq('user_id', user.id)
-    .order('created_at', { ascending: false });
-
-  // 7. 말씀 카드
+  const user = await getCurrentUser();
+  const categories = await categoryStorage.list();
   const verseCards = await getAllCards();
 
   const backupData: BackupData = {
     exportDate: new Date().toISOString(),
     version: '1.0.0',
     user: {
-      email: user.email || '',
-      id: user.id,
+      email: user?.email || '',
+      id: user?.id || '',
     },
     data: {
-      meditations: meditations || [],
-      prayers: prayers || [],
-      gratitudes: gratitudes || [],
-      diaries: diaries || [],
-      categories: categories || [],
-      customRecords: customRecords || [],
-      verseCards: verseCards || [],
+      meditations: meditationStorage.list().map(toExportRecord),
+      prayers: prayerStorage.list().map(toExportRecord),
+      gratitudes: gratitudeStorage.list().map(toExportRecord),
+      diaries: diaryStorage.listAll().map(toExportRecord),
+      categories: categories.map(toExportRecord),
+      customRecords: readLocalArray('custom_records').map(toExportRecord),
+      verseCards,
     },
   };
 

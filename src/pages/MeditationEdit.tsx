@@ -6,7 +6,6 @@ import { MeditationEditor } from '@/components/MeditationEditor';
 import { get, update } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
 import { ApplicationItem } from '@/types/meditation';
 
 const MeditationEdit = () => {

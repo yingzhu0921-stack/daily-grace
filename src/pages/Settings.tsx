@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell, User, Info, ChevronRight, Download, FileJson, FileSpreadsheet, FileText, X } from 'lucide-react';
+import { ChevronLeft, Bell, User, ChevronRight, Download, FileJson, FileSpreadsheet, FileText, X } from 'lucide-react';
 import { BottomNav } from '@/components/BottomNav';
 import { downloadInFormat, getBackupStats, type ExportFormat } from '@/utils/dataExport';
 import { useToast } from '@/hooks/use-toast';
@@ -79,12 +79,12 @@ const Settings: React.FC = () => {
       onClick: () => navigate('/settings/account'),
     },
     {
-      icon: Info,
-      title: '앱 정보',
-      description: '버전 정보 및 개인정보처리방침',
+      icon: FileText,
+      title: '약관 및 정책',
+      description: '이용약관, 개인정보 및 콘텐츠 정책',
       bgColor: 'bg-[#E8C87D]/10',
       iconColor: 'text-[#E8C87D]',
-      onClick: () => {}, // TODO: 앱 정보 페이지
+      onClick: () => navigate('/legal'),
     },
   ];
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bell, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -7,15 +7,15 @@ import { create } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
+import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { meditationSchema } from '@/utils/validation';
-import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
 import { ApplicationItem } from '@/types/meditation';
 
 const MeditationNew = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [title, setTitle] = useState('');
   const [passage, setPassage] = useState('');
   const [content, setContent] = useState('');
@@ -32,6 +32,14 @@ const MeditationNew = () => {
     const hours = String(now.getHours()).padStart(2, '0');
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
+  });
+
+  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
+  useLoginNudge({
+    user,
+    loading,
+    storageKey: 'login_nudge_meditation_new',
+    show: showLoginNudge,
   });
 
   const handleContentChange = (newTitle: string, newPassage: string, newContent: string, newApplication: string | string[] | ApplicationItem[]) => {
@@ -82,12 +90,6 @@ const MeditationNew = () => {
       return;
     }
 
-    // 로그인 체크
-    if (!user) {
-      setShowLoginModal(true);
-      return;
-    }
-
     const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${applicationText}`;
 
     // ApplicationItem[] 배열 추출
@@ -119,7 +121,7 @@ const MeditationNew = () => {
     // 즉시 피드백
     toast({
       title: "저장 완료!",
-      description: "클라우드에 백업되었습니다.",
+      description: user ? "클라우드에 백업되었습니다." : "기기에 저장되었습니다.",
       duration: 2000, // 2초
     });
 
