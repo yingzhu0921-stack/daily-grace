@@ -5,6 +5,7 @@ export interface Env {
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   APP_ORIGIN: string;
+  EMAIL_FROM?: string;
 }
 
 export interface User {

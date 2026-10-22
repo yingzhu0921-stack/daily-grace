@@ -9,6 +9,7 @@ APP_ORIGIN = "https://daily-grace.pages.dev"
 binding = "DB"
 database_name = "daily-grace-db"
 database_id = "da23fb19-c96d-4cb5-b8a1-35ef080f9e2f"
+migrations_dir = "db/migrations"
 
 [[r2_buckets]]
 binding = "CARDS"

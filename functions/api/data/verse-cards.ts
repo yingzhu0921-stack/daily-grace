@@ -1,5 +1,6 @@
 import { getSessionUser } from '../_lib/session';
 import type { Env } from '../_lib/db';
+import { badRequest, readJsonObject, validId, validOptionalString, validOptionalTimestamp, validStringArray } from '../_lib/requestValidation';
 
 // data URL("data:image/png;base64,....") -> 바이트 + content-type
 function decodeDataUrl(dataUrl: string): { bytes: Uint8Array; contentType: string } | null {
@@ -22,7 +23,8 @@ const bgKey = (userId: string, id: string) => `bg/${userId}/${id}`;
 
 const toFront = (r: any) => {
   const editorState = r.editor_state ? JSON.parse(r.editor_state) : undefined;
-  const bgUrl = r.has_bg_image ? `/api/data/verse-cards/${r.id}/bg` : (r.bg || '');
+  const version = encodeURIComponent(String(r.updated_at || r.created_at || ''));
+  const bgUrl = r.has_bg_image ? `/api/data/verse-cards/${r.id}/bg?v=${version}` : (r.bg || '');
   // 재편집용 배경 URL 복원
   if (editorState?.meta && r.has_bg_image) editorState.meta.bgImageUrl = bgUrl;
   return {
@@ -34,7 +36,7 @@ const toFront = (r: any) => {
     ref: r.ref || '',
     tags: JSON.parse(r.tags || '[]'),
     bg: bgUrl,
-    imageDataUrl: r.has_image ? `/api/data/verse-cards/${r.id}/image` : undefined,
+    imageDataUrl: r.has_image ? `/api/data/verse-cards/${r.id}/image?v=${version}` : undefined,
     editorState,
   };
 };
@@ -52,8 +54,25 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
 
   // 업서트 — 신규/수정 공용. 큰 이미지는 R2에, 메타데이터는 D1에.
   if (request.method === 'POST') {
-    const b = await request.json<any>();
-    if (!b?.id) return Response.json({ error: 'id required' }, { status: 400 });
+    const parsed = await readJsonObject<any>(request, 25_000_000);
+    if ('response' in parsed) return parsed.response;
+    const b = parsed.body;
+    if (!validId(b.id)) return badRequest('카드 ID가 올바르지 않습니다.');
+    if (!validOptionalString(b.ratio, 16) || !validOptionalString(b.text, 20_000)
+      || !validOptionalString(b.ref, 1_000) || !validOptionalString(b.bg, 20_000_000)
+      || !validOptionalString(b.imageDataUrl, 20_000_000)
+      || (b.tags !== undefined && !validStringArray(b.tags, 100, 200))
+      || !validOptionalTimestamp(b.createdAt) || !validOptionalTimestamp(b.updatedAt)
+      || (b.editorState !== undefined && (typeof b.editorState !== 'object' || b.editorState === null || Array.isArray(b.editorState)))) {
+      return badRequest();
+    }
+
+    const existing = await env.DB.prepare(
+      'SELECT user_id FROM verse_cards WHERE id = ?'
+    ).bind(b.id).first<{ user_id: string }>();
+    if (existing && existing.user_id !== user.id) {
+      return Response.json({ error: 'Card id conflict' }, { status: 409 });
+    }
 
     const now = new Date().toISOString();
     const createdAt = b.createdAt || now;
@@ -96,10 +115,21 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       editorState = { ...editorState, meta: { ...editorState.meta, bgImageUrl: '' } };
     }
 
-    await env.DB.prepare(
-      `INSERT OR REPLACE INTO verse_cards
+    const result = await env.DB.prepare(
+      `INSERT INTO verse_cards
        (id,user_id,ratio,text,ref,tags,bg,has_image,has_bg_image,editor_state,created_at,updated_at)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
+       ON CONFLICT(id) DO UPDATE SET
+         ratio=excluded.ratio,
+         text=excluded.text,
+         ref=excluded.ref,
+         tags=excluded.tags,
+         bg=excluded.bg,
+         has_image=excluded.has_image,
+         has_bg_image=excluded.has_bg_image,
+         editor_state=excluded.editor_state,
+         updated_at=excluded.updated_at
+       WHERE verse_cards.user_id=excluded.user_id`
     ).bind(
       b.id,
       user.id,
@@ -114,6 +144,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       createdAt,
       now
     ).run();
+    if (!result.meta.changes) {
+      await Promise.all([
+        env.CARDS.delete(imgKey(user.id, b.id)),
+        env.CARDS.delete(bgKey(user.id, b.id)),
+      ]).catch(() => {});
+      return Response.json({ error: 'Card id conflict' }, { status: 409 });
+    }
 
     return Response.json({ success: true });
   }

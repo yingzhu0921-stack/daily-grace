@@ -1,5 +1,6 @@
 import { getSessionUser } from '../_lib/session';
 import type { Env } from '../_lib/db';
+import { badRequest, readJsonObject, validId, validOptionalString, validOptionalTimestamp } from '../_lib/requestValidation';
 
 const toFront = (r: any) => ({
   id: r.id, content: r.content,
@@ -18,10 +19,15 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   }
 
   if (request.method === 'POST') {
-    const b = await request.json<any>();
+    const parsed = await readJsonObject<any>(request);
+    if ('response' in parsed) return parsed.response;
+    const b = parsed.body;
+    if (!validId(b.id) || !validOptionalString(b.content, 200_000)
+      || !validOptionalTimestamp(b.createdAt) || !validOptionalTimestamp(b.updatedAt)) return badRequest();
+    const now = new Date().toISOString();
     await env.DB.prepare(
       'INSERT INTO diary_entries (id,user_id,content,created_at,updated_at) VALUES (?,?,?,?,?)'
-    ).bind(b.id, user.id, b.content ?? '', b.createdAt, b.updatedAt).run();
+    ).bind(b.id, user.id, b.content ?? '', b.createdAt || now, b.updatedAt || b.createdAt || now).run();
     return Response.json({ success: true });
   }
 

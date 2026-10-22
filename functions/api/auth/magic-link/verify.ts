@@ -8,13 +8,13 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
   if (!token) return new Response('Invalid token', { status: 400 });
 
   const record = await env.DB.prepare(
-    'SELECT * FROM magic_link_tokens WHERE token = ? AND expires_at > ? AND consumed_at IS NULL'
-  ).bind(token, Date.now()).first<{ email: string; token: string }>();
+    `UPDATE magic_link_tokens
+     SET consumed_at = ?
+     WHERE token = ? AND expires_at > ? AND consumed_at IS NULL
+     RETURNING email, token`
+  ).bind(Date.now(), token, Date.now()).first<{ email: string; token: string }>();
 
   if (!record) return new Response('링크가 만료되었거나 이미 사용되었습니다.', { status: 400 });
-
-  await env.DB.prepare('UPDATE magic_link_tokens SET consumed_at = ? WHERE token = ?')
-    .bind(Date.now(), token).run();
 
   let user = await getUserByEmail(env.DB, record.email);
   if (!user) {
