@@ -13,6 +13,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
+import { renderGenerativeCard, pickGenerativeSpec, pickAuraSpec, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -121,36 +122,6 @@ const RatioBox: React.FC<{ ratio: Ratio; className?: string; style?: React.CSSPr
 
 function clamp(n: number, min: number, max: number) { return Math.max(min, Math.min(n, max)); }
 
-// 카드 이미지를 기기에 저장. 모바일은 공유 시트("이미지 저장")로 사진 앱 저장 유도, 그 외는 다운로드.
-// 주의: 공유 시트는 사용자 제스처가 필요하므로 긴 await 이전(클릭 직후)에 호출해야 함.
-async function downloadCardToDevice(dataUrl: string) {
-  const filename = `말씀카드-${Date.now()}.jpg`;
-  try {
-    if (navigator.share && navigator.canShare) {
-      const blob = await fetch(dataUrl).then(r => r.blob());
-      const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: '말씀카드' });
-        return; // 공유 시트로 처리됨
-      }
-    }
-  } catch (e: any) {
-    // 사용자가 공유를 취소한 경우는 정상 동작 — 폴백하지 않음
-    if (e?.name === 'AbortError') return;
-    console.warn('Share failed, falling back to download:', e);
-  }
-  try {
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = dataUrl;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  } catch (e) {
-    console.error('Download failed:', e);
-  }
-}
-
 function ratioToAspect(ratio: Ratio | string) {
   const [w, h] = ratio.split(':').map(Number);
   return w && h ? `${w}/${h}` : '4/5';
@@ -169,14 +140,156 @@ function hexToRgba(hex: string, opacity: number) {
   return `rgba(${r},${g},${b},${opacity})`;
 }
 
-const AUTO_BIBLE_REF_RE = /^(?:[1-3]\s*)?[A-Za-z가-힣]{1,10}\.?\s*\d{1,3}\s*[:：]\s*\d{1,3}$/;
+// 말씀 주소의 핵심 토큰: "책이름 장:절" (범위 -절 허용). 반드시 책이름(글자)이 앞에 있어야 하므로
+// "5:30" 같은 시간 표기만으론 안 걸림.
+const AUTO_BIBLE_REF_RE = /(?:[1-3]\s*)?[A-Za-z가-힣]{1,12}\.?\s*\d{1,3}\s*[:：]\s*\d{1,3}(?:\s*[-~]\s*\d{1,3})?/;
+// 주소 뒤에 붙을 수 있는 번역본 이름(있어도 주소 줄로 인정)
+const BIBLE_VERSION_RE = /^(개역한글|개역개정|개역|표준새번역|새번역|공동번역|현대인의성경|쉬운성경|우리말성경|현대어성경|바른성경|NIV|ESV|KJV|NASB|MSG|AMP|NLT|NKJV)$/i;
 
+// 한 줄이 "말씀 주소 줄"인지: 핵심 토큰이 있고 나머지는 없거나 번역본 이름뿐일 때.
+// (본문 문장은 핵심 토큰이 없거나, 있어도 나머지 텍스트가 길어서 제외됨)
 function isAutoCaptionLine(text: string, scale?: number) {
-  return AUTO_BIBLE_REF_RE.test(text.trim()) || (typeof scale === 'number' && scale <= 0.55);
+  if (typeof scale === 'number' && scale <= 0.55) return true;
+  const t = String(text).trim().replace(/^[[(]+/, '').replace(/[\])]+$/, '').trim();
+  if (!AUTO_BIBLE_REF_RE.test(t)) return false;
+  const rest = t.replace(AUTO_BIBLE_REF_RE, '').replace(/[·・,|/()[\]\s]/g, '').trim();
+  return rest === '' || BIBLE_VERSION_RE.test(rest);
+}
+
+// 원문에서 말씀 주소를 위치(앞/중간/뒤)·버전명 상관없이 통째로 추출해 본문과 분리.
+// 주소는 괄호·버전명(개역한글 등)을 떼고 깨끗한 "책 장:절"만 남긴다.
+const REF_TOKEN_RE = /[[(]?\s*(?:[1-3]\s*)?[A-Za-z가-힣]{1,12}\.?\s*\d{1,3}\s*[:：]\s*\d{1,3}(?:\s*[-~]\s*\d{1,3})?\s*[\])]?(?:\s*[·・,|/]?\s*(?:개역한글|개역개정|개역|표준새번역|새번역|공동번역|현대인의성경|쉬운성경|우리말성경|현대어성경|바른성경|NIV|ESV|KJV|NASB|MSG|AMP|NLT|NKJV))?/i;
+function extractReference(raw: string): { body: string; reference: string } {
+  const m = raw.match(REF_TOKEN_RE);
+  if (!m) return { body: raw.trim(), reference: '' };
+  const token = m[0];
+  const reference = token
+    .replace(/[[\]()]/g, '')
+    .replace(/\s*[·・,|/]?\s*(?:개역한글|개역개정|개역|표준새번역|새번역|공동번역|현대인의성경|쉬운성경|우리말성경|현대어성경|바른성경|NIV|ESV|KJV|NASB|MSG|AMP|NLT|NKJV)\s*$/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const body = raw.replace(token, '\n')
+    .split('\n').map((s) => s.trim()).filter(Boolean).join('\n');
+  return { body: body || raw.trim(), reference };
 }
 
 function hasProclamationTone(text: string) {
   return /(전파|선포|찬송|찬양|입술|입을|입이|복음|보내소서|가라|외치|증거|담대)/.test(text);
+}
+
+const T03_LAYOUT = {
+  maxWidthCqw: 84,
+  ornamentHeightCqw: 2.8,
+  ornamentGapCqw: 2.4,
+  ruleWidthCqw: 7.2,
+  ruleThicknessCqw: 0.14,
+  ruleTopGapCqw: 3.2,
+  referenceGapCqw: 2.6,
+  referenceFontCqw: 2.65,
+  referenceLineHeight: 1.1,
+  referencePaddingXCqw: 3.8,
+  referencePaddingYCqw: 0.9,
+  referenceBorderCqw: 0.14,
+} as const;
+
+type T03Composition = {
+  anchorPercent: number;
+  baseFontCqw: number;
+  heroIndices: Set<number>;
+  accentLineIndex: number;
+  accentDirection: -1 | 1;
+};
+
+type T03LinePresentation = {
+  fontSizeCqw: number;
+  lineHeight: number;
+  letterSpacingEm: number;
+  fontWeight: number;
+  isHero: boolean;
+  isHandAccent: boolean;
+};
+
+type T03RenderLine = T03LinePresentation & {
+  text: string;
+  sourceIndex: number;
+  fontFamily: string;
+  gapBeforeCqw: number;
+};
+
+function getT03Composition(
+  lines: { text: string; scale: number }[],
+  textZone: 'upper' | 'center' | 'lower' | undefined,
+  variationSeed: number,
+  primaryFontKey: string,
+  proclamation: boolean,
+): T03Composition {
+  const safeSeed = Math.abs(Number.isFinite(variationSeed) ? variationSeed : 0);
+  const variant = safeSeed % 3;
+  const scales = lines.map((line) => clamp(Number(line.scale) || 1, 0.75, 2));
+  const maxScale = Math.max(1, ...scales);
+  const fallbackHero = lines.length ? Math.min(lines.length - 1, Math.floor(lines.length / 2)) : 0;
+  const heroIndices = new Set<number>();
+  if (maxScale >= 1.2) {
+    scales.forEach((scale, index) => {
+      if (scale >= Math.max(1.2, maxScale - 0.08)) heroIndices.add(index);
+    });
+  } else if (lines.length) {
+    // 직접 문구를 수정해 의미 scale이 평평해진 경우에도 한 줄의 시각적 중심은 유지한다.
+    heroIndices.add(fallbackHero);
+  }
+
+  const isHandwritingPrimary = primaryFontKey === 'KirangHaerang' || primaryFontKey === 'HiMelody';
+  const accentCandidates = lines
+    .map((line, index) => ({ index, length: Array.from(line.text.replace(/\s/g, '')).length }))
+    .filter(({ index, length }) => !heroIndices.has(index) && length >= 2 && length <= 16);
+  const accentLineIndex = !isHandwritingPrimary && variant === 2 && accentCandidates.length
+    ? accentCandidates[accentCandidates.length - 1].index
+    : -1;
+
+  const anchors = textZone === 'upper'
+    ? [36, 39, 42]
+    : textZone === 'lower'
+    ? [58, 61, 64]
+    : [44, 50, 56];
+
+  return {
+    anchorPercent: anchors[variant],
+    baseFontCqw: proclamation ? 5.1 : 4.9,
+    heroIndices,
+    accentLineIndex,
+    accentDirection: variant === 1 ? -1 : 1,
+  };
+}
+
+function getT03LinePresentation(
+  scale: number,
+  index: number,
+  composition: T03Composition,
+  handwritingPrimary: boolean,
+): T03LinePresentation {
+  const safeScale = clamp(Number(scale) || 1, 0.75, 2);
+  const isHero = composition.heroIndices.has(index);
+  const isHandAccent = composition.accentLineIndex === index;
+  return {
+    // 의미 분석의 scale을 그대로 크기에 반영하되, 히어로와 연결 문장의 대비를 더 또렷하게 만든다.
+    fontSizeCqw: composition.baseFontCqw * (isHero ? safeScale * 1.22 : safeScale * 0.86),
+    lineHeight: isHero ? 1.02 : (isHandAccent ? 1.24 : 1.34),
+    letterSpacingEm: isHero ? -0.022 : (isHandAccent ? 0.025 : 0.055),
+    fontWeight: isHero ? (handwritingPrimary ? 500 : 600) : 400,
+    isHero,
+    isHandAccent,
+  };
+}
+
+function getT03LineGap(previous: T03RenderLine | undefined, current: T03RenderLine) {
+  if (!previous) return 0;
+  if (previous.isHero && current.isHero) return 0.35;
+  if (previous.isHero || current.isHero) return 1.65;
+  return 0.65;
+}
+
+function setCanvasLetterSpacing(ctx: CanvasRenderingContext2D, em: number) {
+  (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${em}em`;
 }
 
 function readLocalRecordList(key: string, type: string) {
@@ -286,6 +399,9 @@ const wrapCanvasText = (
  * 메인 페이지
  * ───────────────────────────────────────────────────────── */
 export default function Designer() {
+  // 사진 업로드 후 AI가 글씨까지 생성하는 실험 기능은 당분간 사용자에게 노출하지 않는다.
+  // 관련 구현은 유지해 두 핵심 흐름이 안정된 뒤 다시 활성화할 수 있게 한다.
+  const showPhotoAiFlow = false;
   const navigate = useNavigate();
   const { requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, user, loading } = useAuth();
   
@@ -373,6 +489,8 @@ export default function Designer() {
   // ── 멀티스텝 플로우 ──
   type FlowStep = 'entry' | 'record' | 'auto-template' | 'auto-preview' | 'edit' | 'photo-upload';
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
+  // T04 제자리 문구 수정: null이면 편집 안 함, 문자열이면 편집 중(본문 초안)
+  const [textEditDraft, setTextEditDraft] = useState<string | null>(null);
   const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoText, setPhotoText] = useState('');
@@ -386,9 +504,12 @@ export default function Designer() {
     aiText?: boolean;
     textAlign: 'left' | 'center';
     useBrush: boolean;
+    textZone?: 'upper' | 'center' | 'lower';
     mood: string;
     recommendedTemplates: string[];
     backgroundConcept?: string;
+    sceneSubject?: string;
+    typographyVersion?: number;
     visualMotifs?: string[];
     palette?: string;
     lighting?: string;
@@ -399,11 +520,16 @@ export default function Designer() {
     ratio?: Ratio;
     typography?: AutoTypography;
     simpleLines?: string[];
+    genSeed?: number;      // T05 제너러티브: 재현·재편집용 시드
+    genStyle?: GenerativeStyle;
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [cardPolicyExpanded, setCardPolicyExpanded] = useState(false);
-  const [recordPickerTarget, setRecordPickerTarget] = useState<'entry-auto' | 'auto' | 'manual-text' | 'photo'>('auto');
+  const [recordPickerTarget, setRecordPickerTarget] = useState<'auto' | 'manual-text' | 'photo' | 'manual-bg'>('auto');
+
+  // 재생성 시 이전 장면 피사체를 누적해 다음 요청에서 제외 (같은 장면 반복 방지)
+  const usedSubjectsRef = useRef<string[]>([]);
 
   // Mobile: start collapsed by default
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(true);  // 진입 시 패널 닫혀있음
@@ -444,7 +570,8 @@ export default function Designer() {
     idleLabel: string,
     activeLabel: string,
     icon?: React.ReactNode,
-    dark = true
+    dark = true,
+    compact = false
   ) => {
     const progress = getGenerationProgress(key);
     if (!progress.active) {
@@ -453,6 +580,16 @@ export default function Designer() {
           {icon}
           {idleLabel}
         </>
+      );
+    }
+
+    // 좁은 버튼(다시 생성 등)용 간단 로딩 — 스피너 + 짧은 텍스트만, 줄바꿈 없음
+    if (compact) {
+      return (
+        <span className="inline-flex items-center justify-center gap-1.5 whitespace-nowrap text-[13px]">
+          <span className={`w-3.5 h-3.5 border-2 rounded-full animate-spin ${dark ? 'border-white/30 border-t-white' : 'border-[#1F1F1F]/30 border-t-[#1F1F1F]'}`} />
+          {activeLabel}
+        </span>
       );
     }
 
@@ -589,8 +726,6 @@ export default function Designer() {
     if (editState) {
       try {
         const state = JSON.parse(editState);
-        console.log('Loading card state:', state);
-        
         if (state.meta) {
           setMeta(state.meta);
         }
@@ -881,8 +1016,6 @@ export default function Designer() {
 
   const fetchRecordsForSelector = useCallback(async () => {
     try {
-      console.log('🔄 Fetching records...');
-
       // 병합: localStorage 우선 (최신일 가능성 높음)
       const recordMap = new Map();
 
@@ -898,22 +1031,13 @@ export default function Designer() {
         });
       });
 
-      // 정렬 후 최근 12개
+      // 전체 기록을 정렬하고, 선택 창에서 카테고리·검색 적용 후 더 보기 처리
       const allRecords = Array.from(recordMap.values())
         .sort((a, b) => {
           const dateA = new Date(a.created_at || a.createdAt || a.date).getTime();
           const dateB = new Date(b.created_at || b.createdAt || b.date).getTime();
           return dateB - dateA;
-        })
-        .slice(0, 12);
-
-      console.log('✅ Total merged records:', allRecords.length);
-      console.log('📋 Latest 3 records:', allRecords.slice(0, 3).map(r => ({
-        type: r.type,
-        date: r.date,
-        title: r.title,
-        created: r.created_at || r.createdAt
-      })));
+        });
 
       // 상태 업데이트
       setAvailableRecords(allRecords);
@@ -929,45 +1053,40 @@ export default function Designer() {
     setRecordSelectorOpen(true);
   };
 
-  const useSelectedRecordText = (record: any, selectedText: string) => {
-    setRecordSelectorOpen(false);
-    const text = selectedText.trim();
-    if (!text) return;
-
-    if (recordPickerTarget === 'photo') {
-      setPhotoText(text);
-      toast.success('기록에서 문구를 가져왔어요');
-      return;
-    }
-
-    if (recordPickerTarget === 'manual-text') {
-      setT(s => ({
-        ...s,
-        content: text,
-        x: s.content === '텍스트를 입력하세요.' ? 50 : s.x,
-        y: s.content === '텍스트를 입력하세요.' ? 50 : s.y,
-      }));
-      if (textRef.current) textRef.current.innerText = text;
-      setIsEditing(false);
-      toast.success('기록에서 문구를 추가했어요');
-      return;
-    }
-
-    setVerseInput(text);
-    setT(s => ({ ...s, content: text }));
-    if (textRef.current) textRef.current.innerText = text;
-
-    if (recordPickerTarget === 'entry-auto') {
-      if (!selectedTemplateId) setSelectedTemplateId('T13');
+  const continueWithText = (phrase: string) => {
+    setVerseInput(phrase);
+    setT(s => ({ ...s, content: phrase }));
+    if (activeTrack === 'manual') {
+      setFlowStep('edit');
+      setIsPanelCollapsed(false);
+    } else {
+      if (!selectedTemplateId || selectedTemplateId === 'T13') setSelectedTemplateId('T01');
       setFlowStep('auto-template');
     }
-
-    const categoryName = record?.title ? `"${record.title}"` : '내 기록';
-    toast.success(`${categoryName}에서 문구를 가져왔어요`);
   };
 
-  const expandPrompt = async () => {
-    console.log('🚀 expandPrompt called', { bgPrompt, selectedStyle, user: !!user });
+  const useSelectedRecordText = (_record: unknown, selectedText: string) => {
+    const phrase = selectedText.trim();
+    if (!phrase) return;
+    setRecordSelectorOpen(false);
+    if (recordPickerTarget === 'photo') {
+      setPhotoText(phrase);
+    } else if (recordPickerTarget === 'manual-bg') {
+      setBgPrompt(phrase);
+      setExpandedPrompt('');
+      toast.success('배경 참고 내용을 가져왔어요. 카드 글씨는 유지됩니다.');
+    } else if (recordPickerTarget === 'manual-text') {
+      setT(s => ({ ...s, content: phrase }));
+      setVerseInput(phrase);
+      setIsEditing(false);
+      toast.success('카드 문구를 선택한 문구로 바꿨어요.');
+    } else {
+      continueWithText(phrase);
+    }
+  };
+
+  const expandPrompt = async (generateAfter = false) => {
+    if (isExpandingPrompt || isGenerating) return;
 
     // 쿨다운 체크
     const now = Date.now();
@@ -984,7 +1103,6 @@ export default function Designer() {
 
     // 로그인 체크
     if (!user) {
-      console.log('❌ No user, redirecting to auth');
       navigate('/auth?callback=' + encodeURIComponent(window.location.pathname));
       return;
     }
@@ -999,8 +1117,6 @@ export default function Designer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'expand-prompt', prompt: bgPrompt.trim(), style: selectedStyle }),
       });
-
-      console.log('📥 Response status:', response.status);
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ error: '알 수 없는 오류' }));
@@ -1018,9 +1134,10 @@ export default function Designer() {
       }
 
       const data = await response.json();
-      console.log('✅ expandPrompt success:', data);
+      if (!data.expandedPrompt?.trim()) throw new Error('배경 설명을 만들지 못했어요. 다시 시도해주세요.');
       setExpandedPrompt(data.expandedPrompt);
-      toast.success('프롬프트가 생성되었습니다!');
+      if (generateAfter) await generateBackground(data.expandedPrompt);
+      else toast.success('배경 설명을 준비했어요. 필요하면 수정하세요.');
     } catch (error) {
       console.error('❌ Expand prompt error:', error);
       toast.error(error instanceof Error ? error.message : '프롬프트 확장에 실패했습니다.');
@@ -1030,13 +1147,13 @@ export default function Designer() {
     }
   };
 
-  const generateBackground = async () => {
+  const generateBackground = async (preparedPrompt?: string) => {
     // 쿨다운 체크
     const now = Date.now();
     const timeSinceLastGenerate = now - lastGenerateTime;
     const COOLDOWN_MS = 10000; // 10초 쿨다운
 
-    if (timeSinceLastGenerate < COOLDOWN_MS) {
+    if (!preparedPrompt && timeSinceLastGenerate < COOLDOWN_MS) {
       const remainingSeconds = Math.ceil((COOLDOWN_MS - timeSinceLastGenerate) / 1000);
       toast.error('잠시만 기다려주세요', {
         description: `${remainingSeconds}초 후에 다시 시도해주세요.`
@@ -1058,7 +1175,7 @@ export default function Designer() {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate-image', prompt: expandedPrompt, style: selectedStyle, ratio: meta.ratio, text: t.content }),
+        body: JSON.stringify({ action: 'generate-image', prompt: preparedPrompt || expandedPrompt, style: selectedStyle, ratio: meta.ratio }),
       });
       
       if (!response.ok) {
@@ -1081,16 +1198,12 @@ export default function Designer() {
       // Auto-crop image to match requested aspect ratio
       let finalImage = data.image;
       if (data.requestedRatio && meta.ratio) {
-        console.log('Cropping image from API response to ratio:', meta.ratio);
         try {
           finalImage = await cropImageToRatio(data.image, meta.ratio);
-          console.log('Image cropped successfully');
         } catch (error) {
           console.error('Failed to crop image:', error);
           // Use original image if cropping fails
         }
-      } else {
-        console.log('Skipping crop - requestedRatio:', data.requestedRatio, 'meta.ratio:', meta.ratio);
       }
 
       setMeta(m => ({ ...m, bgImageUrl: finalImage, bgScale: 100 }));
@@ -1118,13 +1231,19 @@ export default function Designer() {
 
   // ── 멀티스텝 플로우 함수들 ──
   const goBack = () => {
+    if (isGenerating || isExpandingPrompt || isSaving) {
+      toast.info('진행 중인 작업이 끝난 뒤 이동해주세요.');
+      return;
+    }
     switch (flowStep) {
       case 'record':        setFlowStep('entry'); break;
       case 'photo-upload':  setFlowStep('entry'); setPhotoData(null); setPhotoText(''); break;
       case 'auto-template': setFlowStep('record'); break;
       case 'auto-preview':  setFlowStep('auto-template'); break;
       case 'edit':
-        if (activeTrack === 'manual') setFlowStep('entry');
+        if (activeTrack === 'manual') {
+          setFlowStep('entry');
+        }
         else setFlowStep('auto-preview');
         break;
       default: navigate('/'); break;
@@ -1137,7 +1256,6 @@ export default function Designer() {
           { id: 'record', label: '내용' },
           { id: 'auto-template', label: '템플릿' },
           { id: 'auto-preview', label: '확인' },
-          { id: 'edit', label: '편집' },
         ]
       : activeTrack === 'photo'
       ? [
@@ -1145,7 +1263,7 @@ export default function Designer() {
           { id: 'edit', label: '편집' },
         ]
       : [
-          { id: 'edit', label: '편집' },
+          { id: 'edit', label: '배경·글씨 편집' },
         ];
 
     const currentIndex = Math.max(0, steps.findIndex(step => step.id === current));
@@ -1189,29 +1307,7 @@ export default function Designer() {
       <div className="w-full max-w-md mx-auto px-5 pb-8 space-y-2.5">
         {renderCardPolicyNotice()}
 
-        <button
-          onClick={() => openRecordSelector('entry-auto')}
-          className="w-full p-4 rounded-xl border border-[#D9DDD5] bg-[#F7F8F4] text-left transition-colors hover:bg-[#F1F4ED]"
-        >
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-[15px] font-semibold text-[#2E2E2E]">
-                내 기록으로 카드 만들기
-              </p>
-              <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">
-                QT · 기도 · 감사 기록을 다시 꺼내 카드로 남겨보세요.
-              </p>
-            </div>
-            <span className="shrink-0 pt-0.5 text-[18px] text-[#4F8A5B]">→</span>
-          </div>
-          <p className="mt-3 text-[12px] font-semibold text-[#4F8A5B]">
-            내 기록에서 선택하기 →
-          </p>
-        </button>
-
-        <p className="pt-2 text-[12px] font-semibold text-[#7E7C78]">
-          새로 만들기
-        </p>
+        <p className="text-[13px] text-[#7E7C78]">두 방식 모두 직접 입력하거나 내 기록을 가져올 수 있어요.</p>
 
         <button
           onClick={() => startCardFlow('auto')}
@@ -1224,7 +1320,7 @@ export default function Designer() {
             <Wand2 className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold">자동 완성</p>
+            <p className="font-semibold">완전 자동</p>
             <p className="mt-1 text-[12px] leading-5 text-white/72">입력한 문구를 분석해 타이포그래피와 배경까지 자동으로 완성합니다.</p>
           </div>
         </button>
@@ -1238,22 +1334,24 @@ export default function Designer() {
           </div>
           <div className="min-w-0">
             <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
-            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">빈 캔버스에서 배경, 문구, 글꼴을 직접 구성합니다.</p>
+            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">AI 배경·내 사진·단색 위에 글씨를 자유롭게 더해요. 배경부터 시작해도 좋아요.</p>
           </div>
         </button>
 
-        <button
-          onClick={() => startCardFlow('photo')}
-          className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
-        >
-          <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
-            <ImageIcon className="w-5 h-5 text-[#1F1F1F]" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-semibold text-[#2E2E2E]">사진으로 시작</p>
-            <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">내 사진을 업로드하고 문구를 더해 카드로 완성합니다.</p>
-          </div>
-        </button>
+        {showPhotoAiFlow && (
+          <button
+            onClick={() => startCardFlow('photo')}
+            className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
+          >
+            <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
+              <ImageIcon className="w-5 h-5 text-[#1F1F1F]" />
+            </div>
+            <div className="min-w-0">
+              <p className="font-semibold text-[#2E2E2E]">사진으로 시작</p>
+              <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">내 사진을 업로드하고 문구를 더해 카드로 완성합니다.</p>
+            </div>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -1382,16 +1480,18 @@ export default function Designer() {
         placeholder={"카드로 남기고 싶은 문구를 입력해주세요\n말씀 · 묵상 · 기도 · 감사 등"}
         className="flex-1 min-h-[190px] p-4 border border-[#E3E2E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none text-[15px] leading-7"
       />
+      <p className="text-[11px] leading-4 text-[#9B9B9B]">
+        입력한 내용은 카드 생성을 위해 AI가 분석합니다. 이름·연락처·주소 등 개인정보는 입력하지 마세요.
+      </p>
       <div className="grid grid-cols-1 gap-2">
         <button
           onClick={() => {
             if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
-            if (!selectedTemplateId) setSelectedTemplateId('T13');
-            setFlowStep('auto-template');
+            continueWithText(verseInput.trim());
           }}
           className="px-4 py-3 bg-[#1F1F1F] text-white rounded-lg font-medium hover:bg-[#333333]"
         >
-          템플릿 선택
+          {activeTrack === 'manual' ? '이 문구로 편집하기' : '이 문구로 스타일 선택'}
         </button>
       </div>
     </div>
@@ -1409,7 +1509,7 @@ export default function Designer() {
         background: 'linear-gradient(135deg, #BBD7F2 0%, #F7E0E4 52%, #F7E5A7 100%)',
         color: '#2F5D7A',
         accent: '#F08A9B',
-        font: "'Kkubullim', 'GowunDodum', sans-serif",
+        font: "'Cafe24SuperMagic', 'GowunDodum', sans-serif",
       },
     },
     {
@@ -1427,15 +1527,15 @@ export default function Designer() {
     },
     {
       id: 'T03',
-      name: '감성 타이포',
-      mood: '묵상 · 평안 · 은혜 · 소망',
+      name: '오로라 타이포',
+      mood: '그레인 그라데이션 · 감성 세리프/손글씨',
       example: '은혜가 머무는 곳',
-      hint: '감성 사진 + 큰 타이포',
+      hint: 'AI 그라데이션 배경 + 코드 글자(철자 정확)',
       preview: {
-        background: 'linear-gradient(160deg, #cfe0ec 0%, #e7d7dd 55%, #f2e6d6 100%)',
-        color: '#3E5C74',
-        accent: '#3E5C74',
-        font: "'Hahmlet', serif",
+        background: 'linear-gradient(150deg, #8FB0DE 0%, #F3E6DE 55%, #C39AD0 100%)',
+        color: '#2E2A4A',
+        accent: '#2E2A4A',
+        font: "'SongMyung', serif",
       },
     },
     {
@@ -1451,12 +1551,42 @@ export default function Designer() {
         font: "'RidiBatang', serif",
       },
     },
+    {
+      id: 'T05',
+      name: '플로우 아트',
+      mood: '흐름 · 추상 · 감각적 · 무료생성',
+      example: '잔잔히 흐르는 은혜',
+      hint: '알고리즘 곡선 아트 · 철자 정확 · 즉시',
+      preview: {
+        background: 'linear-gradient(120deg, #57C79A 0%, #4A63C9 100%)',
+        color: '#F7F7F4',
+        accent: '#F7F7F4',
+        font: "'RidiBatang', serif",
+      },
+    },
   ];
 
   const renderAutoTemplate = () => {
     const handleGenerate = async () => {
       if (!selectedTemplateId) { toast.error('템플릿을 선택해주세요'); return; }
       if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
+      // T03 아우라 / T05 플로우 — AI 호출 없이 코드로 즉시 생성 (토큰 0)
+      if (selectedTemplateId === 'T05') {
+        setIsGenerating(true);
+        startGenerationProgress('auto', 4000);
+        try {
+          await document.fonts?.ready;
+          setAutoResult(buildGenerativeResult(verseInput.trim(), meta.ratio));
+          setFlowStep('auto-preview');
+        } catch (e) {
+          console.error('[gen] failed:', e);
+          toast.error('생성 실패: ' + (e instanceof Error ? e.message : String(e)));
+        } finally {
+          setIsGenerating(false);
+          stopGenerationProgress('auto');
+        }
+        return;
+      }
       setIsGenerating(true);
       // 새 생성마다 색상 변주를 랜덤하게 시작 (매번 같은 색 방지)
       const startIndex = Math.floor(Math.random() * 100);
@@ -1474,6 +1604,8 @@ export default function Designer() {
           throw new Error(err.error || '생성 실패');
         }
         const data = await res.json();
+        // 새 생성 → 이전 피사체 기록 초기화 후 현재 피사체 기록
+        usedSubjectsRef.current = data?.sceneSubject ? [data.sceneSubject] : [];
         setAutoResult(await buildAdaptiveAutoResult(data));
         setFlowStep('auto-preview');
       } catch (e) {
@@ -1492,10 +1624,11 @@ export default function Designer() {
         </div>
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] mb-2">카드 비율</h3>
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 gap-2">
             {(['4:5', '9:16', '1:1', '16:9'] as Ratio[]).map((ratio) => (
               <button
                 key={ratio}
+                disabled={isGenerating}
                 onClick={() => setMeta(m => ({ ...m, ratio }))}
                 className={`h-10 rounded-lg border text-sm font-semibold transition-colors ${
                   meta.ratio === ratio
@@ -1503,7 +1636,7 @@ export default function Designer() {
                     : 'border-[#E3E2E0] text-[#4A4A4A] hover:border-[#1F1F1F]/40'
                 }`}
               >
-                {ratio}
+                {{ '9:16': '휴대폰 배경 9:16', '1:1': '정사각형 1:1', '4:5': '세로 게시물 4:5', '16:9': '가로 화면 16:9' }[ratio]}
               </button>
             ))}
           </div>
@@ -1512,6 +1645,7 @@ export default function Designer() {
           {TEMPLATE_INFO.map(({ id, name, mood, example, hint, preview }) => (
             <button
               key={id}
+              disabled={isGenerating}
               onClick={() => setSelectedTemplateId(id)}
               className={`p-3 rounded-lg border text-left transition-colors ${
                 selectedTemplateId === id
@@ -1615,6 +1749,15 @@ export default function Designer() {
     'Keris': "'Keris', sans-serif",
     'JeonnamBarun': "'JeonnamBarun', sans-serif",
     'Incheon': "'Incheon', sans-serif",
+    'Gaegu': "'Gaegu', cursive",
+    'GamjaFlower': "'Gamja Flower', cursive",
+    'HiMelody': "'Hi Melody', cursive",
+    'NanumPen': "'Nanum Pen Script', cursive",
+    'Dongle': "'Dongle', sans-serif",
+    'PoorStory': "'Poor Story', cursive",
+    'YeonSung': "'Yeon Sung', cursive",
+    'KirangHaerang': "'Kirang Haerang', cursive",
+    'SingleDay': "'Single Day', cursive",
     'Limelight': "'Limelight', cursive",
     'CaveatBrush': "'Caveat Brush', cursive",
     'Cafe24SuperMagic': "'Cafe24SuperMagic', sans-serif",
@@ -1727,6 +1870,7 @@ export default function Designer() {
         const isSerifPoster = template === 'T03';
         const isSimplePhoto = template === 'T04';
         const isChunky = template === 'T02';
+        const isCuteCard = template === 'T01';
         const darkInk = isSerifPoster ? '#202817' : (isWarm ? '#332A22' : '#24272B');
         const lightInk = isSerifPoster ? '#F4E66A' : (isWarm ? '#FFF8EA' : '#F8FBFF');
         const useDarkInk = isSerifPoster ? avg >= 145 : (isBright && !isDark);
@@ -1760,7 +1904,7 @@ export default function Designer() {
               ? (useDarkInk ? 'rgba(255,255,255,.78)' : 'rgba(0,0,0,.34)')
               : shadowColor,
           },
-          box: (isSerifPoster || isSimplePhoto || isChunky)
+          box: (isSerifPoster || isSimplePhoto || isChunky || isCuteCard)
             ? undefined
             : isComplex
             ? {
@@ -1778,64 +1922,174 @@ export default function Designer() {
     });
   };
 
+  // T04 감성 심플: 절(clause) 단위를 원자로 보고 폭에 맞게 묶어 최소 줄수로 재배치.
+  // (절 중간은 절대 자르지 않음) — 자동 생성과 제자리 문구 수정에서 공용.
+  // respectBreaks=true면 입력 줄바꿈을 하드 줄로 존중(병합 안 함, 너무 넓을 때만 하위 분할).
+  // false(자동 생성)면 절을 폭에 맞게 묶어 최소 줄수로 재배치.
+  const wrapSimpleBodyLines = (clauses: string[], primaryKey: string, ratio: string, respectBreaks = false): string[] => {
+    const cleaned = clauses.map((c) => String(c).trim()).filter(Boolean);
+    if (!cleaned.length) return [];
+    const dimMap: Record<string, number> = { '9:16': 900, '16:9': 1600, '1:1': 1200, '4:3': 1200, '4:5': 1000, '3:4': 900, '2:3': 900 };
+    const refWidth = dimMap[ratio] || 1000;
+    const fontPx = Math.max(20, refWidth * 0.033);
+    const maxW = refWidth * 0.86;
+    const fam = PREVIEW_FONT[primaryKey] || 'serif';
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return cleaned;
+    ctx.font = `400 ${fontPx}px ${fam}`;
+    // 1) 줄 구성: 존중 모드면 각 입력 줄이 하드 줄(병합 없음), 아니면 폭에 맞게 묶기
+    let packed: string[];
+    if (respectBreaks) {
+      packed = cleaned;
+    } else {
+      packed = [];
+      let cur = '';
+      for (const c of cleaned) {
+        const t = cur ? `${cur} ${c}` : c;
+        if (ctx.measureText(t).width > maxW && cur) { packed.push(cur); cur = c; }
+        else cur = t;
+      }
+      if (cur) packed.push(cur);
+    }
+    // 2) 혼자서도 폭을 넘는 긴 줄만 어절 단위로 마지막 분할
+    const finalLines: string[] = [];
+    for (const line of packed) {
+      if (ctx.measureText(line).width > maxW) {
+        const words = line.split(' ');
+        let w = '';
+        for (const word of words) {
+          const t = w ? `${w} ${word}` : word;
+          if (ctx.measureText(t).width > maxW && w) { finalLines.push(w); w = word; }
+          else w = t;
+        }
+        if (w) finalLines.push(w);
+      } else finalLines.push(line);
+    }
+    return finalLines;
+  };
+
+  // 원문에서 본문/말씀주소 분리 (위치·버전명 무관, 줄바꿈 존중)
+  const parseBodyRef = (raw: string) => {
+    const { body, reference } = extractReference(raw);
+    return { bodyText: body, reference };
+  };
+
+  // 제너러티브 카드 결과 생성 (AI 호출 없음). template/스펙픽커만 다르게 공용.
+  const buildGenResult = (
+    raw: string,
+    ratio: Ratio,
+    template: string,
+    pick: (text: string, seed?: number) => GenerativeSpec,
+    seedOverride?: number,
+  ): any => {
+    const { bodyText, reference } = parseBodyRef(raw);
+    const spec = pick(bodyText, seedOverride);
+    const image = renderGenerativeCard({ text: bodyText, reference, ratio, spec });
+    return {
+      image,
+      template,
+      aiText: true, // 글자를 코드가 이미 구웠으므로 오버레이 없음
+      fonts: { primary: 'RidiBatang', secondary: 'RidiBatang' },
+      lines: [
+        { text: bodyText, scale: 1 },
+        ...(reference ? [{ text: reference, scale: 0.5 }] : []),
+      ],
+      textAlign: 'center' as const,
+      useBrush: false,
+      textZone: 'center' as const,
+      mood: '',
+      recommendedTemplates: [],
+      ratio,
+      genSeed: spec.seed,
+      genStyle: spec.style,
+      simpleLines: [bodyText],
+    };
+  };
+  const buildGenerativeResult = (raw: string, ratio: Ratio, seedOverride?: number) =>
+    buildGenResult(raw, ratio, 'T05', pickGenerativeSpec, seedOverride);
+  const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number) =>
+    buildGenResult(raw, ratio, 'T03', pickAuraSpec, seedOverride);
+
   const buildAdaptiveAutoResult = async (data: any) => {
     const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
     const template = data?.template || selectedTemplateId || 'T03';
+
+    // OpenAI는 9:16을 지원 안 해 2:3(1024x1536)로 생성됨 → 요청 비율로 중앙 크롭해
+    // autoResult.image 자체를 실제 비율(예: 9:16)로 만든다. (미리보기/저장/다운로드/클라우드 모두 일치)
+    let image = data?.image;
+    if (image) {
+      try { image = await cropImageToRatio(image, resultRatio); } catch { image = data.image; }
+    }
+
     const base = getAutoTypography(template);
-    const typography = data?.image
-      ? await analyzeBackgroundForTypography(data.image, base, template)
+    const typography = image
+      ? await analyzeBackgroundForTypography(image, base, template)
       : base;
 
     // T04 감성 심플: 절(clause) 단위를 원자로 보고 폭에 맞게 묶어 최소 줄수로 재배치.
     // (절 중간은 절대 자르지 않음 → "믿지 / 않는" 같은 어색한 분리 방지)
     let simpleLines: string[] | undefined;
     if (template === 'T04' && Array.isArray(data?.lines) && data.lines.length) {
-      const dimMap: Record<string, number> = { '9:16': 900, '16:9': 1600, '1:1': 1200, '4:3': 1200, '4:5': 1000, '3:4': 900, '2:3': 900 };
-      const refWidth = dimMap[resultRatio] || 1000;
-      const fontPx = Math.max(20, refWidth * 0.033);
-      const maxW = refWidth * 0.86;
-      const fam = PREVIEW_FONT[data.fonts?.primary] || 'serif';
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        ctx.font = `400 ${fontPx}px ${fam}`;
-        const clauses = data.lines
-          .filter((l: any) => !isAutoCaptionLine(l.text, l.scale))
-          .map((l: any) => String(l.text).trim())
-          .filter(Boolean);
-        // 1) 절끼리 폭에 들어가는 만큼 묶기
-        const packed: string[] = [];
-        let cur = '';
-        for (const c of clauses) {
-          const t = cur ? `${cur} ${c}` : c;
-          if (ctx.measureText(t).width > maxW && cur) { packed.push(cur); cur = c; }
-          else cur = t;
-        }
-        if (cur) packed.push(cur);
-        // 2) 혼자서도 폭을 넘는 긴 절만 어절 단위로 마지막 분할
-        const finalLines: string[] = [];
-        for (const line of packed) {
-          if (ctx.measureText(line).width > maxW) {
-            const words = line.split(' ');
-            let w = '';
-            for (const word of words) {
-              const t = w ? `${w} ${word}` : word;
-              if (ctx.measureText(t).width > maxW && w) { finalLines.push(w); w = word; }
-              else w = t;
-            }
-            if (w) finalLines.push(w);
-          } else finalLines.push(line);
-        }
-        simpleLines = finalLines;
-      }
+      const clauses = data.lines
+        .filter((l: any) => !isAutoCaptionLine(l.text, l.scale))
+        .map((l: any) => String(l.text));
+      simpleLines = wrapSimpleBodyLines(clauses, data.fonts?.primary, resultRatio);
     }
 
     return {
       ...data,
+      image,
       ratio: resultRatio,
       typography,
       simpleLines,
     };
+  };
+
+  // 제자리 문구 수정 가능 여부: 오버레이(T03·T04) + T05(제너러티브) — 글자가 코드라 재생성/토큰 없이 수정
+  const canEditTextInPlace = !!autoResult && (
+    (!autoResult.aiText && (autoResult.template === 'T04' || autoResult.template === 'T03')) ||
+    autoResult.template === 'T05'
+  );
+
+  const openTextEdit = () => {
+    if (!autoResult) return;
+    const body = (autoResult.simpleLines && autoResult.simpleLines.length)
+      ? autoResult.simpleLines
+      : (autoResult.lines || []).filter((l) => !isAutoCaptionLine(l.text, l.scale)).map((l) => l.text);
+    const captionLine = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale));
+    // 한 칸에 본문 + (있으면) 말씀 주소를 마지막 줄로 합쳐 보여줌
+    const full = [...body, ...(captionLine ? [captionLine.text] : [])].join('\n');
+    setTextEditDraft(full);
+  };
+
+  const applyTextEdit = () => {
+    if (!autoResult || textEditDraft === null) return;
+    // 말씀 주소는 위치(앞/중간/뒤)·버전명 무관하게 통째로 떼어 맨 뒤로. 본문 줄바꿈은 그대로 존중.
+    const { body, reference } = extractReference(textEditDraft);
+    const clauses = body.split('\n').map((s) => s.trim()).filter(Boolean);
+    if (!clauses.length) return;
+    // T03 아우라 / T05 플로우: 같은 시드로 배경 유지, 글자만 다시 구워 재렌더 (토큰 0)
+    if (autoResult.template === 'T05') {
+      const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
+      setAutoResult(buildGenerativeResult(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
+      setVerseInput(raw);
+      setT(current => ({ ...current, content: raw }));
+      setTextEditDraft(null);
+      return;
+    }
+    // T03·T04 오버레이: 엔터친 줄바꿈을 그대로 존중(respectBreaks), 너무 넓은 줄만 하위 분할
+    const newBody = wrapSimpleBodyLines(clauses, autoResult.fonts.primary, autoResult.ratio || meta.ratio, true);
+    if (!newBody.length) return;
+    const newLines = [
+      ...newBody.map((t) => ({ text: t, scale: 1 })),
+      ...(reference ? [{ text: reference, scale: 0.5 }] : []), // 주소는 작은 캡션
+    ];
+    setAutoResult({ ...autoResult, lines: newLines, simpleLines: newBody });
+    const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
+    setVerseInput(raw);
+    setT(current => ({ ...current, content: raw }));
+    setTextEditDraft(null);
   };
 
   const renderAutoPreview = () => {
@@ -1844,31 +2098,37 @@ export default function Designer() {
     const secondaryFont = PREVIEW_FONT[autoResult.fonts.secondary] || 'sans-serif';
     const typography = autoResult.typography || getAutoTypography(autoResult.template);
     const previewRatio = autoResult.ratio || meta.ratio;
-    const previewAlign: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02') ? 'left' : 'center';
+    // T04(감성 심플)는 항상 가운데 정렬 — 좌측/하단 변주 없이 정가운데 또는 약간 위쪽만
+    const previewAlign: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02' && autoResult.template !== 'T01' && autoResult.template !== 'T04') ? 'left' : 'center';
+    const simpleVAnchor = autoResult.template === 'T04' ? (autoResult.textZone === 'upper' ? 40 : 50) : null; // % (세로 중심 위치)
     const previewLines = (autoResult.lines && autoResult.lines.length)
       ? autoResult.lines
       : [{ text: verseInput, scale: 1 }];
     const isSerifPoster = autoResult.template === 'T03';
     const isSimple = autoResult.template === 'T04';
     const isChunky = autoResult.template === 'T02';
+    const isCute = autoResult.template === 'T01';
     const isProclamationSerif = isSerifPoster && hasProclamationTone(previewLines.map((line) => line.text).join(' '));
-    const serifReferenceLine = (isSerifPoster || isSimple || isChunky) ? previewLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
-    const serifContentLinesRaw = (isSerifPoster || isSimple || isChunky) ? previewLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : previewLines;
+    const serifReferenceLine = (isSerifPoster || isSimple || isChunky || isCute) ? previewLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
+    const serifContentLinesRaw = (isSerifPoster || isSimple || isChunky || isCute) ? previewLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : previewLines;
     // T04: 미리 계산된 절-묶음 줄(simpleLines)로 렌더 (절 중간 안 자름)
     const serifContentLines = (isSimple && autoResult.simpleLines && autoResult.simpleLines.length)
       ? autoResult.simpleLines.map((t) => ({ text: t, scale: 1 }))
       : serifContentLinesRaw;
     const posterCaptionFont = secondaryFont || primaryFont;
     // scale 1.0 기준 폰트 크기 (줄별 scale을 곱해 위계 표현)
+    // cqw = 카드 너비의 1%. 화면 크기와 무관하게 카드 대비 항상 같은 비율 → 저장 결과(width*계수)와도 일치.
     const previewBase = isSerifPoster
-      ? (isProclamationSerif ? 'clamp(0.76rem, 2.75vw, 1.28rem)' : 'clamp(0.72rem, 2.55vw, 1.2rem)')
+      ? (isProclamationSerif ? '4.6cqw' : '4.2cqw')
       : isSimple
-      ? 'clamp(0.78rem, 2.65vw, 1.14rem)'
+      ? '3.3cqw'
       : isChunky
-      ? 'clamp(1.25rem, 5.2vw, 2.35rem)'
-      : 'clamp(0.95rem, 3.5vw, 1.55rem)';
-    const previewMaxWidth = isSerifPoster ? (isProclamationSerif ? '84%' : '80%') : isSimple ? '92%' : isChunky ? '88%' : '90%';
-    const previewPadding = isSerifPoster ? '2.5rem' : '2rem';
+      ? '7.2cqw'
+      : isCute
+      ? '5cqw'
+      : '4.6cqw';
+    const previewMaxWidth = isSerifPoster ? (isProclamationSerif ? '84%' : '80%') : isSimple ? '92%' : isChunky ? '88%' : isCute ? '86%' : '90%';
+    const previewPadding = isSerifPoster ? '5cqw' : '4cqw';
     const previewShift = isProclamationSerif ? 'translateY(-4%)' : undefined;
 
     const getPreviewDimensions = () => {
@@ -1900,6 +2160,57 @@ export default function Designer() {
       if (current) lines.push(current);
       return lines;
     };
+
+    const t03HandwritingPrimary = autoResult.fonts.primary === 'KirangHaerang' || autoResult.fonts.primary === 'HiMelody';
+    const t03Composition = getT03Composition(
+      isSerifPoster ? serifContentLines : [],
+      autoResult.textZone,
+      templateIndex,
+      autoResult.fonts.primary,
+      isProclamationSerif,
+    );
+    const t03SupportFont = t03HandwritingPrimary ? PREVIEW_FONT.GowunBatang : primaryFont;
+    const t03ReferenceFont = t03HandwritingPrimary ? PREVIEW_FONT.GowunBatang : primaryFont;
+    const t03MeasureCtx = isSerifPoster && typeof document !== 'undefined'
+      ? document.createElement('canvas').getContext('2d')
+      : null;
+    const t03RenderLines: T03RenderLine[] = [];
+    if (isSerifPoster) serifContentLines.forEach((line, sourceIndex) => {
+      const presentation = getT03LinePresentation(line.scale, sourceIndex, t03Composition, t03HandwritingPrimary);
+      const fontFamily = presentation.isHero
+        ? primaryFont
+        : presentation.isHandAccent
+        ? PREVIEW_FONT.KirangHaerang
+        : t03SupportFont;
+      let wrapped = [line.text];
+      if (t03MeasureCtx) {
+        t03MeasureCtx.font = `${presentation.fontWeight} ${presentation.fontSizeCqw * 10}px ${fontFamily}`;
+        setCanvasLetterSpacing(t03MeasureCtx, presentation.letterSpacingEm);
+        wrapped = wrapPreviewText(t03MeasureCtx, line.text, T03_LAYOUT.maxWidthCqw * 10);
+      }
+      wrapped.forEach((text) => {
+        const renderLine: T03RenderLine = {
+          ...presentation,
+          text,
+          sourceIndex,
+          fontFamily,
+          gapBeforeCqw: 0,
+        };
+        renderLine.gapBeforeCqw = getT03LineGap(t03RenderLines[t03RenderLines.length - 1], renderLine);
+        t03RenderLines.push(renderLine);
+      });
+    });
+    const t03ReferenceHeightCqw = T03_LAYOUT.referenceFontCqw * T03_LAYOUT.referenceLineHeight
+      + (T03_LAYOUT.referencePaddingYCqw + T03_LAYOUT.referenceBorderCqw) * 2;
+    const t03RawHeightCqw = T03_LAYOUT.ornamentHeightCqw
+      + T03_LAYOUT.ornamentGapCqw
+      + t03RenderLines.reduce((sum, line) => sum + line.gapBeforeCqw + line.fontSizeCqw * line.lineHeight, 0)
+      + T03_LAYOUT.ruleTopGapCqw
+      + T03_LAYOUT.ruleThicknessCqw
+      + (serifReferenceLine ? T03_LAYOUT.referenceGapCqw + t03ReferenceHeightCqw : 0);
+    const t03Dimensions = getPreviewDimensions();
+    const t03MaxHeightCqw = (t03Dimensions.height / t03Dimensions.width) * 82;
+    const t03FitScale = Math.min(1, t03MaxHeightCqw / Math.max(1, t03RawHeightCqw));
 
     const applyPreviewEditState = () => {
       const typography = autoResult.typography || getAutoTypography(autoResult.template);
@@ -1972,19 +2283,101 @@ export default function Designer() {
         if (!autoResult.aiText) {
         const centerX = width / 2;
         const scale = width / 1000;
-        const align: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02') ? 'left' : 'center';
+        const align: 'left' | 'center' = (autoResult.textAlign === 'left' && autoResult.template !== 'T02' && autoResult.template !== 'T01' && autoResult.template !== 'T04') ? 'left' : 'center';
         const layoutLines = (autoResult.lines && autoResult.lines.length)
           ? autoResult.lines
           : [{ text: verseInput, scale: 1 }];
         const isSerifPoster = autoResult.template === 'T03';
         const isSimple = autoResult.template === 'T04';
         const isChunky = autoResult.template === 'T02';
+        const isCute = autoResult.template === 'T01';
         const isProclamationSerif = isSerifPoster && hasProclamationTone(layoutLines.map((line) => line.text).join(' '));
-        const referenceLine = (isSerifPoster || isSimple || isChunky) ? layoutLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
-        const contentLines = (isSerifPoster || isSimple || isChunky) ? layoutLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : layoutLines;
-        const maxTextWidth = width * (isSerifPoster ? (isProclamationSerif ? 0.78 : (align === 'left' ? 0.74 : 0.76)) : isSimple ? 0.9 : isChunky ? 0.86 : (align === 'left' ? 0.82 : 0.8));
-        const baseFontPx = isSerifPoster ? Math.max(20, width * (isProclamationSerif ? 0.034 : 0.031)) : isSimple ? Math.max(20, width * 0.033) : isChunky ? Math.max(38, width * 0.072) : Math.max(28, width * 0.046);
-        const lineGap = baseFontPx * (isSerifPoster ? 0.16 : isSimple ? 0.4 : isChunky ? 0.2 : 0.16);
+        const referenceLine = (isSerifPoster || isSimple || isChunky || isCute) ? layoutLines.find((line) => isAutoCaptionLine(line.text, line.scale)) : undefined;
+        const contentLines = (isSerifPoster || isSimple || isChunky || isCute) ? layoutLines.filter((line) => !isAutoCaptionLine(line.text, line.scale)) : layoutLines;
+        if (isSerifPoster) {
+          const pxPerCqw = width / 100 * t03FitScale;
+          const blockHeight = t03RawHeightCqw * pxPerCqw;
+          let y = height * (t03Composition.anchorPercent / 100) - blockHeight / 2;
+
+          ctx.save();
+          ctx.textAlign = 'center';
+          ctx.fillStyle = typography.referenceColor;
+          ctx.strokeStyle = typography.referenceColor;
+          ctx.shadowColor = 'transparent';
+          ctx.globalAlpha = 0.72;
+
+          const ornamentCenterY = y + T03_LAYOUT.ornamentHeightCqw * pxPerCqw * 0.48;
+          ctx.lineWidth = Math.max(1, T03_LAYOUT.ruleThicknessCqw * pxPerCqw);
+          ctx.beginPath();
+          ctx.moveTo(centerX - T03_LAYOUT.ruleWidthCqw * pxPerCqw / 2, ornamentCenterY);
+          ctx.lineTo(centerX + T03_LAYOUT.ruleWidthCqw * pxPerCqw / 2, ornamentCenterY);
+          ctx.stroke();
+
+          const accentDirection = t03Composition.accentDirection;
+          ctx.textBaseline = 'middle';
+          ctx.font = `400 ${1.55 * pxPerCqw}px ${t03ReferenceFont}`;
+          setCanvasLetterSpacing(ctx, 0);
+          ctx.fillText('✦', centerX - 6.15 * accentDirection * pxPerCqw, y + 0.85 * pxPerCqw);
+          ctx.font = `400 ${1.2 * pxPerCqw}px ${t03ReferenceFont}`;
+          ctx.fillText('✧', centerX + 5.8 * accentDirection * pxPerCqw, y + 0.45 * pxPerCqw);
+          ctx.font = `400 ${0.78 * pxPerCqw}px ${t03ReferenceFont}`;
+          ctx.fillText('✦', centerX + 7.15 * accentDirection * pxPerCqw, y + 1.75 * pxPerCqw);
+
+          y += (T03_LAYOUT.ornamentHeightCqw + T03_LAYOUT.ornamentGapCqw) * pxPerCqw;
+          ctx.globalAlpha = 1;
+          ctx.textBaseline = 'top';
+          ctx.shadowColor = typography.editShadow.color;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0.2 * pxPerCqw;
+          ctx.shadowBlur = 1.0 * pxPerCqw;
+
+          t03RenderLines.forEach((line) => {
+            y += line.gapBeforeCqw * pxPerCqw;
+            const fontSize = line.fontSizeCqw * pxPerCqw;
+            ctx.font = `${line.fontWeight} ${fontSize}px ${line.fontFamily}`;
+            setCanvasLetterSpacing(ctx, line.letterSpacingEm);
+            ctx.fillStyle = line.isHero ? typography.color : typography.secondaryColor;
+            ctx.fillText(line.text, centerX, y);
+            y += fontSize * line.lineHeight;
+          });
+
+          y += T03_LAYOUT.ruleTopGapCqw * pxPerCqw;
+          ctx.shadowColor = 'transparent';
+          ctx.strokeStyle = typography.referenceColor;
+          ctx.globalAlpha = 0.68;
+          ctx.lineWidth = Math.max(1, T03_LAYOUT.ruleThicknessCqw * pxPerCqw);
+          ctx.beginPath();
+          ctx.moveTo(centerX - T03_LAYOUT.ruleWidthCqw * pxPerCqw / 2, y);
+          ctx.lineTo(centerX + T03_LAYOUT.ruleWidthCqw * pxPerCqw / 2, y);
+          ctx.stroke();
+          y += T03_LAYOUT.ruleThicknessCqw * pxPerCqw;
+
+          if (referenceLine) {
+            y += T03_LAYOUT.referenceGapCqw * pxPerCqw;
+            const referenceFontSize = T03_LAYOUT.referenceFontCqw * pxPerCqw;
+            const pillHeight = t03ReferenceHeightCqw * pxPerCqw;
+            ctx.font = `500 ${referenceFontSize}px ${t03ReferenceFont}`;
+            setCanvasLetterSpacing(ctx, 0.055);
+            const textWidth = ctx.measureText(referenceLine.text).width;
+            const pillWidth = textWidth
+              + (T03_LAYOUT.referencePaddingXCqw + T03_LAYOUT.referenceBorderCqw) * 2 * pxPerCqw;
+
+            ctx.globalAlpha = 0.9;
+            ctx.strokeStyle = typography.referenceColor;
+            ctx.lineWidth = Math.max(1, T03_LAYOUT.referenceBorderCqw * pxPerCqw);
+            ctx.beginPath();
+            ctx.roundRect(centerX - pillWidth / 2, y, pillWidth, pillHeight, pillHeight / 2);
+            ctx.stroke();
+
+            ctx.fillStyle = typography.referenceColor;
+            ctx.textBaseline = 'middle';
+            ctx.fillText(referenceLine.text, centerX, y + pillHeight / 2);
+          }
+          ctx.restore();
+        } else {
+        const maxTextWidth = width * (isSerifPoster ? (isProclamationSerif ? 0.78 : (align === 'left' ? 0.74 : 0.76)) : isSimple ? 0.9 : isChunky ? 0.86 : isCute ? 0.82 : (align === 'left' ? 0.82 : 0.8));
+        const baseFontPx = isSerifPoster ? Math.max(28, width * (isProclamationSerif ? 0.046 : 0.042)) : isSimple ? Math.max(20, width * 0.033) : isChunky ? Math.max(38, width * 0.072) : isCute ? Math.max(30, width * 0.05) : Math.max(28, width * 0.046);
+        const lineGap = baseFontPx * (isSerifPoster ? 0.16 : isSimple ? 0.4 : isChunky ? 0.2 : isCute ? 0.3 : 0.16);
         const defaultWeight = typography.bold ? 700 : 500;
         const posterCaptionFont = secondaryFont || primaryFont;
 
@@ -2035,7 +2428,19 @@ export default function Designer() {
         ctx.shadowOffsetY = typography.editShadow.y * scale;
         ctx.shadowBlur = typography.editShadow.blur * scale;
 
-        let y = isProclamationSerif ? (height * 0.45 - totalH * shrink / 2) : (height - totalH * shrink) / 2;
+        const blockH = totalH * shrink;
+        const zonePad = height * 0.1; // 상/하단 배치 시 가장자리 여백
+        // T04(감성 심플): 정가운데(50%) 또는 약간 위쪽(40%)만 — 블록 중심을 앵커에 맞춤
+        const simpleAnchorFrac = isSimple ? (autoResult.textZone === 'upper' ? 0.40 : 0.50) : null;
+        let y = simpleAnchorFrac !== null
+          ? (height * simpleAnchorFrac - blockH / 2)
+          : isProclamationSerif
+          ? (height * 0.45 - blockH / 2)
+          : autoResult.textZone === 'upper'
+          ? zonePad
+          : autoResult.textZone === 'lower'
+          ? (height - blockH - zonePad)
+          : (height - blockH) / 2;
         renderLines.forEach((rl, i) => {
           if (i > 0) y += lineGap * shrink;
           const size = rl.size * shrink;
@@ -2060,14 +2465,28 @@ export default function Designer() {
           ctx.shadowOffsetY = typography.editShadow.y * scale;
           ctx.shadowBlur = typography.editShadow.blur * scale;
           ctx.fillText(referenceLine.text, textX, y);
+          // T03: 주소를 얇은 오벌 알약 테두리로 (레퍼런스 디자인 요소)
+          if (isSerifPoster) {
+            const tw = ctx.measureText(referenceLine.text).width;
+            const pcx = align === 'center' ? textX : textX + tw / 2;
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = typography.referenceColor;
+            ctx.lineWidth = Math.max(1, width * 0.0013);
+            ctx.globalAlpha = 0.75;
+            ctx.beginPath();
+            ctx.ellipse(pcx, y + refSize * 0.42, tw / 2 + width * 0.04, refSize * 1.0, 0, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+          }
+        }
         }
         }
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-        // 핸드폰에도 저장 (보관함과 동시에)
-        await downloadCardToDevice(dataUrl);
+        // 먼저 보관함에 저장하고 완료 창에서 기기 저장·공유를 선택합니다.
+
         await saveCard({
-          id: Date.now().toString(),
+          id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
           ratio: previewRatio,
           bg: autoResult.image,
@@ -2109,6 +2528,24 @@ export default function Designer() {
     };
 
     const handleRegenerate = async () => {
+      setTextEditDraft(null);
+      // T05 플로우: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
+      if (autoResult?.template === 'T05') {
+        setIsGenerating(true);
+        try {
+          await document.fonts?.ready;
+          const body = autoResult.simpleLines?.[0] || verseInput.trim();
+          const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
+          const raw = ref ? `${body}\n${ref}` : body;
+          const newSeed = Math.floor(Math.random() * 0xffffffff);
+          setAutoResult(buildGenerativeResult(raw, autoResult.ratio || meta.ratio, newSeed));
+        } catch {
+          toast.error('재생성에 실패했습니다.');
+        } finally {
+          setIsGenerating(false);
+        }
+        return;
+      }
       setIsGenerating(true);
       const nextIndex = templateIndex + 1;
       setTemplateIndex(nextIndex);
@@ -2127,6 +2564,9 @@ export default function Designer() {
             regenerate: true,
             avoidFontMood: autoResult.fontMood,
             avoidAlign: autoResult.textAlign,
+            previousSubjects: usedSubjectsRef.current,
+            previousLines: autoResult.lines,
+            typographyVersion: autoResult.typographyVersion,
           }),
         });
         if (!res.ok) {
@@ -2134,7 +2574,9 @@ export default function Designer() {
           if (res.status === 429) { toast.error('API 요청 한도 초과'); return; }
           throw new Error(err.error || '생성 실패');
         }
-        setAutoResult(await buildAdaptiveAutoResult(await res.json()));
+        const rdata = await res.json();
+        if (rdata?.sceneSubject) usedSubjectsRef.current = [...usedSubjectsRef.current, rdata.sceneSubject].slice(-6);
+        setAutoResult(await buildAdaptiveAutoResult(rdata));
       } catch (e) {
         toast.error(e instanceof Error ? e.message : '재생성에 실패했습니다.');
       } finally {
@@ -2150,23 +2592,146 @@ export default function Designer() {
             <img src={autoResult.image} alt="card" className="w-full h-full object-cover" />
             {!autoResult.aiText && (
             <div
-              className="absolute inset-0 flex flex-col justify-center p-8"
+              className="absolute inset-0 flex flex-col p-8"
               style={{
+                containerType: 'inline-size', // cqw(카드 너비 기준) 단위가 오버레이 글자에 해석되도록
+                justifyContent: simpleVAnchor !== null ? 'center' : (autoResult.textZone === 'upper' ? 'flex-start' : autoResult.textZone === 'lower' ? 'flex-end' : 'center'),
                 alignItems: previewAlign === 'left' ? 'flex-start' : 'center',
                 padding: previewPadding,
               }}
             >
               <div
                 style={{
-                  maxWidth: previewMaxWidth,
-                  textAlign: previewAlign,
-                  borderRadius: typography.box?.enabled ? typography.box.radius : undefined,
-                  padding: typography.box?.enabled ? typography.box.padding : undefined,
-                  backgroundColor: typography.box?.enabled ? hexToRgba(typography.box.color, typography.box.opacity / 100) : undefined,
-                  backdropFilter: typography.box?.enabled ? 'blur(2px)' : undefined,
-                  transform: previewShift,
+                  maxWidth: isSerifPoster ? undefined : previewMaxWidth,
+                  width: isSerifPoster ? `${T03_LAYOUT.maxWidthCqw}cqw` : undefined,
+                  textAlign: isSerifPoster ? 'center' : previewAlign,
+                  ...(isSerifPoster ? {
+                    position: 'absolute' as const,
+                    top: `${t03Composition.anchorPercent}%`,
+                    left: '50%',
+                  } : simpleVAnchor !== null ? {
+                    position: 'absolute' as const,
+                    top: `${simpleVAnchor}%`,
+                    left: '50%',
+                  } : {}),
+                  borderRadius: !isSerifPoster && typography.box?.enabled ? typography.box.radius : undefined,
+                  padding: !isSerifPoster && typography.box?.enabled ? typography.box.padding : undefined,
+                  backgroundColor: !isSerifPoster && typography.box?.enabled ? hexToRgba(typography.box.color, typography.box.opacity / 100) : undefined,
+                  backdropFilter: !isSerifPoster && typography.box?.enabled ? 'blur(2px)' : undefined,
+                  // T04 앵커 시 가로 정중앙(translateX -50%) + 세로 중심 정렬(translateY -50%)
+                  transform: isSerifPoster
+                    ? `translate(-50%, -50%) scale(${t03FitScale})`
+                    : simpleVAnchor !== null
+                    ? 'translate(-50%, -50%)'
+                    : previewShift,
+                  transformOrigin: isSerifPoster ? 'center' : undefined,
                 }}
               >
+                {isSerifPoster ? (
+                  <>
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        position: 'relative',
+                        width: '100%',
+                        height: `${T03_LAYOUT.ornamentHeightCqw}cqw`,
+                        marginBottom: `${T03_LAYOUT.ornamentGapCqw}cqw`,
+                        color: typography.referenceColor,
+                        opacity: 0.72,
+                      }}
+                    >
+                      <span style={{
+                        position: 'absolute',
+                        left: '50%',
+                        top: '48%',
+                        width: `${T03_LAYOUT.ruleWidthCqw}cqw`,
+                        height: `${T03_LAYOUT.ruleThicknessCqw}cqw`,
+                        backgroundColor: typography.referenceColor,
+                        transform: 'translate(-50%, -50%)',
+                      }} />
+                      <span style={{
+                        position: 'absolute',
+                        left: `calc(50% + ${-6.15 * t03Composition.accentDirection}cqw)`,
+                        top: '0.85cqw',
+                        transform: 'translate(-50%, -50%)',
+                        fontFamily: t03ReferenceFont,
+                        fontSize: '1.55cqw',
+                        lineHeight: 1,
+                      }}>✦</span>
+                      <span style={{
+                        position: 'absolute',
+                        left: `calc(50% + ${5.8 * t03Composition.accentDirection}cqw)`,
+                        top: '0.45cqw',
+                        transform: 'translate(-50%, -50%)',
+                        fontFamily: t03ReferenceFont,
+                        fontSize: '1.2cqw',
+                        lineHeight: 1,
+                      }}>✧</span>
+                      <span style={{
+                        position: 'absolute',
+                        left: `calc(50% + ${7.15 * t03Composition.accentDirection}cqw)`,
+                        top: '1.75cqw',
+                        transform: 'translate(-50%, -50%)',
+                        fontFamily: t03ReferenceFont,
+                        fontSize: '0.78cqw',
+                        lineHeight: 1,
+                      }}>✦</span>
+                    </div>
+                    {t03RenderLines.map((line, i) => (
+                      <p
+                        key={`${line.sourceIndex}-${i}`}
+                        style={{
+                          fontFamily: line.fontFamily,
+                          fontSize: `${line.fontSizeCqw}cqw`,
+                          lineHeight: line.lineHeight,
+                          color: line.isHero ? typography.color : typography.secondaryColor,
+                          textShadow: `0 0.2cqw 1cqw ${typography.editShadow.color}`,
+                          fontWeight: line.fontWeight,
+                          letterSpacing: `${line.letterSpacingEm}em`,
+                          whiteSpace: 'nowrap',
+                          margin: `${line.gapBeforeCqw}cqw 0 0`,
+                        }}
+                      >
+                        {line.text}
+                      </p>
+                    ))}
+                    <div
+                      aria-hidden="true"
+                      style={{
+                        width: `${T03_LAYOUT.ruleWidthCqw}cqw`,
+                        height: `${T03_LAYOUT.ruleThicknessCqw}cqw`,
+                        margin: `${T03_LAYOUT.ruleTopGapCqw}cqw auto 0`,
+                        backgroundColor: typography.referenceColor,
+                        opacity: 0.68,
+                      }}
+                    />
+                    {serifReferenceLine && (
+                      <p
+                        style={{
+                          width: 'fit-content',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          boxSizing: 'border-box',
+                          fontFamily: t03ReferenceFont,
+                          fontSize: `${T03_LAYOUT.referenceFontCqw}cqw`,
+                          lineHeight: T03_LAYOUT.referenceLineHeight,
+                          color: typography.referenceColor,
+                          fontWeight: 500,
+                          letterSpacing: '0.055em',
+                          margin: `${T03_LAYOUT.referenceGapCqw}cqw auto 0`,
+                          border: `${T03_LAYOUT.referenceBorderCqw}cqw solid ${typography.referenceColor}`,
+                          borderRadius: '999px',
+                          padding: `${T03_LAYOUT.referencePaddingYCqw}cqw ${T03_LAYOUT.referencePaddingXCqw}cqw`,
+                          opacity: 0.9,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {serifReferenceLine.text}
+                      </p>
+                    )}
+                  </>
+                ) : (<>
                 {serifContentLines.map((line, i) => {
                   const caption = false;
                   const prominent = line.scale >= 1.45;
@@ -2237,45 +2802,85 @@ export default function Designer() {
                   <p
                     style={{
                       fontFamily: posterCaptionFont,
-                      fontSize: 'clamp(0.68rem, 1.9vw, 0.86rem)',
+                      fontSize: '3cqw',
                       lineHeight: 1.1,
                       color: typography.referenceColor,
                       textShadow: typography.shadow,
                       fontWeight: 600,
                       letterSpacing: '0.04em',
-                      margin: '0.55rem 0 0',
+                      margin: '3cqw auto 0',
+                      ...(isSerifPoster ? {
+                        display: 'inline-block',
+                        border: `0.28cqw solid ${typography.referenceColor}`,
+                        borderRadius: '999px',
+                        padding: '1cqw 4cqw',
+                        opacity: 0.85,
+                      } : {}),
                     }}
                   >
                     {serifReferenceLine.text}
                   </p>
                 )}
+                </>)}
               </div>
             </div>
             )}
           </div>
         </div>
-        {autoResult.aiText && (
+        {autoResult.aiText && autoResult.template !== 'T05' && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
             포스터 느낌을 위해 AI가 글자까지 그렸어요. 저장 전 오탈자를 꼭 확인하세요.
           </div>
         )}
-        <div className="shrink-0 grid grid-cols-[1fr,0.72fr,1.35fr] gap-2 p-4 border-t bg-white">
+        {autoResult.template === 'T05' && (
+          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
+            코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요.
+          </div>
+        )}
+        {autoResult.template === 'T03' && (
+          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
+            글자는 코드라 철자가 정확해요 · 문구 수정은 배경 그대로 바로 반영돼요.
+          </div>
+        )}
+        {textEditDraft !== null ? (
+          <div className="shrink-0 px-4 py-3 bg-white border-t">
+            <p className="mb-2 text-xs text-[#7E7C78]">배경은 그대로, 문구만 바꿔요. <b>Enter로 줄바꿈</b>하면 그대로 반영돼요. 말씀 주소(예: 시편 119:105)는 자동으로 작게 표시돼요.</p>
+            <textarea
+              value={textEditDraft}
+              onChange={(e) => setTextEditDraft(e.target.value)}
+              rows={4}
+              autoFocus
+              className="w-full p-3 border border-[#D8D6D2] rounded-xl text-sm resize-none focus:outline-none focus:border-[#1F1F1F]"
+            />
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button onClick={() => setTextEditDraft(null)} className="px-4 py-2 min-h-11 border border-[#D8D6D2] text-[#1F1F1F] rounded-xl font-medium">취소</button>
+              <button onClick={applyTextEdit} className="px-4 py-2 min-h-11 bg-[#1F1F1F] text-white rounded-xl font-medium">문구 적용</button>
+            </div>
+          </div>
+        ) : (
+        <div className="shrink-0 px-4 py-2 bg-white text-center">
+          <div className="flex justify-center gap-6">
+            <button
+              disabled={isGenerating || isSaving}
+              onClick={() => (canEditTextInPlace ? openTextEdit() : setFlowStep('record'))}
+              className="text-sm underline disabled:opacity-40"
+            >문구 수정</button>
+            <button disabled={isGenerating || isSaving} onClick={() => { setTextEditDraft(null); setFlowStep('auto-template'); }} className="text-sm underline disabled:opacity-40">스타일 변경</button>
+          </div>
+          <p className="mt-1 text-xs text-[#7E7C78]">
+            {canEditTextInPlace
+              ? '문구는 이 배경 그대로 바로 수정돼요. 스타일을 바꾸면 다시 생성해요.'
+              : '문구나 스타일을 바꾸면 카드를 다시 생성해야 해요.'}
+          </p>
+        </div>
+        )}
+        <div className="shrink-0 grid grid-cols-[1fr,1.35fr] gap-2 p-4 border-t bg-white">
           <button
             onClick={handleRegenerate}
             disabled={isGenerating || isSaving}
             className="flex-1 px-4 py-2 min-h-12 border border-[#1F1F1F] text-[#1F1F1F] rounded-xl font-medium disabled:opacity-40 flex items-center justify-center gap-2"
           >
-            {renderGenerationContent('regenerate', '다시 생성', '다시 만드는 중...', undefined, false)}
-          </button>
-          <button
-            onClick={() => {
-              applyPreviewEditState();
-              setFlowStep('edit');
-            }}
-            disabled={isGenerating || isSaving}
-            className="px-3 py-2 bg-white border border-[#D8D6D2] text-[#2E2E2E] rounded-xl font-medium disabled:opacity-40"
-          >
-            편집
+            {renderGenerationContent('regenerate', '다시 생성', '다시 만드는 중...', undefined, false, true)}
           </button>
           <button
             onClick={handleSaveAutoPreview}
@@ -2288,6 +2893,79 @@ export default function Designer() {
       </div>
     );
   };
+
+  const renderLoginModal = () => (
+      <LoginModal
+        open={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        callbackUrl={loginCallbackUrl}
+        title="로그인이 필요해요"
+        description="카드를 만들고 저장하려면 먼저 로그인해주세요."
+      />
+
+  );
+
+  const renderSaveSuccessModal = () => (
+    <>
+      {/* Save Success Modal */}
+      {savedCardData && (
+        <CardSaveSuccessModal
+          open={saveSuccessOpen}
+          onClose={() => {
+            setSaveSuccessOpen(false);
+            setSavedCardData(null);
+          }}
+          cardData={savedCardData}
+          onCreateNew={() => {
+            setFlowStep('entry');
+            setVerseInput('');
+            setAutoResult(null);
+            setSelectedTemplateId('');
+            setBgOpen(false);
+            // Reset canvas to initial state
+            setMeta({
+              ratio: '9:16',
+              safeGuide: true,
+              bgColor: '#1F1F1F',
+              bgImageUrl: '',
+              bgScale: 150,
+              bgPositionX: 50,
+              bgPositionY: 50,
+              bgFilter: 'none',
+              bgDarken: 0,
+              bgBlur: 0,
+            });
+            setT({
+              content: '텍스트를 입력하세요.',
+              fontFamily: 'Inter',
+              fontSize: 18,
+              lineHeight: 1.35,
+              letterSpacing: 0,
+              color: '#FFFFFF',
+              bold: false,
+              italic: false,
+              underline: false,
+              stroke: { enabled: false, width: 2, color: '#000000' },
+              shadow: { enabled: false, x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,.35)' },
+              box: { enabled: false, color: '#000000', opacity: 0, padding: 20, radius: 12 },
+              align: 'center',
+              x: 50,
+              y: 50,
+              w: 85,
+              h: 40,
+            });
+            setBgPrompt('');
+            setExpandedPrompt('');
+            setSelectedStyle('');
+            sessionStorage.removeItem('edit_card_id');
+            sessionStorage.removeItem('edit_card_state');
+            setIsEditMode(false);
+            toast.success('새 카드를 만들 준비가 되었어요!');
+          }}
+        />
+      )}
+    </>
+  );
 
   // 멀티스텝 플로우 - entry, record, auto-style, auto-preview일 때 간단한 구조 표시
   if (flowStep !== 'edit') {
@@ -2316,12 +2994,14 @@ export default function Designer() {
           {flowStep === 'auto-template' && renderAutoTemplate()}
           {flowStep === 'auto-preview' && renderAutoPreview()}
         </div>
+        {renderLoginModal()}
+        {renderSaveSuccessModal()}
         <RecordSelectorModal
           open={recordSelectorOpen}
           onClose={() => setRecordSelectorOpen(false)}
           records={availableRecords}
           onConfirm={useSelectedRecordText}
-          onRefetch={fetchRecordsForSelector}
+          purpose={recordPickerTarget === 'manual-bg' ? 'background' : 'text'}
         />
       </>
     );
@@ -2389,8 +3069,6 @@ export default function Designer() {
             onClick={async () => {
               requireAuth(async () => {
                 setIsSaving(true);
-                console.log('🎨 Starting native canvas save...');
-                
                 try {
                   // Get canvas dimensions based on ratio (optimized for faster save)
                   const getDimensions = () => {
@@ -2418,17 +3096,11 @@ export default function Designer() {
                     throw new Error('Canvas context not available');
                   }
                   
-                  console.log(`📐 Canvas size: ${width}x${height}`);
-                  
                   // ===== STEP 1: Draw Background Color =====
                   ctx.fillStyle = meta.bgColor;
                   ctx.fillRect(0, 0, width, height);
-                  console.log('✅ Background color drawn');
-                  
                   // ===== STEP 2: Draw Background Image =====
                   if (meta.bgImageUrl) {
-                    console.log('📦 Loading background image...');
-                    
                     const img = new Image();
                     img.crossOrigin = 'anonymous';
                     
@@ -2440,8 +3112,6 @@ export default function Designer() {
                       
                       img.onload = () => {
                         clearTimeout(timeout);
-                        console.log('✅ Image loaded successfully');
-                        
                         try {
                           // Save context state
                           ctx.save();
@@ -2475,7 +3145,6 @@ export default function Designer() {
                             ctx.fillRect(0, 0, width, height);
                           }
                           
-                          console.log('✅ Background image drawn with user adjustments');
                         } catch (err) {
                           console.error('Error drawing image:', err);
                         }
@@ -2495,8 +3164,6 @@ export default function Designer() {
                   
                   // ===== STEP 3: Draw Text =====
                   if (t.content && t.content.trim()) {
-                    console.log('✍️ Drawing text...');
-                    
                     // Calculate text position and size
                     const textX = (width * t.x) / 100;
                     const textY = (height * t.y) / 100;
@@ -2630,11 +3297,9 @@ export default function Designer() {
                       ctx.fillText(line, drawX, lineY);
                     });
                     
-                    console.log(`✅ Text drawn (${allLines.length} lines)`);
                   }
                   
                   // ===== STEP 4: Convert to Data URL =====
-                  console.log('📸 Converting to image...');
                   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
                   
                   // Verify not blank
@@ -2642,13 +3307,7 @@ export default function Designer() {
                     throw new Error('Generated image appears to be blank');
                   }
                   
-                  console.log('✅ Image generated successfully');
-
-                  // ===== STEP 5a: Save to Device (핸드폰에도 저장) =====
-                  await downloadCardToDevice(dataUrl);
-
                   // ===== STEP 5: Save to Database =====
-                  console.log('💾 Saving to database...');
                   const editCardId = sessionStorage.getItem('edit_card_id');
                   
                   if (editCardId) {
@@ -2672,7 +3331,7 @@ export default function Designer() {
                     setIsEditMode(false);
                   } else {
                     await saveCard({
-                      id: Date.now().toString(),
+                      id: crypto.randomUUID(),
                       createdAt: new Date().toISOString(),
                       ratio: meta.ratio,
                       bg: meta.bgImageUrl || meta.bgColor,
@@ -2687,8 +3346,6 @@ export default function Designer() {
                     });
                   }
                   
-                  console.log('✅ Saved to database');
-                  
                   // ===== STEP 6: Show Success =====
                   setSavedCardData({
                     imageDataUrl: dataUrl,
@@ -2696,8 +3353,6 @@ export default function Designer() {
                   });
                   setSaveSuccessOpen(true);
                   toast.success(isEditMode ? '카드가 업데이트되었어요!' : '카드가 저장되었어요!');
-                  console.log('🎉 Save complete!');
-                  
                 } catch (error) {
                   console.error('❌ Save Failed:', error);
                   const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
@@ -3112,6 +3767,7 @@ export default function Designer() {
             <header className="shrink-0 flex items-center px-5 py-4 border-b border-[#EDEDED] bg-white z-50">
               <button
                 onClick={() => setBgOpen(false)}
+                disabled={isGenerating || isExpandingPrompt}
                 className="p-2 -ml-2"
               >
                 <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
@@ -3122,7 +3778,7 @@ export default function Designer() {
             </header>
 
             {/* Tabs (with TabsList inside) */}
-            <Tabs value={bgTab} onValueChange={(v) => setBgTab(v as typeof bgTab)} className="flex-1 min-h-0 flex flex-col">
+            <Tabs value={bgTab} onValueChange={(v) => { if (!isGenerating && !isExpandingPrompt) setBgTab(v as typeof bgTab); }} className="flex-1 min-h-0 flex flex-col">
               {/* TabsList */}
               <div className="shrink-0 px-5 py-3 bg-white border-b border-[#EDEDED] z-50">
                 <TabsList className="w-full grid grid-cols-3 h-10 bg-[#F3F2F1] p-1 rounded-xl">
@@ -3167,7 +3823,8 @@ export default function Designer() {
                     ].map((style, idx) => (
                       <button
                         key={idx}
-                        onClick={() => setSelectedStyle(style)}
+                        disabled={isGenerating || isExpandingPrompt}
+                        onClick={() => { setSelectedStyle(style); setExpandedPrompt(''); }}
                         className={`px-3 py-2 rounded-lg border text-[#2E2E2E] text-[13px] font-medium transition-colors text-left ${
                           selectedStyle === style
                             ? 'border-[#1F1F1F] bg-[#1F1F1F]/10'
@@ -3188,29 +3845,51 @@ export default function Designer() {
 
                  {/* 2. 원하는 장면을 적어주세요 */}
                  <section>
-                  <h2 className="text-[13px] font-semibold text-[#2E2E2E] mb-1.5">
-                    2. 원하는 장면을 적어주세요
-                  </h2>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
+                      2. 배경에 담을 분위기나 내용을 적어주세요
+                    </h2>
+                    <button
+                      type="button"
+                      onClick={() => openRecordSelector('manual-bg')}
+                      disabled={isGenerating || isExpandingPrompt}
+                      className="shrink-0 text-[12px] font-semibold text-[#4F8A5B]"
+                    >
+                      ✨ 내 기록에서 가져오기
+                    </button>
+                  </div>
                   <textarea
                     value={bgPrompt}
+                    disabled={isGenerating || isExpandingPrompt}
                     onChange={(e) => {
                       setBgPrompt(e.target.value);
                       setExpandedPrompt('');
                     }}
-                    placeholder="예: 호수, 새벽 햇살, 어린양..."
+                    placeholder="예: 비 오는 창밖, 노을 지는 바다, 푸른 밤하늘"
                     className="w-full h-20 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#1F1F1F] focus:ring-2 focus:ring-[#1F1F1F]/20"
                   />
+                  <p className="mt-1.5 text-[11px] leading-4 text-[#9B9B9B]">
+                    짧게 적어도 AI가 장면을 유지하며 빛·색감·구도를 다듬어줘요. 기록이나 카드 글씨 없이도 만들 수 있어요. 개인정보는 입력하지 마세요.
+                  </p>
                 </section>
 
+                {!expandedPrompt && (
+                  <button onClick={() => expandPrompt(false)}
+                    disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
+                    className="text-sm underline disabled:opacity-40">
+                    배경 설명 먼저 확인·수정 (선택)
+                  </button>
+                )}
                 {/* 확장된 프롬프트 확인 */}
                 {expandedPrompt && (
                   <section>
                     <div className="flex items-center justify-between mb-1.5">
                       <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
-                        AI가 확장한 프롬프트
+                        배경 설명 수정 (선택)
                       </h2>
                       <button
                         onClick={() => setExpandedPrompt('')}
+                        disabled={isGenerating || isExpandingPrompt}
                         className="text-[12px] text-[#1F1F1F] hover:text-[#333333] font-medium"
                       >
                         다시 작성
@@ -3219,8 +3898,9 @@ export default function Designer() {
                     <div className="p-3 rounded-lg bg-white border-2 border-[#1F1F1F] shadow-sm">
                       <textarea
                         value={expandedPrompt}
+                        disabled={isGenerating || isExpandingPrompt}
                         onChange={(e) => setExpandedPrompt(e.target.value)}
-                        placeholder="프롬프트를 자유롭게 수정하세요..."
+                        placeholder="배경 설명을 자유롭게 수정하세요..."
                         className="w-full h-24 bg-transparent text-[#2E2E2E] text-[13px] leading-relaxed resize-none focus:outline-none placeholder:text-[#ACACAC]"
                       />
                     </div>
@@ -3270,30 +3950,15 @@ export default function Designer() {
 
                 {/* Bottom Button - Fixed */}
                 <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110]">
-                  {!expandedPrompt ? (
-                    <Button
-                      onClick={expandPrompt}
-                      disabled={isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
-                      className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
-                    >
-                      {renderGenerationContent('prompt', '프롬프트 미리보기', '프롬프트 만드는 중...', <Wand2 className="w-4 h-4 mr-2" />)}
-                    </Button>
-                  ) : meta.bgImageUrl && bgTab === 'ai' ? (
-                    <Button
-                      onClick={() => setBgOpen(false)}
-                      className="w-full h-11 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
-                    >
-                      완료
-                    </Button>
-                  ) : (
-                    <Button
-                      onClick={generateBackground}
-                      disabled={isGenerating}
-                      className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
-                    >
-                      {renderGenerationContent('background', '배경 이미지 생성하기', '이미지 생성 중...', <Wand2 className="w-4 h-4 mr-2" />)}
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => expandedPrompt ? generateBackground() : expandPrompt(true)}
+                    disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
+                    className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
+                  >
+                    {isExpandingPrompt && !isGenerating
+                      ? renderGenerationContent('prompt', '배경 만들기', '배경 준비 중...')
+                      : renderGenerationContent('background', meta.bgImageUrl ? '새 배경 만들기' : '배경 만들기', '이미지 생성 중...')}
+                  </Button>
                 </div>
               </TabsContent>
 
@@ -3508,79 +4173,20 @@ export default function Designer() {
         onChange={handleImageUpload}
       />
 
-      {/* Login Modal */}
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        callbackUrl={loginCallbackUrl}
-        title="로그인이 필요해요"
-        description="카드를 만들고 저장하려면 먼저 로그인해주세요."
-      />
+      {renderLoginModal()}
 
       {/* Record Selector Modal */}
-      <RecordSelectorModal 
+      <RecordSelectorModal
         open={recordSelectorOpen}
         onClose={() => {
-          console.log('🚪 Closing modal');
           setRecordSelectorOpen(false);
         }}
         records={availableRecords}
         onConfirm={useSelectedRecordText}
-        onRefetch={fetchRecordsForSelector}
+        purpose={recordPickerTarget === 'manual-bg' ? 'background' : 'text'}
       />
 
-      {/* Save Success Modal */}
-      {savedCardData && (
-        <CardSaveSuccessModal
-          open={saveSuccessOpen}
-          onClose={() => {
-            setSaveSuccessOpen(false);
-            setSavedCardData(null);
-          }}
-          cardData={savedCardData}
-          onCreateNew={() => {
-            // Reset canvas to initial state
-            setMeta({
-              ratio: '9:16',
-              safeGuide: true,
-              bgColor: '#1F1F1F',
-              bgImageUrl: '',
-              bgScale: 150,
-              bgPositionX: 50,
-              bgPositionY: 50,
-              bgFilter: 'none',
-              bgDarken: 0,
-              bgBlur: 0,
-            });
-            setT({
-              content: '텍스트를 입력하세요.',
-              fontFamily: 'Inter',
-              fontSize: 18,
-              lineHeight: 1.35,
-              letterSpacing: 0,
-              color: '#FFFFFF',
-              bold: false,
-              italic: false,
-              underline: false,
-              stroke: { enabled: false, width: 2, color: '#000000' },
-              shadow: { enabled: false, x: 0, y: 2, blur: 8, color: 'rgba(0,0,0,.35)' },
-              box: { enabled: false, color: '#000000', opacity: 0, padding: 20, radius: 12 },
-              align: 'center',
-              x: 50,
-              y: 50,
-              w: 85,
-              h: 40,
-            });
-            setBgPrompt('');
-            setExpandedPrompt('');
-            setSelectedStyle('');
-            sessionStorage.removeItem('edit_card_id');
-            sessionStorage.removeItem('edit_card_state');
-            setIsEditMode(false);
-            toast.success('새 카드를 만들 준비가 되었어요!');
-          }}
-        />
-      )}
+      {renderSaveSuccessModal()}
 
       {/* Analysis Loading Overlay */}
       {isExpandingPrompt && (
@@ -3787,7 +4393,6 @@ function Toolbar({
           <TabsContent value="font" className="mt-0 pb-0">
             <button
               onClick={() => {
-                console.log('Font button clicked');
                 onOpenFontPicker?.();
               }}
               className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#1F1F1F] transition-colors"

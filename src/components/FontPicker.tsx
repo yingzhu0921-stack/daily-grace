@@ -6,8 +6,8 @@ export type FontFamily =
   | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang'
   | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung'
   | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora'
-  | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada'
-  | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo'
+  | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada'
+  | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'GangwonModoo'
   | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush'
   | 'Cafe24SuperMagic';
 
@@ -20,10 +20,8 @@ export interface FontOption {
 export const fontOptions: FontOption[] = [
   // ── 말씀카드 추천 ──
   // 초강렬 헤드라인
-  { value: 'KBLJump', label: 'KBL점프', family: 'KBLJump' },
   { value: 'GangwonTunTun', label: '강원튼튼', family: 'GangwonTunTun' },
   // 개성/힙
-  { value: 'Kkubullim', label: '꾸불림', family: 'Kkubullim' },
   { value: 'Taenada', label: '태나다', family: 'Taenada' },
   { value: 'Cafe24SuperMagic', label: '카페24슈퍼매직', family: 'Cafe24SuperMagic' },
   // 깔끔한 고딕
