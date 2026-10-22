@@ -34,6 +34,7 @@ const ModalManager = () => {
 };
 
 const AppContent = () => { 
+  const { loading } = useAuth();
   // 데이터 동기화 (로그인 시 자동으로 클라우드에서 로드)
   useDataSync();
   
@@ -43,6 +44,8 @@ const AppContent = () => {
     const interval = setInterval(checkAndShowReminder, 60000); // 1분마다 체크
     return () => clearInterval(interval);
   }, []);
+
+  if (loading) return <div className="min-h-screen bg-[rgba(249,248,246,1)]" aria-label="로딩 중" />;
 
   return (
     <>

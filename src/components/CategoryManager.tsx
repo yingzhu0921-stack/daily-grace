@@ -123,8 +123,16 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
     } catch (error) {
       console.error('Failed to load categories:', error);
       toast.error('카테고리를 불러오는데 실패했습니다');
-      // 에러가 나도 기본 카테고리는 표시
-      setCategories(DEFAULT_CATEGORIES);
+      // 네트워크 오류에서는 계정별 로컬 캐시를 유지한다.
+      try {
+        const cached = JSON.parse(localStorage.getItem('custom_categories') || '[]');
+        const customCategories = Array.isArray(cached)
+          ? cached.map(category => ({ ...category, color: normalizeCategoryColor(category.color) }))
+          : [];
+        setCategories([...DEFAULT_CATEGORIES, ...customCategories]);
+      } catch {
+        setCategories(DEFAULT_CATEGORIES);
+      }
     } finally {
       setLoading(false);
     }
@@ -174,8 +182,53 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   };
 
   const handleDeleteCategory = async (id: string) => {
+    const linkedRecords = (() => {
+      try {
+        const records = JSON.parse(localStorage.getItem('custom_records') || '[]');
+        return Array.isArray(records) ? records.filter(record => record?.categoryId === id) : [];
+      } catch {
+        return [];
+      }
+    })();
+    const categoryName = categories.find(category => category.id === id)?.name || '이 카테고리';
+    const detail = linkedRecords.length
+      ? `\n이 카테고리의 기록 ${linkedRecords.length}개도 함께 삭제됩니다.`
+      : '';
+    if (!window.confirm(`“${categoryName}” 카테고리를 삭제하시겠어요?${detail}\n삭제한 내용은 복구할 수 없습니다.`)) return;
+
     try {
       await categoryStorage.remove(id);
+
+      for (const storage of [localStorage, sessionStorage]) {
+        try {
+          const cached = JSON.parse(storage.getItem('custom_categories') || '[]');
+          if (Array.isArray(cached)) {
+            storage.setItem('custom_categories', JSON.stringify(
+              cached.filter(category => category?.id !== id)
+            ));
+          }
+        } catch {
+          // 손상된 캐시는 서버의 삭제 결과에 영향을 주지 않는다.
+        }
+      }
+
+      if (linkedRecords.length) {
+        const removedIds = new Set(linkedRecords.map(record => String(record.id)));
+        const allRecords = JSON.parse(localStorage.getItem('custom_records') || '[]');
+        if (Array.isArray(allRecords)) {
+          localStorage.setItem('custom_records', JSON.stringify(
+            allRecords.filter(record => record?.categoryId !== id)
+          ));
+        }
+        try {
+          const reminders = JSON.parse(localStorage.getItem('application_reminders') || '{}');
+          for (const recordId of removedIds) delete reminders[recordId];
+          localStorage.setItem('application_reminders', JSON.stringify(reminders));
+        } catch {
+          // 손상된 로컬 알림 캐시는 카테고리 삭제를 막지 않는다.
+        }
+        window.dispatchEvent(new Event('recordsUpdated'));
+      }
       // Re-fetch from storage to ensure consistency
       await loadCategories();
 

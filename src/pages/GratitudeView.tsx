@@ -49,7 +49,7 @@ export default function GratitudeView() {
       navigator.share({
         title: '감사 기록',
         text: shareText,
-      }).catch(err => console.log('Share failed:', err));
+      }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText);
       toast.success('전체 내용이 복사되었어요!');

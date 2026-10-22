@@ -1,4 +1,5 @@
 import type { PrayerNote } from '@/types/prayer';
+import { clearRecordDeletion, markRecordDeleted } from '@/utils/deletionQueue';
 
 const KEY = 'prayers';
 
@@ -30,7 +31,9 @@ function syncUpdate(note: PrayerNote) {
 }
 
 function syncDelete(id: string) {
-  fetch(`/api/data/prayers/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  fetch(`/api/data/prayers/${id}`, { method: 'DELETE', credentials: 'include' })
+    .then(response => { if (response.ok) clearRecordDeletion(KEY, id); })
+    .catch(() => {});
 }
 
 export function list(): PrayerNote[] {
@@ -77,6 +80,7 @@ export function get(id: string) {
 }
 
 export async function remove(id: string) {
+  markRecordDeleted(KEY, id);
   writeAll(readAll().filter(n => n.id !== id));
   syncDelete(id);
 }

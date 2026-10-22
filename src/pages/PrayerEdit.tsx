@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { ChevronLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 export default function PrayerEdit() {
   const navigate = useNavigate();
@@ -42,7 +43,7 @@ export default function PrayerEdit() {
       answeredDetail: answered ? answeredDetail : undefined
     });
 
-    toast.success('클라우드에 백업되었습니다.');
+    toast.success(saveFeedback(Boolean(user)));
     navigate(`/prayer/${id}`, { replace: true });
   };
 

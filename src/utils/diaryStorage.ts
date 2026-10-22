@@ -1,3 +1,5 @@
+import { clearRecordDeletion, markRecordDeleted } from '@/utils/deletionQueue';
+
 export type Diary = {
   id: string;
   content: string;
@@ -57,8 +59,11 @@ export async function update(id: string, content: string) {
 }
 
 export async function remove(id: string) {
+  markRecordDeleted(KEY, id);
   writeAll(readAll().filter(d => d.id !== id));
-  fetch(`/api/data/diaries/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  fetch(`/api/data/diaries/${id}`, { method: 'DELETE', credentials: 'include' })
+    .then(response => { if (response.ok) clearRecordDeletion(KEY, id); })
+    .catch(() => {});
 }
 
 export function hasDiaryOn(date: Date) {

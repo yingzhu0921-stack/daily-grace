@@ -101,15 +101,12 @@ const IndexNew = () => {
   useEffect(() => {
     const loadCustomCategories = async () => {
       try {
-        console.log('📂 Loading custom categories...');
-
         // 먼저 캐시된 데이터를 즉시 표시
         const cached = sessionStorage.getItem('custom_categories');
         if (cached) {
           try {
             const cachedData = JSON.parse(cached);
             setCustomCategories(cachedData.map((cat: any) => ({ ...cat, color: normalizeCategoryColor(cat.color) })));
-            console.log('⚡ Loaded from cache:', cachedData);
           } catch (e) {
             console.error('Cache parse error:', e);
           }
@@ -117,13 +114,11 @@ const IndexNew = () => {
 
         // 백그라운드에서 최신 데이터 가져오기
         const dbCategories = await categoryStorage.list();
-        console.log('✅ Loaded categories from DB:', dbCategories);
 
         // user_id가 있는 것만 커스텀 카테고리 (기본 카테고리는 user_id가 null)
         const customs = dbCategories
           .filter((cat: any) => cat.user_id != null)
           .map((cat: any) => ({ ...cat, color: normalizeCategoryColor(cat.color) }));
-        console.log('🎯 Custom categories filtered:', customs);
 
         // 캐시 업데이트
         sessionStorage.setItem('custom_categories', JSON.stringify(customs));
@@ -136,7 +131,6 @@ const IndexNew = () => {
     loadCustomCategories();
 
     const handleCategoriesUpdated = () => {
-      console.log('🔄 Categories updated event received');
       loadCustomCategories();
     };
 

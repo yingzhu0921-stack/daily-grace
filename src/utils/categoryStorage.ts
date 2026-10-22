@@ -49,14 +49,10 @@ const normalizeCategory = (category: Category): Category => ({
 });
 
 export async function list(): Promise<Category[]> {
-  try {
-    const res = await fetch('/api/data/categories', { credentials: 'include' });
-    if (!res.ok) return [];
-    const categories = await res.json<Category[]>();
-    return categories.map(normalizeCategory);
-  } catch {
-    return [];
-  }
+  const res = await fetch('/api/data/categories', { credentials: 'include' });
+  if (!res.ok) throw new Error('카테고리 목록을 불러오지 못했습니다');
+  const categories: Category[] = await res.json();
+  return categories.map(normalizeCategory);
 }
 
 export async function create(category: Omit<Category, 'id' | 'createdAt' | 'updatedAt'>): Promise<Category> {
@@ -67,7 +63,8 @@ export async function create(category: Omit<Category, 'id' | 'createdAt' | 'upda
     body: JSON.stringify(category),
   });
   if (!res.ok) throw new Error('카테고리 생성 실패');
-  return normalizeCategory(await res.json<Category>());
+  const created: Category = await res.json();
+  return normalizeCategory(created);
 }
 
 export async function get(id: string): Promise<Category | null> {
@@ -89,12 +86,15 @@ export async function update(id: string, patch: Partial<Category>): Promise<Cate
   });
   if (!res.ok) throw new Error('카테고리 수정 실패');
   const all = await list();
-  return normalizeCategory(all.find(c => c.id === id) as Category);
+  const updated = all.find(c => c.id === id);
+  if (!updated) throw new Error('수정된 카테고리를 불러오지 못했습니다');
+  return normalizeCategory(updated);
 }
 
 export async function remove(id: string): Promise<void> {
-  await fetch(`/api/data/categories/${id}`, {
+  const res = await fetch(`/api/data/categories/${id}`, {
     method: 'DELETE',
     credentials: 'include',
   });
+  if (!res.ok) throw new Error('카테고리 삭제 실패');
 }

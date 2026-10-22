@@ -24,6 +24,7 @@ interface RecordSelectorModalProps {
   records: Record[];
   onConfirm: (record: Record, selectedText: string) => void;
   onRefetch?: () => void; // 새로고침 콜백 추가
+  purpose?: 'text' | 'background';
 }
 
 const getCategoryInfo = (type: RecordType) => {
@@ -57,18 +58,59 @@ const getRecordText = (record: Record) => {
   return record.content || record.passage || record.title || '';
 };
 
-export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch }: RecordSelectorModalProps) {
+export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch, purpose = 'text' }: RecordSelectorModalProps) {
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [confirmedText, setConfirmedText] = useState('');
   const [step, setStep] = useState<'select' | 'confirm'>('select');
   const [activeType, setActiveType] = useState<'all' | RecordType>('all');
-  
-  console.log('🎭 RecordSelectorModal render - open:', open, 'records:', records.length);
+  const [query, setQuery] = useState('');
+  const [visibleCount, setVisibleCount] = useState(12);
+  const [options, setOptions] = useState<string[]>([]);
+  const [recommending, setRecommending] = useState(false);
+  const [recommendationError, setRecommendationError] = useState('');
+  const [recommendationRequested, setRecommendationRequested] = useState(false);
+
+  useEffect(() => {
+    setVisibleCount(12);
+  }, [query, activeType]);
+
+  useEffect(() => {
+    setOptions([]);
+    setRecommendationError('');
+    setRecommending(false);
+    if (!recommendationRequested || !open || step !== 'confirm' || !selectedRecord || purpose === 'background') return;
+    const raw = getRecordText(selectedRecord);
+    if (raw.replace(/\s/g, '').length <= 22) return;
+    const controller = new AbortController();
+    setRecommending(true);
+    const timeout = window.setTimeout(() => controller.abort(), 30000);
+    let active = true;
+    (async () => {
+      try {
+        const response = await fetch('/api/generate-image', {
+          method: 'POST', credentials: 'include', signal: controller.signal,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'condense', text: raw }),
+        });
+        if (!response.ok) throw new Error('Recommendation failed');
+        const data = await response.json();
+        const candidates = Array.isArray(data.options) ? data.options : [data.text];
+        const phrases = [...new Set<string>(candidates.filter((value: unknown): value is string => typeof value === 'string' && !!value.trim()).map((value: string) => value.trim()))].filter(value => value !== raw).slice(0, 3);
+        if (!phrases.length) throw new Error('Empty recommendation');
+        if (active) setOptions(phrases);
+      } catch {
+        if (active) setRecommendationError('추천을 불러오지 못했어요. 원문을 그대로 사용하거나 수정할 수 있어요.');
+      } finally {
+        window.clearTimeout(timeout);
+        if (active) setRecommending(false);
+      }
+    })();
+    return () => { active = false; controller.abort(); window.clearTimeout(timeout); };
+  }, [open, selectedRecord, step, purpose, recommendationRequested]);
 
   // 모달이 열릴 때마다 최신 데이터 가져오기
   useEffect(() => {
     if (open && onRefetch) {
-      console.log('🔄 Modal opened - triggering refetch');
       onRefetch();
     }
     // onRefetch는 useCallback으로 감싸져서 안정적인 참조를 가지므로 의존성 배열에 포함 가능
@@ -81,12 +123,18 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
       setConfirmedText('');
       setStep('select');
       setActiveType('all');
+      setQuery('');
+      setVisibleCount(12);
+      setRecommendationRequested(false);
     }
   }, [open]);
 
   const handleSelectRecord = (record: Record) => {
     setSelectedRecord(record);
     setConfirmedText(getRecordText(record));
+    setOptions([]);
+    setRecommendationError('');
+    setRecommendationRequested(false);
     setStep('confirm');
   };
 
@@ -100,9 +148,10 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     }
   };
 
-  const filteredRecords = activeType === 'all'
-    ? records
-    : records.filter(record => record.type === activeType);
+  const filteredRecords = records.filter(record =>
+    (activeType === 'all' || record.type === activeType) &&
+    `${record.title || ''} ${getRecordText(record)}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
+  );
 
   const filters: { key: 'all' | RecordType; label: string }[] = [
     { key: 'all', label: '전체' },
@@ -114,26 +163,27 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
 
   return (
     <Dialog open={open} onOpenChange={(isOpen) => {
-      console.log('📱 Dialog onOpenChange:', isOpen);
       if (!isOpen) onClose();
     }}>
       <DialogContent 
         className="max-w-[500px] max-h-[70vh] flex flex-col p-4 sm:p-6 bg-white"
         style={{ zIndex: 9999 }}
+        overlayClassName="z-[9998]"
       >
         <DialogHeader className="pb-3">
           <DialogTitle className="text-lg sm:text-xl">
-            {step === 'select' ? '내 기록에서 가져오기' : '카드에 담을 문구'}
+            {step === 'select' ? '내 기록에서 가져오기' : purpose === 'background' ? '배경에 참고할 내용' : '카드에 담을 문구'}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground mt-1">
             {step === 'select'
               ? '최근 기록에서 카드로 남길 내용을 선택하세요'
-              : '원본 기록은 수정되지 않습니다'}
+              : purpose === 'background' ? '배경에만 참고하며 기존 카드 글씨는 바뀌지 않아요.' : '원문 또는 AI 추천을 선택하고 수정하세요. 원본 기록은 바뀌지 않아요.'}
           </DialogDescription>
         </DialogHeader>
 
         {step === 'select' ? (
           <div className="flex-1 min-h-0 flex flex-col gap-3">
+            <input aria-label="기록 검색" value={query} onChange={e => setQuery(e.target.value)} placeholder="제목이나 내용으로 검색" className="w-full rounded-lg border p-3 text-sm" />
             <div className="flex gap-1.5 overflow-x-auto pb-1">
               {filters.map(filter => (
                 <button
@@ -154,10 +204,10 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
             <div className="flex-1 overflow-y-auto space-y-2 py-1">
             {filteredRecords.length === 0 ? (
               <div className="text-center text-muted-foreground py-8 text-sm">
-                불러올 기록이 없습니다. 먼저 Q.T, 기도, 감사 등을 작성해주세요.
+                {query || activeType !== 'all' ? '조건에 맞는 기록이 없어요. 검색어나 카테고리를 바꿔보세요.' : '아직 기록이 없어요. 기록을 작성하거나 돌아가서 문구를 직접 입력해주세요.'}
               </div>
             ) : (
-              filteredRecords.map((record) => {
+              filteredRecords.slice(0, visibleCount).map((record) => {
                 const categoryInfo = getCategoryInfo(record.type);
                 const contentPreview = getContentPreview(record);
 
@@ -185,7 +235,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                             {categoryInfo.name}
                           </span>
                           <span className="text-[11px] text-muted-foreground">
-                            {format(new Date(record.date || record.created_at || ''), 'M/d', { locale: ko })}
+                            {Number.isFinite(new Date(record.date || record.created_at || '').getTime()) ? format(new Date(record.date || record.created_at || ''), 'M/d', { locale: ko }) : '날짜 없음'}
                           </span>
                         </div>
 
@@ -204,10 +254,11 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                 );
               })
             )}
+            {filteredRecords.length > visibleCount && <Button variant="outline" className="w-full" onClick={() => setVisibleCount(count => count + 12)}>기록 더 보기</Button>}
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 flex flex-col gap-3">
+          <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto">
             {selectedRecord && (
               <button
                 type="button"
@@ -218,11 +269,30 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                 다른 기록 선택
               </button>
             )}
+            {purpose === 'text' && selectedRecord && (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
+                  {getRecordText(selectedRecord).replace(/\s/g, '').length > 22 && !recommendationRequested && (
+                    <Button variant="outline" onClick={() => setRecommendationRequested(true)}>AI 추천 받기</Button>
+                  )}
+                </div>
+                <p role="status" className="text-xs text-muted-foreground">
+                  {recommending
+                    ? 'AI 추천 문구를 준비 중이에요. 기다리지 않고 원문을 사용해도 돼요.'
+                    : recommendationError || (recommendationRequested
+                      ? '추천을 위해 선택한 기록을 AI에 전송했어요.'
+                      : 'AI 추천을 누르면 선택한 기록이 AI에 전송됩니다. 원문은 바뀌지 않아요.')}
+                </p>
+                {options.map((option, index) => <button key={option} onClick={() => setConfirmedText(option)} className="w-full rounded-lg border p-3 text-left text-sm hover:bg-gray-50"><span className="block text-xs text-muted-foreground">AI 추천 {index + 1}</span>{option}</button>)}
+              </div>
+            )}
             <textarea
+              aria-label={purpose === 'background' ? '배경 참고 내용' : '카드 문구 수정'}
               value={confirmedText}
               onChange={(e) => setConfirmedText(e.target.value)}
               placeholder="카드에 담을 문구를 확인해주세요"
-              className="min-h-[220px] flex-1 resize-none rounded-xl border border-[#E3E2E0] bg-[#FAFAF9] p-3 text-[14px] leading-6 text-[#2E2E2E] focus:outline-none focus:ring-2 focus:ring-[#4F8A5B]/20"
+              className="min-h-[160px] shrink-0 resize-y rounded-xl border border-[#E3E2E0] bg-[#FAFAF9] p-3 text-[14px] leading-6 text-[#2E2E2E] focus:outline-none focus:ring-2 focus:ring-[#4F8A5B]/20"
             />
             <p className="text-[11px] leading-4 text-[#9A9894]">
               필요한 부분만 남기거나 줄바꿈을 정리해도 원본 기록은 바뀌지 않습니다.
@@ -230,7 +300,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
           </div>
         )}
 
-        <div className="flex gap-2 pt-3 border-t">
+        <div className="flex shrink-0 gap-2 pt-3 border-t">
           <Button
             variant="outline"
             onClick={onClose}
@@ -243,7 +313,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
             disabled={step !== 'confirm' || !confirmedText.trim()}
             className="flex-1 h-10 text-sm bg-[#1F1F1F] hover:bg-[#333333] text-white disabled:opacity-50"
           >
-            이 문구 사용하기
+            {purpose === 'background' ? '배경에만 적용' : '이 문구로 만들기'}
           </Button>
         </div>
       </DialogContent>

@@ -13,6 +13,7 @@ import { TimePicker } from '@/components/onboarding/TimePicker';
 import { MultiApplicationInput } from '@/components/MultiApplicationInput';
 import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
 import * as categoryStorage from '@/utils/categoryStorage';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 type Category = {
   id: string;
@@ -107,9 +108,6 @@ const CustomRecordNew = () => {
         const records = JSON.parse(recordsSaved);
         const foundRecord = records.find((r: any) => r.id === recordId);
         if (foundRecord) {
-          console.log('Loading record for edit:', foundRecord);
-          console.log('Original application:', foundRecord.application);
-
           // application 필드 변환
           let applicationArray: string[] = [''];
           if (foundRecord.application) {
@@ -120,8 +118,6 @@ const CustomRecordNew = () => {
               applicationArray = foundRecord.application.split('\n').filter((s: string) => s.trim());
             }
           }
-
-          console.log('Converted application array:', applicationArray);
 
           setFormData({
             title: foundRecord.title || '',
@@ -143,9 +139,6 @@ const CustomRecordNew = () => {
   }, [categoryId, recordId, navigate]);
 
   useEffect(() => {
-    console.log('=== formData changed ===');
-    console.log('Current formData:', formData);
-
     // 내용 변경 감지
     const hasAnyContent = Object.entries(formData).some(([key, value]) => {
       if (key === 'answered') return false;
@@ -155,7 +148,6 @@ const CustomRecordNew = () => {
       return typeof value === 'string' && value.trim().length > 0;
     });
 
-    console.log('hasContent calculated:', hasAnyContent);
     setHasContent(hasAnyContent);
 
     // 초기 로드 및 데이터 변경 시 높이 조절
@@ -171,10 +163,6 @@ const CustomRecordNew = () => {
   };
 
   const handleComplete = async () => {
-    console.log('=== handleComplete called ===');
-    console.log('hasContent:', hasContent);
-    console.log('formData:', formData);
-
     if (!hasContent) {
       toast({
         title: "내용을 입력해주세요",
@@ -189,10 +177,6 @@ const CustomRecordNew = () => {
     const records = existingRecords ? JSON.parse(existingRecords) : [];
 
     if (isEditMode && recordId) {
-      console.log('=== EDIT MODE ===');
-      console.log('Updating record with ID:', recordId);
-      console.log('Form data to save:', formData);
-
       // 편집 모드: 기존 레코드 업데이트
       const updatedRecords = records.map((r: any) => {
         if (r.id === recordId) {
@@ -201,44 +185,40 @@ const CustomRecordNew = () => {
             ...formData,
             categoryId: category.id,
             categoryName: category.name,
+            updatedAt: new Date().toISOString(),
           };
         }
         return r;
       });
 
-      console.log('Updated records:', updatedRecords);
       localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
       window.dispatchEvent(new Event('recordsUpdated'));
 
       toast({
         title: "수정 완료!",
-        description: user ? "클라우드에 백업되었습니다." : "기기에 저장되었습니다.",
+        description: saveFeedback(Boolean(user)),
       });
 
       navigate(`/custom/${categoryId}/${recordId}`);
     } else {
-      console.log('=== NEW MODE ===');
-      console.log('Creating new record');
-      console.log('Form data to save:', formData);
-
       // 새로 작성 모드
+      const now = new Date().toISOString();
       const recordData = {
         categoryId: category.id,
         categoryName: category.name,
         ...formData,
-        createdAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       };
 
-      const newRecord = { id: Date.now().toString(), ...recordData };
-      console.log('New record:', newRecord);
-
+      const newRecord = { id: crypto.randomUUID(), ...recordData };
       records.push(newRecord);
       localStorage.setItem('custom_records', JSON.stringify(records));
       window.dispatchEvent(new Event('recordsUpdated'));
 
       toast({
         title: "저장 완료!",
-        description: user ? "클라우드에 백업되었습니다." : "기기에 저장되었습니다.",
+        description: saveFeedback(Boolean(user)),
       });
 
       // 적용 필드가 있고 값이 있으면 알림 모달 표시

@@ -156,7 +156,6 @@ export const BottomNav: React.FC = () => {
           <div className="px-6 pb-6 grid grid-cols-2 gap-3">
             {allRecordTypes.map((type) => {
               const Icon = type.icon;
-              const isCustom = 'isCustom' in type && type.isCustom;
               return (
                 <button
                   key={type.id}
@@ -167,8 +166,8 @@ export const BottomNav: React.FC = () => {
                   {/* Accent line */}
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ backgroundColor: type.color, borderRadius: '16px 16px 0 0' }} />
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${type.color}15` }}>
-                    {isCustom && type.icon ? (
-                      <AppIcon name={type.icon as IconName} size={20} color={type.color} strokeWidth={1.5} />
+                    {typeof Icon === 'string' ? (
+                      <AppIcon name={Icon} size={20} color={type.color} strokeWidth={1.5} />
                     ) : Icon ? (
                       <Icon className="w-5 h-5" style={{ color: type.color }} strokeWidth={1.5} />
                     ) : (

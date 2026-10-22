@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { routes } from '@/config/routes';
+import { toast } from 'sonner';
 
 type CardSaveSuccessModalProps = {
   open: boolean;
@@ -26,9 +27,44 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
   onCreateNew,
 }) => {
   const navigate = useNavigate();
+  // 공유 버튼 클릭 직후 호출할 수 있도록 파일은 미리 준비합니다.
+  const imageFile = React.useMemo(() => {
+    try {
+      const [header, encoded] = cardData.imageDataUrl.split(',');
+      const mime = header.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64$/)?.[1];
+      if (!mime || !encoded) return null;
+      const bytes = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
+      const extension = mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'png';
+      return new File([bytes], `card-${Date.now()}.${extension}`, { type: mime });
+    } catch { return null; }
+  }, [cardData.imageDataUrl]);
+
+  const download = () => {
+    const link = document.createElement('a');
+    link.download = imageFile?.name || `card-${Date.now()}.png`;
+    link.href = cardData.imageDataUrl;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    toast.info('다운로드를 요청했어요. 기기의 다운로드 목록을 확인해주세요.');
+  };
+
+  const share = async (saveToDevice = false) => {
+    if (!imageFile || !navigator.canShare?.({ files: [imageFile] })) {
+      if (saveToDevice) download();
+      else toast.info('이 브라우저는 이미지 공유를 지원하지 않아요. 기기에 다운로드한 뒤 공유해주세요.');
+      return;
+    }
+    try {
+      await navigator.share({ files: [imageFile], title: '말씀카드' });
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') return;
+      toast.error('공유 창을 열지 못했어요. 다운로드를 이용해주세요.');
+    }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={isOpen => { if (!isOpen) onClose(); }}>
       <DialogContent hideCloseButton className="max-w-md max-h-[90vh] overflow-y-auto p-0 bg-white border-none shadow-2xl">
         <DialogTitle className="sr-only">말씀카드 저장 완료</DialogTitle>
         
@@ -65,7 +101,7 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
             카드가 저장되었습니다!
           </h2>
           <p className="text-sm text-gray-600 text-center mb-6 px-4">
-            📱 보관함과 기기에 저장되었어요. 저장이 안 됐다면 아래 버튼으로 다시 저장할 수 있어요.
+            보관함에 저장했어요. 기기에도 저장하려면 아래 버튼을 눌러주세요. 공유 창에서는 이미지 저장을 선택할 수 있어요.
           </p>
 
           {/* Card Preview */}
@@ -82,20 +118,7 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
             {/* Row 1: Primary Actions (Use this card) */}
             <div className="grid grid-cols-2 gap-3">
               <Button
-                onClick={async () => {
-                  if (navigator.share) {
-                    try {
-                      const blob = await fetch(cardData.imageDataUrl).then(r => r.blob());
-                      const file = new File([blob], 'card.png', { type: 'image/png' });
-                      await navigator.share({
-                        files: [file],
-                        title: '말씀카드',
-                      });
-                    } catch (err) {
-                      console.error('Share failed:', err);
-                    }
-                  }
-                }}
+                onClick={() => share()}
                 className="h-12 bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white text-base font-medium rounded-xl flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -105,20 +128,16 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
               </Button>
 
               <Button
-                onClick={() => {
-                  const link = document.createElement('a');
-                  link.download = `card-${Date.now()}.png`;
-                  link.href = cardData.imageDataUrl;
-                  link.click();
-                }}
+                onClick={() => share(true)}
                 className="h-12 bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white text-base font-medium rounded-xl flex items-center justify-center gap-2"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                 </svg>
-                저장하기
+                기기에 저장
               </Button>
             </div>
+            <button onClick={download} className="w-full text-sm underline text-gray-500">파일로 다운로드</button>
 
             {/* Row 2: Secondary Action (Create more) */}
             <Button

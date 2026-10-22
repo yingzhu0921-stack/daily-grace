@@ -2,6 +2,7 @@ import { useState, useEffect, createContext, useContext, useRef } from 'react';
 import { toast } from 'sonner';
 import { clearAllCards } from '@/utils/verseCardDB';
 import { initCustomRecordSync, stopCustomRecordSync } from '@/utils/customRecordSync';
+import { clearLocalDataForUser, switchLocalDataScope } from '@/utils/localDataScope';
 
 export interface DGUser {
   id: string;
@@ -42,8 +43,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     fetch('/api/auth/me', { credentials: 'include' })
-      .then(r => r.json<{ user: DGUser | null }>())
+      .then((r): Promise<{ user: DGUser | null }> => r.json())
       .then(({ user }) => {
+        switchLocalDataScope(user?.id ?? null);
         setUser(user);
         if (user) {
           // 로그인 상태면 커스텀 기록을 클라우드와 동기화 시작
@@ -56,16 +58,26 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setTimeout(cb, 100);
         }
       })
-      .catch(() => setUser(null))
+      .catch(() => {
+        switchLocalDataScope(null);
+        setUser(null);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const signOut = async () => {
-    setUser(null);
-    stopCustomRecordSync();
-    await clearAllCards().catch(() => {});
-    toast.success('로그아웃되었습니다');
-    window.location.href = '/api/auth/signout';
+    try {
+      const response = await fetch('/api/auth/signout', { method: 'POST', credentials: 'include' });
+      if (!response.ok) throw new Error('로그아웃 실패');
+      stopCustomRecordSync();
+      switchLocalDataScope(null);
+      setUser(null);
+      await clearAllCards().catch(() => {});
+      toast.success('로그아웃되었습니다');
+      window.location.href = '/';
+    } catch {
+      toast.error('로그아웃에 실패했습니다');
+    }
   };
 
   const deleteAccount = async () => {
@@ -76,10 +88,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         credentials: 'include',
       });
       if (!res.ok) throw new Error('삭제 실패');
-      setUser(null);
       stopCustomRecordSync();
-      const keys = ['meditations','prayers','gratitudes','diaries','custom_categories','custom_records','verse_cards','verse_cards_migrated','onboarding_completed'];
-      keys.forEach(k => localStorage.removeItem(k));
+      clearLocalDataForUser(user.id);
+      switchLocalDataScope(null);
+      setUser(null);
+      localStorage.removeItem('verse_cards');
+      localStorage.removeItem('verse_cards_migrated');
       await clearAllCards().catch(() => {});
       toast.success('계정이 삭제되었습니다');
     } catch (err) {

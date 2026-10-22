@@ -7,6 +7,7 @@ import { get, update } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { ApplicationItem } from '@/types/meditation';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 const MeditationEdit = () => {
   const navigate = useNavigate();
@@ -100,7 +101,7 @@ const MeditationEdit = () => {
     
     toast({
       title: "저장 완료!",
-      description: "클라우드에 백업되었습니다.",
+      description: saveFeedback(Boolean(user)),
       duration: 2000, // 2초
     });
     navigate(`/meditation/${id}`, { replace: true });

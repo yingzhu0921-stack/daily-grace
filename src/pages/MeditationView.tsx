@@ -86,7 +86,7 @@ const MeditationView = () => {
       navigator.share({
         title: 'Q.T 기록',
         text: shareText,
-      }).catch(err => console.log('Share failed:', err));
+      }).catch(() => {});
     } else {
       navigator.clipboard.writeText(shareText);
       toast({

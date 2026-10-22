@@ -7,6 +7,7 @@ import { LoginModal } from '@/components/LoginModal';
 import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { gratitudeSchema } from '@/utils/validation';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 const TEMPLATE = `1. 
 2. 
@@ -88,7 +89,7 @@ export default function GratitudeNew() {
 
     const saved = await create(items);
 
-    toast.success(user ? '클라우드에 백업되었습니다.' : '기기에 저장되었습니다.');
+    toast.success(saveFeedback(Boolean(user)));
     navigate(`/gratitude/${saved.id}`, { replace: true });
   };
 

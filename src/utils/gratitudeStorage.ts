@@ -1,4 +1,5 @@
 import type { GratitudeNote } from '@/types/gratitude';
+import { clearRecordDeletion, markRecordDeleted } from '@/utils/deletionQueue';
 
 const KEY = 'gratitudes';
 
@@ -51,6 +52,9 @@ export async function update(id: string, items: string[]) {
 }
 
 export async function remove(id: string) {
+  markRecordDeleted(KEY, id);
   writeAll(readAll().filter(n => n.id !== id));
-  fetch(`/api/data/gratitudes/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  fetch(`/api/data/gratitudes/${id}`, { method: 'DELETE', credentials: 'include' })
+    .then(response => { if (response.ok) clearRecordDeletion(KEY, id); })
+    .catch(() => {});
 }

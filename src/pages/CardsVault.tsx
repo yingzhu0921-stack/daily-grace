@@ -104,7 +104,6 @@ const CardsVault: React.FC = () => {
   const handleEdit = (card: VerseCard) => {
     // Save card state to session storage for editor to load
     if (card.editorState) {
-      console.log('Saving card editorState to session:', card.editorState);
       sessionStorage.setItem('edit_card_state', JSON.stringify(card.editorState));
       sessionStorage.setItem('edit_card_id', card.id);
       navigate(routes.cardDesigner);

@@ -11,11 +11,13 @@
 const KEY = 'custom_records';
 const API = '/api/data/custom-records';
 
-type Rec = { id: string; categoryId?: string; createdAt?: string; [k: string]: any };
+type Rec = { id: string; categoryId?: string; createdAt?: string; updatedAt?: string; [k: string]: any };
 
 let started = false;
 let syncing = false;
 let queued = false;
+let runVersion = 0;
+let syncController: AbortController | null = null;
 // 클라우드에 반영된 마지막 상태 스냅샷 (id -> JSON). 변경 감지 + 안전한 삭제 판단용.
 let snapshot: Record<string, string> = {};
 
@@ -28,6 +30,9 @@ function writeLocal(records: Rec[]) {
 
 async function pushChanges(): Promise<void> {
   if (syncing) { queued = true; return; }
+  const version = runVersion;
+  const signal = syncController?.signal;
+  if (!signal || signal.aborted) return;
   syncing = true;
   try {
     const local = readLocal();
@@ -41,9 +46,11 @@ async function pushChanges(): Promise<void> {
       const res = await fetch(API, {
         method: 'POST',
         credentials: 'include',
+        signal,
         headers: { 'Content-Type': 'application/json' },
         body: s,
       });
+      if (signal.aborted || version !== runVersion) return;
       if (res.status === 401) return; // 로그아웃됨 — 조용히 중단
       if (res.ok) snapshot[r.id] = s;
     }
@@ -51,15 +58,18 @@ async function pushChanges(): Promise<void> {
     // 로컬에서 사라진 기록만 클라우드에서 삭제 (스냅샷에 있고 로컬엔 없음)
     for (const id of Object.keys(snapshot)) {
       if (localIds.has(id)) continue;
-      const res = await fetch(`${API}/${id}`, { method: 'DELETE', credentials: 'include' });
+      const res = await fetch(`${API}/${id}`, { method: 'DELETE', credentials: 'include', signal });
+      if (signal.aborted || version !== runVersion) return;
       if (res.status === 401) return;
       if (res.ok) delete snapshot[id];
     }
   } catch {
     /* 네트워크 오류 — 다음 이벤트에 재시도 */
   } finally {
-    syncing = false;
-    if (queued) { queued = false; void pushChanges(); }
+    if (version === runVersion) {
+      syncing = false;
+      if (queued && !signal.aborted) { queued = false; void pushChanges(); }
+    }
   }
 }
 
@@ -68,23 +78,34 @@ function onRecordsUpdated() { void pushChanges(); }
 export async function initCustomRecordSync(): Promise<void> {
   if (started) return;
   started = true;
+  const version = ++runVersion;
+  const controller = new AbortController();
+  syncController = controller;
 
   // 1) 클라우드에서 불러오기
   let cloud: Rec[] = [];
   try {
-    const res = await fetch(API, { credentials: 'include' });
+    const res = await fetch(API, { credentials: 'include', signal: controller.signal });
+    if (controller.signal.aborted || version !== runVersion) return;
     if (res.status === 401) { started = false; return; } // 미로그인
     if (res.ok) cloud = await res.json();
+    if (controller.signal.aborted || version !== runVersion) return;
   } catch {
-    started = false;
+    if (version === runVersion) started = false;
     return;
   }
 
-  // 2) 병합: 클라우드가 기준, 로컬에만 있는(아직 미동기) 기록은 보존
+  // 2) 병합: 같은 id는 updatedAt이 더 최근인 기록을 사용한다.
   const local = readLocal();
   const byId: Record<string, Rec> = {};
   cloud.forEach(r => { byId[r.id] = r; });
-  local.forEach(r => { if (r?.id && !byId[r.id]) byId[r.id] = r; });
+  local.forEach(r => {
+    if (!r?.id) return;
+    const remote = byId[r.id];
+    const localTime = Date.parse(r.updatedAt || r.createdAt || '') || 0;
+    const remoteTime = Date.parse(remote?.updatedAt || remote?.createdAt || '') || 0;
+    if (!remote || localTime > remoteTime) byId[r.id] = r;
+  });
   writeLocal(Object.values(byId));
 
   snapshot = {};
@@ -92,14 +113,19 @@ export async function initCustomRecordSync(): Promise<void> {
 
   // 3) 로컬에만 있던 것 밀어올리기 + 뷰 갱신
   await pushChanges();
+  if (controller.signal.aborted || version !== runVersion) return;
   window.dispatchEvent(new Event('recordsUpdated'));
 
   window.addEventListener('recordsUpdated', onRecordsUpdated);
 }
 
 export function stopCustomRecordSync(): void {
-  if (!started) return;
+  runVersion += 1;
+  syncController?.abort();
+  syncController = null;
   window.removeEventListener('recordsUpdated', onRecordsUpdated);
   snapshot = {};
   started = false;
+  syncing = false;
+  queued = false;
 }

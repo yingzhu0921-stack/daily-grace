@@ -1,11 +1,10 @@
 import { useDataSync } from '@/hooks/useDataSync';
 import { useAuth } from '@/hooks/useAuth';
 import { Cloud, CloudOff, Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 export function SyncStatus() {
   const { user } = useAuth();
-  const { isSyncing, lastSyncAt, syncToCloud } = useDataSync();
+  const { isSyncing, lastSyncAt } = useDataSync();
 
   if (!user) return null;
 
@@ -24,14 +23,7 @@ export function SyncStatus() {
       ) : (
         <>
           <CloudOff className="h-3 w-3" />
-          <Button 
-            variant="link" 
-            size="sm" 
-            onClick={() => syncToCloud()}
-            className="h-auto p-0 text-xs"
-          >
-            동기화하기
-          </Button>
+          <span>동기화 대기 중</span>
         </>
       )}
     </div>

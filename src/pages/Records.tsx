@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChevronLeft, Plus } from 'lucide-react';
-import { AppIcon, IconName } from '@/components/ui/AppIcon';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { routes } from '@/config/routes';
 import { BottomNav } from '@/components/BottomNav';
 import { getAllRecords } from '@/utils/recordsQuery';
@@ -10,14 +10,8 @@ import { toLocalDateString } from '@/utils/dateHelpers';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { getAllCards, type VerseCard } from '@/utils/verseCardDB';
 
-type Category = {
-  id: string;
-  name: string;
-  color: string;
-  icon?: IconName;
-  fields?: string[];
-  includeInGoal?: boolean;
-  description?: string;
+type Category = Pick<categoryStorage.Category, 'id' | 'name' | 'color' | 'icon' | 'includeInGoal' | 'description'> & {
+  fields?: categoryStorage.Category['fields'];
 };
 
 type TabType = 'records' | 'cards';

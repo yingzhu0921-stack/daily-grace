@@ -30,6 +30,8 @@ import {
   Coffee,
   Flower,
   Hand,
+  ArrowRight,
+  Archive,
   LucideIcon,
 } from 'lucide-react';
 import { PrayingHandsIcon } from './PrayingHandsIcon';
@@ -65,6 +67,8 @@ export type IconName =
   | 'coffee'
   | 'flower'
   | 'hand'
+  | 'arrowRight'
+  | 'archive'
   | 'prayingHands';
 
 type LucideIconName = Exclude<IconName, 'prayingHands'>;
@@ -100,6 +104,8 @@ const iconMap: Record<LucideIconName, LucideIcon> = {
   coffee: Coffee,
   flower: Flower,
   hand: Hand,
+  arrowRight: ArrowRight,
+  archive: Archive,
 };
 
 interface AppIconProps {

@@ -8,7 +8,6 @@ import * as prayerStorage from './prayerStorage';
 import * as gratitudeStorage from './gratitudeStorage';
 import * as diaryStorage from './diaryStorage';
 import * as categoryStorage from './categoryStorage';
-import * as XLSX from 'xlsx';
 
 export interface BackupData {
   exportDate: string;
@@ -56,12 +55,39 @@ function toExportRecord(record: any) {
   };
 }
 
+const CUSTOM_META_FIELDS = new Set([
+  'id', 'categoryId', 'category_id', 'categoryName', 'createdAt', 'created_at', 'updatedAt', 'updated_at', 'date',
+]);
+
+function customRecordData(record: any): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(record).filter(([key, value]) => !CUSTOM_META_FIELDS.has(key) && value !== undefined)
+  );
+}
+
+function printableValue(value: unknown): string {
+  if (Array.isArray(value)) return value.map(printableValue).filter(Boolean).join(' / ');
+  if (value && typeof value === 'object') return JSON.stringify(value);
+  if (typeof value === 'boolean') return value ? '예' : '아니오';
+  return value == null ? '' : String(value);
+}
+
+function categoryNameFor(record: any, categories: any[]): string {
+  const categoryId = record.categoryId || record.category_id;
+  return record.categoryName || categories.find(category => category.id === categoryId)?.name || categoryId || '커스텀 기록';
+}
+
 /**
  * 모든 사용자 데이터를 JSON으로 내보내기
  */
 export async function exportAllData(): Promise<BackupData> {
   const user = await getCurrentUser();
-  const categories = await categoryStorage.list();
+  let categories: any[];
+  try {
+    categories = await categoryStorage.list();
+  } catch {
+    categories = readLocalArray('custom_categories');
+  }
   const verseCards = await getAllCards();
 
   const backupData: BackupData = {
@@ -143,6 +169,7 @@ export async function getBackupStats() {
  * Excel 형식으로 다운로드
  */
 export async function downloadAsExcel(): Promise<void> {
+  const XLSX = await import('xlsx');
   const backupData = await exportAllData();
   const date = new Date().toISOString().split('T')[0];
 
@@ -200,11 +227,23 @@ export async function downloadAsExcel(): Promise<void> {
   if (backupData.data.customRecords.length > 0) {
     const customData = backupData.data.customRecords.map((r: any) => ({
       작성일: new Date(r.created_at).toLocaleDateString('ko-KR'),
-      카테고리ID: r.category_id,
-      데이터: JSON.stringify(r.data, null, 2),
+      카테고리: categoryNameFor(r, backupData.data.categories),
+      데이터: JSON.stringify(customRecordData(r)),
     }));
     const ws = XLSX.utils.json_to_sheet(customData);
     XLSX.utils.book_append_sheet(wb, ws, '커스텀기록');
+  }
+
+  if (backupData.data.verseCards.length > 0) {
+    const cardData = backupData.data.verseCards.map((card: any) => ({
+      작성일: new Date(card.createdAt || card.updatedAt).toLocaleDateString('ko-KR'),
+      문구: card.text || '',
+      말씀주소: card.ref || '',
+      비율: card.ratio || '',
+      태그: Array.isArray(card.tags) ? card.tags.join(', ') : '',
+    }));
+    const ws = XLSX.utils.json_to_sheet(cardData);
+    XLSX.utils.book_append_sheet(wb, ws, '말씀카드');
   }
 
   // 파일 다운로드
@@ -215,6 +254,7 @@ export async function downloadAsExcel(): Promise<void> {
  * CSV 형식으로 다운로드 (모든 데이터를 하나의 CSV로)
  */
 export async function downloadAsCSV(): Promise<void> {
+  const XLSX = await import('xlsx');
   const backupData = await exportAllData();
   const date = new Date().toISOString().split('T')[0];
 
@@ -258,6 +298,27 @@ export async function downloadAsCSV(): Promise<void> {
       제목: '일기',
       내용: d.content,
       추가정보: '',
+    });
+  });
+
+  backupData.data.customRecords.forEach((record: any) => {
+    const data = customRecordData(record);
+    allRecords.push({
+      카테고리: categoryNameFor(record, backupData.data.categories),
+      작성일: new Date(record.created_at).toLocaleDateString('ko-KR'),
+      제목: printableValue(data.title),
+      내용: printableValue(data.content || data.passage || data.application),
+      추가정보: JSON.stringify(data),
+    });
+  });
+
+  backupData.data.verseCards.forEach((card: any) => {
+    allRecords.push({
+      카테고리: '말씀카드',
+      작성일: new Date(card.createdAt || card.updatedAt).toLocaleDateString('ko-KR'),
+      제목: card.ref || '말씀카드',
+      내용: card.text || '',
+      추가정보: Array.isArray(card.tags) ? card.tags.join(', ') : '',
     });
   });
 
@@ -337,6 +398,31 @@ export async function downloadAsText(): Promise<void> {
     backupData.data.diaries.forEach((d: any, i: number) => {
       text += `[${i + 1}] ${new Date(d.created_at).toLocaleDateString('ko-KR')}\n`;
       text += `${d.content}\n`;
+      text += `\n${'-'.repeat(40)}\n\n`;
+    });
+  }
+
+  if (backupData.data.customRecords.length > 0) {
+    text += `🗂 커스텀 기록 (${backupData.data.customRecords.length}개)\n`;
+    text += `${'='.repeat(60)}\n\n`;
+    backupData.data.customRecords.forEach((record: any, index: number) => {
+      text += `[${index + 1}] ${categoryNameFor(record, backupData.data.categories)}\n`;
+      text += `작성일: ${new Date(record.created_at).toLocaleString('ko-KR')}\n`;
+      for (const [key, value] of Object.entries(customRecordData(record))) {
+        const printable = printableValue(value);
+        if (printable) text += `${key}: ${printable}\n`;
+      }
+      text += `\n${'-'.repeat(40)}\n\n`;
+    });
+  }
+
+  if (backupData.data.verseCards.length > 0) {
+    text += `🎨 말씀카드 (${backupData.data.verseCards.length}개)\n`;
+    text += `${'='.repeat(60)}\n\n`;
+    backupData.data.verseCards.forEach((card: any, index: number) => {
+      text += `[${index + 1}] ${card.ref || '말씀카드'}\n`;
+      text += `${card.text || ''}\n`;
+      if (Array.isArray(card.tags) && card.tags.length) text += `태그: ${card.tags.join(', ')}\n`;
       text += `\n${'-'.repeat(40)}\n\n`;
     });
   }

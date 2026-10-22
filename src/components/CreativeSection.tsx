@@ -7,12 +7,10 @@ export const CreativeSection: React.FC = () => {
 
   const handleStartClick = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click
-    console.log('🎨 Start button clicked - navigating to designer');
     navigate('/cards/designer');
   };
 
   const handleCardClick = () => {
-    console.log('📦 Card clicked - navigating to vault');
     navigate('/cards/vault');
   };
 

@@ -8,6 +8,7 @@ import { LoginModal } from '@/components/LoginModal';
 import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { diarySchema } from '@/utils/validation';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 export default function DiaryNew() {
   const navigate = useNavigate();
@@ -66,7 +67,7 @@ export default function DiaryNew() {
 
     const saved = await create(text.trim());
     
-    toast.success(user ? '클라우드에 백업되었습니다.' : '기기에 저장되었습니다.');
+    toast.success(saveFeedback(Boolean(user)));
     navigate(`/diary/${saved.id}`, { replace: true });
   };
 

@@ -27,6 +27,7 @@ type CustomRecord = {
   answered?: boolean;
   answeredDetail?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 const CustomRecordList = () => {
@@ -221,7 +222,7 @@ const CustomRecordList = () => {
                                         newChecked[idx] = e.target.checked;
                                       }
 
-                                      return { ...r, applyChecked: newChecked };
+                                      return { ...r, applyChecked: newChecked, updatedAt: new Date().toISOString() };
                                     }
                                     return r;
                                   });

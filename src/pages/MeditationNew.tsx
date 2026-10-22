@@ -12,6 +12,7 @@ import { meditationSchema } from '@/utils/validation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
 import { ApplicationItem } from '@/types/meditation';
+import { saveFeedback } from '@/utils/saveFeedback';
 
 const MeditationNew = () => {
   const navigate = useNavigate();
@@ -121,7 +122,7 @@ const MeditationNew = () => {
     // 즉시 피드백
     toast({
       title: "저장 완료!",
-      description: user ? "클라우드에 백업되었습니다." : "기기에 저장되었습니다.",
+      description: saveFeedback(Boolean(user)),
       duration: 2000, // 2초
     });
 

@@ -1,4 +1,5 @@
 import { ApplicationItem } from '@/types/meditation';
+import { clearRecordDeletion, markRecordDeleted } from '@/utils/deletionQueue';
 
 export type MeditationNote = {
   id: string;
@@ -44,7 +45,9 @@ function syncUpdate(note: MeditationNote) {
 }
 
 function syncDelete(id: string) {
-  fetch(`/api/data/meditations/${id}`, { method: 'DELETE', credentials: 'include' }).catch(() => {});
+  fetch(`/api/data/meditations/${id}`, { method: 'DELETE', credentials: 'include' })
+    .then(response => { if (response.ok) clearRecordDeletion(KEY, id); })
+    .catch(() => {});
 }
 
 export async function create(note: Omit<MeditationNote, 'id' | 'createdAt' | 'updatedAt'>) {
@@ -98,6 +101,7 @@ export async function toggleApply(id: string) {
 }
 
 export async function remove(id: string) {
+  markRecordDeleted(KEY, id);
   writeAll(readAll().filter(n => n.id !== id));
   syncDelete(id);
 }

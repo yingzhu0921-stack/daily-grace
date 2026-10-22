@@ -26,6 +26,7 @@ type CustomRecord = {
   answered?: boolean;
   answeredDetail?: string;
   createdAt: string;
+  updatedAt?: string;
 };
 
 const CustomRecordView = () => {
@@ -59,12 +60,8 @@ const CustomRecordView = () => {
       if (foundRecord) {
         // application이 문자열이면 배열로 변환 (하위 호환성)
         if (foundRecord.application && typeof foundRecord.application === 'string') {
-          console.log('Converting application from string to array');
           foundRecord.application = [foundRecord.application];
         }
-
-        console.log('Found record:', foundRecord);
-        console.log('Application is array:', Array.isArray(foundRecord.application));
 
         setRecord(foundRecord);
       } else {
@@ -83,11 +80,13 @@ const CustomRecordView = () => {
     const saved = localStorage.getItem('custom_records');
     if (saved) {
       const records: CustomRecord[] = JSON.parse(saved);
+      const updatedAt = new Date().toISOString();
       const updatedRecords = records.map(r =>
-        r.id === recordId ? { ...r, answered: checked } : r
+        r.id === recordId ? { ...r, answered: checked, updatedAt } : r
       );
       localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
-      setRecord({ ...record, answered: checked });
+      setRecord({ ...record, answered: checked, updatedAt });
+      window.dispatchEvent(new Event('recordsUpdated'));
 
       toast({
         title: checked ? "완료로 표시했어요" : "완료를 해제했어요",
@@ -114,11 +113,12 @@ const CustomRecordView = () => {
             newChecked[index] = checked;
           }
 
-          return { ...r, applyChecked: newChecked };
+          return { ...r, applyChecked: newChecked, updatedAt: new Date().toISOString() };
         }
         return r;
       });
       localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
+      window.dispatchEvent(new Event('recordsUpdated'));
 
       const updatedRecord = updatedRecords.find(r => r.id === recordId);
       if (updatedRecord) {
@@ -151,7 +151,7 @@ const CustomRecordView = () => {
         const value = record[field as keyof CustomRecord];
         if (Array.isArray(value)) {
           // application 배열 처리
-          const items = value.filter(item => item && item.trim());
+          const items = value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0);
           if (items.length > 0) {
             parts.push(`${fieldLabels[field] || field}:\n${items.map((item, i) => `${i + 1}. ${item}`).join('\n')}`);
           }
