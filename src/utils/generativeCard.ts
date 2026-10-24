@@ -253,6 +253,10 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   };
 }
 
+// 그레인 세기. 스펙 기본값(0.35 / 0.10)은 실제 화면에서 너무 거칠어 사용자가 이 값을 골랐다.
+// 미리보기는 작아서 더 거칠어 보이므로 저장 해상도 기준으로 맞춘다.
+export const GRAIN_STRENGTH = { overlay: 0.12, multiply: 0.035 };
+
 // feTurbulence + feComponentTransfer(slope 2.2, intercept -0.6) 에 해당하는 노이즈 판
 function grainTile(w: number, h: number, seed: number): HTMLCanvasElement | null {
   const c = document.createElement('canvas');
@@ -307,10 +311,10 @@ function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, spec: Ge
   if (tile) {
     ctx.save();
     ctx.globalCompositeOperation = 'overlay';
-    ctx.globalAlpha = 0.35;
+    ctx.globalAlpha = GRAIN_STRENGTH.overlay;
     ctx.drawImage(tile, 0, 0);
     ctx.globalCompositeOperation = 'multiply';
-    ctx.globalAlpha = 0.1;
+    ctx.globalAlpha = GRAIN_STRENGTH.multiply;
     ctx.drawImage(tile, 0, 0);
     ctx.restore();
   }
