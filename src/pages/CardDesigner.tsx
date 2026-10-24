@@ -13,7 +13,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGenerativeSpec, pickAuraSpec, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGenerativeSpec, pickGrainSpec, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -537,6 +537,8 @@ export default function Designer() {
 
   const isPlaceholderText = t.content === '텍스트를 입력하세요.';
   const isTextEmpty = !t.content.trim() || isPlaceholderText;
+  // 배경 선택 안내가 떠 있는 상태. 이때는 글씨 상자의 핸들·힌트를 숨겨 안내와 겹치지 않게 한다.
+  const showBgPrompt = !meta.bgImageUrl && !t.content.trim() && !isEditing && !isBgEditMode;
 
   const openBackgroundSheet = (tab: typeof bgTab = 'ai') => {
     setBgTab(tab);
@@ -1527,10 +1529,10 @@ export default function Designer() {
     },
     {
       id: 'T03',
-      name: '오로라 타이포',
-      mood: '그레인 그라데이션 · 감성 세리프/손글씨',
+      name: '그레인 그라데이션',
+      mood: '번진 색 · 필름 그레인 · 차분한 명조',
       example: '은혜가 머무는 곳',
-      hint: 'AI 그라데이션 배경 + 코드 글자(철자 정확)',
+      hint: '코드로 즉시 생성 · 철자 정확 · 무료',
       preview: {
         background: 'linear-gradient(150deg, #8FB0DE 0%, #F3E6DE 55%, #C39AD0 100%)',
         color: '#2E2A4A',
@@ -1570,13 +1572,15 @@ export default function Designer() {
     const handleGenerate = async () => {
       if (!selectedTemplateId) { toast.error('템플릿을 선택해주세요'); return; }
       if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
-      // T03 아우라 / T05 플로우 — AI 호출 없이 코드로 즉시 생성 (토큰 0)
-      if (selectedTemplateId === 'T05') {
+      // T03 그레인 그라데이션 / T05 플로우 — AI 호출 없이 코드로 즉시 생성 (토큰 0)
+      if (selectedTemplateId === 'T03' || selectedTemplateId === 'T05') {
         setIsGenerating(true);
         startGenerationProgress('auto', 4000);
         try {
           await document.fonts?.ready;
-          setAutoResult(buildGenerativeResult(verseInput.trim(), meta.ratio));
+          setAutoResult(selectedTemplateId === 'T03'
+            ? buildT03Result(verseInput.trim(), meta.ratio)
+            : buildGenerativeResult(verseInput.trim(), meta.ratio));
           setFlowStep('auto-preview');
         } catch (e) {
           console.error('[gen] failed:', e);
@@ -2009,7 +2013,7 @@ export default function Designer() {
   const buildGenerativeResult = (raw: string, ratio: Ratio, seedOverride?: number) =>
     buildGenResult(raw, ratio, 'T05', pickGenerativeSpec, seedOverride);
   const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number) =>
-    buildGenResult(raw, ratio, 'T03', pickAuraSpec, seedOverride);
+    buildGenResult(raw, ratio, 'T03', pickGrainSpec, seedOverride);
 
   const buildAdaptiveAutoResult = async (data: any) => {
     const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
@@ -2046,9 +2050,10 @@ export default function Designer() {
     };
   };
 
-  // 제자리 문구 수정 가능 여부: 오버레이(T03·T04) + T05(제너러티브) — 글자가 코드라 재생성/토큰 없이 수정
+  // 제자리 문구 수정 가능 여부: 오버레이(T04) + 코드 렌더(T03 그레인·T05 플로우) — 토큰 없이 수정
   const canEditTextInPlace = !!autoResult && (
-    (!autoResult.aiText && (autoResult.template === 'T04' || autoResult.template === 'T03')) ||
+    (!autoResult.aiText && autoResult.template === 'T04') ||
+    autoResult.template === 'T03' ||
     autoResult.template === 'T05'
   );
 
@@ -2069,10 +2074,11 @@ export default function Designer() {
     const { body, reference } = extractReference(textEditDraft);
     const clauses = body.split('\n').map((s) => s.trim()).filter(Boolean);
     if (!clauses.length) return;
-    // T03 아우라 / T05 플로우: 같은 시드로 배경 유지, 글자만 다시 구워 재렌더 (토큰 0)
-    if (autoResult.template === 'T05') {
+    // T03 그레인 / T05 플로우: 같은 시드로 배경 유지, 글자만 다시 구워 재렌더 (토큰 0)
+    if (autoResult.template === 'T03' || autoResult.template === 'T05') {
       const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
-      setAutoResult(buildGenerativeResult(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
+      const build = autoResult.template === 'T03' ? buildT03Result : buildGenerativeResult;
+      setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
       setVerseInput(raw);
       setT(current => ({ ...current, content: raw }));
       setTextEditDraft(null);
@@ -2529,8 +2535,8 @@ export default function Designer() {
 
     const handleRegenerate = async () => {
       setTextEditDraft(null);
-      // T05 플로우: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
-      if (autoResult?.template === 'T05') {
+      // T03 그레인 / T05 플로우: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
+      if (autoResult?.template === 'T03' || autoResult?.template === 'T05') {
         setIsGenerating(true);
         try {
           await document.fonts?.ready;
@@ -2538,7 +2544,8 @@ export default function Designer() {
           const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
           const raw = ref ? `${body}\n${ref}` : body;
           const newSeed = Math.floor(Math.random() * 0xffffffff);
-          setAutoResult(buildGenerativeResult(raw, autoResult.ratio || meta.ratio, newSeed));
+          const build = autoResult.template === 'T03' ? buildT03Result : buildGenerativeResult;
+          setAutoResult(build(raw, autoResult.ratio || meta.ratio, newSeed));
         } catch {
           toast.error('재생성에 실패했습니다.');
         } finally {
@@ -2827,7 +2834,7 @@ export default function Designer() {
             )}
           </div>
         </div>
-        {autoResult.aiText && autoResult.template !== 'T05' && (
+        {autoResult.aiText && autoResult.template !== 'T05' && autoResult.template !== 'T03' && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
             포스터 느낌을 위해 AI가 글자까지 그렸어요. 저장 전 오탈자를 꼭 확인하세요.
           </div>
@@ -2839,7 +2846,7 @@ export default function Designer() {
         )}
         {autoResult.template === 'T03' && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
-            글자는 코드라 철자가 정확해요 · 문구 수정은 배경 그대로 바로 반영돼요.
+            코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요 · 문구 수정은 배경 그대로 반영돼요.
           </div>
         )}
         {textEditDraft !== null ? (
@@ -3494,10 +3501,10 @@ export default function Designer() {
                   </div>
                 )}
 
-                {!meta.bgImageUrl && !t.content.trim() && !isEditing && !isBgEditMode && (
-                  <div className="absolute inset-0 z-20 flex items-center justify-center px-6 pointer-events-none">
+                {showBgPrompt && (
+                  <div className="absolute inset-0 z-40 flex items-center justify-center px-6 pointer-events-none">
                     <div className="w-full max-w-[280px] pointer-events-auto">
-                      <div className="text-center text-white drop-shadow mb-4">
+                      <div className="text-center text-white mb-4 bg-black/45 backdrop-blur-sm rounded-xl px-4 py-3">
                         <p className="text-[17px] font-semibold">배경을 먼저 선택하세요</p>
                         <p className="mt-1 text-[12px] leading-5 text-white/78">AI 생성, 사진 업로드, 단색 배경 중 선택할 수 있습니다.</p>
                       </div>
@@ -3579,8 +3586,8 @@ export default function Designer() {
                     onDragStart(e, 'move');
                   }}
                 >
-                  {/* 선택 시 Dashed Border */}
-                  {!isEditing && !isBgEditMode && (
+                  {/* 선택 시 Dashed Border — 배경 선택 안내가 떠 있을 땐 안내 문구를 가로질러서 숨긴다 */}
+                  {!isEditing && !isBgEditMode && !showBgPrompt && (
                     <div className="ui-control dashed-border absolute inset-0 border-2 border-dashed border-white/60 rounded-lg pointer-events-none" />
                   )}
 
@@ -3652,8 +3659,8 @@ export default function Designer() {
                     />
                   </div>
 
-                  {/* 빈 상태 힌트 */}
-                  {!isEditing && isTextEmpty ? (
+                  {/* 빈 상태 힌트 — 배경 선택 안내가 떠 있을 땐 버튼과 겹쳐서 숨긴다 */}
+                  {!isEditing && isTextEmpty && !showBgPrompt ? (
                     <div
                       className="ui-control absolute -bottom-7 left-0 right-0 flex items-center justify-center"
                       onMouseDown={(e) => {
@@ -3671,8 +3678,8 @@ export default function Designer() {
                     </div>
                   ) : null}
 
-                  {/* 코너 리사이즈 핸들 - 편집 모드와 배경 편집 모드가 아닐 때만 표시 */}
-                  {!isEditing && !isBgEditMode && (
+                  {/* 코너 리사이즈 핸들 - 편집/배경편집 모드가 아니고, 배경 선택 안내가 없을 때만 표시 */}
+                  {!isEditing && !isBgEditMode && !showBgPrompt && (
                     <>
                       {/* Top-Left */}
                       <div

@@ -8,7 +8,59 @@
  * seed 고정→같은 기록 같은 카드(재현), 진짜 폰트→철자 정확, 색은 팔레트로 정확히 지정.
  */
 
-export type GenerativeStyle = 'flow' | 'aura';
+export type GenerativeStyle = 'flow' | 'aura' | 'grain';
+
+// 그레인 그라데이션(T03) 팔레트 — 배경 1 + 크게 번진 색 덩어리 3 + 글자색.
+// mid=true(M)는 글자가 밝은 색이라 덩어리 배치에 제약이 있다(아래 drawGrain 참고).
+export interface GrainPalette {
+  id: string;
+  name: string;
+  bg: string;
+  blobs: [string, string, string]; // M은 밝음 → 중간 → 어두움 순
+  ink: string;
+  mid: boolean;
+}
+
+export const GRAIN_PALETTES: GrainPalette[] = [
+  // 연한 톤 L01–L16 (글자 어두운 색)
+  { id: 'L01', name: '새벽 블루',   bg: '#eef0f4', blobs: ['#b7c7e6', '#d9c7e3', '#f1dccc'], ink: '#2f3446', mid: false },
+  { id: 'L02', name: '노을',       bg: '#f6efe4', blobs: ['#eaa98d', '#f3cf9e', '#f6e3c8'], ink: '#4a3328', mid: false },
+  { id: 'L03', name: '세이지',      bg: '#e9efe6', blobs: ['#c4d8bf', '#e6e1b9', '#b9d3cf'], ink: '#2f3d33', mid: false },
+  { id: 'L04', name: '더스티 로즈', bg: '#f7eeee', blobs: ['#ecc3c6', '#e8d3e8', '#f4e0cf'], ink: '#4a2f36', mid: false },
+  { id: 'L05', name: '민트 블루',   bg: '#eef1f2', blobs: ['#bcd6dc', '#d8e3c9', '#c9cde6'], ink: '#2b3c44', mid: false },
+  { id: 'L06', name: '샌드 베이지', bg: '#f5efe6', blobs: ['#e3c7a6', '#e9d6c9', '#efe5c8'], ink: '#43352a', mid: false },
+  { id: 'L07', name: '라벤더',      bg: '#f1eef6', blobs: ['#cfc4ea', '#e6d5ee', '#d6e0f2'], ink: '#352f4a', mid: false },
+  { id: 'L08', name: '피치',       bg: '#fbf0ea', blobs: ['#f6c5b0', '#f9dccb', '#f3e6c4'], ink: '#4d3027', mid: false },
+  { id: 'L09', name: '레몬 크림',   bg: '#f8f5e6', blobs: ['#efe3a6', '#f3eccb', '#d9e6c4'], ink: '#3f3a22', mid: false },
+  { id: 'L10', name: '스카이',      bg: '#eef4f8', blobs: ['#b9d7ee', '#d3e6f2', '#e8eef0'], ink: '#24394a', mid: false },
+  { id: 'L11', name: '아이리스 핑크', bg: '#f4eef4', blobs: ['#d9c3e3', '#f1cbd6', '#cdd3ee'], ink: '#3e2e45', mid: false },
+  { id: 'L12', name: '코랄 라일락', bg: '#f8eeee', blobs: ['#f2b9b1', '#d9c6e8', '#f5dcc7'], ink: '#47302f', mid: false },
+  { id: 'L13', name: '올리브 크림', bg: '#f2f1e6', blobs: ['#d3d6ae', '#e8dcc0', '#c7d4c1'], ink: '#353826', mid: false },
+  { id: 'L14', name: '하늘 복숭아', bg: '#f4f1f0', blobs: ['#c4d3ec', '#f4cdbd', '#ece3d8'], ink: '#33384a', mid: false },
+  { id: 'L15', name: '아쿠아',      bg: '#ecf4f2', blobs: ['#aedbd4', '#cfe5e0', '#d9dcef'], ink: '#21403c', mid: false },
+  { id: 'L16', name: '모브',       bg: '#f2ebec', blobs: ['#d6b9c2', '#e5d2cf', '#c9c3d9'], ink: '#3f2c33', mid: false },
+  // 중간 톤 M01–M12 (글자 밝은 색)
+  { id: 'M01', name: '새벽 네이비', bg: '#7c8a9f', blobs: ['#f1e4cc', '#9da6b3', '#69788d'], ink: '#f3e7d2', mid: true },
+  { id: 'M02', name: '코발트',     bg: '#6f87b2', blobs: ['#e9e6df', '#729fdc', '#5d7196'], ink: '#ffffff', mid: true },
+  { id: 'M03', name: '플럼 밤',    bg: '#716e7f', blobs: ['#f0d9c6', '#a998cc', '#7c7494'], ink: '#efe6f6', mid: true },
+  { id: 'M04', name: '딥 로즈',    bg: '#9c838b', blobs: ['#efd6cc', '#c2969b', '#806c75'], ink: '#f7e9e2', mid: true },
+  { id: 'M05', name: '테라코타',   bg: '#c39585', blobs: ['#f4dcc2', '#e7b192', '#9f7469'], ink: '#fff4e8', mid: true },
+  { id: 'M06', name: '포레스트',   bg: '#71837b', blobs: ['#e8e2c8', '#adc7b3', '#5e7169'], ink: '#eef1e4', mid: true },
+  { id: 'M07', name: '딥 틸',      bg: '#6a888e', blobs: ['#e7dccb', '#92bec0', '#577279'], ink: '#eef5f2', mid: true },
+  { id: 'M08', name: '버건디',     bg: '#906f76', blobs: ['#f0d8c4', '#dea99f', '#745b62'], ink: '#f8e8e2', mid: true },
+  { id: 'M09', name: '미드나잇',   bg: '#666a77', blobs: ['#d8c9e6', '#7584b5', '#555864'], ink: '#e8e9f6', mid: true },
+  { id: 'M10', name: '카멜',       bg: '#af9982', blobs: ['#e9d2ae', '#cca982', '#8b7969'], ink: '#fbf1e2', mid: true },
+  { id: 'M11', name: '올리브 골드', bg: '#9d997b', blobs: ['#f3ecd0', '#decc8b', '#7e7c65'], ink: '#faf5e2', mid: true },
+  { id: 'M12', name: '딥 바이올렛', bg: '#7b7394', blobs: ['#f2c9c4', '#b5aae4', '#655f7a'], ink: '#f2ecfb', mid: true },
+];
+
+// 글씨 배치 4종 (스펙 5장). bodyTop은 본문 상단의 카드 높이 대비 위치.
+const GRAIN_LAYOUTS = [
+  { bodyTop: 0.62, align: 'left' as const },
+  { bodyTop: 0.40, align: 'center' as const },
+  { bodyTop: 0.14, align: 'left' as const },
+  { bodyTop: 0.16, align: 'center' as const },
+];
 
 export interface GenerativePalette {
   name: string;
@@ -148,6 +200,9 @@ export interface GenerativeSpec {
   ring?: boolean;     // (aura) 글자 주위 얇은 타원 링
   accentKind?: 'sparkle' | 'line' | 'arc' | 'none'; // (aura) 미세 악센트
   refPill?: boolean;  // (aura) 주소를 오벌 알약 테두리로
+  grainPal?: GrainPalette; // (grain) 28색 팔레트
+  layout?: number;    // (grain) GRAIN_LAYOUTS 인덱스
+  sparkle?: boolean;  // (grain) 작은 반짝이 1개
 }
 
 export function pickGenerativeSpec(text: string, seedOverride?: number): GenerativeSpec {
@@ -171,6 +226,150 @@ export function pickAuraSpec(text: string, seedOverride?: number): GenerativeSpe
   const accentKind = accents[Math.floor(rnd() * accents.length)];
   const refPill = rnd() < 0.5;
   return { seed, style: 'aura', palette, font, flowTop: false, accentKind, refPill };
+}
+
+// T03 그레인 그라데이션 — 스펙 본문 폰트는 명조.
+// 스펙에는 Nanum Myeongjo가 있으나 "나눔은 쓰지 않는다"는 사용자 결정에 따라 제외했다.
+// 주의: 캔버스에는 CSS에 등록된 실제 family 이름(공백 포함)을 써야 한다.
+// 'GowunBatang' 같은 건 앱 내부 키일 뿐이라 캔버스에서는 기본 serif로 떨어진다.
+const GRAIN_BODY_FONTS = ["'Gowun Batang', serif", "'Song Myung', serif"];
+const GRAIN_REF_FONT = "'Gowun Dodum', sans-serif";
+
+export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSpec {
+  const seed = seedOverride ?? hashSeed(text || 'grace');
+  const rnd = mulberry32(seed);
+  const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
+  const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
+  const layout = Math.floor(rnd() * GRAIN_LAYOUTS.length);
+  return {
+    seed,
+    style: 'grain',
+    font,
+    flowTop: false,
+    palette: { name: grainPal.name, bg: grainPal.bg, ink: grainPal.ink },
+    grainPal,
+    layout,
+    sparkle: rnd() < 0.3,
+  };
+}
+
+// feTurbulence + feComponentTransfer(slope 2.2, intercept -0.6) 에 해당하는 노이즈 판
+function grainTile(w: number, h: number, seed: number): HTMLCanvasElement | null {
+  const c = document.createElement('canvas');
+  c.width = w; c.height = h;
+  const g = c.getContext('2d');
+  if (!g) return null;
+  const img = g.createImageData(w, h);
+  const d = img.data;
+  const rnd = mulberry32(seed ^ 0x5bf03635);
+  for (let i = 0; i < d.length; i += 4) {
+    let v = rnd() * 2.2 - 0.6;
+    v = v < 0 ? 0 : v > 1 ? 1 : v;
+    const p = (v * 255) | 0;
+    d[i] = p; d[i + 1] = p; d[i + 2] = p; d[i + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
+// 배경색 + 크게 번진 색 덩어리 3개 + 그레인 두 겹
+function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, spec: GenerativeSpec) {
+  const pal = spec.grainPal!;
+  const rnd = mulberry32(spec.seed ^ 0x27d4eb2d);
+  ctx.fillStyle = pal.bg;
+  ctx.fillRect(0, 0, w, h);
+
+  // M 팔레트는 글자가 밝은 색이라, 가장 어두운 덩어리를 글자 뒤에 두어 대비를 확보한다.
+  const layout = GRAIN_LAYOUTS[spec.layout ?? 0];
+  const textY = Math.min(0.85, layout.bodyTop + 0.1);
+  const loose = () => ({ cx: -0.1 + rnd() * 1.2, r: 0.4 + rnd() * 0.15 });
+  const blobs = pal.mid
+    ? [
+        { color: pal.blobs[0], cy: 1 - textY, ...loose() },
+        { color: pal.blobs[1], cy: 0.15 + rnd() * 0.7, ...loose() },
+        // 가장 어두운 덩어리는 세로뿐 아니라 가로도 글자 쪽에 맞추고 크게 그린다.
+        // 세로만 맞추면 블러가 커서 글자 띠를 못 덮고 대비가 무너진다.
+        { color: pal.blobs[2], cy: textY, cx: 0.5 + (rnd() - 0.5) * 0.2, r: 0.58 + rnd() * 0.12 },
+      ]
+    : pal.blobs.map((color) => ({ color, cy: 0.1 + rnd() * 0.8, ...loose() }));
+
+  ctx.save();
+  ctx.filter = `blur(${(w * 0.185).toFixed(1)}px)`;
+  for (const b of blobs) {   // 어두운 덩어리가 마지막이라 글자 뒤에 얹힌다
+    ctx.fillStyle = b.color;
+    ctx.beginPath();
+    ctx.arc(w * b.cx, h * b.cy, w * b.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+
+  const tile = grainTile(w, h, spec.seed);
+  if (tile) {
+    ctx.save();
+    ctx.globalCompositeOperation = 'overlay';
+    ctx.globalAlpha = 0.35;
+    ctx.drawImage(tile, 0, 0);
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.globalAlpha = 0.1;
+    ctx.drawImage(tile, 0, 0);
+    ctx.restore();
+  }
+}
+
+// 어떤 경우에도 maxW를 넘지 않게. 한 어절이 통째로 너무 길면 그 어절만 글자 단위로 쪼갠다.
+function forceWrap(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  const out: string[] = [];
+  for (const seg of text.split('\n')) {
+    let cur = '';
+    for (const word of seg.split(/\s+/).filter(Boolean)) {
+      let w = word;
+      // 어절 하나가 maxW보다 길면 글자 단위로 잘라 내보낸다.
+      // 서로게이트 페어(이모지)가 쪼개지지 않도록 코드포인트 단위로 센다.
+      while (ctx.measureText(w).width > maxW) {
+        const chars = Array.from(w);
+        if (chars.length <= 1) break;   // 글자 하나가 maxW보다 넓으면 더 나눌 수 없다
+        let cut = 1;
+        while (cut < chars.length && ctx.measureText(chars.slice(0, cut + 1).join('')).width <= maxW) cut++;
+        if (cur) { out.push(cur); cur = ''; }
+        out.push(chars.slice(0, cut).join(''));
+        w = chars.slice(cut).join('');
+      }
+      const test = cur ? `${cur} ${w}` : w;
+      if (cur && ctx.measureText(test).width > maxW) { out.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) out.push(cur);
+  }
+  return out.length ? out : [text];
+}
+
+// 어절(띄어쓰기) 단위로만 n줄 균형 분할. 들어가지 않으면 null.
+function wrapKeepAll(ctx: CanvasRenderingContext2D, text: string, maxW: number, n: number): string[] | null {
+  const words = text.split(/\s+/).filter(Boolean);
+  if (!words.length || words.length < n) return null;
+  if (n === 1) {
+    const one = words.join(' ');
+    return ctx.measureText(one).width <= maxW ? [one] : null;
+  }
+  const target = ctx.measureText(words.join(' ')).width / n;
+  const lines: string[] = [];
+  let cur = '';
+  for (const word of words) {
+    const test = cur ? `${cur} ${word}` : word;
+    if (cur && n - lines.length > 1 && ctx.measureText(test).width > target * 1.06) {
+      lines.push(cur); cur = word;
+    } else cur = test;
+  }
+  if (cur) lines.push(cur);
+  if (lines.length !== n) return null;
+  // 마지막 줄에 한 어절만 남지 않게 보정
+  const lastWords = lines[n - 1].split(' ');
+  const prevWords = lines[n - 2].split(' ');
+  if (lastWords.length === 1 && prevWords.length > 1) {
+    lines[n - 1] = `${prevWords.pop()} ${lines[n - 1]}`;
+    lines[n - 2] = prevWords.join(' ');
+  }
+  return lines.every((l) => ctx.measureText(l).width <= maxW) ? lines : null;
 }
 
 // 아우라 그레인 그라데이션(또는 단색) 그리기
@@ -274,6 +473,8 @@ export function renderGenerativeCard(opts: RenderGenerativeOpts): string {
   const ctx = canvas.getContext('2d');
   if (!ctx) return '';
 
+  if (spec.style === 'grain') return renderGrainCard(canvas, ctx, width, height, text, reference, spec);
+
   const pal = spec.palette;
   const isSerif = spec.font.includes('serif');
   const isAura = spec.style === 'aura';
@@ -349,6 +550,120 @@ export function renderGenerativeCard(opts: RenderGenerativeOpts): string {
     const spaced = reference.split('').join(' ');
     ctx.fillText(spaced, cx, cyTop + bodyH + refPx * 1.4);
     ctx.globalAlpha = 1;
+  }
+
+  return canvas.toDataURL('image/png');
+}
+
+// T03 그레인 그라데이션 카드. 본문은 사용자가 입력한 글자 그대로 쓴다(요약·생략 없음).
+function renderGrainCard(
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+  reference: string | undefined,
+  spec: GenerativeSpec,
+): string {
+  drawGrain(ctx, width, height, spec);
+
+  const pal = spec.grainPal!;
+  const layout = GRAIN_LAYOUTS[spec.layout ?? 0];
+  const maxW = width * 0.78;          // 좌우 여백 11%씩
+  const minPx = Math.round(width * 0.045);
+  const step = Math.max(1, Math.round(width * 0.003));
+  const vFits = (px: number, count: number) =>
+    count * px * 1.72 + (reference ? px * 0.6 * 1.9 : 0) <= height * 0.84;
+
+  // 사용자가 Enter로 넣은 줄바꿈이 있으면 그 배치를 그대로 존중한다(편집 안내의 약속).
+  // 줄바꿈이 없을 때만 스펙대로 1→4줄 균형 분할을 시도한다.
+  const hasUserBreaks = text.includes('\n');
+  let fontPx = Math.round(width * 0.065);
+  let lines: string[] | null = null;
+  while (fontPx >= minPx && !lines) {
+    ctx.font = `400 ${fontPx}px ${spec.font}`;
+    if (hasUserBreaks) {
+      const got = forceWrap(ctx, text, maxW);
+      // 쪼개지지 않고 사용자 줄 그대로 들어갈 때만 채택
+      if (got.length === text.split('\n').filter((s) => s.trim()).length && vFits(fontPx, got.length)) lines = got;
+    } else {
+      for (let n = 1; n <= 4; n++) {
+        const got = wrapKeepAll(ctx, text, maxW, n);
+        if (got && vFits(fontPx, got.length)) { lines = got; break; }
+      }
+    }
+    if (!lines) fontPx -= step;
+  }
+  // 최소 크기로도 안 들어가면 줄 수를 늘린다. 글자를 빼거나 줄이지는 않는다.
+  if (!lines) {
+    fontPx = minPx;
+    ctx.font = `400 ${fontPx}px ${spec.font}`;
+    if (!hasUserBreaks) for (let n = 5; n <= 12 && !lines; n++) lines = wrapKeepAll(ctx, text, maxW, n);
+    if (!lines) lines = forceWrap(ctx, text, maxW);
+    // 줄 수가 아주 많아도 카드 밖으로 나가지 않도록 끝까지 줄인다(원문 보존 우선).
+    while (!vFits(fontPx, lines.length) && fontPx > width * 0.014) {
+      fontPx -= step;
+      ctx.font = `400 ${fontPx}px ${spec.font}`;
+      lines = forceWrap(ctx, text, maxW);
+    }
+  }
+
+  ctx.font = `400 ${fontPx}px ${spec.font}`;
+  const lineH = fontPx * 1.72;
+  // 주소도 카드 밖으로 나가지 않게 맞춘다
+  let refPx = Math.round(fontPx * 0.6);
+  if (reference) {
+    // 실제 렌더에 자간 0.12em이 붙으므로 그만큼을 더해서 잰다
+    const refW = () => ctx.measureText(reference).width + refPx * 0.12 * Math.max(0, Array.from(reference).length - 1);
+    ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
+    while (refPx > 6 && refW() > maxW) {
+      refPx -= 1;
+      ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
+    }
+    ctx.font = `400 ${fontPx}px ${spec.font}`;
+  }
+  const bodyH = lines.length * lineH;
+  const totalH = bodyH + (reference ? refPx * 1.9 : 0);
+
+  let top = height * layout.bodyTop;
+  const maxTop = height * 0.93 - totalH;
+  if (top > maxTop) top = Math.max(height * 0.06, maxTop);
+
+  const x = layout.align === 'left' ? width * 0.11 : width / 2;
+  ctx.textAlign = layout.align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = pal.ink;
+  let y = top + fontPx * 0.95;
+  for (const l of lines) { ctx.fillText(l, x, y); y += lineH; }
+
+  if (reference) {
+    const anyCtx = ctx as unknown as { letterSpacing?: string };
+    const hasLS = 'letterSpacing' in anyCtx;
+    ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
+    ctx.fillStyle = pal.ink;
+    ctx.globalAlpha = 0.75;
+    if (hasLS) anyCtx.letterSpacing = `${(refPx * 0.12).toFixed(1)}px`;
+    ctx.fillText(reference, x, top + bodyH + refPx * 1.35);
+    if (hasLS) anyCtx.letterSpacing = '0px';
+    ctx.globalAlpha = 1;
+  }
+
+  // 작은 4각 반짝이 1개 — 글씨 반대편
+  if (spec.sparkle) {
+    const sx = width * 0.83;
+    const sy = height * (layout.bodyTop < 0.4 ? 0.86 : 0.14);
+    const r = width * 0.032;
+    ctx.save();
+    ctx.globalAlpha = 0.7;
+    ctx.fillStyle = pal.ink;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy - r);
+    ctx.quadraticCurveTo(sx + r * 0.18, sy - r * 0.18, sx + r, sy);
+    ctx.quadraticCurveTo(sx + r * 0.18, sy + r * 0.18, sx, sy + r);
+    ctx.quadraticCurveTo(sx - r * 0.18, sy + r * 0.18, sx - r, sy);
+    ctx.quadraticCurveTo(sx - r * 0.18, sy - r * 0.18, sx, sy - r);
+    ctx.fill();
+    ctx.restore();
   }
 
   return canvas.toDataURL('image/png');
