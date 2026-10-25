@@ -54,13 +54,43 @@ export const GRAIN_PALETTES: GrainPalette[] = [
   { id: 'M12', name: '딥 바이올렛', bg: '#7b7394', blobs: ['#f2c9c4', '#b5aae4', '#655f7a'], ink: '#f2ecfb', mid: true },
 ];
 
-// 글씨 배치 4종 (스펙 5장). bodyTop은 본문 상단의 카드 높이 대비 위치.
+// 글씨 배치. bodyTop 은 본문 상단의 카드 높이 대비 위치.
+//  uniform    — 전 줄 같은 크기 (스펙 5장의 네 가지)
+//  hero       — 핵심 구절만 아주 크게, 나머지 작게, 왼쪽 정렬 (시안 A)
+//  centerHero — 가운데 정렬, 핵심 구절만 조금 크게, 가는 십자 장식 (시안 C)
+// hero 계열은 본문이 두 조각 이상으로 나뉠 때만 쓴다. 한 덩어리 문장은 키울 데가 없다.
 const GRAIN_LAYOUTS = [
-  { bodyTop: 0.62, align: 'left' as const },
-  { bodyTop: 0.40, align: 'center' as const },
-  { bodyTop: 0.14, align: 'left' as const },
-  { bodyTop: 0.16, align: 'center' as const },
+  { bodyTop: 0.62, align: 'left' as const, kind: 'uniform' as const },
+  { bodyTop: 0.40, align: 'center' as const, kind: 'uniform' as const },
+  { bodyTop: 0.14, align: 'left' as const, kind: 'uniform' as const },
+  { bodyTop: 0.16, align: 'center' as const, kind: 'uniform' as const },
+  { bodyTop: 0.46, align: 'left' as const, kind: 'hero' as const },
+  { bodyTop: 0.34, align: 'center' as const, kind: 'centerHero' as const },
 ];
+const UNIFORM_LAYOUT_COUNT = 4;
+
+/**
+ * 본문을 의미 조각으로 나눈다. 줄바꿈·쉼표·가운뎃점이 기준이다.
+ * 단어는 건드리지 않는다 — 어디서 줄을 바꿀지만 정한다.
+ */
+function splitSegments(text: string): string[] {
+  // 구분 문자(쉼표·가운뎃점)는 앞 조각에 붙여 둔다. 사용자가 쓴 글자를 지우지 않는다.
+  return text
+    .split('\n')
+    .flatMap((line) => line.split(/(?<=[,·])/))
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+/**
+ * 크게 보여 줄 핵심 구절을 고른다. **마지막 조각**을 쓴다.
+ * 한국어 말씀은 결론이 뒤에 오는 경우가 많다("…없으리로다", "…함께 함이라").
+ * 의미로 고르는 것이 아니므로 틀릴 수 있다. T03 은 다시 뽑기가 공짜라 그때 다시 뽑으면 된다.
+ */
+function pickKeySegment(segments: string[]): { key: string; rest: string[] } {
+  if (segments.length < 2) return { key: segments[0] || '', rest: [] };
+  return { key: segments[segments.length - 1], rest: segments.slice(0, -1) };
+}
 
 export interface GenerativePalette {
   name: string;
@@ -240,7 +270,9 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   const rnd = mulberry32(seed);
   const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
   const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
-  const layout = Math.floor(rnd() * GRAIN_LAYOUTS.length);
+  // 조각이 하나뿐인 문장에는 hero 계열을 쓰지 않는다
+  const layoutPool = splitSegments(text).length >= 2 ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
+  const layout = Math.floor(rnd() * layoutPool);
   // 별(반짝이) 장식은 제거했다(2026-10-24 요청 4).
   // 난수 소비는 그대로 둔다 — 빼면 이후 난수가 밀려 같은 시드의 색·배치가 달라진다.
   rnd();
@@ -563,6 +595,104 @@ export function renderGenerativeCard(opts: RenderGenerativeOpts): string {
 }
 
 // T03 그레인 그라데이션 카드. 본문은 사용자가 입력한 글자 그대로 쓴다(요약·생략 없음).
+/** 글자 폭에 맞춰 maxW 안에서 줄을 나눈다. 어절 우선, 안 되면 글자 단위. */
+function fitLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  return forceWrap(ctx, text, maxW);
+}
+
+/**
+ * 핵심 구절을 크게 쓰는 배치(시안 A·C).
+ * 본문 단어는 바꾸지 않는다. 어디서 줄을 바꾸고 무엇을 크게 쓸지만 정한다.
+ */
+function drawHeroText(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  text: string,
+  reference: string | undefined,
+  spec: GenerativeSpec,
+  layout: (typeof GRAIN_LAYOUTS)[number],
+): void {
+  const pal = spec.grainPal!;
+  const centered = layout.align === 'center';
+  const maxW = width * 0.78;
+  const x = centered ? width / 2 : width * 0.11;
+  const { key, rest } = pickKeySegment(splitSegments(text));
+
+  // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
+  let keyPx = Math.round(width * (centered ? 0.072 : 0.118));
+  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.07));
+  let keyLines: string[] = [];
+  while (keyPx >= minKeyPx) {
+    ctx.font = `${centered ? 600 : 700} ${keyPx}px ${spec.font}`;
+    keyLines = fitLines(ctx, key, maxW);
+    if (keyLines.length <= (centered ? 2 : 3)) break;
+    keyPx -= Math.max(1, Math.round(width * 0.004));
+  }
+
+  const restPx = Math.round(width * (centered ? 0.046 : 0.040));
+  ctx.font = `400 ${restPx}px ${spec.font}`;
+  const restLines = rest.flatMap((r) => fitLines(ctx, r, maxW));
+
+  const keyLH = keyPx * 1.22;
+  const restLH = restPx * 1.65;
+  const refPx = Math.round(width * 0.027);
+  const gap = width * 0.03;
+  // C 는 나머지를 위에, A 는 아래에 둔다
+  const totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+
+  let top = height * layout.bodyTop;
+  const maxTop = height * 0.9 - totalH;
+  if (top > maxTop) top = Math.max(height * 0.07, maxTop);
+
+  ctx.textAlign = layout.align;
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillStyle = pal.ink;
+  let y = top;
+
+  const drawRest = () => {
+    ctx.font = `400 ${restPx}px ${spec.font}`;
+    ctx.globalAlpha = 0.78;
+    for (const line of restLines) { y += restLH; ctx.fillText(line, x, y); }
+    ctx.globalAlpha = 1;
+  };
+  const drawKey = () => {
+    ctx.font = `${centered ? 600 : 700} ${keyPx}px ${spec.font}`;
+    for (const line of keyLines) { y += keyLH; ctx.fillText(line, x, y); }
+  };
+
+  // 두 배치 모두 원문 순서를 지킨다. 핵심 구절(마지막 조각)을 위로 올리면
+  // 결론을 먼저 읽게 돼 문장이 뒤집힌다.
+  drawRest();
+  y += gap;
+  drawKey();
+
+  // C 는 핵심 구절 아래에 가는 십자 표시를 둔다
+  if (centered) {
+    y += gap;
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.strokeStyle = pal.ink;
+    ctx.lineWidth = Math.max(1, width * 0.0016);
+    const arm = width * 0.055;
+    ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - width * 0.016); ctx.lineTo(x, y + width * 0.016); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (reference) {
+    const anyCtx = ctx as unknown as { letterSpacing?: string };
+    const hasLS = 'letterSpacing' in anyCtx;
+    ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
+    ctx.fillStyle = pal.ink;
+    ctx.globalAlpha = 0.68;
+    if (hasLS) anyCtx.letterSpacing = `${(refPx * 0.12).toFixed(1)}px`;
+    ctx.fillText(reference, x, y + refPx * 2.2);
+    if (hasLS) anyCtx.letterSpacing = '0px';
+    ctx.globalAlpha = 1;
+  }
+}
+
 function renderGrainCard(
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
@@ -576,6 +706,10 @@ function renderGrainCard(
 
   const pal = spec.grainPal!;
   const layout = GRAIN_LAYOUTS[spec.layout ?? 0];
+  if (layout.kind !== 'uniform') {
+    drawHeroText(ctx, width, height, text, reference, spec, layout);
+    return canvas.toDataURL('image/png');
+  }
   const maxW = width * 0.78;          // 좌우 여백 11%씩
   const minPx = Math.round(width * 0.045);
   const step = Math.max(1, Math.round(width * 0.003));
