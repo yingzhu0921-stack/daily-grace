@@ -67,10 +67,15 @@ const GRAIN_LAYOUTS = [
   { bodyTop: 0.70, align: 'center' as const, kind: 'uniform' as const },
   { bodyTop: 0.22, align: 'right' as const, kind: 'uniform' as const },
   { bodyTop: 0.58, align: 'right' as const, kind: 'uniform' as const },
-  // 강조 배치는 본문이 나뉠 때만 쓴다
+  // 강조 배치는 본문이 나뉠 때만 쓴다. 기본 배치보다 수를 많이 둬 자주 나오게 한다.
   { bodyTop: 0.46, align: 'left' as const, kind: 'hero' as const },
-  { bodyTop: 0.34, align: 'center' as const, kind: 'centerHero' as const },
+  { bodyTop: 0.22, align: 'left' as const, kind: 'hero' as const },
+  { bodyTop: 0.56, align: 'left' as const, kind: 'hero' as const },
   { bodyTop: 0.50, align: 'right' as const, kind: 'hero' as const },
+  { bodyTop: 0.26, align: 'right' as const, kind: 'hero' as const },
+  { bodyTop: 0.34, align: 'center' as const, kind: 'centerHero' as const, mark: true },
+  { bodyTop: 0.52, align: 'center' as const, kind: 'centerHero' as const, mark: false },
+  { bodyTop: 0.20, align: 'center' as const, kind: 'centerHero' as const, mark: true },
 ];
 const UNIFORM_LAYOUT_COUNT = 7;
 
@@ -722,8 +727,8 @@ function drawHeroText(
   y += gap;
   drawKey();
 
-  // C 는 핵심 구절 아래에 가는 십자 표시를 둔다
-  if (centered) {
+  // C 는 핵심 구절 아래에 가는 십자 표시를 둔다 (일부 변형은 없이)
+  if (centered && (layout as { mark?: boolean }).mark !== false) {
     y += gap;
     ctx.save();
     ctx.globalAlpha = 0.35;
