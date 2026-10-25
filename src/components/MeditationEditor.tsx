@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Plus, X } from 'lucide-react';
@@ -13,14 +13,29 @@ interface MeditationEditorProps {
   onContentChange?: (hasContent: boolean) => void;
 }
 
-export const MeditationEditor: React.FC<MeditationEditorProps> = ({
+/**
+ * 저장 버튼이 눌렸을 때 부모가 쓰는 창구.
+ * onChange 는 800ms 디바운스라, 타이핑 직후 저장을 누르면 부모 state 가 아직 옛 값이다.
+ * 그대로 저장하면 "저장 완료" 는 뜨는데 내용은 그대로인 문제가 생긴다.
+ * getValues() 는 대기 중인 디바운스를 취소하고 에디터가 들고 있는 현재 값을 바로 돌려준다.
+ */
+export interface MeditationEditorHandle {
+  getValues: () => {
+    title: string;
+    passage: string;
+    content: string;
+    application: string[] | ApplicationItem[];
+  };
+}
+
+export const MeditationEditor = forwardRef<MeditationEditorHandle, MeditationEditorProps>(({
   initialTitle,
   initialPassage,
   initialContent,
   initialApplication,
   onChange,
   onContentChange
-}) => {
+}, ref) => {
   const [title, setTitle] = useState(initialTitle);
   const [passage, setPassage] = useState(initialPassage);
   const [content, setContent] = useState(initialContent);
@@ -75,6 +90,17 @@ export const MeditationEditor: React.FC<MeditationEditorProps> = ({
       titleRef.current.focus();
     }
   }, []);
+
+  // 저장 직전에 부모가 현재 값을 바로 가져간다. 대기 중인 디바운스는 취소한다.
+  useImperativeHandle(ref, () => ({
+    getValues: () => {
+      if (saveTimerRef.current) {
+        clearTimeout(saveTimerRef.current);
+        saveTimerRef.current = undefined;
+      }
+      return { title, passage, content, application };
+    },
+  }), [title, passage, content, application]);
 
   const handleChange = (field: 'title' | 'passage' | 'content', value: string, textarea?: HTMLTextAreaElement | null) => {
     let newTitle = title;
@@ -187,4 +213,6 @@ export const MeditationEditor: React.FC<MeditationEditorProps> = ({
       />
     </div>
   );
-};
+});
+
+MeditationEditor.displayName = 'MeditationEditor';

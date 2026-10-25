@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MeditationEditor } from '@/components/MeditationEditor';
+import { MeditationEditor, type MeditationEditorHandle } from '@/components/MeditationEditor';
 import { get, update } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -19,6 +19,7 @@ const MeditationEdit = () => {
   const [application, setApplication] = useState<string | string[] | ApplicationItem[]>('');
   const [hasContent, setHasContent] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const editorRef = useRef<MeditationEditorHandle>(null);
 
   useEffect(() => {
     if (id) {
@@ -51,6 +52,15 @@ const MeditationEdit = () => {
   const handleComplete = () => {
     if (!id) return;
 
+    // 에디터의 onChange 는 800ms 디바운스라, 타이핑 직후 저장을 누르면 state 가 아직 옛 값이다.
+    // 그대로 저장하면 "저장 완료" 만 뜨고 내용은 그대로다.
+    // 저장 시점에는 에디터가 들고 있는 현재 값을 직접 가져와 이 함수 안에서만 쓴다.
+    const live = editorRef.current?.getValues();
+    const titleNow = live?.title ?? title;
+    const passageNow = live?.passage ?? passage;
+    const contentNow = live?.content ?? content;
+    const applicationNow = live?.application ?? application;
+
     // ApplicationItem[] 형식을 문자열로 변환
     const getApplicationText = (app: string | string[] | ApplicationItem[]): string => {
       if (typeof app === 'string') return app;
@@ -63,9 +73,9 @@ const MeditationEdit = () => {
       return '';
     };
 
-    const applicationText = getApplicationText(application);
+    const applicationText = getApplicationText(applicationNow);
 
-    if (!title.trim() && !passage.trim() && !content.trim() && !applicationText.trim()) {
+    if (!titleNow.trim() && !passageNow.trim() && !contentNow.trim() && !applicationText.trim()) {
       toast({
         title: "내용을 입력해주세요",
         description: "최소 한 섹션 이상 작성해야 합니다.",
@@ -73,7 +83,7 @@ const MeditationEdit = () => {
       return;
     }
 
-    const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${applicationText}`;
+    const fullText = `# 제목\n${titleNow}\n\n## 본문\n${passageNow}\n\n## 내용\n${contentNow}\n\n## 적용\n${applicationText}`;
 
     // ApplicationItem[] 배열 추출
     const getApplicationsArray = (app: string | string[] | ApplicationItem[]): ApplicationItem[] => {
@@ -88,12 +98,12 @@ const MeditationEdit = () => {
       return [];
     };
 
-    const applicationsArray = getApplicationsArray(application);
+    const applicationsArray = getApplicationsArray(applicationNow);
 
     update(id, {
-      title: title.trim(),
-      passage: passage.trim(),
-      content: content.trim(),
+      title: titleNow.trim(),
+      passage: passageNow.trim(),
+      content: contentNow.trim(),
       application: applicationText.trim(),
       applications: applicationsArray,
       fullText
@@ -146,6 +156,7 @@ const MeditationEdit = () => {
       {/* 에디터 */}
       <main className="flex flex-1 flex-col">
         <MeditationEditor
+          ref={editorRef}
           initialTitle={title}
           initialPassage={passage}
           initialContent={content}

@@ -203,7 +203,9 @@ npx esbuild src/utils/<모듈>.ts --bundle --format=iife --global-name=GC --outf
 2. 요청받지 않은 기능을 임의로 추가하지 않는다.
 3. 한 가지를 고칠 때 무관한 파일을 건드리지 않는다.
 4. 변경 전 관련 코드를 읽고 영향 범위를 확인한다.
-5. 변경 후 가능한 범위에서 `npx tsc --noEmit` / `npm run build`로 검증한다.
+5. 변경 후 **`npx tsc -p tsconfig.app.json --noEmit`** 과 `npm run build` 로 검증한다.
+   **`npx tsc --noEmit` 은 쓰지 않는다.** 루트 `tsconfig.json` 은 `"files": []` 에 프로젝트 참조만
+   있어서 검사할 파일이 없고, 항상 조용히 통과한다. 실제로 `useRef` 미임포트를 놓쳤다.
 6. 근거 없는 추측으로 코드를 바꾸지 않는다.
 7. `.env`, API 키, 비밀번호 등 민감정보를 출력하거나 외부로 보내지 않는다.
 8. 파일 삭제, 배포, 외부 업로드는 승인 없이 하지 않는다.

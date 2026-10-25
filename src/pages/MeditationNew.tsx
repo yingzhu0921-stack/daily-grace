@@ -1,8 +1,8 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Bell, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { MeditationEditor } from '@/components/MeditationEditor';
+import { MeditationEditor, type MeditationEditorHandle } from '@/components/MeditationEditor';
 import { create } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -22,6 +22,7 @@ const MeditationNew = () => {
   const [content, setContent] = useState('');
   const [application, setApplication] = useState<string | string[] | ApplicationItem[]>([{ text: '', checked: false }]);
   const [hasContent, setHasContent] = useState(false);
+  const editorRef = useRef<MeditationEditorHandle>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showTimePickerModal, setShowTimePickerModal] = useState(false);
@@ -51,6 +52,15 @@ const MeditationNew = () => {
   };
 
   const handleComplete = async () => {
+
+    // 에디터의 onChange 는 800ms 디바운스라, 타이핑 직후 저장을 누르면 state 가 아직 옛 값이다.
+    // 그대로 저장하면 첫 저장이 "최소 한 섹션" 으로 실패한다.
+    // 저장 시점에는 에디터가 들고 있는 현재 값을 직접 가져와 이 함수 안에서만 쓴다.
+    const live = editorRef.current?.getValues();
+    const titleNow = live?.title ?? title;
+    const passageNow = live?.passage ?? passage;
+    const contentNow = live?.content ?? content;
+    const applicationNow = live?.application ?? application;
     // ApplicationItem[] 형식을 문자열로 변환
     const getApplicationText = (app: string | string[] | ApplicationItem[]): string => {
       if (typeof app === 'string') return app;
@@ -63,9 +73,9 @@ const MeditationNew = () => {
       return '';
     };
 
-    const applicationText = getApplicationText(application);
+    const applicationText = getApplicationText(applicationNow);
 
-    if (!title.trim() && !passage.trim() && !content.trim() && !applicationText.trim()) {
+    if (!titleNow.trim() && !passageNow.trim() && !contentNow.trim() && !applicationText.trim()) {
       toast({
         title: "내용을 입력해주세요",
         description: "최소 한 섹션 이상 작성해야 합니다.",
@@ -75,9 +85,9 @@ const MeditationNew = () => {
 
     // 입력 검증
     const validationResult = meditationSchema.safeParse({
-      title,
-      passage,
-      content,
+      title: titleNow,
+      passage: passageNow,
+      content: contentNow,
       application: applicationText,
     });
 
@@ -91,7 +101,7 @@ const MeditationNew = () => {
       return;
     }
 
-    const fullText = `# 제목\n${title}\n\n## 본문\n${passage}\n\n## 내용\n${content}\n\n## 적용\n${applicationText}`;
+    const fullText = `# 제목\n${titleNow}\n\n## 본문\n${passageNow}\n\n## 내용\n${contentNow}\n\n## 적용\n${applicationText}`;
 
     // ApplicationItem[] 배열 추출
     const getApplicationsArray = (app: string | string[] | ApplicationItem[]): ApplicationItem[] => {
@@ -106,13 +116,13 @@ const MeditationNew = () => {
       return [];
     };
 
-    const applicationsArray = getApplicationsArray(application);
+    const applicationsArray = getApplicationsArray(applicationNow);
 
     // 즉시 저장 (Optimistic UI)
     const newNote = await create({
-      title: title.trim(),
-      passage: passage.trim(),
-      content: content.trim(),
+      title: titleNow.trim(),
+      passage: passageNow.trim(),
+      content: contentNow.trim(),
       application: applicationText.trim(),
       applications: applicationsArray, // 배열 형태로 저장
       applyChecked: false,
@@ -312,6 +322,7 @@ const MeditationNew = () => {
       {/* 에디터 */}
       <main className="mt-[60px] flex flex-1 flex-col">
         <MeditationEditor
+          ref={editorRef}
           initialTitle={title}
           initialPassage={passage}
           initialContent={content}
