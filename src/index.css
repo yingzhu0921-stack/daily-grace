@@ -10,6 +10,14 @@
 @font-face { font-family: 'PaperBlack'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-9Black.woff2') format('woff2'); }
 @font-face { font-family: 'PaperLight'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2') format('woff2'); }
 @font-face { font-family: 'Taenada'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-2@1.0/Tenada.woff2') format('woff2'); }
+/* 말씀카드 T03 본문용 고딕. 넷 다 웹사이트·임베딩 허용을 확인했다(2026-10-25).
+   금지 사항은 모두 "폰트 파일 자체의 판매·재배포" 뿐이고, 이 앱은 CDN 에서 불러 쓴다. */
+@font-face { font-family: 'BusanDandiGothic'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@l/l/부산단디고딕L.woff2') format('woff2'); font-weight: 300; font-display: swap; }
+@font-face { font-family: 'BusanDandiGothic'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@l/l/부산단디고딕M.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'BusanDandiGothic'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2610132210@l/l/부산단디고딕B.woff2') format('woff2'); font-weight: 700; font-display: swap; }
+@font-face { font-family: 'SeoulNamsan'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulNamsanM.woff') format('woff'); font-weight: normal; font-display: swap; }
+@font-face { font-family: 'NoonnuBasicGothic'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noon-2410@1.0/NoonnuBasicGothicRegular.woff2') format('woff2'); font-weight: normal; font-display: swap; }
+@font-face { font-family: 'LeeSunSinDotum'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/YiSunShinDotumM.woff') format('woff'); font-weight: normal; font-display: swap; }
 @font-face { font-family: 'RidiBatang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_twelve@1.0/RIDIBatang.woff') format('woff'); }
 @font-face { font-family: 'SeoulHangang'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_two@1.0/SeoulHangangM.woff') format('woff'); }
 @font-face { font-family: 'Hyunok'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduHyeonokT_OTFMediumA.woff') format('woff'); }

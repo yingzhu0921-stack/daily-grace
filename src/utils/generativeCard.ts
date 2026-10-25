@@ -313,13 +313,19 @@ export function pickAuraSpec(text: string, seedOverride?: number): GenerativeSpe
 // 차분한 결을 유지하면서 서로 구분되는 것만 둔다. 손글씨는 T03 의 결과 맞지 않아 뺐다.
 // 명조를 여러 개 넣으면 서로 구분이 안 돼 다양해지지 않는다. 나눔은 쓰지 않는다(사용자 방침).
 const GRAIN_BODY_FONTS = [
-  "'Gowun Batang', serif",     // 명조 — 차분한 기본
-  "'Gowun Dodum', sans-serif", // 고딕 — 깔끔하고 현대적
+  "'Gowun Batang', serif",          // 명조 — 차분한 기본
+  "'Gowun Dodum', sans-serif",      // 고딕 — 깔끔하고 현대적
+  "'BusanDandiGothic', sans-serif", // 부산단디 — 또렷하고 자간이 넓다
+  "'SeoulNamsan', sans-serif",      // 서울남산 — 가늘고 단정하다
+  "'NoonnuBasicGothic', sans-serif",// 눈누기초 — 굵고 힘이 있다
+  "'LeeSunSinDotum', sans-serif",   // 이순신돋움 — 중간 굵기, 살짝 각지다
 ];
 
 /** 글꼴마다 같은 px 라도 보이는 크기가 조금씩 다르다. */
 function fontScale(css: string): number {
-  return css.includes('Dodum') ? 0.97 : 1;
+  if (css.includes('Gowun Dodum')) return 0.97;
+  if (css.includes('NoonnuBasic')) return 0.95;  // 굵어서 조금 작게
+  return 1;
 }
 
 /**
@@ -327,7 +333,8 @@ function fontScale(css: string): number {
  * 고운바탕만 700 을 들고 있다.
  */
 function fontBoldWeight(css: string): number {
-  return css.includes('Gowun Batang') ? 700 : 400;
+  // 굵은 자형을 실제로 들고 있는 글꼴에만 700 을 준다
+  return css.includes('Gowun Batang') || css.includes('BusanDandi') ? 700 : 400;
 }
 
 export async function preloadGrainFonts(text = ''): Promise<void> {
