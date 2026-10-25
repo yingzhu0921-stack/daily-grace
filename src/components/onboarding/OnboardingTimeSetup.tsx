@@ -33,8 +33,10 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
   ];
 
   return (
-    <div className="flex flex-col h-full px-6 py-8 bg-[#FAFAF9]">
-      <div className="flex-1">
+    // 1·3단계처럼 가운데 폭을 제한한다. 제한이 없으면 데스크톱(약 1024px)에서
+    // 카드와 '다음' 버튼이 화면 끝까지 늘어나 오른쪽이 잘린 것처럼 보인다.
+    <div className="flex flex-col h-full px-6 py-8 bg-[#FAFAF9] items-center">
+      <div className="flex-1 w-full max-w-[420px] overflow-y-auto">
         <div className="mb-8">
           <h2 className="text-[24px] font-bold leading-[32px] text-[#1F1F1F] mb-2">
             하루를 어떻게<br />하나님과 함께하고 싶나요?
@@ -71,7 +73,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
         </div>
       </div>
 
-      <div className="pt-4">
+      <div className="pt-4 w-full max-w-[420px]">
         <Button
           onClick={handleNext}
           className="w-full h-12 rounded-full bg-[#1F1F1F] hover:bg-[#333] text-white text-[15px] font-semibold"

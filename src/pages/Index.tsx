@@ -140,6 +140,10 @@ const IndexNew = () => {
 
   // 추천 메시지 생성
   const getRecommendationMessage = () => {
+    // 다 채운 날에는 "시작해보세요" 가 어색하다. 완료 상태에 맞는 말을 한다.
+    if (goalProgress.total > 0 && goalProgress.completed >= goalProgress.total) {
+      return '오늘의 기록을 모두 남겼어요';
+    }
     const messages = [
       '오늘은 감사를 먼저 기록해볼까요?',
       '하루를 Q.T로 시작해보세요',

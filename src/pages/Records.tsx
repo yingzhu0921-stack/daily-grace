@@ -219,21 +219,19 @@ const Records: React.FC = () => {
         {/* 전체 기록 탭 */}
         {activeTab === 'records' && (
           <>
-            <div className="pt-4 pb-4">
-              <div className="flex items-center gap-2 mb-2">
-                <AppIcon name="archive" size={18} className="text-[#7C7C7C]" />
-                <span className="text-[13px] font-medium text-[#7C7C7C]">보관함</span>
-              </div>
-              <h1 className="text-[24px] font-semibold text-[#2E2E2E]">{formatDateHeader()}</h1>
-              {dateParam && (
+            {/* 상단 헤더에 이미 '보관함' 이, 탭에 '전체 기록' 이 있다.
+                날짜로 걸러 볼 때만 그 날짜를 제목으로 보여 준다. */}
+            {dateParam && (
+              <div className="pt-4 pb-4">
+                <h1 className="text-[24px] font-semibold text-[#2E2E2E]">{formatDateHeader()}</h1>
                 <button
                   onClick={() => navigate('/records')}
                   className="mt-2 text-[13px] text-[#1F1F1F] font-medium"
                 >
                   전체 보기 →
                 </button>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Category Filter */}
             <div className="mb-4 flex gap-2 overflow-x-auto pb-2">

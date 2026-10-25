@@ -126,7 +126,10 @@ export default function DiaryNew() {
             className="bg-transparent border-0 text-[16px] leading-7 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px]"
             style={{ overflowY: 'hidden' }}
           />
-          <div className="mt-2 text-[12px] text-[#8A8A8A]">{text.length}자</div>
+          {/* 빈 화면에 "0자" 만 덩그러니 떠 있지 않게, 쓰기 시작하면 입력창 끝에 붙여 보여 준다 */}
+          {text.length > 0 && (
+            <div className="mt-2 text-right text-[12px] text-[#8A8A8A]">{text.length}자</div>
+          )}
         </div>
       </div>
     </>

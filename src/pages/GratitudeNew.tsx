@@ -14,6 +14,25 @@ const TEMPLATE = `1.
 3. 
 4. `;
 
+/** 감사 줄 최대 개수. 자동으로 번호를 더 붙이지 않는 지점이다. */
+const MAX_ITEMS = 10;
+
+/**
+ * 마지막 번호 줄에 글을 쓰기 시작하면 다음 번호 줄을 미리 붙여 준다.
+ * (4번 줄에 쓰면 5번 줄이 생긴다) 아직 비어 있으면 붙이지 않는다.
+ */
+function withNextNumberedLine(src: string): string {
+  const lines = src.split('\n');
+  const last = lines[lines.length - 1];
+  const matched = last.match(/^\s*(\d+)\.\s*(.*)$/);
+  if (!matched) return src;
+  const [, numberText, rest] = matched;
+  if (!rest.trim()) return src;
+  const next = Number(numberText) + 1;
+  if (next > MAX_ITEMS) return src;
+  return `${src}\n${next}. `;
+}
+
 function parseItems(src: string) {
   return src.split('\n')
     .map(s => s.replace(/^\s*\d+\.\s?/, '').trim())
@@ -145,8 +164,22 @@ export default function GratitudeNew() {
             value={text}
             onChange={(e) => {
               const scrollPos = window.scrollY;
-              setText(e.target.value);
-              adjustTextareaHeight(e.target);
+              const el = e.target;
+              // 맨 끝에서 쓰고 있을 때만 다음 번호를 붙인다. 중간을 고칠 때 끼어들면 곤란하다.
+              const atEnd = el.selectionStart === el.value.length;
+              const raw = el.value;
+              const next = atEnd ? withNextNumberedLine(raw) : raw;
+              setText(next);
+              if (next !== raw) {
+                // 새 번호 줄은 뒤에 붙이고 커서는 치던 자리에 그대로 둔다.
+                // 커서가 새 줄로 끌려가면 글자마다 줄이 하나씩 생긴다.
+                const caret = raw.length;
+                requestAnimationFrame(() => {
+                  el.selectionStart = caret;
+                  el.selectionEnd = caret;
+                });
+              }
+              adjustTextareaHeight(el);
               requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             }}
             placeholder="1.&#10;2.&#10;3.&#10;4."
@@ -154,7 +187,7 @@ export default function GratitudeNew() {
             style={{ overflowY: 'hidden' }}
           />
           <div className="mt-2 text-[12px] text-[#8A8A8A]">
-            숫자 없이 적어도 되고, 줄은 더 추가해도 돼요.
+            마지막 줄에 쓰면 다음 번호가 저절로 생겨요. 숫자 없이 적어도 괜찮아요.
           </div>
         </div>
       </div>

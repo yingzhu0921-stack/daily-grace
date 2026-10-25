@@ -150,9 +150,13 @@ export default function PrayerView() {
             </div>
           </div>
 
-          <div className="text-[15px] leading-relaxed text-[#5A5A5A] mb-6 whitespace-pre-wrap">
-            {note.content}
-          </div>
+          {/* 기도는 한 줄로 적으면 제목과 본문에 같은 글이 저장된다.
+              같은 글을 두 번 보여 주지 않는다. */}
+          {note.content?.trim() && note.content.trim() !== note.title?.trim() && (
+            <div className="text-[15px] leading-relaxed text-[#5A5A5A] mb-6 whitespace-pre-wrap">
+              {note.content}
+            </div>
+          )}
 
           {note.answered && note.answeredDetail && (
             <div className="mb-6 p-4 rounded-xl bg-[#F8F5FB] border border-[#E8DEF5]">
