@@ -317,13 +317,24 @@ function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, spec: Ge
       ]
     : pal.blobs.map((color) => ({ color, cy: 0.1 + rnd() * 0.8, ...loose() }));
 
+  // 색 덩어리는 가장자리가 서서히 사라지는 방사형 그라데이션으로 그린다.
+  //
+  // 전에는 원을 그리고 ctx.filter 로 흐리게 했는데, 캔버스 filter 는 사파리 17 미만에서
+  // 지원되지 않는다. 지원되지 않으면 **조용히 무시돼** 테두리가 또렷한 원이 그대로
+  // 남는다. 아이폰에서 "그라데이션이 아니라 또렷한 원 도형" 으로 보이던 원인이다.
+  // 그라데이션은 어디서나 같게 그려진다.
   ctx.save();
-  ctx.filter = `blur(${(w * 0.185).toFixed(1)}px)`;
   for (const b of blobs) {   // 어두운 덩어리가 마지막이라 글자 뒤에 얹힌다
-    ctx.fillStyle = b.color;
-    ctx.beginPath();
-    ctx.arc(w * b.cx, h * b.cy, w * b.r, 0, Math.PI * 2);
-    ctx.fill();
+    const cx = w * b.cx;
+    const cy = h * b.cy;
+    const r = w * b.r * 1.5;               // 흐려지는 만큼 더 넓게 퍼뜨린다
+    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+    g.addColorStop(0, hexA(b.color, 1));
+    g.addColorStop(0.45, hexA(b.color, 0.72));
+    g.addColorStop(0.75, hexA(b.color, 0.28));
+    g.addColorStop(1, hexA(b.color, 0));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
   }
   ctx.restore();
 

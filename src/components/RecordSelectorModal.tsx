@@ -66,19 +66,48 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
   const [query, setQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const [options, setOptions] = useState<string[]>([]);
+
+  // 키보드가 올라오면 보이는 화면이 줄어든다. vh 는 그대로라 창이 화면 밖으로 밀려
+  // 아래쪽(분류 버튼)이 가려졌다. 실제로 보이는 높이를 따라간다.
+  // 창은 fixed top:50% 라 레이아웃 화면의 한가운데에 놓인다. 키보드가 올라오면
+  // 그 한가운데가 보이는 화면 밖으로 내려가므로, 높이와 함께 중심도 옮겨 준다.
+  const [viewport, setViewport] = useState<{ h: number; mid: number } | null>(null);
+  useEffect(() => {
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setViewport({ h: vv.height, mid: vv.offsetTop + vv.height / 2 });
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, []);
   const [recommending, setRecommending] = useState(false);
   const [recommendationError, setRecommendationError] = useState('');
-  const [recommendationRequested, setRecommendationRequested] = useState(false);
+  // 몇 번째 추천 요청인지. 0 이면 아직 안 누른 것. 늘릴 때마다 다시 받아온다.
+  const [recommendCount, setRecommendCount] = useState(0);
+  const recommendationRequested = recommendCount > 0;
 
   useEffect(() => {
     setVisibleCount(12);
   }, [query, activeType]);
 
+  // 다른 기록을 고르거나 단계가 바뀌면 지난 추천을 버린다.
+  // 이 초기화를 아래 요청 effect 안에 두면 recommendCount 가 자기 자신을 되돌려
+  // cleanup 이 방금 띄운 요청을 취소해 버린다. 반드시 따로 둔다.
   useEffect(() => {
     setOptions([]);
+    setRecommendCount(0);
     setRecommendationError('');
     setRecommending(false);
-    if (!recommendationRequested || !open || step !== 'confirm' || !selectedRecord || purpose === 'background') return;
+  }, [open, selectedRecord, step, purpose]);
+
+  useEffect(() => {
+    if (!recommendCount || !open || step !== 'confirm' || !selectedRecord || purpose === 'background') return;
+    setOptions([]);
+    setRecommendationError('');
     const raw = getRecordText(selectedRecord);
     if (raw.replace(/\s/g, '').length <= 22) return;
     const controller = new AbortController();
@@ -106,7 +135,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
       }
     })();
     return () => { active = false; controller.abort(); window.clearTimeout(timeout); };
-  }, [open, selectedRecord, step, purpose, recommendationRequested]);
+  }, [open, selectedRecord, step, purpose, recommendCount]);
 
   // 모달이 열릴 때마다 최신 데이터 가져오기
   useEffect(() => {
@@ -125,7 +154,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
       setActiveType('all');
       setQuery('');
       setVisibleCount(12);
-      setRecommendationRequested(false);
+      setRecommendCount(0);
     }
   }, [open]);
 
@@ -133,8 +162,9 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     setSelectedRecord(record);
     setConfirmedText(getRecordText(record));
     setOptions([]);
+    setRecommendCount(0);
     setRecommendationError('');
-    setRecommendationRequested(false);
+    setRecommendCount(0);
     setStep('confirm');
   };
 
@@ -165,9 +195,13 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     <Dialog open={open} onOpenChange={(isOpen) => {
       if (!isOpen) onClose();
     }}>
-      <DialogContent 
-        className="max-w-[500px] max-h-[70vh] flex flex-col p-4 sm:p-6 bg-white"
-        style={{ zIndex: 9999 }}
+      <DialogContent
+        className="max-w-[500px] flex flex-col p-4 sm:p-6 bg-white"
+        style={{
+          zIndex: 9999,
+          maxHeight: viewport ? `${Math.round(viewport.h * 0.88)}px` : '70vh',
+          ...(viewport ? { top: `${Math.round(viewport.mid)}px` } : {}),
+        }}
         overlayClassName="z-[9998]"
       >
         <DialogHeader className="pb-3">
@@ -184,7 +218,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
         {step === 'select' ? (
           <div className="flex-1 min-h-0 flex flex-col gap-3">
             <input aria-label="기록 검색" value={query} onChange={e => setQuery(e.target.value)} placeholder="제목이나 내용으로 검색" className="w-full rounded-lg border p-3 text-sm" />
-            <div className="flex gap-1.5 overflow-x-auto pb-1">
+            <div className="flex shrink-0 gap-1.5 overflow-x-auto overflow-y-visible pb-2">
               {filters.map(filter => (
                 <button
                   key={filter.key}
@@ -273,8 +307,15 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
-                  {getRecordText(selectedRecord).replace(/\s/g, '').length > 22 && !recommendationRequested && (
-                    <Button variant="outline" onClick={() => setRecommendationRequested(true)}>AI 추천 받기</Button>
+                  {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
+                  {getRecordText(selectedRecord).replace(/\s/g, '').length > 22 && (
+                    <Button
+                      variant="outline"
+                      disabled={recommending}
+                      onClick={() => setRecommendCount((n) => n + 1)}
+                    >
+                      {recommending ? '추천 받는 중…' : recommendationRequested ? '다시 추천 받기' : 'AI 추천 받기'}
+                    </Button>
                   )}
                 </div>
                 <p role="status" className="text-xs text-muted-foreground">

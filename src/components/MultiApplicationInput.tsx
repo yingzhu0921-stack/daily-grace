@@ -91,11 +91,11 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
   return (
     <section className="mb-12">
       <label className="mb-2 block text-sm text-[#9B9B9B]">{label}</label>
-      <div className="space-y-3">
+      <div className="space-y-1.5">
         {displayValues.map((item, index) => (
           <div key={index} className="flex gap-3 items-start">
             {showCheckboxes && (
-              <div className="pt-3">
+              <div className="pt-1">
                 <Checkbox
                   checked={item.checked}
                   onCheckedChange={(checked) => handleCheckChange(index, checked as boolean)}
@@ -119,7 +119,8 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
                 }}
                 onKeyDown={(e) => handleKeyDown(e, index)}
                 placeholder={`${placeholder} ${displayValues.length > 1 ? `#${index + 1}` : ''}`}
-                className={`min-h-[60px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0 ${
+                rows={1}
+                className={`min-h-[32px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0 ${
                   item.checked ? 'text-[#ACACAC] line-through' : 'text-[#2E2E2E]'
                 }`}
                 style={{ overflowY: 'hidden' }}
@@ -129,7 +130,7 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleRemove(index)}
-                className="mt-2 p-1.5 rounded-lg hover:bg-[#F3F2F1] transition-colors"
+                className="mt-0.5 p-1.5 rounded-lg hover:bg-[#F3F2F1] transition-colors"
                 aria-label="항목 삭제"
               >
                 <X className="w-4 h-4 text-[#ACACAC]" />

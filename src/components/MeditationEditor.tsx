@@ -184,7 +184,8 @@ export const MeditationEditor = forwardRef<MeditationEditorHandle, MeditationEdi
           ref={passageRef}
           value={passage}
           onChange={(e) => handleChange('passage', e.target.value, e.target)}
-          className="min-h-[120px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+          rows={1}
+          className="min-h-[32px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
           style={{ overflowY: 'hidden' }}
           placeholder="읽은 말씀을 적어보세요"
         />
