@@ -519,6 +519,7 @@ export default function Designer() {
     ratio?: Ratio;
     typography?: AutoTypography;
     simpleLines?: string[];
+    simpleScale?: number;   // T04: 미리보기/저장본 공통 글씨 배율
     genSeed?: number;      // T05 제너러티브: 재현·재편집용 시드
     genStyle?: GenerativeStyle;
   } | null>(null);
@@ -1972,6 +1973,26 @@ export default function Designer() {
     return finalLines;
   };
 
+  /**
+   * T04 감성 심플: 미리보기와 저장본이 같은 줄·같은 크기로 보이게 하는 글씨 배율.
+   * 줄을 다시 나누지 않고(그러면 화면 폭마다 줄 수가 달라진다) 글씨만 줄인다.
+   * 화면 크기와 무관한 비율이라 작은 미리보기·큰 미리보기·저장본이 모두 같아진다.
+   */
+  const simpleFontScale = (lines: string[], primaryKey: string, ratio: string): number => {
+    if (!lines.length) return 1;
+    const dimMap: Record<string, number> = { '9:16': 900, '16:9': 1600, '1:1': 1200, '4:3': 1200, '4:5': 1000, '3:4': 900, '2:3': 900 };
+    const refWidth = dimMap[ratio] || 1000;
+    const fontPx = Math.max(20, refWidth * 0.033);
+    const maxW = refWidth * 0.86;
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return 1;
+    ctx.font = `400 ${fontPx}px ${PREVIEW_FONT[primaryKey] || 'serif'}`;
+    const widest = Math.max(...lines.map((l) => ctx.measureText(l).width));
+    if (widest <= maxW) return 1;
+    return Math.max(0.62, maxW / widest);   // 너무 작아지지는 않게
+  };
+
   // 원문에서 본문/말씀주소 분리 (위치·버전명 무관, 줄바꿈 존중)
   const parseBodyRef = (raw: string) => {
     const { body, reference } = extractReference(raw);
@@ -2033,11 +2054,14 @@ export default function Designer() {
     // T04 감성 심플: 절(clause) 단위를 원자로 보고 폭에 맞게 묶어 최소 줄수로 재배치.
     // (절 중간은 절대 자르지 않음 → "믿지 / 않는" 같은 어색한 분리 방지)
     let simpleLines: string[] | undefined;
+    let simpleScale = 1;
     if (template === 'T04' && Array.isArray(data?.lines) && data.lines.length) {
       const clauses = data.lines
         .filter((l: any) => !isAutoCaptionLine(l.text, l.scale))
         .map((l: any) => String(l.text));
-      simpleLines = wrapSimpleBodyLines(clauses, data.fonts?.primary, resultRatio);
+      // 사용자가 넣은 줄바꿈을 그대로 둔다(respectBreaks). 묶어 버리면 입력과 달라진다.
+      simpleLines = wrapSimpleBodyLines(clauses, data.fonts?.primary, resultRatio, true);
+      simpleScale = simpleFontScale(simpleLines, data.fonts?.primary, resultRatio);
     }
 
     return {
@@ -2046,6 +2070,7 @@ export default function Designer() {
       ratio: resultRatio,
       typography,
       simpleLines,
+      simpleScale,
     };
   };
 
@@ -2090,7 +2115,12 @@ export default function Designer() {
       ...newBody.map((t) => ({ text: t, scale: 1 })),
       ...(reference ? [{ text: reference, scale: 0.5 }] : []), // 주소는 작은 캡션
     ];
-    setAutoResult({ ...autoResult, lines: newLines, simpleLines: newBody });
+    setAutoResult({
+      ...autoResult,
+      lines: newLines,
+      simpleLines: newBody,
+      simpleScale: simpleFontScale(newBody, autoResult.fonts.primary, autoResult.ratio || meta.ratio),
+    });
     const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
     setVerseInput(raw);
     setT(current => ({ ...current, content: raw }));
@@ -2381,7 +2411,9 @@ export default function Designer() {
           ctx.restore();
         } else {
         const maxTextWidth = width * (isSerifPoster ? (isProclamationSerif ? 0.78 : (align === 'left' ? 0.74 : 0.76)) : isSimple ? 0.9 : isChunky ? 0.86 : isCute ? 0.82 : (align === 'left' ? 0.82 : 0.8));
-        const baseFontPx = isSerifPoster ? Math.max(28, width * (isProclamationSerif ? 0.046 : 0.042)) : isSimple ? Math.max(20, width * 0.033) : isChunky ? Math.max(38, width * 0.072) : isCute ? Math.max(30, width * 0.05) : Math.max(28, width * 0.046);
+        // T04 는 미리보기와 같은 배율을 써야 줄바꿈과 크기가 어긋나지 않는다
+        const simpleScale = isSimple ? (autoResult.simpleScale ?? 1) : 1;
+        const baseFontPx = isSerifPoster ? Math.max(28, width * (isProclamationSerif ? 0.046 : 0.042)) : isSimple ? Math.max(20, width * 0.033) * simpleScale : isChunky ? Math.max(38, width * 0.072) : isCute ? Math.max(30, width * 0.05) : Math.max(28, width * 0.046);
         const lineGap = baseFontPx * (isSerifPoster ? 0.16 : isSimple ? 0.4 : isChunky ? 0.2 : isCute ? 0.3 : 0.16);
         const defaultWeight = typography.bold ? 700 : 500;
         const posterCaptionFont = secondaryFont || primaryFont;
@@ -2770,12 +2802,14 @@ export default function Designer() {
                         key={i}
                         style={{
                           fontFamily: primaryFont,
-                          fontSize: previewBase,
+                          // 저장본과 같은 배율. 줄은 이미 정해져 있으니 크기만 맞춘다.
+                          fontSize: `calc(${previewBase} * ${autoResult.simpleScale ?? 1})`,
                           lineHeight: 1.8,
                           color: typography.color,
                           textShadow: typography.shadow,
                           fontWeight: 400,
-                          wordBreak: 'keep-all',
+                          // CSS 가 줄을 또 나누면 화면 폭마다 줄 수가 달라진다. 정해진 줄 그대로 둔다.
+                          whiteSpace: 'pre',
                           letterSpacing: '0.01em',
                           margin: 0,
                         }}
