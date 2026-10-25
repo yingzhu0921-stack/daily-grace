@@ -102,22 +102,32 @@ function splitSegments(text: string): string[] {
  *
  * 의미를 이해하고 고르는 것이 아니므로 틀릴 수 있다. T03 은 다시 뽑기가 공짜다.
  */
+/**
+ * 글자 수 대신 '보이는 폭'으로 센다. 한글은 한 글자가 네모 한 칸이지만
+ * 영문은 그 절반쯤이라, 글자 수로 재면 같은 분량의 영어 구절이 두 배로 길게 잡힌다.
+ */
+function visualLen(text: string): number {
+  let total = 0;
+  for (const ch of text) total += /[\uAC00-\uD7A3\u3131-\u318E]/.test(ch) ? 1 : 0.5;
+  return total;
+}
+
 const CLAUSE_END = /(아|어|여|고|며|니|매|므로|지만|나|되|면서|라도|거늘|거니와|새)$/;
 
 function splitForEmphasis(text: string): { key: string; rest: string[] } | null {
-  if ([...text].length > 90) return null;
+  if (visualLen(text) > 90) return null;
   const byPunct = splitSegments(text);
   if (byPunct.length >= 2) {
     return { key: byPunct[byPunct.length - 1], rest: byPunct.slice(0, -1) };
   }
   const words = text.trim().split(/\s+/).filter(Boolean);
   if (words.length < 5) return null;                 // 짧은 문장은 나눌 데가 없다
-  if ([...text].length > 90) return null;            // 아주 긴 본문은 크게 키울 수 없다
+  if (visualLen(text) > 90) return null;             // 아주 긴 본문은 크게 키울 수 없다
 
   // 끝에서부터 연결어미로 끝나는 어절을 찾아 그 뒤에서 끊는다
   for (let i = words.length - 2; i >= 2; i--) {
     const keyWords = words.slice(i + 1);
-    const keyLen = [...keyWords.join(' ')].length;
+    const keyLen = visualLen(keyWords.join(' '));
     if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
     if (CLAUSE_END.test(words[i])) {
       return { key: keyWords.join(' '), rest: [words.slice(0, i + 1).join(' ')] };
