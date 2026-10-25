@@ -310,24 +310,26 @@ export function pickAuraSpec(text: string, seedOverride?: number): GenerativeSpe
 // 스펙에는 Nanum Myeongjo가 있으나 "나눔은 쓰지 않는다"는 사용자 결정에 따라 제외했다.
 // 주의: 캔버스에는 CSS에 등록된 실제 family 이름(공백 포함)을 써야 한다.
 // 'GowunBatang' 같은 건 앱 내부 키일 뿐이라 캔버스에서는 기본 serif로 떨어진다.
-// 앱이 이미 불러오는 글꼴 중에서 **서로 느낌이 다른 것**만 고른다.
-// 명조를 여러 개 넣어 봤자 구분이 안 돼 다양해지지 않는다. 나눔은 쓰지 않는다(사용자 방침).
+// 차분한 결을 유지하면서 서로 구분되는 것만 둔다. 손글씨는 T03 의 결과 맞지 않아 뺐다.
+// 명조를 여러 개 넣으면 서로 구분이 안 돼 다양해지지 않는다. 나눔은 쓰지 않는다(사용자 방침).
 const GRAIN_BODY_FONTS = [
   "'Gowun Batang', serif",     // 명조 — 차분한 기본
   "'Gowun Dodum', sans-serif", // 고딕 — 깔끔하고 현대적
-  "'Gaegu', cursive",          // 손글씨 — 둥글고 가벼움
-  "'Gamja Flower', cursive",   // 손글씨 — 가늘고 정갈
-  "'Hi Melody', cursive",      // 손글씨 — 부드럽고 작음
 ];
 
+/** 글꼴마다 같은 px 라도 보이는 크기가 조금씩 다르다. */
+function fontScale(css: string): number {
+  return css.includes('Dodum') ? 0.97 : 1;
+}
+
 /**
- * 캔버스에 그리기 전에 본문 글꼴을 실제로 내려받아 둔다.
- *
- * 브라우저는 DOM 에서 쓰이는 글꼴만 받아온다. 캔버스에만 쓰는 글꼴은 아무도 쓰지
- * 않는 것으로 보여 받아오지 않고, document.fonts.ready 도 그냥 통과한다. 그러면
- * ctx.font 가 조용히 기본 글꼴로 떨어져 **어떤 글꼴을 골라도 같은 카드**가 나온다.
- * document.fonts.load() 로 필요한 글꼴을 직접 요청해야 한다.
+ * 강조에 쓸 굵기. 굵은 자형이 없는 글꼴에 700 을 주면 억지로 굵게 그려져 지저분해진다.
+ * 고운바탕만 700 을 들고 있다.
  */
+function fontBoldWeight(css: string): number {
+  return css.includes('Gowun Batang') ? 700 : 400;
+}
+
 export async function preloadGrainFonts(text = ''): Promise<void> {
   if (typeof document === 'undefined' || !document.fonts) return;
   // 구글 한글 웹폰트는 유니코드 구간별로 잘게 쪼개져 있다. 실제 글자를 함께 넘겨야
@@ -344,24 +346,6 @@ export async function preloadGrainFonts(text = ''): Promise<void> {
     .catch(() => undefined);
 }
 
-/**
- * 글꼴마다 같은 px 라도 보이는 크기가 다르다. 손글씨는 대체로 작게 나와 키워 준다.
- */
-function fontScale(css: string): number {
-  if (css.includes('Gaegu')) return 1.18;
-  if (css.includes('Gamja')) return 1.14;
-  if (css.includes('Hi Melody')) return 1.16;
-  if (css.includes('Dodum')) return 0.97;
-  return 1;
-}
-
-/**
- * 강조에 쓸 굵기. 굵은 자형이 없는 글꼴에 700 을 주면 억지로 굵게 그려져 지저분해진다.
- * 고운바탕만 700 을 들고 있다.
- */
-function fontBoldWeight(css: string): number {
-  return css.includes('Gowun Batang') ? 700 : 400;
-}
 const GRAIN_REF_FONT = "'Gowun Dodum', sans-serif";
 
 export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSpec {
