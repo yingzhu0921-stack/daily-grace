@@ -11,12 +11,21 @@ export interface DGUser {
   auth_method: string;
 }
 
+/** 로그인 창에 무엇을 보여줄지. 기능마다 다르게 줄 수 있다 */
+export interface LoginPrompt {
+  /** 게스트로 계속할 수 있는 기능인지. false 면 게스트 버튼을 숨긴다 */
+  guestAllowed?: boolean;
+  title?: string;
+  description?: string;
+}
+
 interface AuthContextType {
   user: DGUser | null;
   loading: boolean;
   signOut: () => Promise<void>;
   deleteAccount: () => Promise<void>;
-  requireAuth: (callback: () => void, callbackUrl?: string) => boolean;
+  requireAuth: (callback: () => void, callbackUrl?: string, prompt?: LoginPrompt) => boolean;
+  loginPrompt: LoginPrompt;
   showLoginModal: boolean;
   setShowLoginModal: (show: boolean) => void;
   loginCallbackUrl?: string;
@@ -52,6 +61,7 @@ const AuthContext = createContext<AuthContextType>({
   signOut: async () => {},
   deleteAccount: async () => {},
   requireAuth: () => false,
+  loginPrompt: {},
   showLoginModal: false,
   setShowLoginModal: () => {},
   cancelPendingCallback: () => {},
@@ -62,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginCallbackUrl, setLoginCallbackUrl] = useState<string>();
+  const [loginPrompt, setLoginPrompt] = useState<LoginPrompt>({});
   const pendingCallbackRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
@@ -143,13 +154,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const requireAuth = (callback: () => void, callbackUrl?: string): boolean => {
+  const requireAuth = (callback: () => void, callbackUrl?: string, prompt: LoginPrompt = {}): boolean => {
     if (user) {
       callback();
       return true;
     }
     pendingCallbackRef.current = callback;
     setLoginCallbackUrl(callbackUrl);
+    setLoginPrompt(prompt);
     setShowLoginModal(true);
     return false;
   };
@@ -160,7 +172,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, signOut, deleteAccount, requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback }}>
+    <AuthContext.Provider value={{ user, loading, signOut, deleteAccount, requireAuth, loginPrompt, showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback }}>
       {children}
     </AuthContext.Provider>
   );

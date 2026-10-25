@@ -61,11 +61,13 @@ const Records: React.FC = () => {
   const [cards, setCards] = useState<VerseCard[]>([]);
   const [isLoadingCards, setIsLoadingCards] = useState(false);
 
+  // id 는 기록의 type 과 같아야 한다. 종류 필터가 record.type 과 직접 비교하기 때문이다.
+  // 예전에는 '1'~'4' 라서 어떤 기록과도 맞지 않아 필터가 항상 빈 화면이었다.
   const defaultCategories = [
-    { id: '1', label: 'Q.T', icon: 'bookOpen', route: routes.qt, color: '#7DB87D', desc: '오늘의 말씀을 나눠보세요' },
-    { id: '2', label: '기도', icon: 'heart', route: routes.prayer, color: '#A57DB8', desc: '하루의 기도를 적어보세요' },
-    { id: '3', label: '감사', icon: 'star', route: routes.thanks, color: '#E8C87D', desc: '감사했던 순간을 떠올려보세요' },
-    { id: '4', label: '일기', icon: 'pencilLine', route: routes.diary, color: '#DD957D', desc: '오늘의 마음을 기록해보세요' },
+    { id: 'meditation', label: 'Q.T', icon: 'bookOpen', route: routes.qt, color: '#7DB87D', desc: '오늘의 말씀을 나눠보세요' },
+    { id: 'prayer', label: '기도', icon: 'heart', route: routes.prayer, color: '#A57DB8', desc: '하루의 기도를 적어보세요' },
+    { id: 'gratitude', label: '감사', icon: 'star', route: routes.thanks, color: '#E8C87D', desc: '감사했던 순간을 떠올려보세요' },
+    { id: 'diary', label: '일기', icon: 'pencilLine', route: routes.diary, color: '#DD957D', desc: '오늘의 마음을 기록해보세요' },
   ];
 
   const [customCategories, setCustomCategories] = useState<Category[]>([]);

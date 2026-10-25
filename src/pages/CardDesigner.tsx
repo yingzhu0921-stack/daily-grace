@@ -5,7 +5,6 @@ import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLe
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
 import { RecordSelectorModal } from '@/components/RecordSelectorModal';
 import { CardSaveSuccessModal } from '@/components/CardSaveSuccessModal';
 import { LoginModal } from '@/components/LoginModal';
@@ -546,7 +545,6 @@ export default function Designer() {
     setBgTab(tab);
     setBgOpen(true);
   };
-  const showCardLoginNudge = useCallback(() => setShowLoginModal(true), [setShowLoginModal]);
 
   const startGenerationProgress = useCallback((key: GenerationKey, durationMs: number) => {
     const now = Date.now();
@@ -674,13 +672,6 @@ export default function Designer() {
     </div>
   );
 
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: 'login_nudge_card_designer',
-    show: showCardLoginNudge,
-    delay: 700,
-  });
 
   const startTextEditing = () => {
     if (isBgEditMode) return;
@@ -707,7 +698,13 @@ export default function Designer() {
         return;
       }
       setFlowStep('photo-upload');
-    }, window.location.pathname);
+    }, window.location.pathname, {
+      // 말씀카드 만들기는 로그인이 꼭 필요하다. 게스트로 계속할 수 있는 것처럼
+      // 보이는 버튼을 두면 눌러도 아무 일이 없어 헷갈린다.
+      guestAllowed: false,
+      title: '로그인이 필요해요',
+      description: '말씀카드를 만들고 저장하려면 먼저 로그인해주세요.',
+    });
   };
 
   // 캔버스 참조
@@ -2903,16 +2900,8 @@ export default function Designer() {
     );
   };
 
-  const renderLoginModal = () => (
-      <LoginModal
-        open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
-        callbackUrl={loginCallbackUrl}
-        title="로그인이 필요해요"
-        description="카드를 만들고 저장하려면 먼저 로그인해주세요."
-      />
-
-  );
+  // 로그인 창은 App 의 전역 LoginModal 하나만 띄운다. 여기서 또 렌더하면 두 개가 겹친다.
+  const renderLoginModal = () => null;
 
   const renderSaveSuccessModal = () => (
     <>

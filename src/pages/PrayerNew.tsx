@@ -4,7 +4,7 @@ import { ChevronLeft, Share2 } from 'lucide-react';
 import { create, createManyFromText } from '@/utils/prayerStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
+import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { prayerSchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
@@ -16,15 +16,9 @@ export default function PrayerNew() {
   const [text, setText] = useState('');
   const [splitLines, setSplitLines] = useState(true);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // 저장 직후 로그인 유도 창을 띄우는 동안 이동을 잠시 미뤄 둔다
+  const afterNudgeRef = useRef<(() => void) | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
-
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: 'login_nudge_prayer_new',
-    show: showLoginNudge,
-  });
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -58,6 +52,16 @@ export default function PrayerNew() {
     toast.success('전체 내용이 복사되었어요!');
   };
 
+  // 저장을 마친 뒤 한 번만 로그인을 권하고, 창을 닫으면 상세로 이동한다
+  const finishSave = (prayerId: string) => {
+    const go = () => {
+      navigate('/prayer', { replace: true });
+      setTimeout(() => navigate(`/prayer/${prayerId}`), 0);
+    };
+    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
+    else go();
+  };
+
   const handleSave = async () => {
     const value = text.trim();
     const validationResult = prayerSchema.safeParse({
@@ -85,9 +89,7 @@ export default function PrayerNew() {
       savedPrayer = prayers[0];
 
       toast.success(saveFeedback(Boolean(user)));
-
-      navigate('/prayer', { replace: true });
-      setTimeout(() => navigate(`/prayer/${savedPrayer.id}`), 0);
+      finishSave(savedPrayer.id);
     } else {
       savedPrayer = await create({
         title: value,
@@ -97,9 +99,7 @@ export default function PrayerNew() {
       });
 
       toast.success(saveFeedback(Boolean(user)));
-
-      navigate('/prayer', { replace: true });
-      setTimeout(() => navigate(`/prayer/${savedPrayer.id}`), 0);
+      finishSave(savedPrayer.id);
     }
   };
 
@@ -107,7 +107,12 @@ export default function PrayerNew() {
     <>
       <LoginModal
         open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => {
+          setShowLoginModal(false);
+          const go = afterNudgeRef.current;
+          afterNudgeRef.current = null;
+          go?.();
+        }}
         callbackUrl={location.pathname}
       />
       

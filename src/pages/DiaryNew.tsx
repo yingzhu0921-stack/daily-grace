@@ -5,7 +5,7 @@ import { create } from "@/utils/diaryStorage";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
+import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { diarySchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
@@ -16,16 +16,10 @@ export default function DiaryNew() {
   const { user, loading } = useAuth();
   const [text, setText] = useState("");
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // 저장 직후 로그인 유도 창을 띄우는 동안 이동을 잠시 미뤄 둔다
+  const afterNudgeRef = useRef<(() => void) | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
   const canSave = text.trim().length > 0;
-
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: 'login_nudge_diary_new',
-    show: showLoginNudge,
-  });
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -68,14 +62,22 @@ export default function DiaryNew() {
     const saved = await create(text.trim());
     
     toast.success(saveFeedback(Boolean(user)));
-    navigate(`/diary/${saved.id}`, { replace: true });
+    const go = () => navigate(`/diary/${saved.id}`, { replace: true });
+    // 입력 도중이 아니라 저장을 마친 지금 한 번만 묻는다
+    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
+    else go();
   };
 
   return (
     <>
       <LoginModal
         open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => {
+          setShowLoginModal(false);
+          const go = afterNudgeRef.current;
+          afterNudgeRef.current = null;
+          go?.();
+        }}
         callbackUrl={location.pathname}
       />
       

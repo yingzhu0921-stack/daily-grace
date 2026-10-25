@@ -4,7 +4,7 @@ import { ChevronLeft, Share2 } from 'lucide-react';
 import { create } from '@/utils/gratitudeStorage';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
+import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { gratitudeSchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
@@ -26,17 +26,12 @@ export default function GratitudeNew() {
   const { user, loading } = useAuth();
   const [text, setText] = useState(TEMPLATE);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // 저장 직후 로그인 유도 창을 띄우는 동안 이동을 잠시 미뤄 둔다
+  const afterNudgeRef = useRef<(() => void) | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
   const items = parseItems(text);
   const canSave = items.length > 0;
-
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: 'login_nudge_gratitude_new',
-    show: showLoginNudge,
-  });
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -90,14 +85,25 @@ export default function GratitudeNew() {
     const saved = await create(items);
 
     toast.success(saveFeedback(Boolean(user)));
-    navigate(`/gratitude/${saved.id}`, { replace: true });
+    const go = () => { navigate(`/gratitude/${saved.id}`, { replace: true }); };
+    // 입력 도중이 아니라 저장을 마친 지금 한 번만 묻는다
+    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) {
+      afterNudgeRef.current = go;
+    } else {
+      go();
+    }
   };
 
   return (
     <>
       <LoginModal
         open={showLoginModal}
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => {
+          setShowLoginModal(false);
+          const go = afterNudgeRef.current;
+          afterNudgeRef.current = null;
+          go?.();
+        }}
         callbackUrl={location.pathname}
       />
       

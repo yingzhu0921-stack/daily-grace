@@ -7,7 +7,7 @@ import { create } from '@/utils/meditationStorage';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
+import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { meditationSchema } from '@/utils/validation';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
@@ -24,6 +24,8 @@ const MeditationNew = () => {
   const [hasContent, setHasContent] = useState(false);
   const editorRef = useRef<MeditationEditorHandle>(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // 로그인 유도 창을 닫은 뒤 이어서 할 이동
+  const afterNudgeRef = useRef<(() => void) | null>(null);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showTimePickerModal, setShowTimePickerModal] = useState(false);
   const [savedNoteId, setSavedNoteId] = useState<string | null>(null);
@@ -36,13 +38,6 @@ const MeditationNew = () => {
     return `${hours}:${minutes}`;
   });
 
-  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: 'login_nudge_meditation_new',
-    show: showLoginNudge,
-  });
 
   const handleContentChange = (newTitle: string, newPassage: string, newContent: string, newApplication: string | string[] | ApplicationItem[]) => {
     setTitle(newTitle);
@@ -214,11 +209,18 @@ const MeditationNew = () => {
   };
 
   const navigateToNote = () => {
-    if (savedNoteId) {
+    if (!savedNoteId) return;
+    const go = () => {
       navigate('/meditation', { replace: true });
       setTimeout(() => {
         navigate(`/meditation/${savedNoteId}?new=${savedNoteId}`);
       }, 0);
+    };
+    // 알림 모달을 닫은 지금이 물어볼 자리다. 저장 직후에 바로 띄우면 창이 겹친다.
+    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) {
+      afterNudgeRef.current = go;
+    } else {
+      go();
     }
   };
 
@@ -279,7 +281,12 @@ const MeditationNew = () => {
     <>
       <LoginModal 
         open={showLoginModal} 
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => {
+          setShowLoginModal(false);
+          const go = afterNudgeRef.current;
+          afterNudgeRef.current = null;
+          go?.();
+        }}
         callbackUrl="/meditation/new"
         title="기록을 안전하게 저장하시겠어요?"
         description="클라우드에 저장하고 언제 어디서나 확인하세요."

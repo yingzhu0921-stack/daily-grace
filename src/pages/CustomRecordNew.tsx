@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { toast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { LoginModal } from '@/components/LoginModal';
-import { useLoginNudge } from '@/hooks/useLoginNudge';
+import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { TimePicker } from '@/components/onboarding/TimePicker';
 import { MultiApplicationInput } from '@/components/MultiApplicationInput';
@@ -38,6 +38,8 @@ const CustomRecordNew = () => {
   });
   const [hasContent, setHasContent] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  // 로그인 유도 창을 닫은 뒤 이어서 할 이동
+  const afterNudgeRef = useRef<(() => void) | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
   const [showReminderModal, setShowReminderModal] = useState(false);
   const [showTimePickerModal, setShowTimePickerModal] = useState(false);
@@ -49,14 +51,7 @@ const CustomRecordNew = () => {
     const minutes = String(now.getMinutes()).padStart(2, '0');
     return `${hours}:${minutes}`;
   });
-  const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
 
-  useLoginNudge({
-    user,
-    loading,
-    storageKey: `login_nudge_custom_${categoryId || 'new'}`,
-    show: showLoginNudge,
-  });
   
   // Refs for auto-expanding textareas
   const passageRef = useRef<HTMLTextAreaElement>(null);
@@ -227,10 +222,15 @@ const CustomRecordNew = () => {
         setSavedRecordId(newRecord.id);
         setShowReminderModal(true);
       } else {
-        navigate(`/custom/${categoryId}`, { replace: true });
-        setTimeout(() => {
-          navigate(`/custom/${categoryId}?new=${newRecord.id}`);
-        }, 0);
+        const go = () => {
+          navigate(`/custom/${categoryId}`, { replace: true });
+          setTimeout(() => {
+            navigate(`/custom/${categoryId}?new=${newRecord.id}`);
+          }, 0);
+        };
+        // 입력 도중이 아니라 저장을 마친 지금 한 번만 묻는다
+        if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
+        else go();
       }
     }
   };
@@ -368,7 +368,12 @@ const CustomRecordNew = () => {
     <>
       <LoginModal 
         open={showLoginModal} 
-        onClose={() => setShowLoginModal(false)}
+        onClose={() => {
+          setShowLoginModal(false);
+          const go = afterNudgeRef.current;
+          afterNudgeRef.current = null;
+          go?.();
+        }}
         callbackUrl={`/custom/${categoryId}`}
         title="기록을 안전하게 저장하시겠어요?"
         description="클라우드에 저장하고 언제 어디서나 확인하세요."

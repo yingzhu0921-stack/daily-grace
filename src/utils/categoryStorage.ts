@@ -50,6 +50,9 @@ const normalizeCategory = (category: Category): Category => ({
 
 export async function list(): Promise<Category[]> {
   const res = await fetch('/api/data/categories', { credentials: 'include' });
+  // 게스트는 401 이 정상이다. 오류로 올리면 화면마다 "불러오지 못했습니다" 토스트가 뜬다.
+  // 커스텀 카테고리가 없는 상태로 보고 기본 카테고리만 쓰게 한다.
+  if (res.status === 401) return [];
   if (!res.ok) throw new Error('카테고리 목록을 불러오지 못했습니다');
   const categories: Category[] = await res.json();
   return categories.map(normalizeCategory);

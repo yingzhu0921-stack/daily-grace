@@ -13,7 +13,7 @@ import { AppRoutes } from "./AppRoutes";
 const queryClient = new QueryClient();
 
 const ModalManager = () => {
-  const { showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback } = useAuth();
+  const { showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback, loginPrompt } = useAuth();
   const location = useLocation();
 
   const handleCloseLoginModal = () => {
@@ -25,10 +25,13 @@ const ModalManager = () => {
   const shouldShowModal = showLoginModal && location.pathname !== '/auth';
 
   return (
-    <LoginModal 
-      open={shouldShowModal} 
+    <LoginModal
+      open={shouldShowModal}
       onClose={handleCloseLoginModal}
       callbackUrl={loginCallbackUrl}
+      guestAllowed={loginPrompt.guestAllowed !== false}
+      title={loginPrompt.title}
+      description={loginPrompt.description}
     />
   );
 };
