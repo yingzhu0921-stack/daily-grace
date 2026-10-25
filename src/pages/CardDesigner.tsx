@@ -12,7 +12,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGenerativeSpec, pickGrainSpec, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGenerativeSpec, pickGrainSpec, preloadGrainFonts, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -1578,6 +1578,8 @@ export default function Designer() {
         startGenerationProgress('auto', 4000);
         try {
           await document.fonts?.ready;
+          // 캔버스용 글꼴은 따로 받아와야 한다. 안 그러면 기본 글꼴로 조용히 떨어진다.
+          if (selectedTemplateId === 'T03') await preloadGrainFonts(verseInput.trim());
           setAutoResult(selectedTemplateId === 'T03'
             ? buildT03Result(verseInput.trim(), meta.ratio)
             : buildGenerativeResult(verseInput.trim(), meta.ratio));
@@ -2102,6 +2104,12 @@ export default function Designer() {
     if (autoResult.template === 'T03' || autoResult.template === 'T05') {
       const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
       const build = autoResult.template === 'T03' ? buildT03Result : buildGenerativeResult;
+      // 글꼴이 아직 안 받아졌으면 기본 글꼴로 다시 구워진다. 받아온 뒤 한 번 더 그린다.
+      if (autoResult.template === 'T03') {
+        preloadGrainFonts(raw).then(() => {
+          setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
+        });
+      }
       setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
       setVerseInput(raw);
       setT(current => ({ ...current, content: raw }));
@@ -2571,6 +2579,7 @@ export default function Designer() {
         setIsGenerating(true);
         try {
           await document.fonts?.ready;
+          if (autoResult.template === 'T03') await preloadGrainFonts(verseInput.trim());
           const body = autoResult.simpleLines?.[0] || verseInput.trim();
           const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
           const raw = ref ? `${body}\n${ref}` : body;

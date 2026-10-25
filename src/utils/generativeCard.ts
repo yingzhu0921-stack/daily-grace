@@ -310,14 +310,58 @@ export function pickAuraSpec(text: string, seedOverride?: number): GenerativeSpe
 // 스펙에는 Nanum Myeongjo가 있으나 "나눔은 쓰지 않는다"는 사용자 결정에 따라 제외했다.
 // 주의: 캔버스에는 CSS에 등록된 실제 family 이름(공백 포함)을 써야 한다.
 // 'GowunBatang' 같은 건 앱 내부 키일 뿐이라 캔버스에서는 기본 serif로 떨어진다.
-// 앱이 이미 불러오는 글꼴 중 차분한 명조 계열만. 나눔은 쓰지 않는다(사용자 방침).
+// 앱이 이미 불러오는 글꼴 중에서 **서로 느낌이 다른 것**만 고른다.
+// 명조를 여러 개 넣어 봤자 구분이 안 돼 다양해지지 않는다. 나눔은 쓰지 않는다(사용자 방침).
 const GRAIN_BODY_FONTS = [
-  "'Gowun Batang', serif",
-  "'Song Myung', serif",
-  "'Hahmlet', serif",
-  "'Noto Serif KR', serif",
-  "'RidiBatang', serif",
+  "'Gowun Batang', serif",     // 명조 — 차분한 기본
+  "'Gowun Dodum', sans-serif", // 고딕 — 깔끔하고 현대적
+  "'Gaegu', cursive",          // 손글씨 — 둥글고 가벼움
+  "'Gamja Flower', cursive",   // 손글씨 — 가늘고 정갈
+  "'Hi Melody', cursive",      // 손글씨 — 부드럽고 작음
 ];
+
+/**
+ * 캔버스에 그리기 전에 본문 글꼴을 실제로 내려받아 둔다.
+ *
+ * 브라우저는 DOM 에서 쓰이는 글꼴만 받아온다. 캔버스에만 쓰는 글꼴은 아무도 쓰지
+ * 않는 것으로 보여 받아오지 않고, document.fonts.ready 도 그냥 통과한다. 그러면
+ * ctx.font 가 조용히 기본 글꼴로 떨어져 **어떤 글꼴을 골라도 같은 카드**가 나온다.
+ * document.fonts.load() 로 필요한 글꼴을 직접 요청해야 한다.
+ */
+export async function preloadGrainFonts(text = ''): Promise<void> {
+  if (typeof document === 'undefined' || !document.fonts) return;
+  // 구글 한글 웹폰트는 유니코드 구간별로 잘게 쪼개져 있다. 실제 글자를 함께 넘겨야
+  // 그 글자가 든 구간을 받아온다. 안 넘기면 한글 구간이 빠져 글자마다 다른 글꼴이 섞인다.
+  const sample = `${text} 가나다라마바사아자차카타파하 0123456789:` ;
+  const families = [...GRAIN_BODY_FONTS, GRAIN_REF_FONT];
+  await Promise.all(
+    families.map((css) =>
+      document.fonts.load(`400 64px ${css}`, sample).catch(() => undefined),
+    ),
+  );
+  await document.fonts
+    .load("700 64px 'Gowun Batang', serif", sample)
+    .catch(() => undefined);
+}
+
+/**
+ * 글꼴마다 같은 px 라도 보이는 크기가 다르다. 손글씨는 대체로 작게 나와 키워 준다.
+ */
+function fontScale(css: string): number {
+  if (css.includes('Gaegu')) return 1.18;
+  if (css.includes('Gamja')) return 1.14;
+  if (css.includes('Hi Melody')) return 1.16;
+  if (css.includes('Dodum')) return 0.97;
+  return 1;
+}
+
+/**
+ * 강조에 쓸 굵기. 굵은 자형이 없는 글꼴에 700 을 주면 억지로 굵게 그려져 지저분해진다.
+ * 고운바탕만 700 을 들고 있다.
+ */
+function fontBoldWeight(css: string): number {
+  return css.includes('Gowun Batang') ? 700 : 400;
+}
 const GRAIN_REF_FONT = "'Gowun Dodum', sans-serif";
 
 export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSpec {
@@ -677,19 +721,21 @@ function drawHeroText(
   const rest = split?.rest ?? [];
 
   // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
-  let keyPx = Math.round(width * (centered ? 0.072 : 0.100));
-  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.062));
+  const fs = fontScale(spec.font);
+  const boldW = fontBoldWeight(spec.font);
+  let keyPx = Math.round(width * (centered ? 0.072 : 0.100) * fs);
+  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.062) * fs);
   const hasLoneWord = (ls: string[]) => ls.length > 1 && ls.some((l) => l.trim().split(/\s+/).length === 1 && [...l.trim()].length <= 3);
   let keyLines: string[] = [];
   while (keyPx >= minKeyPx) {
-    ctx.font = `${centered ? 600 : 700} ${keyPx}px ${spec.font}`;
+    ctx.font = `${boldW} ${keyPx}px ${spec.font}`;
     keyLines = fitLines(ctx, key, maxW);
     // 짧은 어절이 한 줄에 혼자 남으면 한 단계 줄여 다시 묶는다
     if (keyLines.length <= (centered ? 2 : 3) && !hasLoneWord(keyLines)) break;
     keyPx -= Math.max(1, Math.round(width * 0.004));
   }
 
-  let restPx2 = Math.round(width * (centered ? 0.046 : 0.040));
+  let restPx2 = Math.round(width * (centered ? 0.046 : 0.040) * fs);
   ctx.font = `400 ${restPx2}px ${spec.font}`;
   const restLines = rest.flatMap((r) => fitLines(ctx, r, maxW));
 
@@ -727,7 +773,7 @@ function drawHeroText(
     ctx.globalAlpha = 1;
   };
   const drawKey = () => {
-    ctx.font = `${centered ? 600 : 700} ${keyPx}px ${spec.font}`;
+    ctx.font = `${boldW} ${keyPx}px ${spec.font}`;
     for (const line of keyLines) { y += keyLH; ctx.fillText(line, x, y); }
   };
 
@@ -781,7 +827,7 @@ function renderGrainCard(
     return canvas.toDataURL('image/png');
   }
   const maxW = width * 0.78;          // 좌우 여백 11%씩
-  const minPx = Math.round(width * 0.045);
+  const minPx = Math.round(width * 0.045 * fontScale(spec.font));
   const step = Math.max(1, Math.round(width * 0.003));
   const vFits = (px: number, count: number) =>
     count * px * 1.72 + (reference ? px * 0.6 * 1.9 : 0) <= height * 0.84;
@@ -789,7 +835,7 @@ function renderGrainCard(
   // 사용자가 Enter로 넣은 줄바꿈이 있으면 그 배치를 그대로 존중한다(편집 안내의 약속).
   // 줄바꿈이 없을 때만 스펙대로 1→4줄 균형 분할을 시도한다.
   const hasUserBreaks = text.includes('\n');
-  let fontPx = Math.round(width * 0.065);
+  let fontPx = Math.round(width * 0.065 * fontScale(spec.font));
   let lines: string[] | null = null;
   while (fontPx >= minPx && !lines) {
     ctx.font = `400 ${fontPx}px ${spec.font}`;
