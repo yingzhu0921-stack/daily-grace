@@ -537,8 +537,10 @@ export default function Designer() {
 
   const isPlaceholderText = t.content === '텍스트를 입력하세요.';
   const isTextEmpty = !t.content.trim() || isPlaceholderText;
-  // 배경 선택 안내가 떠 있는 상태. 이때는 글씨 상자의 핸들·힌트를 숨겨 안내와 겹치지 않게 한다.
-  const showBgPrompt = !meta.bgImageUrl && !t.content.trim() && !isEditing && !isBgEditMode;
+  // 배경 선택 안내가 떠 있는 상태. 이때는 글씨 상자의 점선·핸들·힌트를 숨겨 안내와 겹치지 않게 한다.
+  // 기본 문구('텍스트를 입력하세요.')도 빈 것으로 본다 — 그래야 첫 진입부터 안내가 뜬다.
+  // (isTextEmpty 가 아니라 !t.content.trim() 을 쓰던 때는 상자를 한 번 눌렀다 나와야만 떴다)
+  const showBgPrompt = !meta.bgImageUrl && isTextEmpty && !isEditing && !isBgEditMode;
 
   const openBackgroundSheet = (tab: typeof bgTab = 'ai') => {
     setBgTab(tab);
@@ -3501,6 +3503,7 @@ export default function Designer() {
                   </div>
                 )}
 
+                {/* 배경 선택 안내 — 첫 진입부터 보인다. 배경을 고르거나 글씨를 넣으면 사라진다 */}
                 {showBgPrompt && (
                   <div className="absolute inset-0 z-40 flex items-center justify-center px-6 pointer-events-none">
                     <div className="w-full max-w-[280px] pointer-events-auto">

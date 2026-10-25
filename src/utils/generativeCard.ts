@@ -202,7 +202,7 @@ export interface GenerativeSpec {
   refPill?: boolean;  // (aura) 주소를 오벌 알약 테두리로
   grainPal?: GrainPalette; // (grain) 28색 팔레트
   layout?: number;    // (grain) GRAIN_LAYOUTS 인덱스
-  sparkle?: boolean;  // (grain) 작은 반짝이 1개
+  sparkle?: boolean;  // (grain) 사용 안 함 — 별 장식은 2026-10-24에 제거했다. 항상 false
 }
 
 export function pickGenerativeSpec(text: string, seedOverride?: number): GenerativeSpec {
@@ -241,6 +241,9 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
   const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
   const layout = Math.floor(rnd() * GRAIN_LAYOUTS.length);
+  // 별(반짝이) 장식은 제거했다(2026-10-24 요청 4).
+  // 난수 소비는 그대로 둔다 — 빼면 이후 난수가 밀려 같은 시드의 색·배치가 달라진다.
+  rnd();
   return {
     seed,
     style: 'grain',
@@ -249,7 +252,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
     palette: { name: grainPal.name, bg: grainPal.bg, ink: grainPal.ink },
     grainPal,
     layout,
-    sparkle: rnd() < 0.3,
+    sparkle: false,
   };
 }
 
@@ -650,24 +653,6 @@ function renderGrainCard(
     ctx.fillText(reference, x, top + bodyH + refPx * 1.35);
     if (hasLS) anyCtx.letterSpacing = '0px';
     ctx.globalAlpha = 1;
-  }
-
-  // 작은 4각 반짝이 1개 — 글씨 반대편
-  if (spec.sparkle) {
-    const sx = width * 0.83;
-    const sy = height * (layout.bodyTop < 0.4 ? 0.86 : 0.14);
-    const r = width * 0.032;
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.fillStyle = pal.ink;
-    ctx.beginPath();
-    ctx.moveTo(sx, sy - r);
-    ctx.quadraticCurveTo(sx + r * 0.18, sy - r * 0.18, sx + r, sy);
-    ctx.quadraticCurveTo(sx + r * 0.18, sy + r * 0.18, sx, sy + r);
-    ctx.quadraticCurveTo(sx - r * 0.18, sy + r * 0.18, sx - r, sy);
-    ctx.quadraticCurveTo(sx - r * 0.18, sy - r * 0.18, sx, sy - r);
-    ctx.fill();
-    ctx.restore();
   }
 
   return canvas.toDataURL('image/png');

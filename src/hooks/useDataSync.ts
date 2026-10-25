@@ -23,7 +23,11 @@ function readLocal(key: string): SyncRecord[] {
 }
 
 export function useDataSync() {
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
+  // 개발용 로그인 우회로 들어온 가짜 사용자로는 동기화하지 않는다.
+  // 브라우저에 진짜 세션 쿠키가 남아 있으면 서버는 실제 계정으로 응답하므로,
+  // 그대로 두면 남의 클라우드 기록이 로컬에 합쳐진다.
+  const user = authUser && authUser.auth_method !== 'dev-bypass' ? authUser : null;
   const [isSyncing, setIsSyncing] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
   const syncingRef = useRef(false);
