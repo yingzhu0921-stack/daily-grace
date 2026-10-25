@@ -64,10 +64,15 @@ const GRAIN_LAYOUTS = [
   { bodyTop: 0.40, align: 'center' as const, kind: 'uniform' as const },
   { bodyTop: 0.14, align: 'left' as const, kind: 'uniform' as const },
   { bodyTop: 0.16, align: 'center' as const, kind: 'uniform' as const },
+  { bodyTop: 0.70, align: 'center' as const, kind: 'uniform' as const },
+  { bodyTop: 0.22, align: 'right' as const, kind: 'uniform' as const },
+  { bodyTop: 0.58, align: 'right' as const, kind: 'uniform' as const },
+  // 강조 배치는 본문이 나뉠 때만 쓴다
   { bodyTop: 0.46, align: 'left' as const, kind: 'hero' as const },
   { bodyTop: 0.34, align: 'center' as const, kind: 'centerHero' as const },
+  { bodyTop: 0.50, align: 'right' as const, kind: 'hero' as const },
 ];
-const UNIFORM_LAYOUT_COUNT = 4;
+const UNIFORM_LAYOUT_COUNT = 7;
 
 /**
  * 본문을 의미 조각으로 나눈다. 줄바꿈·쉼표·가운뎃점이 기준이다.
@@ -290,7 +295,14 @@ export function pickAuraSpec(text: string, seedOverride?: number): GenerativeSpe
 // 스펙에는 Nanum Myeongjo가 있으나 "나눔은 쓰지 않는다"는 사용자 결정에 따라 제외했다.
 // 주의: 캔버스에는 CSS에 등록된 실제 family 이름(공백 포함)을 써야 한다.
 // 'GowunBatang' 같은 건 앱 내부 키일 뿐이라 캔버스에서는 기본 serif로 떨어진다.
-const GRAIN_BODY_FONTS = ["'Gowun Batang', serif", "'Song Myung', serif"];
+// 앱이 이미 불러오는 글꼴 중 차분한 명조 계열만. 나눔은 쓰지 않는다(사용자 방침).
+const GRAIN_BODY_FONTS = [
+  "'Gowun Batang', serif",
+  "'Song Myung', serif",
+  "'Hahmlet', serif",
+  "'Noto Serif KR', serif",
+  "'RidiBatang', serif",
+];
 const GRAIN_REF_FONT = "'Gowun Dodum', sans-serif";
 
 export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSpec {
@@ -644,7 +656,7 @@ function drawHeroText(
   const pal = spec.grainPal!;
   const centered = layout.align === 'center';
   const maxW = width * 0.78;
-  const x = centered ? width / 2 : width * 0.11;
+  const x = centered ? width / 2 : layout.align === 'right' ? width * 0.89 : width * 0.11;
   const split = splitForEmphasis(text);
   const key = split?.key ?? text;
   const rest = split?.rest ?? [];
@@ -813,7 +825,7 @@ function renderGrainCard(
   const maxTop = height * 0.93 - totalH;
   if (top > maxTop) top = Math.max(height * 0.06, maxTop);
 
-  const x = layout.align === 'left' ? width * 0.11 : width / 2;
+  const x = layout.align === 'left' ? width * 0.11 : layout.align === 'right' ? width * 0.89 : width / 2;
   ctx.textAlign = layout.align;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = pal.ink;

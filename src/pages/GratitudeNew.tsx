@@ -18,19 +18,19 @@ const TEMPLATE = `1.
 const MAX_ITEMS = 10;
 
 /**
- * 마지막 번호 줄에 글을 쓰기 시작하면 다음 번호 줄을 미리 붙여 준다.
- * (4번 줄에 쓰면 5번 줄이 생긴다) 아직 비어 있으면 붙이지 않는다.
+ * 다음에 쓸 번호를 돌려준다. 없으면 null.
+ * 마지막 번호 줄에 글이 들어가 있어야 다음 번호를 **흐릿하게 미리** 보여 준다.
+ * 실제 줄은 Enter 를 치거나 그 번호를 눌렀을 때 생긴다.
  */
-function withNextNumberedLine(src: string): string {
+function nextItemNumber(src: string): number | null {
   const lines = src.split('\n');
   const last = lines[lines.length - 1];
   const matched = last.match(/^\s*(\d+)\.\s*(.*)$/);
-  if (!matched) return src;
+  if (!matched) return null;
   const [, numberText, rest] = matched;
-  if (!rest.trim()) return src;
+  if (!rest.trim()) return null;          // 그 줄이 아직 비어 있으면 다음 번호를 권하지 않는다
   const next = Number(numberText) + 1;
-  if (next > MAX_ITEMS) return src;
-  return `${src}\n${next}. `;
+  return next > MAX_ITEMS ? null : next;
 }
 
 function parseItems(src: string) {
@@ -50,6 +50,7 @@ export default function GratitudeNew() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const showLoginNudge = useCallback(() => setShowLoginModal(true), []);
   const items = parseItems(text);
+  const ghostNumber = nextItemNumber(text);
   const canSave = items.length > 0;
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
@@ -164,30 +165,53 @@ export default function GratitudeNew() {
             value={text}
             onChange={(e) => {
               const scrollPos = window.scrollY;
-              const el = e.target;
-              // 맨 끝에서 쓰고 있을 때만 다음 번호를 붙인다. 중간을 고칠 때 끼어들면 곤란하다.
-              const atEnd = el.selectionStart === el.value.length;
-              const raw = el.value;
-              const next = atEnd ? withNextNumberedLine(raw) : raw;
-              setText(next);
-              if (next !== raw) {
-                // 새 번호 줄은 뒤에 붙이고 커서는 치던 자리에 그대로 둔다.
-                // 커서가 새 줄로 끌려가면 글자마다 줄이 하나씩 생긴다.
-                const caret = raw.length;
-                requestAnimationFrame(() => {
-                  el.selectionStart = caret;
-                  el.selectionEnd = caret;
-                });
-              }
-              adjustTextareaHeight(el);
+              setText(e.target.value);
+              adjustTextareaHeight(e.target);
               requestAnimationFrame(() => window.scrollTo(0, scrollPos));
+            }}
+            onKeyDown={(e) => {
+              // 맨 끝에서 Enter 를 치면 다음 번호를 붙여 준다 (흐릿하던 번호가 진해진다)
+              if (e.key !== 'Enter') return;
+              const el = e.currentTarget;
+              if (el.selectionStart !== el.value.length) return;
+              const next = nextItemNumber(el.value);
+              if (next === null) return;
+              e.preventDefault();
+              setText(`${el.value}\n${next}. `);
+              requestAnimationFrame(() => {
+                adjustTextareaHeight(el);
+                const end = el.value.length;
+                el.selectionStart = end;
+                el.selectionEnd = end;
+              });
             }}
             placeholder="1.&#10;2.&#10;3.&#10;4."
             className="w-full min-h-[120px] bg-transparent text-[16px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
             style={{ overflowY: 'hidden' }}
           />
+          {/* 다음 번호 미리보기. 흐릿하게 떠 있다가 누르거나 Enter 를 치면 진짜 줄이 된다. */}
+          {ghostNumber !== null && (
+            <button
+              type="button"
+              onClick={() => {
+                const el = textareaRef.current;
+                if (!el) return;
+                setText(`${text}\n${ghostNumber}. `);
+                requestAnimationFrame(() => {
+                  el.focus();
+                  adjustTextareaHeight(el);
+                  const end = el.value.length;
+                  el.selectionStart = end;
+                  el.selectionEnd = end;
+                });
+              }}
+              className="block w-full text-left text-[16px] leading-7 text-[#C8C8C8] -mt-1"
+            >
+              {ghostNumber}.
+            </button>
+          )}
           <div className="mt-2 text-[12px] text-[#8A8A8A]">
-            마지막 줄에 쓰면 다음 번호가 저절로 생겨요. 숫자 없이 적어도 괜찮아요.
+            마지막 줄에 쓰면 다음 번호가 흐리게 떠요. Enter 를 치거나 눌러서 이어 쓰면 돼요.
           </div>
         </div>
       </div>
