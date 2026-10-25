@@ -12,7 +12,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGenerativeSpec, pickGrainSpec, preloadGrainFonts, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -1553,36 +1553,21 @@ export default function Designer() {
         font: "'RidiBatang', serif",
       },
     },
-    {
-      id: 'T05',
-      name: '플로우 아트',
-      mood: '흐름 · 추상 · 감각적 · 무료생성',
-      example: '잔잔히 흐르는 은혜',
-      hint: '알고리즘 곡선 아트 · 철자 정확 · 즉시',
-      preview: {
-        background: 'linear-gradient(120deg, #57C79A 0%, #4A63C9 100%)',
-        color: '#F7F7F4',
-        accent: '#F7F7F4',
-        font: "'RidiBatang', serif",
-      },
-    },
   ];
 
   const renderAutoTemplate = () => {
     const handleGenerate = async () => {
       if (!selectedTemplateId) { toast.error('템플릿을 선택해주세요'); return; }
       if (!user) { navigate('/auth?callback=' + encodeURIComponent(window.location.pathname)); return; }
-      // T03 그레인 그라데이션 / T05 플로우 — AI 호출 없이 코드로 즉시 생성 (토큰 0)
-      if (selectedTemplateId === 'T03' || selectedTemplateId === 'T05') {
+      // T03 그레인 그라데이션 — AI 호출 없이 코드로 즉시 생성 (토큰 0)
+      if (selectedTemplateId === 'T03') {
         setIsGenerating(true);
         startGenerationProgress('auto', 4000);
         try {
           await document.fonts?.ready;
           // 캔버스용 글꼴은 따로 받아와야 한다. 안 그러면 기본 글꼴로 조용히 떨어진다.
-          if (selectedTemplateId === 'T03') await preloadGrainFonts(verseInput.trim());
-          setAutoResult(selectedTemplateId === 'T03'
-            ? buildT03Result(verseInput.trim(), meta.ratio)
-            : buildGenerativeResult(verseInput.trim(), meta.ratio));
+          await preloadGrainFonts(verseInput.trim());
+          setAutoResult(buildT03Result(verseInput.trim(), meta.ratio));
           setFlowStep('auto-preview');
         } catch (e) {
           console.error('[gen] failed:', e);
@@ -2032,8 +2017,6 @@ export default function Designer() {
       simpleLines: [bodyText],
     };
   };
-  const buildGenerativeResult = (raw: string, ratio: Ratio, seedOverride?: number) =>
-    buildGenResult(raw, ratio, 'T05', pickGenerativeSpec, seedOverride);
   const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number) =>
     buildGenResult(raw, ratio, 'T03', pickGrainSpec, seedOverride);
 
@@ -2076,11 +2059,10 @@ export default function Designer() {
     };
   };
 
-  // 제자리 문구 수정 가능 여부: 오버레이(T04) + 코드 렌더(T03 그레인·T05 플로우) — 토큰 없이 수정
+  // 제자리 문구 수정 가능 여부: 오버레이(T04) + 코드 렌더(T03 그레인) — 토큰 없이 수정
   const canEditTextInPlace = !!autoResult && (
     (!autoResult.aiText && autoResult.template === 'T04') ||
-    autoResult.template === 'T03' ||
-    autoResult.template === 'T05'
+    autoResult.template === 'T03'
   );
 
   const openTextEdit = () => {
@@ -2100,10 +2082,10 @@ export default function Designer() {
     const { body, reference } = extractReference(textEditDraft);
     const clauses = body.split('\n').map((s) => s.trim()).filter(Boolean);
     if (!clauses.length) return;
-    // T03 그레인 / T05 플로우: 같은 시드로 배경 유지, 글자만 다시 구워 재렌더 (토큰 0)
-    if (autoResult.template === 'T03' || autoResult.template === 'T05') {
+    // T03 그레인: 같은 시드로 배경 유지, 글자만 다시 구워 재렌더 (토큰 0)
+    if (autoResult.template === 'T03') {
       const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
-      const build = autoResult.template === 'T03' ? buildT03Result : buildGenerativeResult;
+      const build = buildT03Result;
       // 글꼴이 아직 안 받아졌으면 기본 글꼴로 다시 구워진다. 받아온 뒤 한 번 더 그린다.
       if (autoResult.template === 'T03') {
         preloadGrainFonts(raw).then(() => {
@@ -2574,17 +2556,17 @@ export default function Designer() {
 
     const handleRegenerate = async () => {
       setTextEditDraft(null);
-      // T03 그레인 / T05 플로우: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
-      if (autoResult?.template === 'T03' || autoResult?.template === 'T05') {
+      // T03 그레인: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
+      if (autoResult?.template === 'T03') {
         setIsGenerating(true);
         try {
           await document.fonts?.ready;
-          if (autoResult.template === 'T03') await preloadGrainFonts(verseInput.trim());
+          await preloadGrainFonts(verseInput.trim());
           const body = autoResult.simpleLines?.[0] || verseInput.trim();
           const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
           const raw = ref ? `${body}\n${ref}` : body;
           const newSeed = Math.floor(Math.random() * 0xffffffff);
-          const build = autoResult.template === 'T03' ? buildT03Result : buildGenerativeResult;
+          const build = buildT03Result;
           setAutoResult(build(raw, autoResult.ratio || meta.ratio, newSeed));
         } catch {
           toast.error('재생성에 실패했습니다.');
@@ -2876,17 +2858,12 @@ export default function Designer() {
             )}
           </div>
         </div>
-        {autoResult.aiText && autoResult.template !== 'T05' && autoResult.template !== 'T03' && (
+        {autoResult.aiText && autoResult.template !== 'T03' && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
             포스터 느낌을 위해 AI가 글자까지 그렸어요. 저장 전 오탈자를 꼭 확인하세요.
           </div>
         )}
-        {autoResult.template === 'T05' && (
-          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
-            코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요.
-          </div>
-        )}
-        {autoResult.template === 'T03' && (
+                {autoResult.template === 'T03' && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
             코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요 · 문구 수정은 배경 그대로 반영돼요.
           </div>
