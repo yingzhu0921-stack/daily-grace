@@ -83,13 +83,41 @@ function splitSegments(text: string): string[] {
 }
 
 /**
- * 크게 보여 줄 핵심 구절을 고른다. **마지막 조각**을 쓴다.
- * 한국어 말씀은 결론이 뒤에 오는 경우가 많다("…없으리로다", "…함께 함이라").
- * 의미로 고르는 것이 아니므로 틀릴 수 있다. T03 은 다시 뽑기가 공짜라 그때 다시 뽑으면 된다.
+ * 크게 보여 줄 핵심 구절과 그 앞부분을 나눈다.
+ *
+ * 1순위는 쉼표·줄바꿈이다. 사용자가 Enter 로 줄을 나누면 **마지막 줄이 핵심 구절**이 된다.
+ *    (의도한 자리를 직접 정하는 가장 확실한 방법이다)
+ * 2순위는 어절이다. 개역개정 구절은 대개 쉼표가 없어서, 연결어미로 끝나는 어절
+ *    (…말미암아 / …하시니 / …하고) 뒤에서 끊는다. 거기가 문장이 쉬어 가는 자리다.
+ *
+ * 의미를 이해하고 고르는 것이 아니므로 틀릴 수 있다. T03 은 다시 뽑기가 공짜다.
  */
-function pickKeySegment(segments: string[]): { key: string; rest: string[] } {
-  if (segments.length < 2) return { key: segments[0] || '', rest: [] };
-  return { key: segments[segments.length - 1], rest: segments.slice(0, -1) };
+const CLAUSE_END = /(아|어|여|고|며|니|매|므로|지만|나|되|면서|라도|거늘|거니와|새)$/;
+
+function splitForEmphasis(text: string): { key: string; rest: string[] } | null {
+  if ([...text].length > 90) return null;
+  const byPunct = splitSegments(text);
+  if (byPunct.length >= 2) {
+    return { key: byPunct[byPunct.length - 1], rest: byPunct.slice(0, -1) };
+  }
+  const words = text.trim().split(/\s+/).filter(Boolean);
+  if (words.length < 5) return null;                 // 짧은 문장은 나눌 데가 없다
+  if ([...text].length > 90) return null;            // 아주 긴 본문은 크게 키울 수 없다
+
+  // 끝에서부터 연결어미로 끝나는 어절을 찾아 그 뒤에서 끊는다
+  for (let i = words.length - 2; i >= 2; i--) {
+    const keyWords = words.slice(i + 1);
+    const keyLen = [...keyWords.join(' ')].length;
+    if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
+    if (CLAUSE_END.test(words[i])) {
+      return { key: keyWords.join(' '), rest: [words.slice(0, i + 1).join(' ')] };
+    }
+  }
+  // 끊을 자리를 못 찾으면 뒤 3분의 1을 핵심 구절로 본다
+  const cut = Math.max(2, Math.floor(words.length * 0.66));
+  const keyWords = words.slice(cut);
+  if (keyWords.length < 2) return null;
+  return { key: keyWords.join(' '), rest: [words.slice(0, cut).join(' ')] };
 }
 
 export interface GenerativePalette {
@@ -271,7 +299,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
   const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
   // 조각이 하나뿐인 문장에는 hero 계열을 쓰지 않는다
-  const layoutPool = splitSegments(text).length >= 2 ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
+  const layoutPool = splitForEmphasis(text) ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
   const layout = Math.floor(rnd() * layoutPool);
   // 별(반짝이) 장식은 제거했다(2026-10-24 요청 4).
   // 난수 소비는 그대로 둔다 — 빼면 이후 난수가 밀려 같은 시드의 색·배치가 달라진다.
@@ -617,29 +645,44 @@ function drawHeroText(
   const centered = layout.align === 'center';
   const maxW = width * 0.78;
   const x = centered ? width / 2 : width * 0.11;
-  const { key, rest } = pickKeySegment(splitSegments(text));
+  const split = splitForEmphasis(text);
+  const key = split?.key ?? text;
+  const rest = split?.rest ?? [];
 
   // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
-  let keyPx = Math.round(width * (centered ? 0.072 : 0.118));
-  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.07));
+  let keyPx = Math.round(width * (centered ? 0.072 : 0.100));
+  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.062));
+  const hasLoneWord = (ls: string[]) => ls.length > 1 && ls.some((l) => l.trim().split(/\s+/).length === 1 && [...l.trim()].length <= 3);
   let keyLines: string[] = [];
   while (keyPx >= minKeyPx) {
     ctx.font = `${centered ? 600 : 700} ${keyPx}px ${spec.font}`;
     keyLines = fitLines(ctx, key, maxW);
-    if (keyLines.length <= (centered ? 2 : 3)) break;
+    // 짧은 어절이 한 줄에 혼자 남으면 한 단계 줄여 다시 묶는다
+    if (keyLines.length <= (centered ? 2 : 3) && !hasLoneWord(keyLines)) break;
     keyPx -= Math.max(1, Math.round(width * 0.004));
   }
 
-  const restPx = Math.round(width * (centered ? 0.046 : 0.040));
-  ctx.font = `400 ${restPx}px ${spec.font}`;
+  let restPx2 = Math.round(width * (centered ? 0.046 : 0.040));
+  ctx.font = `400 ${restPx2}px ${spec.font}`;
   const restLines = rest.flatMap((r) => fitLines(ctx, r, maxW));
 
-  const keyLH = keyPx * 1.22;
-  const restLH = restPx * 1.65;
+  let keyLH = keyPx * 1.22;
+  let restLH = restPx2 * 1.65;
   const refPx = Math.round(width * 0.027);
   const gap = width * 0.03;
   // C 는 나머지를 위에, A 는 아래에 둔다
-  const totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+  let totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+
+  // 그래도 카드 높이를 넘으면 전체를 비례해 줄인다
+  const avail = height * 0.84;
+  if (totalH > avail) {
+    const k = avail / totalH;
+    keyPx = Math.max(12, Math.round(keyPx * k));
+    restPx2 = Math.max(10, Math.round(restPx2 * k));
+    keyLH = keyPx * 1.22;
+    restLH = restPx2 * 1.65;
+    totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+  }
 
   let top = height * layout.bodyTop;
   const maxTop = height * 0.9 - totalH;
@@ -651,7 +694,7 @@ function drawHeroText(
   let y = top;
 
   const drawRest = () => {
-    ctx.font = `400 ${restPx}px ${spec.font}`;
+    ctx.font = `400 ${restPx2}px ${spec.font}`;
     ctx.globalAlpha = 0.78;
     for (const line of restLines) { y += restLH; ctx.fillText(line, x, y); }
     ctx.globalAlpha = 1;
