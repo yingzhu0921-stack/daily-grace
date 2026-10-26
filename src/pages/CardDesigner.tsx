@@ -492,6 +492,8 @@ export default function Designer() {
   const [textEditDraft, setTextEditDraft] = useState<string | null>(null);
   // 강조 고르기 패널. null 이면 안 열림. from 은 첫 번째로 탭한 어절(아직 끝을 안 고름).
   const [emphasisPick, setEmphasisPick] = useState<{ from: number | null; applied: { from: number; to: number } | null } | null>(null);
+  // 고른 뒤 카드를 다시 그리는 동안. 연타로 순서가 엉키는 걸 막는다.
+  const [emphasisBusy, setEmphasisBusy] = useState(false);
   const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoText, setPhotoText] = useState('');
@@ -2578,20 +2580,34 @@ export default function Designer() {
       setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, next));
     };
 
-    // 고르는 중에만 쓰는 값. 첫 탭이 시작, 둘째 탭이 끝이다.
-    const pickFrom = emphasisPick?.from ?? null;
+    // 첫 탭은 그 단어 하나를 바로 크게 만든다. 이어서 다른 단어를 누르면 그 사이까지 넓힌다.
+    // 예전에는 첫 탭이 아무것도 바꾸지 않아 "안 눌렸나" 싶어 다시 누르게 됐고,
+    // 그 두 번째 탭이 새 시작점이 돼 버렸다. 그래서 매 탭마다 결과를 보여 준다.
     const openEmphasisPicker = () => {
       setTextEditDraft(null);
       // 사용자가 직접 고른 적이 있을 때만 칠해 보여 준다. 자동 상태에서 자동 후보를
       // 칠하면 카드에는 강조가 안 보이는데 패널만 칠해져 어긋난다.
       const now = autoResult?.genEmphasis;
-      setEmphasisPick({ from: null, applied: now && now !== 'none' ? now : null });
+      const span = now && now !== 'none' ? now : null;
+      setEmphasisPick({ from: span ? span.from : null, applied: span });
     };
-    const tapWord = (i: number) => {
-      if (pickFrom === null) { setEmphasisPick({ from: i, applied: emphasisPick?.applied ?? null }); return; }
-      const span = { from: Math.min(pickFrom, i), to: Math.max(pickFrom, i) };
-      setEmphasisPick({ from: null, applied: span });
-      applyEmphasis(span);
+    /**
+     * 탭 한 번에 결과가 바로 보인다. 숨은 단계가 없다.
+     *  · 아무것도 없을 때   → 그 단어 하나
+     *  · 단어 하나만 있을 때 → 그 단어와 누른 단어 사이 전체
+     *  · 이미 범위가 있을 때 → 어디를 누르든 그 단어 하나로 새로 시작
+     * 마지막 규칙이 없으면 범위가 한 번 잡힌 뒤로는 계속 옛 시작점에서만 늘어나,
+     * 가운데 구간을 고를 수가 없다.
+     */
+    const tapWord = async (i: number) => {
+      if (emphasisBusy) return;                    // 그리는 중에 또 누르면 순서가 엉킨다
+      const now = emphasisPick?.applied ?? null;
+      const span = !now || now.from !== now.to
+        ? { from: i, to: i }
+        : { from: Math.min(now.from, i), to: Math.max(now.from, i) };
+      setEmphasisPick({ from: span.from, applied: span });
+      setEmphasisBusy(true);
+      try { await applyEmphasis(span); } finally { setEmphasisBusy(false); }
     };
 
     const handleRegenerate = async () => {
@@ -2911,28 +2927,32 @@ export default function Designer() {
         )}
         {emphasisPick !== null ? (
           <div className="shrink-0 px-4 py-3 bg-white border-t">
-            <p className="mb-2 text-xs text-[#7E7C78]">
-              {pickFrom === null
-                ? '크게 쓸 부분의 \u2018시작\u2019 단어를 눌러요. 한 단어만 크게 하려면 같은 단어를 두 번 눌러요.'
-                : '이제 \u2018끝\u2019 단어를 눌러요.'}
-            </p>
-            <div className="max-h-40 overflow-y-auto rounded-xl border border-[#E3E2E0] p-2">
-              <div className="flex flex-wrap gap-1">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="text-xs text-[#7E7C78]">
+                {emphasisBusy
+                  ? '카드를 다시 그리는 중…'
+                  : emphasisPick.applied && emphasisPick.applied.from === emphasisPick.applied.to
+                  ? '다른 단어를 누르면 거기까지 넓어져요.'
+                  : emphasisPick.applied
+                  ? '아무 단어나 누르면 거기서 새로 골라요.'
+                  : '크게 쓸 단어를 눌러요.'}
+              </p>
+            </div>
+            <div className={`max-h-48 overflow-y-auto rounded-xl border border-[#E3E2E0] p-2 ${emphasisBusy ? 'opacity-50' : ''}`}>
+              <div className="flex flex-wrap gap-1.5">
                 {emphasisWordList.map((word, i) => {
                   const applied = emphasisPick.applied;
                   const inSpan = !!applied && i >= applied.from && i <= applied.to;
-                  const isStart = pickFrom === i;
                   return (
                     <button
                       key={i}
                       type="button"
+                      disabled={emphasisBusy}
                       onClick={() => tapWord(i)}
-                      className={`rounded-md px-1.5 py-1 text-sm transition-colors ${
-                        isStart
-                          ? 'bg-[#1F1F1F] text-white'
-                          : inSpan
-                          ? 'bg-[#1F1F1F]/10 text-[#1F1F1F] font-medium'
-                          : 'text-[#4A4845] hover:bg-[#F3F2F1]'
+                      className={`min-h-11 rounded-lg px-2.5 py-2 text-base transition-colors ${
+                        inSpan
+                          ? 'bg-[#1F1F1F] text-white font-medium'
+                          : 'bg-[#F7F6F5] text-[#4A4845] active:bg-[#EDEBE9]'
                       }`}
                     >{word}</button>
                   );
