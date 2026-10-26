@@ -2607,7 +2607,8 @@ export default function Designer() {
           const raw = ref ? `${body}\n${ref}` : body;
           const newSeed = Math.floor(Math.random() * 0xffffffff);
           const build = buildT03Result;
-          setAutoResult(build(raw, autoResult.ratio || meta.ratio, newSeed));
+          // 다시 생성은 배경만 바꾸는 것이다. 글은 그대로이므로 고른 강조도 그대로 둔다.
+          setAutoResult(build(raw, autoResult.ratio || meta.ratio, newSeed, autoResult.genEmphasis));
         } catch {
           toast.error('재생성에 실패했습니다.');
         } finally {

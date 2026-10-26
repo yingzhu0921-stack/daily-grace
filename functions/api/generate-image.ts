@@ -666,6 +666,21 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const t01Layout = selectedTemplate === 'T01'
       ? t01DesignArchetypes[Math.abs(templateIndex) % t01DesignArchetypes.length]
       : '';
+    // 손글씨는 **모양**만 다르게 한다. 질감(크레용 왁스·수채 번짐·연필 결)은 쓰지 않는다 —
+    // 그림이 질감 없는 플랫이라 글자만 거칠면 따로 논다.
+    const t01TypographyStyles = [
+      'FONT A: thick rounded Korean marker lettering, friendly and bold, medium-large strokes; not thin',
+      'FONT B: chunky childlike lettering with uneven lopsided strokes; thick and playful, drawn in one solid colour',
+      'FONT C: bold sticker-like Korean block handwriting, rounded corners, wide letter spacing, colourful key words',
+      'FONT D: small diary pen handwriting, narrow and compact, used only for quiet memo-style cards',
+      'FONT E: big bubbly doodle lettering for key words, smaller handwritten supporting text; intentionally uneven and cute',
+      'FONT F: loose brush-shaped handwriting with thicker and thinner strokes, gentle and organic, but still flat solid colour with crisp edges',
+      'FONT G: felt-tip pen note lettering, dark brown or cobalt, casual but weighty, like a handwritten classroom poster',
+      'FONT H: lettering with a flat solid colour block highlight behind one key word, thick hand-drawn strokes',
+      'FONT I: thin wiry handwriting with slightly heavy strokes, imperfect but readable, not pale or too thin',
+      'FONT J: mixed cute lettering: one chunky word, one small note line, and one coloured accent line (all taken from the given text only)',
+    ];
+    const T01_LETTER_RULE = 'All lettering is drawn FLAT in solid colour with clean edges — no crayon wax, no watercolour bleed, no pencil grain, no paper texture inside the letters.';
     // 폰트는 레이아웃과 다른 인덱스로 뽑아 조합이 고정 10개에 묶이지 않게 함
     const t01TypographyStyle = selectedTemplate === 'T01'
       ? t01TypographyStyles[Math.abs(templateIndex * 7 + 3) % t01TypographyStyles.length]
