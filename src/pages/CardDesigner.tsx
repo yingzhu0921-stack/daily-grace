@@ -12,7 +12,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisCandidateCount, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, canEmphasize, type GenerativeStyle, type GenerativeSpec, type EmphasisChoice } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -490,6 +490,8 @@ export default function Designer() {
   const [flowStep, setFlowStep] = useState<FlowStep>('entry');
   // T04 제자리 문구 수정: null이면 편집 안 함, 문자열이면 편집 중(본문 초안)
   const [textEditDraft, setTextEditDraft] = useState<string | null>(null);
+  // 강조 고르기 패널. null 이면 안 열림. from 은 첫 번째로 탭한 어절(아직 끝을 안 고름).
+  const [emphasisPick, setEmphasisPick] = useState<{ from: number | null; applied: { from: number; to: number } | null } | null>(null);
   const [activeTrack, setActiveTrack] = useState<'auto' | 'manual' | 'photo' | null>(null);
   const [photoData, setPhotoData] = useState<string | null>(null);
   const [photoText, setPhotoText] = useState('');
@@ -522,7 +524,7 @@ export default function Designer() {
     simpleScale?: number;   // T04: 미리보기/저장본 공통 글씨 배율
     genSeed?: number;      // 코드 렌더 카드(T03): 재현·재편집용 시드
     genStyle?: GenerativeStyle;
-    genEmphasis?: number | 'none';  // 사용자가 고른 강조 자리. undefined 면 자동
+    genEmphasis?: EmphasisChoice;   // 사용자가 고른 강조 구간. undefined 면 자동
     genBodyText?: string;           // 주소를 뗀 본문. 강조 후보를 세는 데 쓴다
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
@@ -1995,7 +1997,7 @@ export default function Designer() {
     template: string,
     pick: (text: string, seed?: number) => GenerativeSpec,
     seedOverride?: number,
-    emphasis?: number | 'none',
+    emphasis?: EmphasisChoice,
   ): any => {
     const { bodyText, reference } = parseBodyRef(raw);
     const base = pick(bodyText, seedOverride);
@@ -2023,7 +2025,7 @@ export default function Designer() {
       simpleLines: [bodyText],
     };
   };
-  const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number, emphasis?: number | 'none') =>
+  const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number, emphasis?: EmphasisChoice) =>
     buildGenResult(raw, ratio, 'T03', pickGrainSpec, seedOverride, emphasis);
 
   const buildAdaptiveAutoResult = async (data: any) => {
@@ -2093,12 +2095,14 @@ export default function Designer() {
       const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
       const build = buildT03Result;
       // 글꼴이 아직 안 받아졌으면 기본 글꼴로 다시 구워진다. 받아온 뒤 한 번 더 그린다.
+      // 글이 바뀌면 어절 번호가 어긋난다. '강조 없음'만 이어 가고 구간은 자동으로 되돌린다.
+      const keepEmphasis = autoResult.genEmphasis === 'none' ? 'none' : undefined;
       if (autoResult.template === 'T03') {
         preloadGrainFonts(raw).then(() => {
-          setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, autoResult.genEmphasis));
+          setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, keepEmphasis));
         });
       }
-      setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, autoResult.genEmphasis));
+      setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, keepEmphasis));
       setVerseInput(raw);
       setT(current => ({ ...current, content: raw }));
       setTextEditDraft(null);
@@ -2562,23 +2566,32 @@ export default function Designer() {
 
     // ── 요청 4: 어디를 크게 쓸지 사용자가 고른다 ──
     // 배경(팔레트·시드)은 그대로 두고 글 배치만 다시 굽는다. AI 호출 없음.
-    const applyEmphasis = async (next: number | 'none' | undefined) => {
+    const emphasisBody = autoResult?.genBodyText || autoResult?.simpleLines?.[0] || verseInput.trim();
+    const emphasisCanPick = autoResult?.template === 'T03' && canEmphasize(emphasisBody);
+    const emphasisWordList = emphasisCanPick ? emphasisWords(emphasisBody) : [];
+
+    const applyEmphasis = async (next: EmphasisChoice | undefined) => {
       if (!autoResult || autoResult.template !== 'T03') return;
-      const body = autoResult.genBodyText || autoResult.simpleLines?.[0] || verseInput.trim();
       const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
-      const raw = ref ? `${body}\n${ref}` : body;
+      const raw = ref ? `${emphasisBody}\n${ref}` : emphasisBody;
       await preloadGrainFonts(raw).catch(() => undefined);
       setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, next));
     };
 
-    const emphasisTotal = autoResult?.template === 'T03'
-      ? emphasisCandidateCount(autoResult.genBodyText || autoResult.simpleLines?.[0] || verseInput.trim())
-      : 0;
-    const emphasisNow = autoResult?.genEmphasis;
-    const cycleEmphasis = () => {
-      if (!emphasisTotal) return;
-      const current = typeof emphasisNow === 'number' ? emphasisNow : 0;
-      applyEmphasis((current + 1) % emphasisTotal);
+    // 고르는 중에만 쓰는 값. 첫 탭이 시작, 둘째 탭이 끝이다.
+    const pickFrom = emphasisPick?.from ?? null;
+    const openEmphasisPicker = () => {
+      setTextEditDraft(null);
+      // 사용자가 직접 고른 적이 있을 때만 칠해 보여 준다. 자동 상태에서 자동 후보를
+      // 칠하면 카드에는 강조가 안 보이는데 패널만 칠해져 어긋난다.
+      const now = autoResult?.genEmphasis;
+      setEmphasisPick({ from: null, applied: now && now !== 'none' ? now : null });
+    };
+    const tapWord = (i: number) => {
+      if (pickFrom === null) { setEmphasisPick({ from: i, applied: emphasisPick?.applied ?? null }); return; }
+      const span = { from: Math.min(pickFrom, i), to: Math.max(pickFrom, i) };
+      setEmphasisPick({ from: null, applied: span });
+      applyEmphasis(span);
     };
 
     const handleRegenerate = async () => {
@@ -2895,7 +2908,48 @@ export default function Designer() {
             코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요 · 문구 수정은 배경 그대로 반영돼요.
           </div>
         )}
-        {textEditDraft !== null ? (
+        {emphasisPick !== null ? (
+          <div className="shrink-0 px-4 py-3 bg-white border-t">
+            <p className="mb-2 text-xs text-[#7E7C78]">
+              {pickFrom === null
+                ? '크게 쓸 부분의 \u2018시작\u2019 단어를 눌러요. 한 단어만 크게 하려면 같은 단어를 두 번 눌러요.'
+                : '이제 \u2018끝\u2019 단어를 눌러요.'}
+            </p>
+            <div className="max-h-40 overflow-y-auto rounded-xl border border-[#E3E2E0] p-2">
+              <div className="flex flex-wrap gap-1">
+                {emphasisWordList.map((word, i) => {
+                  const applied = emphasisPick.applied;
+                  const inSpan = !!applied && i >= applied.from && i <= applied.to;
+                  const isStart = pickFrom === i;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => tapWord(i)}
+                      className={`rounded-md px-1.5 py-1 text-sm transition-colors ${
+                        isStart
+                          ? 'bg-[#1F1F1F] text-white'
+                          : inSpan
+                          ? 'bg-[#1F1F1F]/10 text-[#1F1F1F] font-medium'
+                          : 'text-[#4A4845] hover:bg-[#F3F2F1]'
+                      }`}
+                    >{word}</button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                onClick={() => { setEmphasisPick({ from: null, applied: null }); applyEmphasis('none'); }}
+                className="px-4 py-2 min-h-11 border border-[#D8D6D2] text-[#1F1F1F] rounded-xl font-medium"
+              >강조 없음</button>
+              <button
+                onClick={() => setEmphasisPick(null)}
+                className="px-4 py-2 min-h-11 bg-[#1F1F1F] text-white rounded-xl font-medium"
+              >완료</button>
+            </div>
+          </div>
+        ) : textEditDraft !== null ? (
           <div className="shrink-0 px-4 py-3 bg-white border-t">
             <p className="mb-2 text-xs text-[#7E7C78]">배경은 그대로, 문구만 바꿔요. <b>Enter로 줄바꿈</b>하면 그대로 반영돼요. 말씀 주소(예: 시편 119:105)는 자동으로 작게 표시돼요.</p>
             <textarea
@@ -2912,31 +2966,27 @@ export default function Designer() {
           </div>
         ) : (
         <div className="shrink-0 px-4 py-2 bg-white text-center">
-          <div className="flex justify-center gap-6">
+          {/* 셋 다 "이 카드를 고치는" 동작이라 한 묶음으로 보인다 */}
+          <div className="flex rounded-xl bg-[#F3F2F1] p-[3px]">
             <button
               disabled={isGenerating || isSaving}
               onClick={() => (canEditTextInPlace ? openTextEdit() : setFlowStep('record'))}
-              className="text-sm underline disabled:opacity-40"
+              className="flex-1 rounded-[9px] py-2.5 text-[13px] text-[#4A4845] transition-colors hover:bg-white/70 disabled:opacity-40"
             >문구 수정</button>
-            <button disabled={isGenerating || isSaving} onClick={() => { setTextEditDraft(null); setFlowStep('auto-template'); }} className="text-sm underline disabled:opacity-40">스타일 변경</button>
-          </div>
-          {autoResult.template === 'T03' && emphasisTotal > 0 && (
-            <div className="mt-2 flex justify-center gap-6">
-              {emphasisTotal > 1 && (
-                <button
-                  disabled={isGenerating || isSaving}
-                  onClick={cycleEmphasis}
-                  className="text-sm underline disabled:opacity-40"
-                >강조 바꾸기</button>
-              )}
+            <button
+              disabled={isGenerating || isSaving}
+              onClick={() => { setTextEditDraft(null); setFlowStep('auto-template'); }}
+              className="flex-1 rounded-[9px] py-2.5 text-[13px] text-[#4A4845] transition-colors hover:bg-white/70 disabled:opacity-40"
+            >스타일 변경</button>
+            {emphasisCanPick && (
               <button
                 disabled={isGenerating || isSaving}
-                onClick={() => applyEmphasis(emphasisNow === 'none' ? 0 : 'none')}
-                className="text-sm underline disabled:opacity-40"
-              >{emphasisNow === 'none' ? '강조 다시 쓰기' : '강조 없음'}</button>
-            </div>
-          )}
-          <p className="mt-1 text-xs text-[#7E7C78]">
+                onClick={openEmphasisPicker}
+                className="flex-1 rounded-[9px] py-2.5 text-[13px] text-[#4A4845] transition-colors hover:bg-white/70 disabled:opacity-40"
+              >강조 고르기</button>
+            )}
+          </div>
+          <p className="mt-1.5 text-xs text-[#7E7C78]">
             {canEditTextInPlace
               ? '문구는 이 배경 그대로 바로 수정돼요. 스타일을 바꾸면 다시 생성해요.'
               : '문구나 스타일을 바꾸면 카드를 다시 생성해야 해요.'}

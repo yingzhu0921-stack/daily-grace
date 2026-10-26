@@ -114,75 +114,126 @@ function visualLen(text: string): number {
 
 const CLAUSE_END = /(아|어|여|고|며|니|매|므로|지만|나|되|면서|라도|거늘|거니와|새)$/;
 
-export interface EmphasisSplit {
-  key: string;
-  rest: string[];
+/** 강조 구간. 어절 번호(둘 다 포함). 어절 중간에서는 절대 끊기지 않는다. */
+export interface EmphasisSpan {
+  from: number;
+  to: number;
 }
 
+/** 사용자가 고른 강조. undefined 면 자동, 'none' 이면 강조 없이 같은 크기로만. */
+export type EmphasisChoice = 'none' | EmphasisSpan;
+
 /**
- * 크게 쓸 만한 자리를 **끊을 수 있는 데까지 모두** 찾아 돌려준다.
- * 맨 앞(0번)이 지금까지 자동으로 고르던 자리다. 사용자가 "강조 바꾸기"를 누르면
- * 뒤 번호로 옮겨 간다.
+ * 본문을 어절로 나눈다. 사이 글자(공백)는 그대로 들고 있어 원문을 한 글자도 잃지 않는다.
+ * 짝수 칸이 어절, 홀수 칸이 그 사이다(비어 있을 수 있다).
+ *
+ * 공백뿐 아니라 **쉼표·가운뎃점 뒤에서도 끊는다.** "기뻐하라,쉬지" 처럼 쉼표 뒤에
+ * 공백이 없으면 두 어절이 한 덩어리가 돼, 쉼표를 경계로 한 강조를 고를 수 없다.
+ * 구분 문자는 앞 조각에 붙여 둔다(splitSegments 와 같은 규칙).
  */
-export function emphasisCandidates(text: string): EmphasisSplit[] {
-  if (visualLen(text) > 90) return [];               // 아주 긴 본문은 크게 키울 수 없다
-  const out: EmphasisSplit[] = [];
-  const seen = new Set<string>();
-  const add = (key: string, rest: string[]) => {
-    const k = key.trim();
-    if (!k || seen.has(k)) return;
-    seen.add(k);
-    out.push({ key: k, rest: rest.filter(Boolean) });
-  };
-
-  // 0번은 지금까지 자동으로 골라 오던 자리 그대로다. 넓힌 후보는 그 뒤에만 붙인다.
-  const byPunct = splitSegments(text);
-  const words = text.trim().split(/\s+/).filter(Boolean);
-
-  // 어절로 끊을 수 있는 자리 — 연결어미로 끝나는 쪽이 먼저다
-  const clauseCuts: number[] = [];
-  const otherCuts: number[] = [];
-  if (words.length >= 5) {
-    for (let i = words.length - 2; i >= 2; i--) {
-      const keyWords = words.slice(i + 1);
-      const keyLen = visualLen(keyWords.join(' '));
-      if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
-      (CLAUSE_END.test(words[i]) ? clauseCuts : otherCuts).push(i);
-    }
+function tokenize(text: string): string[] {
+  const out: string[] = [];
+  const rough = text.split(/(\s+)/);          // [어절, 공백, 어절, 공백, …]
+  for (let i = 0; i < rough.length; i += 2) {
+    const gap = rough[i + 1] ?? '';
+    const pieces = rough[i].split(/(?<=[,·])/).filter((piece) => piece !== '');
+    if (!pieces.length) pieces.push(rough[i]);  // 빈 어절(맨 앞 공백 등)도 자리를 지킨다
+    pieces.forEach((piece, k) => {
+      out.push(piece);
+      out.push(k === pieces.length - 1 ? gap : '');
+    });
   }
-  const addCut = (i: number) =>
-    add(words.slice(i + 1).join(' '), [words.slice(0, i + 1).join(' ')]);
-
-  if (byPunct.length >= 2) {
-    // 쉼표·줄바꿈이 1순위. 마지막 조각부터 앞으로 넓혀 간다.
-    for (let i = byPunct.length - 1; i >= 1; i--) {
-      add(byPunct.slice(i).join(' '), byPunct.slice(0, i));
-    }
-  } else if (clauseCuts.length) {
-    clauseCuts.forEach(addCut);
-  } else if (words.length >= 5) {
-    // 끊을 자리를 못 찾으면 뒤 3분의 1을 핵심 구절로 본다
-    const cut = Math.max(2, Math.floor(words.length * 0.66));
-    if (words.length - cut >= 2) add(words.slice(cut).join(' '), [words.slice(0, cut).join(' ')]);
-  }
-  if (!out.length) return out;        // 0번을 못 만들면 강조 자체를 쓰지 않는다
-
-  // 여기부터는 "강조 바꾸기"로만 가 볼 수 있는 자리다. 기본값은 위에서 이미 정해졌다.
-  clauseCuts.forEach(addCut);
-  otherCuts.forEach(addCut);
   return out;
 }
 
-/** 이 글에서 "강조 바꾸기"로 돌려 볼 수 있는 자리가 몇 개인지. */
-export function emphasisCandidateCount(text: string): number {
-  return emphasisCandidates(text).length;
+/** 화면에서 탭할 어절 목록. 번호가 EmphasisSpan 의 from/to 와 같다. */
+export function emphasisWords(text: string): string[] {
+  return tokenize(text).filter((_, i) => i % 2 === 0).filter(Boolean);
 }
 
-function splitForEmphasis(text: string, pick?: number): EmphasisSplit | null {
-  const list = emphasisCandidates(text);
-  if (!list.length) return null;
-  if (typeof pick !== 'number') return list[0];
-  return list[((pick % list.length) + list.length) % list.length];
+/** 어절 번호 → tokenize 배열의 칸 번호 */
+function wordSlots(tokens: string[]): number[] {
+  const slots: number[] = [];
+  tokens.forEach((t, i) => { if (i % 2 === 0 && t) slots.push(i); });
+  return slots;
+}
+
+/**
+ * 혼자 서지 못하는 말. 강조를 이런 말로 **시작하면** "모든 / 것을" 처럼
+ * 잘린 것처럼 읽힌다. 자동으로 고를 때만 피한다(직접 고르면 사용자 뜻대로).
+ */
+const BOUND_NOUN = /^(것|것을|것이|것은|것도|수|수가|때|때에|바|바를|줄|데|데에|뿐|뿐만|만큼|지|적|채|터|리|나름)$/;
+
+/**
+ * 자동으로 크게 쓸 구간을 정한다. **지금까지와 같은 자리**를 고른다.
+ * 다만 혼자 못 서는 말로 시작하면 한 어절 앞으로 물린다.
+ */
+export function autoEmphasisSpan(text: string): EmphasisSpan | null {
+  if (visualLen(text) > 90) return null;             // 아주 긴 본문은 크게 키울 수 없다
+  const words = emphasisWords(text);
+  const last = words.length - 1;
+  if (last < 0) return null;
+
+  const widen = (from: number): EmphasisSpan => {
+    let f = from;
+    while (f > 1 && BOUND_NOUN.test(words[f])) f -= 1;   // 앞 어절까지 끌어온다
+    return { from: f, to: last };
+  };
+
+  // 1순위 — 쉼표·줄바꿈. 마지막 조각이 강조가 된다.
+  const segs = splitSegments(text);
+  if (segs.length >= 2) {
+    const tailWords = segs[segs.length - 1].trim().split(/\s+/).filter(Boolean).length;
+    if (tailWords > 0 && tailWords <= words.length) return widen(words.length - tailWords);
+  }
+
+  if (words.length < 5) return null;                 // 짧은 문장은 나눌 데가 없다
+
+  // 2순위 — 끝에서부터 연결어미로 끝나는 어절을 찾아 그 뒤에서 끊는다
+  for (let i = words.length - 2; i >= 2; i--) {
+    const keyWords = words.slice(i + 1);
+    const keyLen = visualLen(keyWords.join(' '));
+    if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
+    if (CLAUSE_END.test(words[i])) return widen(i + 1);
+  }
+
+  // 끊을 자리를 못 찾으면 뒤 3분의 1을 핵심 구절로 본다
+  const cut = Math.max(2, Math.floor(words.length * 0.66));
+  if (words.length - cut < 2) return null;
+  return widen(cut);
+}
+
+/** 이 글에 강조할 만한 자리가 있는지. 없으면 "강조 고르기"를 쓸 수 없다. */
+export function canEmphasize(text: string): boolean {
+  return emphasisWords(text).length >= 2;
+}
+
+export interface EmphasisParts {
+  before: string;
+  key: string;
+  after: string;
+}
+
+/**
+ * 고른 구간으로 본문을 앞 / 강조 / 뒤 세 토막으로 나눈다.
+ * **자르는 자리는 언제나 어절 경계**이고, 원문 글자는 하나도 바뀌지 않는다.
+ */
+export function emphasisParts(text: string, choice?: EmphasisChoice): EmphasisParts | null {
+  if (choice === 'none') return null;
+  const span = choice ?? autoEmphasisSpan(text);
+  if (!span) return null;
+  const tokens = tokenize(text);
+  const slots = wordSlots(tokens);
+  if (!slots.length) return null;
+  const from = Math.max(0, Math.min(span.from, slots.length - 1));
+  const to = Math.max(from, Math.min(span.to, slots.length - 1));
+  const a = slots[from];
+  const b = slots[to];
+  return {
+    before: tokens.slice(0, a).join(''),
+    key: tokens.slice(a, b + 1).join(''),
+    after: tokens.slice(b + 1).join(''),
+  };
 }
 
 export interface GenerativePalette {
@@ -252,12 +303,12 @@ export interface GenerativeSpec {
   layout?: number;    // (grain) GRAIN_LAYOUTS 인덱스
   sparkle?: boolean;  // (grain) 사용 안 함 — 별 장식은 2026-10-24에 제거했다. 항상 false
   /**
-   * (grain) 어디를 크게 쓸지. 사용자가 고른 값이다.
-   *  · undefined — 자동(후보 0번)
-   *  · 숫자      — emphasisCandidates 의 그 번째 자리
+   * (grain) 어디를 크게 쓸지.
+   *  · undefined — 자동
+   *  · {from,to} — 사용자가 탭으로 고른 어절 구간
    *  · 'none'    — 강조 없이 같은 크기로만
    */
-  emphasis?: number | 'none';
+  emphasis?: EmphasisChoice;
 }
 
 const GRAIN_BODY_FONTS = [
@@ -309,7 +360,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
   const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
   // 조각이 하나뿐인 문장에는 hero 계열을 쓰지 않는다
-  const layoutPool = splitForEmphasis(text) ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
+  const layoutPool = autoEmphasisSpan(text) ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
   const layout = Math.floor(rnd() * layoutPool);
   // 별(반짝이) 장식은 제거했다(2026-10-24 요청 4).
   // 난수 소비는 그대로 둔다 — 빼면 이후 난수가 밀려 같은 시드의 색·배치가 달라진다.
@@ -478,7 +529,7 @@ function resolveLayoutIndex(text: string, spec: GenerativeSpec): number {
   if (spec.emphasis === 'none') {
     return base % UNIFORM_LAYOUT_COUNT;                       // 같은 크기로만
   }
-  if (typeof spec.emphasis === 'number' && emphasisCandidates(text).length) {
+  if (spec.emphasis && emphasisParts(text, spec.emphasis)) {
     if (base < UNIFORM_LAYOUT_COUNT) {
       return UNIFORM_LAYOUT_COUNT + (base % heroCount);       // 강조를 골랐으면 크게 쓰는 배치로
     }
@@ -519,9 +570,12 @@ function drawHeroText(
   const centered = layout.align === 'center';
   const maxW = width * 0.78;
   const x = centered ? width / 2 : layout.align === 'right' ? width * 0.89 : width * 0.11;
-  const split = splitForEmphasis(text, typeof spec.emphasis === 'number' ? spec.emphasis : undefined);
-  const key = split?.key ?? text;
-  const rest = split?.rest ?? [];
+  const parts = emphasisParts(text, spec.emphasis);
+  const key = parts?.key ?? text;
+  // 강조가 문장 가운데일 수 있다. 앞·뒤를 따로 들고 원문 순서대로 그린다.
+  // 쉼표·줄바꿈이 있으면 조각마다 줄을 나눈다(예전과 같은 읽기 리듬).
+  const beforeSegs = parts ? splitSegments(parts.before) : [];
+  const afterSegs = parts ? splitSegments(parts.after) : [];
 
   // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
   const fs = fontScale(spec.font);
@@ -540,14 +594,16 @@ function drawHeroText(
 
   let restPx2 = Math.round(width * (centered ? 0.046 : 0.040) * fs);
   ctx.font = `400 ${restPx2}px ${spec.font}`;
-  const restLines = rest.flatMap((r) => fitLines(ctx, r, maxW));
+  const beforeLines = beforeSegs.flatMap((r) => fitLines(ctx, r, maxW));
+  const afterLines = afterSegs.flatMap((r) => fitLines(ctx, r, maxW));
+  const restCount = beforeLines.length + afterLines.length;
+  const gapCount = (beforeLines.length ? 1 : 0) + (afterLines.length ? 1 : 0);
 
   let keyLH = keyPx * 1.22;
   let restLH = restPx2 * 1.65;
   const refPx = Math.round(width * 0.027);
   const gap = width * 0.03;
-  // C 는 나머지를 위에, A 는 아래에 둔다
-  let totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+  let totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refPx * 2.4;
 
   // 그래도 카드 높이를 넘으면 전체를 비례해 줄인다
   const avail = height * 0.84;
@@ -557,7 +613,7 @@ function drawHeroText(
     restPx2 = Math.max(10, Math.round(restPx2 * k));
     keyLH = keyPx * 1.22;
     restLH = restPx2 * 1.65;
-    totalH = keyLines.length * keyLH + restLines.length * restLH + gap + refPx * 2.4;
+    totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refPx * 2.4;
   }
 
   let top = height * layout.bodyTop;
@@ -569,10 +625,11 @@ function drawHeroText(
   ctx.fillStyle = pal.ink;
   let y = top;
 
-  const drawRest = () => {
+  const drawRest = (lines: string[]) => {
+    if (!lines.length) return;
     ctx.font = `400 ${restPx2}px ${spec.font}`;
     ctx.globalAlpha = 0.78;
-    for (const line of restLines) { y += restLH; ctx.fillText(line, x, y); }
+    for (const line of lines) { y += restLH; ctx.fillText(line, x, y); }
     ctx.globalAlpha = 1;
   };
   const drawKey = () => {
@@ -580,11 +637,13 @@ function drawHeroText(
     for (const line of keyLines) { y += keyLH; ctx.fillText(line, x, y); }
   };
 
-  // 두 배치 모두 원문 순서를 지킨다. 핵심 구절(마지막 조각)을 위로 올리면
-  // 결론을 먼저 읽게 돼 문장이 뒤집힌다.
-  drawRest();
-  y += gap;
+  // 언제나 원문 순서대로 그린다. 강조가 가운데여도 앞 → 강조 → 뒤 순서다.
+  // 순서를 바꾸면 사용자가 쓴 문장이 뒤집혀 읽힌다.
+  drawRest(beforeLines);
+  if (beforeLines.length) y += gap;
   drawKey();
+  if (afterLines.length) y += gap;
+  drawRest(afterLines);
 
   // C 는 핵심 구절 아래에 가는 십자 표시를 둔다 (일부 변형은 없이)
   if (centered && (layout as { mark?: boolean }).mark !== false) {
