@@ -72,6 +72,8 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
   // 창은 fixed top:50% 라 레이아웃 화면의 한가운데에 놓인다. 키보드가 올라오면
   // 그 한가운데가 보이는 화면 밖으로 내려가므로, 높이와 함께 중심도 옮겨 준다.
   const [viewport, setViewport] = useState<{ h: number; mid: number } | null>(null);
+  // 키보드가 올라온 상태. 이때는 설명줄·여백을 줄여 목록에 높이를 넘긴다.
+  const short = !!viewport && viewport.h < 620;
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
@@ -199,16 +201,16 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
         className="max-w-[500px] flex flex-col p-4 sm:p-6 bg-white"
         style={{
           zIndex: 9999,
-          maxHeight: viewport ? `${Math.round(viewport.h * 0.88)}px` : '70vh',
+          maxHeight: viewport ? `${Math.round(viewport.h * (short ? 0.96 : 0.88))}px` : '70vh',
           ...(viewport ? { top: `${Math.round(viewport.mid)}px` } : {}),
         }}
         overlayClassName="z-[9998]"
       >
-        <DialogHeader className="pb-3">
-          <DialogTitle className="text-lg sm:text-xl">
+        <DialogHeader className={short ? 'pb-1' : 'pb-3'}>
+          <DialogTitle className={short ? 'text-base' : 'text-lg sm:text-xl'}>
             {step === 'select' ? '내 기록에서 가져오기' : purpose === 'background' ? '배경에 참고할 내용' : '카드에 담을 문구'}
           </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
+          <DialogDescription className={`text-xs text-muted-foreground mt-1 ${short ? 'hidden' : ''}`}>
             {step === 'select'
               ? '최근 기록에서 카드로 남길 내용을 선택하세요'
               : purpose === 'background' ? '배경에만 참고하며 기존 카드 글씨는 바뀌지 않아요.' : '원문 또는 AI 추천을 선택하고 수정하세요. 원본 기록은 바뀌지 않아요.'}
@@ -218,7 +220,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
         {step === 'select' ? (
           <div className="flex-1 min-h-0 flex flex-col gap-3">
             <input aria-label="기록 검색" value={query} onChange={e => setQuery(e.target.value)} placeholder="제목이나 내용으로 검색" className="w-full rounded-lg border p-3 text-sm" />
-            <div className="flex shrink-0 gap-1.5 overflow-x-auto overflow-y-visible pb-2">
+            <div className={`flex shrink-0 gap-1.5 overflow-x-auto overflow-y-visible ${short ? 'pb-1' : 'pb-2'}`}>
               {filters.map(filter => (
                 <button
                   key={filter.key}
@@ -235,7 +237,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
               ))}
             </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 py-1">
+            <div className="min-h-0 flex-1 overflow-y-auto space-y-2 py-1">
             {filteredRecords.length === 0 ? (
               <div className="text-center text-muted-foreground py-8 text-sm">
                 {query || activeType !== 'all' ? '조건에 맞는 기록이 없어요. 검색어나 카테고리를 바꿔보세요.' : '아직 기록이 없어요. 기록을 작성하거나 돌아가서 문구를 직접 입력해주세요.'}

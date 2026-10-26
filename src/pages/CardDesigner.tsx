@@ -12,7 +12,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisCandidateCount, type GenerativeStyle, type GenerativeSpec } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -520,8 +520,10 @@ export default function Designer() {
     typography?: AutoTypography;
     simpleLines?: string[];
     simpleScale?: number;   // T04: 미리보기/저장본 공통 글씨 배율
-    genSeed?: number;      // T05 제너러티브: 재현·재편집용 시드
+    genSeed?: number;      // 코드 렌더 카드(T03): 재현·재편집용 시드
     genStyle?: GenerativeStyle;
+    genEmphasis?: number | 'none';  // 사용자가 고른 강조 자리. undefined 면 자동
+    genBodyText?: string;           // 주소를 뗀 본문. 강조 후보를 세는 데 쓴다
   } | null>(null);
   const [templateIndex, setTemplateIndex] = useState(0);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
@@ -1993,9 +1995,11 @@ export default function Designer() {
     template: string,
     pick: (text: string, seed?: number) => GenerativeSpec,
     seedOverride?: number,
+    emphasis?: number | 'none',
   ): any => {
     const { bodyText, reference } = parseBodyRef(raw);
-    const spec = pick(bodyText, seedOverride);
+    const base = pick(bodyText, seedOverride);
+    const spec: GenerativeSpec = emphasis === undefined ? base : { ...base, emphasis };
     const image = renderGenerativeCard({ text: bodyText, reference, ratio, spec });
     return {
       image,
@@ -2014,11 +2018,13 @@ export default function Designer() {
       ratio,
       genSeed: spec.seed,
       genStyle: spec.style,
+      genEmphasis: emphasis,      // 사용자가 고른 강조. 문구를 고쳐도 유지한다
+      genBodyText: bodyText,      // 강조 후보 개수를 세는 데 쓴다
       simpleLines: [bodyText],
     };
   };
-  const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number) =>
-    buildGenResult(raw, ratio, 'T03', pickGrainSpec, seedOverride);
+  const buildT03Result = (raw: string, ratio: Ratio, seedOverride?: number, emphasis?: number | 'none') =>
+    buildGenResult(raw, ratio, 'T03', pickGrainSpec, seedOverride, emphasis);
 
   const buildAdaptiveAutoResult = async (data: any) => {
     const resultRatio = (data?.ratio || meta.ratio || '4:5') as Ratio;
@@ -2089,10 +2095,10 @@ export default function Designer() {
       // 글꼴이 아직 안 받아졌으면 기본 글꼴로 다시 구워진다. 받아온 뒤 한 번 더 그린다.
       if (autoResult.template === 'T03') {
         preloadGrainFonts(raw).then(() => {
-          setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
+          setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, autoResult.genEmphasis));
         });
       }
-      setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed));
+      setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, autoResult.genEmphasis));
       setVerseInput(raw);
       setT(current => ({ ...current, content: raw }));
       setTextEditDraft(null);
@@ -2554,6 +2560,27 @@ export default function Designer() {
       }
     };
 
+    // ── 요청 4: 어디를 크게 쓸지 사용자가 고른다 ──
+    // 배경(팔레트·시드)은 그대로 두고 글 배치만 다시 굽는다. AI 호출 없음.
+    const applyEmphasis = async (next: number | 'none' | undefined) => {
+      if (!autoResult || autoResult.template !== 'T03') return;
+      const body = autoResult.genBodyText || autoResult.simpleLines?.[0] || verseInput.trim();
+      const ref = (autoResult.lines || []).find((l) => isAutoCaptionLine(l.text, l.scale))?.text || '';
+      const raw = ref ? `${body}\n${ref}` : body;
+      await preloadGrainFonts(raw).catch(() => undefined);
+      setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, next));
+    };
+
+    const emphasisTotal = autoResult?.template === 'T03'
+      ? emphasisCandidateCount(autoResult.genBodyText || autoResult.simpleLines?.[0] || verseInput.trim())
+      : 0;
+    const emphasisNow = autoResult?.genEmphasis;
+    const cycleEmphasis = () => {
+      if (!emphasisTotal) return;
+      const current = typeof emphasisNow === 'number' ? emphasisNow : 0;
+      applyEmphasis((current + 1) % emphasisTotal);
+    };
+
     const handleRegenerate = async () => {
       setTextEditDraft(null);
       // T03 그레인: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
@@ -2893,6 +2920,22 @@ export default function Designer() {
             >문구 수정</button>
             <button disabled={isGenerating || isSaving} onClick={() => { setTextEditDraft(null); setFlowStep('auto-template'); }} className="text-sm underline disabled:opacity-40">스타일 변경</button>
           </div>
+          {autoResult.template === 'T03' && emphasisTotal > 0 && (
+            <div className="mt-2 flex justify-center gap-6">
+              {emphasisTotal > 1 && (
+                <button
+                  disabled={isGenerating || isSaving}
+                  onClick={cycleEmphasis}
+                  className="text-sm underline disabled:opacity-40"
+                >강조 바꾸기</button>
+              )}
+              <button
+                disabled={isGenerating || isSaving}
+                onClick={() => applyEmphasis(emphasisNow === 'none' ? 0 : 'none')}
+                className="text-sm underline disabled:opacity-40"
+              >{emphasisNow === 'none' ? '강조 다시 쓰기' : '강조 없음'}</button>
+            </div>
+          )}
           <p className="mt-1 text-xs text-[#7E7C78]">
             {canEditTextInPlace
               ? '문구는 이 배경 그대로 바로 수정돼요. 스타일을 바꾸면 다시 생성해요.'

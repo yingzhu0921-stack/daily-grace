@@ -114,30 +114,75 @@ function visualLen(text: string): number {
 
 const CLAUSE_END = /(아|어|여|고|며|니|매|므로|지만|나|되|면서|라도|거늘|거니와|새)$/;
 
-function splitForEmphasis(text: string): { key: string; rest: string[] } | null {
-  if (visualLen(text) > 90) return null;
-  const byPunct = splitSegments(text);
-  if (byPunct.length >= 2) {
-    return { key: byPunct[byPunct.length - 1], rest: byPunct.slice(0, -1) };
-  }
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  if (words.length < 5) return null;                 // 짧은 문장은 나눌 데가 없다
-  if (visualLen(text) > 90) return null;             // 아주 긴 본문은 크게 키울 수 없다
+export interface EmphasisSplit {
+  key: string;
+  rest: string[];
+}
 
-  // 끝에서부터 연결어미로 끝나는 어절을 찾아 그 뒤에서 끊는다
-  for (let i = words.length - 2; i >= 2; i--) {
-    const keyWords = words.slice(i + 1);
-    const keyLen = visualLen(keyWords.join(' '));
-    if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
-    if (CLAUSE_END.test(words[i])) {
-      return { key: keyWords.join(' '), rest: [words.slice(0, i + 1).join(' ')] };
+/**
+ * 크게 쓸 만한 자리를 **끊을 수 있는 데까지 모두** 찾아 돌려준다.
+ * 맨 앞(0번)이 지금까지 자동으로 고르던 자리다. 사용자가 "강조 바꾸기"를 누르면
+ * 뒤 번호로 옮겨 간다.
+ */
+export function emphasisCandidates(text: string): EmphasisSplit[] {
+  if (visualLen(text) > 90) return [];               // 아주 긴 본문은 크게 키울 수 없다
+  const out: EmphasisSplit[] = [];
+  const seen = new Set<string>();
+  const add = (key: string, rest: string[]) => {
+    const k = key.trim();
+    if (!k || seen.has(k)) return;
+    seen.add(k);
+    out.push({ key: k, rest: rest.filter(Boolean) });
+  };
+
+  // 0번은 지금까지 자동으로 골라 오던 자리 그대로다. 넓힌 후보는 그 뒤에만 붙인다.
+  const byPunct = splitSegments(text);
+  const words = text.trim().split(/\s+/).filter(Boolean);
+
+  // 어절로 끊을 수 있는 자리 — 연결어미로 끝나는 쪽이 먼저다
+  const clauseCuts: number[] = [];
+  const otherCuts: number[] = [];
+  if (words.length >= 5) {
+    for (let i = words.length - 2; i >= 2; i--) {
+      const keyWords = words.slice(i + 1);
+      const keyLen = visualLen(keyWords.join(' '));
+      if (keyWords.length < 2 || keyLen < 6 || keyLen > 22) continue;
+      (CLAUSE_END.test(words[i]) ? clauseCuts : otherCuts).push(i);
     }
   }
-  // 끊을 자리를 못 찾으면 뒤 3분의 1을 핵심 구절로 본다
-  const cut = Math.max(2, Math.floor(words.length * 0.66));
-  const keyWords = words.slice(cut);
-  if (keyWords.length < 2) return null;
-  return { key: keyWords.join(' '), rest: [words.slice(0, cut).join(' ')] };
+  const addCut = (i: number) =>
+    add(words.slice(i + 1).join(' '), [words.slice(0, i + 1).join(' ')]);
+
+  if (byPunct.length >= 2) {
+    // 쉼표·줄바꿈이 1순위. 마지막 조각부터 앞으로 넓혀 간다.
+    for (let i = byPunct.length - 1; i >= 1; i--) {
+      add(byPunct.slice(i).join(' '), byPunct.slice(0, i));
+    }
+  } else if (clauseCuts.length) {
+    clauseCuts.forEach(addCut);
+  } else if (words.length >= 5) {
+    // 끊을 자리를 못 찾으면 뒤 3분의 1을 핵심 구절로 본다
+    const cut = Math.max(2, Math.floor(words.length * 0.66));
+    if (words.length - cut >= 2) add(words.slice(cut).join(' '), [words.slice(0, cut).join(' ')]);
+  }
+  if (!out.length) return out;        // 0번을 못 만들면 강조 자체를 쓰지 않는다
+
+  // 여기부터는 "강조 바꾸기"로만 가 볼 수 있는 자리다. 기본값은 위에서 이미 정해졌다.
+  clauseCuts.forEach(addCut);
+  otherCuts.forEach(addCut);
+  return out;
+}
+
+/** 이 글에서 "강조 바꾸기"로 돌려 볼 수 있는 자리가 몇 개인지. */
+export function emphasisCandidateCount(text: string): number {
+  return emphasisCandidates(text).length;
+}
+
+function splitForEmphasis(text: string, pick?: number): EmphasisSplit | null {
+  const list = emphasisCandidates(text);
+  if (!list.length) return null;
+  if (typeof pick !== 'number') return list[0];
+  return list[((pick % list.length) + list.length) % list.length];
 }
 
 export interface GenerativePalette {
@@ -206,6 +251,13 @@ export interface GenerativeSpec {
   grainPal?: GrainPalette; // (grain) 28색 팔레트
   layout?: number;    // (grain) GRAIN_LAYOUTS 인덱스
   sparkle?: boolean;  // (grain) 사용 안 함 — 별 장식은 2026-10-24에 제거했다. 항상 false
+  /**
+   * (grain) 어디를 크게 쓸지. 사용자가 고른 값이다.
+   *  · undefined — 자동(후보 0번)
+   *  · 숫자      — emphasisCandidates 의 그 번째 자리
+   *  · 'none'    — 강조 없이 같은 크기로만
+   */
+  emphasis?: number | 'none';
 }
 
 const GRAIN_BODY_FONTS = [
@@ -416,6 +468,24 @@ export interface RenderGenerativeOpts {
   heroFont?: string;
 }
 
+/**
+ * 사용자가 고른 강조에 맞춰 배치 번호를 옮긴다.
+ * 배경은 팔레트·시드에서 나오므로 그대로 남고, 글 배치만 바뀐다.
+ */
+function resolveLayoutIndex(text: string, spec: GenerativeSpec): number {
+  const base = spec.layout ?? 0;
+  const heroCount = GRAIN_LAYOUTS.length - UNIFORM_LAYOUT_COUNT;
+  if (spec.emphasis === 'none') {
+    return base % UNIFORM_LAYOUT_COUNT;                       // 같은 크기로만
+  }
+  if (typeof spec.emphasis === 'number' && emphasisCandidates(text).length) {
+    if (base < UNIFORM_LAYOUT_COUNT) {
+      return UNIFORM_LAYOUT_COUNT + (base % heroCount);       // 강조를 골랐으면 크게 쓰는 배치로
+    }
+  }
+  return base;
+}
+
 export function renderGenerativeCard(opts: RenderGenerativeOpts): string {
   const { text, reference, ratio, spec } = opts;
   const { width, height } = genDims(ratio);
@@ -449,7 +519,7 @@ function drawHeroText(
   const centered = layout.align === 'center';
   const maxW = width * 0.78;
   const x = centered ? width / 2 : layout.align === 'right' ? width * 0.89 : width * 0.11;
-  const split = splitForEmphasis(text);
+  const split = splitForEmphasis(text, typeof spec.emphasis === 'number' ? spec.emphasis : undefined);
   const key = split?.key ?? text;
   const rest = split?.rest ?? [];
 
@@ -554,7 +624,7 @@ function renderGrainCard(
   drawGrain(ctx, width, height, spec);
 
   const pal = spec.grainPal!;
-  const layout = GRAIN_LAYOUTS[spec.layout ?? 0];
+  const layout = GRAIN_LAYOUTS[resolveLayoutIndex(text, spec)];
   if (layout.kind !== 'uniform') {
     drawHeroText(ctx, width, height, text, reference, spec, layout);
     return canvas.toDataURL('image/png');

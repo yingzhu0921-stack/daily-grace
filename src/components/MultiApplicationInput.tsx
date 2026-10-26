@@ -95,7 +95,7 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
         {displayValues.map((item, index) => (
           <div key={index} className="flex gap-3 items-start">
             {showCheckboxes && (
-              <div className="pt-1">
+              <div className="pt-3">
                 <Checkbox
                   checked={item.checked}
                   onCheckedChange={(checked) => handleCheckChange(index, checked as boolean)}
@@ -130,7 +130,7 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
               <button
                 type="button"
                 onClick={() => handleRemove(index)}
-                className="mt-0.5 p-1.5 rounded-lg hover:bg-[#F3F2F1] transition-colors"
+                className="mt-2 p-1.5 rounded-lg hover:bg-[#F3F2F1] transition-colors"
                 aria-label="항목 삭제"
               >
                 <X className="w-4 h-4 text-[#ACACAC]" />
