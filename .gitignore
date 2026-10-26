@@ -15,6 +15,9 @@ dist-ssr
 # Environment variables (중요!)
 .env
 .env.*
+# wrangler 가 로컬에서만 읽는 비밀값. 절대 커밋하지 않는다
+.dev.vars
+.dev.vars.*
 
 # Bun lock file
 bun.lockb
