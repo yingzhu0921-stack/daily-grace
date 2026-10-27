@@ -26,10 +26,10 @@ const T01_ART = 'FLAT, MINIMAL illustration in the style of a modern Korean/Japa
   + 'charmingly wonky, never geometric or polished. Any character is a chunky little blob body with a round face, '
   + 'TINY DOT EYES and a small deadpan flat mouth, drawn with tiny dots and short thin lines only. A character always has CLEARLY DRAWN HAIR with a real shape and simple limbs — never a bald featureless egg. No eyebrows, '
   + 'no blush, no smile lines, no expressive cartoon faces. '
-  + 'BOLD SATURATED palette on a plain cream ground: cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown. '
+  + 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
   + 'Clean smooth surface with at most a very subtle paper grain. '
-  + 'VERY FEW ELEMENTS — one small subject drawn from the verse\'s meaning, placed LOW in the frame, with a large plain '
-  + 'cream empty area in the UPPER HALF. Quiet, spacious and a little offbeat.';
+  + 'VERY FEW ELEMENTS — one small subject taken from the verse\'s own words, placed LOW in the frame, with a large plain '
+  + 'empty area of the ground colour in the UPPER HALF. Quiet, spacious and a little offbeat.';
 
 /** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
 const T01_NOT = 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
@@ -293,6 +293,18 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const requestedRatio = typeof ratio === 'string' && ratioToSize[ratio] ? ratio : '4:5';
     if (!verse?.trim() && !cachedAnalysis) return Response.json({ error: '말씀을 입력해주세요.' }, { status: 400 });
 
+    // T01 바탕색 로테이션 — 전에는 늘 크림이라 카드가 전부 같아 보였다.
+    // 글씨가 바로 올라앉는 면이라 전부 '밝고 연한' 색만 둔다.
+    const t01Grounds = [
+      'warm cream', 'pale butter yellow', 'soft powder blue', 'pale sage green',
+      'warm sand beige', 'soft blush pink', 'pale lilac', 'light mint',
+      'pale apricot', 'soft warm stone grey', 'very pale sky', 'pale oat',
+    ];
+    // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
+    // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
+    const t01Ground = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid light colour from edge to edge — no gradient, no frame, at most a very subtle paper grain. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
+
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       // T01 — 귀여운 손글씨 (파스텔 + doodle)
@@ -323,16 +335,63 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 
 
     const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography card background. No text. No letters. No words. No typography. No logos. Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end card design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
-    const GLOBAL_BG_PROMPT_T01 = `\n\nCreate a card BACKGROUND only. No text. No letters. No words. No typography. No logos. ${T01_ART} Keep the whole UPPER HALF a large plain empty cream area for text overlay. ${T01_NOT} Background only.`;
+    const GLOBAL_BG_PROMPT_T01 = `\n\nCreate a card BACKGROUND only. No text. No letters. No words. No typography. No logos. ${T01_ART} Keep the whole UPPER HALF a large plain empty area of the ground colour for text overlay. ${T01_GROUND} ${T01_NOT} Background only.`;
     const GLOBAL_BG_PROMPT_T02 = '\n\nCreate a HIP modern worship poster BACKGROUND — bold Korean typography will be overlaid on top by code, so ADD NO TEXT. No letters, no words, no typography, no logos. Style: a high-contrast, grainy DUOTONE (2-tone) surface — either (a) a duotone/tritone PHOTO whose subject is drawn from the verse meaning (hands, a figure, a path, sky, water, a single object) pressed into one bold color + near-black/cream, with visible film grain and halftone, or (b) a gritty print/riso/newspaper-collage texture with torn edges, or (c) a bold flat color field with heavy paper grain. VARY the 2-tone palette per card — cobalt/cream, violet/black, electric-blue/white, red/cream, teal/black, lilac/black, mustard/black — NOT always orange. Leave a large CALM low-contrast zone (center, or one side/half) so overlaid bold text stays perfectly legible; push texture/collage/subject toward the edges or one side. Mature, editorial, punchy. NOT cute: no bubble shapes, no pastel candy colors, no hearts, no flowers, no smiley faces, no doodle stickers. Background only.';
 
     // T03 하이브리드 — AI는 그레인 그라데이션 '배경만'(글자는 코드 오버레이). 장면/사물/사진 없이 순수 추상 그라데이션.
     const GLOBAL_BG_PROMPT_T03 = '\n\nCreate a soft, aesthetic GRAINY GRADIENT BACKGROUND — elegant serif Korean typography will be overlaid on top by code, so this image has ABSOLUTELY NO text, letters, words, numbers, logos, objects, people, scenery, or photographic subjects. It is a PURE abstract gradient: a soft tonal gradient in ONE single color family (specified below) with a fine, even film GRAIN over the whole frame (like a grainy gradient phone wallpaper). Use gentle light and dark blooms WITHIN that one family — do NOT blend many different hues, do NOT make a rainbow/multi-color pastel wash. Soft, calm, luminous. Keep the whole surface fairly even/low-contrast so overlaid text stays legible anywhere. Grainy tonal gradient ONLY — nothing else in the image.';
 
+    // T01 은 말씀과 무관한 귀여운 동물(달팽이·거북이·고양이…)이 반복해서 나왔다.
+    // 장면이 동물을 그리겠다고 하면, 바로 '그 동물'이 말씀에 있는지 본다.
+    // (예전엔 말씀에 아무 동물이나 있으면 통과라, 독수리 말씀에 달팽이가 그대로 지나갔다.)
+    // 영문 쪽은 단어 경계를 둔다 — 안 그러면 bowl→owl, scattered→cat, bearing→bear 가 걸린다.
+    // not: 같은 글자지만 동물이 아닌 쓰임. 있으면 그 말씀은 '동물을 부르지 않은' 것으로 본다.
+    const T01_ANIMALS: { en: RegExp; ko: string[]; not?: RegExp }[] = [
+      { en: /\b(sheep|lamb|lambs|ewe|flock)\b/i, ko: ['양', '어린양', '양떼', '목자'] },
+      { en: /\b(shepherd)\b/i, ko: ['목자', '양'] },
+      { en: /\b(dove|doves|pigeon)\b/i, ko: ['비둘기'] },
+      { en: /\b(eagle|eagles)\b/i, ko: ['독수리'] },
+      // '사자'는 使者(천사)와 겹친다. 그 쓰임이면 사자(동물)로 치지 않는다.
+      { en: /\b(lion|lions)\b/i, ko: ['사자'], not: /((주|여호와|하나님|그)의\s*사자|천사)/ },
+      { en: /\b(bird|birds|songbird|sparrow|swallow|raven|owl|owls)\b/i, ko: ['참새', '까마귀', '날짐승', '새들', '새를', '새의', '새에게', '부엉이'] },
+      { en: /\b(fish|fishes)\b/i, ko: ['물고기'] },
+      { en: /\b(ox|oxen|cow|cows|cattle|calf)\b/i, ko: ['소떼', '송아지', '황소', '암소', '소'] },
+      { en: /\b(donkey|donkeys|colt)\b/i, ko: ['나귀'] },
+      // '말'은 말씀/말을(words)과 겹쳐 한 글자로 둘 수 없다. 동물로만 읽히는 꼴만 받는다.
+      { en: /\b(horse|horses)\b/i, ko: ['군마', '병거와 말', '말과 병거', '말을 타', '말 타', '말들과'] },
+      { en: /\b(deer|doe|hart)\b/i, ko: ['사슴'] },
+      { en: /\b(serpent|snake)\b/i, ko: ['뱀'] },
+      { en: /\b(goat|goats)\b/i, ko: ['염소'] },
+      { en: /\b(camel|camels)\b/i, ko: ['낙타'] },
+      { en: /\b(rooster|hen|chicken)\b/i, ko: ['닭'] },
+      // 아래는 성경에 거의 안 나오는 "귀여워서 고른" 동물들. 말씀이 직접 부르지 않으면 항상 탈락.
+      { en: /\b(snail|snails|turtle|tortoise|rabbit|rabbits|bunny|cat|cats|kitten|puppy|dog|dogs|hedgehog|fox|foxes|bear|bears|panda|duck|ducks|frog|frogs|whale|penguin|squirrel|mouse|chick|koala|sloth|butterfly|ladybug|bee|bees)\b/i, ko: [] },
+    ];
+    // 한국어는 조사와 서술격 어미가 붙는다 ('양을', '목자시니').
+    // 두 글자 이상이면 다른 단어에 묻힐 일이 거의 없어 그냥 포함 여부만 본다.
+    // 한 글자('양'·'새'·'말'·'소'·'뱀'·'닭')만 앞뒤 경계를 따진다 —
+    // 안 그러면 '모양을'·'태양이'·'다양한'·'말씀'·'소망' 이 전부 동물로 잡힌다.
+    const KO_PARTICLE = '(?:은|는|이|가|을|를|의|에|에게|와|과|도|만|들|떼|로|으로|처럼|같이|보다|마다|까지|조차|이나|나)?';
+    const verseText = typeof verse === 'string' ? verse : '';
+    const hasKoStem = (text: string, stem: string) =>
+      stem.length >= 2
+        ? text.includes(stem)
+        : new RegExp(`(^|[^가-힣])${stem}${KO_PARTICLE}(?![가-힣])`).test(text);
+    /** 장면이 말씀에 없는 동물을 그리려 하면 그 동물 이름을 돌려준다. 문제 없으면 빈 문자열. */
+    const t01AnimalMiss = (concept: string): string => {
+      for (const a of T01_ANIMALS) {
+        const m = concept.match(a.en);
+        if (!m) continue;
+        if (a.not?.test(verseText)) return m[0];                  // 같은 글자지만 동물이 아닌 쓰임
+        if (a.ko.some((k) => hasKoStem(verseText, k))) continue;   // 말씀이 그 동물을 부른다
+        return m[0];
+      }
+      return '';
+    };
     let analysis: AutoCardAnalysis;
     // 재생성일 땐 캐시를 무시하고 새로 분석해 매번 다른 아트디렉션을 만든다
     if (cachedAnalysis?.templates?.length && !regenerate) {
-      analysis = cachedAnalysis;
+      analysis = cachedAnalysis;   // 캐시는 재분석을 못 하지만, 아래 최종 동물 판정은 똑같이 받는다
     } else {
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
@@ -406,15 +465,15 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
 - T01 is not brush calligraphy and not a doodle cartoon. It is a FLAT, OUTLINE-FREE illustration in the style of a modern Korean/Japanese indie sticker or zine artist, with playful Korean hand-lettering.
 - NO OUTLINES AT ALL. Shapes are made of SOLID FLAT COLOR only, never defined by a drawn line. NO gradient, NO airbrush/soft shading, NO painterly texture, NO crayon, NO pencil, NO watercolor, NO halftone dots. A very subtle paper grain is the most texture allowed.
 - Shapes are BLOBBY and slightly LOPSIDED with soft hand-drawn edges — charmingly wonky, never geometric or polished.
-- BOLD SATURATED colors on a plain cream ground: cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown. Not pastel, not muted.
-- VERY FEW ELEMENTS. ONE small subject that clearly CONNECTS TO THE VERSE MEANING, placed LOW in the frame, with the whole UPPER HALF left as plain empty cream for the text. Do NOT fill the card with a scene.
+- BOLD SATURATED accent colors — cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown — over a plain flat LIGHT ground. The ground colour CHANGES from card to card (cream, pale butter, powder blue, sage, sand, blush, lilac, mint, apricot, warm grey); it is given per card, so do not assume cream. Not pastel, not muted.
+- VERY FEW ELEMENTS. ONE small subject the reader can trace back to THE VERSE'S OWN WORDS, placed LOW in the frame, with the whole UPPER HALF left as plain empty ground colour for the text. Do NOT fill the card with a scene. A cute animal that the verse never mentions is NOT an acceptable subject.
 - Do NOT put faces (eyes/nose/mouth) on inanimate objects.
 - A character is a chunky little blob body with a round face, TINY DOT EYES and a small deadpan mouth — faces are dots and short lines only, never a detailed cartoon face.
 - CRITICAL — the character MUST have CLEARLY DRAWN HAIR with a real shape (a bob, a ponytail, short cropped hair, a bun) and simple limbs. NEVER draw a bald, hairless, featureless egg/bean figure — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person instead of a blob. When in doubt, draw an object or a plant instead of a character.
-- CRITICAL — NO BORDER/FRAME: full-bleed cream to the edges. Do NOT draw any border, frame, edge line, vine, leaf-vine, floral garland, or corner decoration.
+- CRITICAL — NO BORDER/FRAME: the ground colour runs full-bleed to the edges. Do NOT draw any border, frame, edge line, vine, leaf-vine, floral garland, or corner decoration.
 - NO rainbows, NO floating hearts, NO sparkles. Keep the palette clean and intentional. Flat over detailed, quiet over corny.
 - Lettering should feel like a handmade note and MUST vary across generations by SHAPE and WEIGHT: thick rounded marker, chunky uneven hand, sticker-like block letters, bubbly doodle letters, felt-tip poster letters, a loose brush shape, or mixed cute lettering. The letters themselves are always FLAT solid colour with clean edges — no crayon wax, no watercolour bleed, no pencil grain. Avoid making every font thin. Never use powerful ink strokes.
-- Vary the design heavily across generations: blue speckled paper, pink border, yellow path illustration, cream marker note, big crayon shape, mint object scene, notebook memo, chunky cute word card, sticker collage, cozy desk doodle.
+- Vary the design heavily across generations, but ONLY along these axes: the flat ground colour, the accent colour pair, the composition (empty / ground band / horizon / big colour block / off-centre), whether a person appears and who that person is, and the hand-lettering shape. What is DRAWN always comes from the verse itself. Never a border, never tape or paper scraps, never crayon or pastel texture.
 - Keep text modest and friendly, not huge. Lots of empty space is part of the style.
 - A cute accent may be used ONLY on the single key word (a soft highlight or underline), sparingly and intentionally — never on ordinary words, never on every line, no smiley faces. For verses about paths/ways/turning, a small path, signpost, or road motif may fit.
 
@@ -431,7 +490,7 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
   · emotionalMovement: how the feeling/state CHANGES or MOVES (e.g. "from heaviness to release", "holding steady through pressure", "reaching outward", "quiet waiting before dawn")
   · visualEnergy: one of quiet / gentle / hopeful / strong / dynamic
   · literalObjectsToAvoid: 2-4 obvious literal noun-substitutions that would be too on-the-nose for THIS message (e.g. 비우라→"empty bowl", 기다림→"clock", 손 들어→"raised hands", 회복→"bandage/broken object")
-  · t01SceneConcept: for the flat handwriting card — ONE small simple subject that expresses the meaning (an object, a plant, an animal, or one chunky little person), placed LOW in the frame; keep the upper half empty. Not a busy scene, not one giant literal noun.
+  · t01SceneConcept: for the flat handwriting card — ONE small simple subject that is TRACEABLE TO THE MESSAGE'S OWN WORDS, IMAGERY OR METAPHOR, placed LOW in the frame; keep the upper half empty. Write it in this exact shape: "<the subject in English> — from \"<the Korean word or phrase in the message it comes from>\"". ANIMALS ARE ALLOWED ONLY when the message itself names an animal or an animal is its direct biblical metaphor (sheep/shepherd, dove, eagle, lion). Picking a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) just because it is cute, when the message never mentions it, is a FAILURE — the reader must be able to see why it is there. If no concrete object fits, use light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing exactly what the message describes. Not a busy scene, not one giant literal noun.
   · t02GraphicConcept: for the hip poster — give BOTH (a) a verse-derived MOOD/energy (color contrast, layers, direction, repetition, space) AND (b) ONE concrete verse-related NON-HUMAN subject/motif that could appear as a bold duotone cutout or texture (e.g. an open door, a mountain path, waves, light breaking through clouds, a flame, a mountain, a road, rays, a torn horizon). NO people, NO faces, NO hands or body parts. The background should visibly connect to the message. (e.g. 담대함→"a road climbing upward, strong diagonal lines, high contrast"; 소망→"light breaking through dark clouds"). Keep it one clear non-human subject, not a busy scene.
   · t03NatureConcept: for the dreamy emotional film photo — a NATURE scene ONLY (shallow depth, blur, film grain, and the MOVEMENT of wind/mist/rain/ripples/light). NO still-life, NO indoor props, NO single symbolic object, NO forced religious symbol. Express the meaning as a natural STATE and its motion. Keep nature variety (do not always use flowers).
   · t04NatureConcept: for the calm minimal FILM card — a specific, calm aesthetic 35mm-film SCENE whose SUBJECT is translated from THIS verse's own imagery/metaphor and emotionalMovement. NOT limited to nature: it can be an everyday film-diary moment (a cafe window, a desk with a book, a quiet room corner, a windowsill, warm interior light, a city street at dusk, hands, a small still-life of meaningful objects) OR a natural scene (valley/path=journey, stream=living water, sheltering rock/shade=refuge, first light=hope, clearing sky after rain=peace, harvest field=provision, shoreline=being led). Choose whatever best fits the verse; go beyond generic mountains/lake/sunset. Keep a calm low-contrast area for text. Name the concrete scene AND why it fits.
@@ -458,6 +517,8 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
       // 장면 검증 — 아래 중 하나라도 걸리면 장면 개념만 1회 재분석(선택 템플릿 규칙 적용).
       const STILL_LIFE_RE = /(bowl|candle|cup|mug|plate|table|desk|book|indoor|room|still[- ]?life|vase|jar|linen|bread|altar|window sill)/i;
       const VAGUE_RE = /(beautiful nature|warm light|serene landscape|peaceful (mountain|nature|landscape|sea)|generic)/i;
+      // 이 검사는 '장면을 다시 분석할지'만 정한다. 최종 판정은 chosenConcept 기준으로 아래에서 한다.
+      let t01BadAnimal = !!t01AnimalMiss(analysis.t01SceneConcept || '');
       const t03 = analysis.t03NatureConcept || '';
       const t04 = analysis.t04NatureConcept || '';
       const allConcepts = `${analysis.t01SceneConcept || ''} ${analysis.t02GraphicConcept || ''} ${t03} ${t04} ${analysis.backgroundConcept || ''}`;
@@ -467,6 +528,7 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
         (!t03.trim() && !t04.trim() && !analysis.backgroundConcept?.trim()) || // 장면 개념 없음
         STILL_LIFE_RE.test(`${t03} ${t04}`) ||                    // T03/T04가 정물/실내
         VAGUE_RE.test(allConcepts) ||                             // 진부/모호
+        t01BadAnimal ||                                          // T01이 말씀에 없는 동물을 고름
         reusesPrevSubject;                                       // 이전 소재 재사용
       if (needsRetry) {
         try {
@@ -478,9 +540,9 @@ RULES: Do NOT draw the message's nouns literally and do NOT substitute a concept
 - t03NatureConcept: NATURE ONLY — dreamy blurred film photo with natural MOTION (wind/mist/rain/ripples/light). NO still-life, NO indoor props, NO single symbolic object.
 - t04NatureConcept: a calm aesthetic 35mm-film SCENE whose SUBJECT fits THIS verse's imagery/metaphor — NOT limited to nature (may be a cafe window, desk with a book, quiet room, windowsill, city street at dusk, hands, a small still-life) OR a natural scene (valley/path=journey, stream=living water, sheltering rock=refuge, first light=hope, clearing sky=peace, harvest field=provision, shoreline=being led). Go beyond generic mountains/lake/sunset. Name the concrete scene and why it fits.
 - t02GraphicConcept: a verse-derived mood + ONE concrete verse-related NON-HUMAN subject for a bold duotone cutout/texture (an open door, a path, waves, light through clouds, a flame, mountains, rays) — NO people/faces/hands. The background must connect to the message.
-- t01SceneConcept: a small warm doodle scene (may include a simple object, but not one giant literal noun).
+- t01SceneConcept: ONE small subject traceable to the message's own words/imagery, written as "<subject> — from \"<Korean word or phrase>\"". NO cute animal unless the message names an animal or an animal is its direct metaphor. Prefer light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing what the message describes. Not one giant literal noun.
 - sceneRationale: why the scene connects to the meaning (reasoning only).
-BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to flowers/meadow/sunset unless the message names them. English.`,
+BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to flowers/meadow/sunset unless the message names them. Also BANNED for t01SceneConcept: a cute animal the message never mentions. English.`,
             },
             { role: 'user', content: verse.trim() + (prevSubjects.length ? `\n\nAvoid reusing these scene materials: ${prevSubjects.join('; ')}.` : '') },
           ], 400, 'gpt-4o');
@@ -547,6 +609,11 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const chosenConcept = (conceptByTemplate[selectedTemplate] || analysis.backgroundConcept || '').trim();
     if (chosenConcept) analysis.backgroundConcept = chosenConcept;
 
+    // 동물 판정은 '실제로 그려질 최종 장면'을 봐야 한다.
+    // t01SceneConcept 가 비면 backgroundConcept 로 폴백되므로, 앞의 검사만으로는 새어나간다.
+    // (앞의 검사는 '재분석을 돌릴지' 판단용이고, 여기가 최종 판정이다.)
+    const t01BannedAnimal = selectedTemplate === 'T01' ? t01AnimalMiss(chosenConcept) : '';
+
     const fontMood = analysis.fontMood || 'editorial';
     const fontMoodOffset: Record<string, number> = {
       editorial: 0,
@@ -600,18 +667,18 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       ? fontPresets[(Math.abs(templateIndex) + (fontMoodOffset[fontMood] ?? 0)) % fontPresets.length]
       : config.fonts;
     const templateVariations: Record<string, string[]> = {
-      // T01 귀여운 손글씨 — 파스텔 낙서/수채화/크레용
+      // T01 플랫 인디 스티커 — '분위기'만 바꾼다. 무엇을 그릴지는 THE SCENE(말씀)이 정한다.
       T01: [
-        'Pastel blue paper card with tiny speckles and white/cream Korean handwritten lettering; use only a few tiny doodles.',
-        'Soft pink illustrated border card with hand-drawn leaves/berries/daisies around the edges and a clean center.',
-        'Warm butter-yellow childlike landscape card with a simple hill, path, cloud, sun, or tiny object related to the verse.',
-        'Cream paper marker-note card with a couple of small tasteful marker accents (underline or circle) only on a key word.',
-        'Off-white card with one large soft crayon blob, sticker shape, or hand-painted letter-shape behind the text.',
-        'Light mint/sky-blue simple scene card with a tiny bike, path, window, table, cup, candle, book, or map motif related to the verse.',
-        'Minimal notebook/memo card: warm paper, tape scraps, tiny check marks, pencil dots, and compact handwritten note typography.',
-        'Playful chunky word card: mostly blank cream background, bold rounded key words, a soft pastel highlight behind ONE key word.',
-        'Cute object card: one simple illustrated object such as a mug, loaf, lamp, envelope, small house, umbrella, or backpack, chosen from the verse meaning.',
-        'Soft geometric doodle card: pastel blocks, rounded rectangles, sticker-like shapes, one or two tiny simple shapes only, no smileys.',
+        'MOOD: very quiet and empty — nearly the whole card is the bare ground colour, the subject tiny and low.',
+        'MOOD: a simple flat band of colour across the bottom (ground, grass or water) with the subject standing on it.',
+        'MOOD: one bold oversized flat shape from THE SCENE, cropped by the bottom edge, everything else bare.',
+        'MOOD: a low horizon line and open space above it, the subject small against that horizon.',
+        'MOOD: two or three flat shapes from THE SCENE grouped low together, like a small still arrangement.',
+        'MOOD: a large flat colour block occupying one side of the card, the subject set against it.',
+        'MOOD: the subject slightly off to one side and low, leaving a wide asymmetric empty area.',
+        'MOOD: the subject centred low and symmetric, calm and deliberate, like a small emblem.',
+        'MOOD: a flat indoor plane (a floor, a sill, a tabletop edge) low in the frame with the subject resting on it.',
+        'MOOD: flat light or weather from THE SCENE as simple colour shapes low in the frame, with or without an object.',
       ],
       // T02 힙한 포스터 — 볼드 콘덴스드 + 스크립트 오버레이 + 그런지 (오렌지·블랙·크림)
       T02: [
@@ -652,17 +719,36 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     // T01 아키타입 = "표현 방식(레이아웃/두들 밀도/질감)"만. 무엇을 그릴지(피사체)는 위 THE SCENE이 결정.
     // 배치만 다르게 한다. 종이 질감·테이프·연필 점 같은 소품은 참고 스타일에서 금지다.
     const t01DesignArchetypes = [
-      'T01 LAYOUT A — poem card: almost nothing but cream, small centered handwriting with LOTS of empty space, one tiny flat motif of THE SCENE low in the frame.',
-      'T01 LAYOUT B — floor line: one simple flat shape of THE SCENE resting along the bottom edge, handwriting floating in the open cream above it.',
+      'T01 LAYOUT A — poem card: almost nothing but the plain ground colour, small centered handwriting with LOTS of empty space, one tiny flat motif of THE SCENE low in the frame.',
+      'T01 LAYOUT B — ground band: a single flat band of colour across the BOTTOM THIRD (earth, grass, water, a floor or a tabletop — whichever suits THE SCENE), the subject resting on it, handwriting floating in the open ground colour above.',
       'T01 LAYOUT C — upper card: handwriting in the calm upper area, one small flat illustration of THE SCENE sitting low and slightly off-centre.',
-      'T01 LAYOUT D — accent note: playful handwriting with a flat solid underline or circle on ONE key word only, one small flat motif of THE SCENE.',
+      'T01 LAYOUT D — accent note: playful handwriting with a flat solid colour HIGHLIGHT BAND behind ONE key word only (no underline, no circle), one small flat motif of THE SCENE.',
       'T01 LAYOUT E — big shape card: one large flat solid colour blob to the side, handwriting placed inside or beside it, one tiny motif of THE SCENE.',
       'T01 LAYOUT F — single object card: one simple flat object taken from THE SCENE placed low in a corner, casual handwriting, minimal.',
-      'T01 LAYOUT G — tiny character card: one chunky blob character from THE SCENE with tiny dot eyes sitting low, compact handwritten note above.',
-      'T01 LAYOUT H — chunky word card: mostly blank cream, thick rounded hand-lettered key words, a flat solid colour block behind ONE key word, one tiny motif of THE SCENE.',
+      'T01 LAYOUT G — horizon card: a simple flat horizon line low in the frame (a hill, a far ridge, a shoreline, a rooftop line — whichever suits THE SCENE) with the subject against it, handwriting above.',
+      'T01 LAYOUT H — chunky word card: mostly plain ground colour, thick rounded hand-lettered key words, a flat solid colour block behind ONE key word, one tiny motif of THE SCENE.',
       'T01 LAYOUT I — sticker pair: two simple flat sticker-like shapes derived from THE SCENE placed low, playful hand lettering above.',
       'T01 LAYOUT J — corner scene card: a small flat vignette of THE SCENE tucked into a bottom corner, handwritten note text, calm and offbeat.',
     ];
+    // T01 인물 로테이션 — 지시가 "머리 모양이 있을 것"까지만이라 모델이 매번 같은
+    // 갈색 단발 여자아이로 수렴했다. 절반 가까이는 아예 사람을 빼서 소재도 넓힌다.
+    const t01Figures = [
+      'PEOPLE: prefer NO person — show THE SCENE through its setting, object or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain.',
+      'PEOPLE: prefer NO person — show THE SCENE through its place, water, weather or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain.',
+      'PEOPLE: prefer NO person — show THE SCENE through the single object at its centre instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain.',
+      'PEOPLE: prefer NO person — show THE SCENE through its growing or living things instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain.',
+      'PEOPLE: if THE SCENE calls for a person, draw a SMALL CHILD with short dark hair.',
+      'PEOPLE: if THE SCENE calls for a person, draw an OLDER PERSON with grey or white hair.',
+      'PEOPLE: if THE SCENE calls for a person, draw a MAN with short cropped dark hair.',
+      'PEOPLE: if THE SCENE calls for a person, draw a WOMAN with long hair tied back in a ponytail or a bun.',
+      'PEOPLE: if THE SCENE calls for a person, draw the figure SEEN FROM BEHIND so no face shows.',
+      'PEOPLE: if THE SCENE calls for a person, draw TWO small figures together.',
+      'PEOPLE: if THE SCENE calls for a person, draw a person with curly or wavy hair.',
+      'PEOPLE: if THE SCENE calls for a person, draw a person with a cap or a head covering over visible hair.',
+    ];
+    const t01Figure = selectedTemplate === 'T01'
+      ? t01Figures[Math.abs(templateIndex * 5 + 2) % t01Figures.length]
+      : '';
     const t01Layout = selectedTemplate === 'T01'
       ? t01DesignArchetypes[Math.abs(templateIndex) % t01DesignArchetypes.length]
       : '';
@@ -695,15 +781,6 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     ];
     const t01Palette = selectedTemplate === 'T01'
       ? t01Palettes[Math.abs(templateIndex) % t01Palettes.length]
-      : '';
-    // 말씀 의미를 귀여운 두들로 그리도록 (씬은 backgroundConcept/motifs 기반, 스타일만 큐트)
-    const t01BgStyle = selectedTemplate === 'T01'
-      ? `BACKGROUND STYLE: a plain cream ground with at most a very subtle paper grain. `
-        + `ILLUSTRATE THE MEANING OF THE VERSE as ONE small, simple subject taken from the verse's own motifs `
-        + `(e.g. a lamp or path for guidance, hands or a heart for love, a hill and light for reverence, `
-        + `a crown for a king, a seed and sprout for growth) — one subject, not a scene full of things. `
-        + `Place it LOW in the frame and keep the whole UPPER HALF a large plain empty cream area for the text. `
-        + `Use this accent colour pair for the subject: ${t01Palette}. ${T01_ART} ${T01_NOT}`
       : '';
     const t03TypographyLayouts = [
       'T03 TYPOGRAPHY VARIANT A: CENTERED MAGAZINE COVER. Horizontally CENTERED text block in the vertical middle. The hero phrase is large and centered; small supporting lines sit centered directly above it; the small reference sits centered just below. Everything symmetrical and centered.',
@@ -834,8 +911,9 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         : '',
       // T02는 팔레트·조명(화풍)을 STYLE 레시피가 100% 결정 — 내용 분석의 색/조명 제안은 넣지 않아 충돌(주황 회귀) 방지.
       // (내용은 '무엇을 그릴지'=장면 주제만 결정: backgroundConcept·visualMotifs)
-      selectedTemplate !== 'T02' && analysis.palette ? `Refined palette: ${analysis.palette}.` : '',
-      selectedTemplate !== 'T02' && analysis.lighting ? `Lighting direction: ${analysis.lighting}.` : '',
+      // T01 도 제외 — 바탕색/악센트색이 카드별로 이미 정해져 있어 분석 모델의 색 제안과 충돌한다.
+      selectedTemplate !== 'T02' && selectedTemplate !== 'T01' && analysis.palette ? `Refined palette: ${analysis.palette}.` : '',
+      selectedTemplate !== 'T02' && selectedTemplate !== 'T01' && analysis.lighting ? `Lighting direction: ${analysis.lighting}.` : '',
       selectedTemplate !== 'T02' && analysis.composition ? `Composition direction: ${analysis.composition}.` : '',
       selectedTemplate === 'T03'
         ? 'T03 SPECIFIC: the image is a PURE, soft, aesthetic GRAINY GRADIENT (dreamy aurora / mesh gradient with fine even film grain), palette varied and luminous per card. NO scene, NO photo, NO objects, NO people, NO text — just the grainy gradient. Keep it fairly even and low-contrast so overlaid text stays legible. (Elegant Korean typography is added separately by code.)'
@@ -900,15 +978,22 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       selectedTemplate === 'T01'
         ? [
             `T01 FLAT INDIE STICKER MODE: ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
+            T01_GROUND,
+            `ACCENT COLOUR PAIR for the subject (use these over the ground colour): ${t01Palette}.`,
+            `LETTER CONTRAST (CRITICAL): the ground is a pale ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — dark brown, near-black, deep cobalt, deep green or deep red-orange. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
             t01Layout,
+            t01Figure,
+            t01BannedAnimal
+              ? `ANIMAL BAN FOR THIS CARD (ABSOLUTE — overrides THE SCENE): the verse never speaks of a ${t01BannedAnimal}, so do NOT draw a ${t01BannedAnimal} anywhere in this image. Draw ONLY an animal the verse itself names; if it names none, use an object, a plant, water, light, a landscape element or a person instead. Keep everything else about THE SCENE.`
+              : '',
             `T01 FONT VARIANT (render the lettering in EXACTLY this handwriting style): ${t01TypographyStyle}. ${T01_LETTER_RULE}`,
             'CRITICAL FONT RULE: you have a strong habit of defaulting to ONE rounded medium marker cute handwriting — DO NOT. Commit fully to the variant above so the letterform is CLEARLY different from other T01 cards. A thin diary pen, a chunky bubble hand, a wide block sticker hand, a loose brush shape and a felt-tip note are all VERY different shapes and weights — make that difference obvious through SHAPE and WEIGHT, never through texture. The handwriting is what should vary most between cards.',
-            `VARIATION SEED: ${templateIndex}. Also vary the background color, doodle type, and composition from other T01 generations.`,
-            'SCENE-FROM-VERSE RULE: the ONE small illustrated subject must ILLUSTRATE THE MEANING OF THE VERSE (the background subject above) — e.g. a lamp/path for guidance, hands/heart for love, a hill and light for reverence, a crown for a king. Do NOT default to random flowers and clouds; draw the verse\'s own motif, flat and outline-free, low in the frame.',
+            `VARIATION SEED: ${templateIndex}. Also vary the ground colour, the subject, the figure (or no figure) and the composition from other T01 generations — two cards from the same verse must not look like the same drawing.`,
+            'SCENE-FROM-VERSE RULE (CRITICAL): the ONE small illustrated subject must come from THE SCENE above, which was derived from the verse\'s OWN words — e.g. a lamp or path for guidance, a hill and light for reverence, a door for welcome, water for refreshing, a seed and sprout for growth. A reader should be able to point at the drawing and say which part of the verse it came from. Do NOT swap in a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) or random flowers and clouds for cuteness — if the verse never mentions that creature, drawing it is a FAILURE. Draw the verse\'s own motif, flat and outline-free, low in the frame.',
             heroLine?.text
               ? `EMPHASIS RULE: at most, put ONE soft color HIGHLIGHT band behind the single most important phrase "${heroLine.text}" (like a marker highlight). NO underlines, NO circles. Do NOT mark ordinary/connective words; most lines have NO decoration. Emphasis lands on meaning, not random words.`
               : 'EMPHASIS RULE: no underlines or circles; at most one soft highlight band on one key phrase.',
-            'ILLUSTRATION RULE: draw ONE small, simple SUBJECT that CONNECTS TO THE VERSE MEANING (a verse-fitting object, a plant, an ordinary animal, or a single chunky little person). Do NOT drop in a random unrelated subject just for cuteness. Do NOT put faces on inanimate objects. A person is a chunky blob body with a round face, tiny dot eyes and a small deadpan mouth — keep the face to dots and short lines, never a detailed cartoon face. CRITICAL: that person must have CLEARLY DRAWN HAIR with a real shape (a bob, a ponytail, short cropped hair, a bun) and simple limbs. NEVER draw a bald, hairless, featureless egg/bean blob — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person rather than a blob. FULL-BLEED cream ground — NO border, frame, vine, floral garland, or corner decoration. NO rainbows, NO floating hearts, NO sparkles, NO underlines. Keep the whole UPPER HALF a plain empty cream area so the Korean text sits on it directly, with no banner behind it.',
+            'ILLUSTRATION RULE: draw ONE small, simple SUBJECT that CONNECTS TO THE VERSE MEANING (a verse-fitting object, a plant, an ordinary animal, or a single chunky little person). Do NOT drop in a random unrelated subject just for cuteness. Do NOT put faces on inanimate objects. A person is a chunky blob body with a round face, tiny dot eyes and a small deadpan mouth — keep the face to dots and short lines, never a detailed cartoon face. CRITICAL: that person must have CLEARLY DRAWN HAIR with a real shape and simple limbs. NEVER draw a bald, hairless, featureless egg/bean blob — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person rather than a blob. CAST VARIETY (IMPORTANT): you have a strong habit of drawing the SAME young woman with a brown bob in a blue top on every card — do NOT. Follow the PEOPLE line above exactly for who appears, and vary age, hair and clothing colour between cards. FULL-BLEED ground colour — NO border, frame, vine, floral garland, or corner decoration. NO rainbows, NO floating hearts, NO sparkles, NO underlines. Keep the whole UPPER HALF a plain empty area of the ground colour so the Korean text sits on it directly, with no banner behind it.',
             `Outline-free flat look: solid flat colours with NO outlines, very simple blobby shapes. ABSOLUTELY NO painterly texture, no gradient or soft airbrush shading, no glossy pretty kawaii, no detailed rendering, no brush calligraphy, no dark/dramatic background, no realistic photo. ${T01_NOT}`,
           ].filter(Boolean).join(' ')
         : '',
@@ -939,7 +1024,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       selectedTemplate === 'T03'
         ? 'SIZE & SPACING FOR T03: the text block is HORIZONTALLY CENTERED and fits inside the central 86% of the width (never pushed to a side, never touching edges). The TYPOGRAPHY leads: the hero phrase is LARGE and dominant (the whole text block can occupy about 55–72% of the card) with the supporting lines much smaller — strong size contrast is the point. Keep clear side margins (at least 8%) and never crop a letter. A given Bible reference stays small and centered; never add one that was not given. Any cropped or edge-touching letter is a FAILURE.'
         : selectedTemplate === 'T01'
-          ? 'SIZE & SPACING FOR T01: the Korean hand-lettering sits in the large plain cream area in the UPPER HALF, directly on the cream — it needs no banner or backing because that area is empty by design. Keep letters cute and legible, not oversized; long verses become smaller friendly handwriting. The single small illustrated subject stays LOW in the frame and must not crowd the text. Cropped/cut-off letters are a failure.'
+          ? 'SIZE & SPACING FOR T01: the Korean hand-lettering sits in the large plain area in the UPPER HALF, directly on the ground colour — it needs no banner or backing because that area is empty by design. Keep letters cute and legible, not oversized; long verses become smaller friendly handwriting. The single small illustrated subject stays LOW in the frame and must not crowd the text. Cropped/cut-off letters are a failure.'
         : selectedTemplate === 'T02'
           ? 'SIZE & SPACING FOR T02 (SIDE MARGINS ARE MANDATORY): this hip style is bold, but the lettering MUST NOT run off the sides. Decide the WIDEST line first and size the whole block so that widest line keeps at least a 9% empty margin on BOTH the left AND right — letters NEVER touch or cross the side edges. It is far better for the text to be a bit smaller with clear side gaps than to be cropped. Use SIZE CONTRAST (one word larger, others smaller) and the design elements (grungy texture, small caption/connector lines) so it still looks DESIGNED, not a plain wall. If a line is too wide, break it onto more lines or scale the whole block down until it fits with margin. Any letter clipped at the left/right edge is a FAILURE. If a reference line was given, keep it tucked small; if none was given, do NOT add one.'
         : 'SIZE & SPACING: do NOT make the text gigantic. The whole text block should occupy about 55–65% of the card with clear empty margins all around. Use TIGHT line spacing (lines close together, not airy). Keep at least 8% empty margin on the left and right — the longest line must NOT touch or cross the edges; scale ALL the lettering down until the widest line fits with margin. Cropped/cut-off letters are a failure.',
@@ -948,7 +1033,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         : 'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
-    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, spacious. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. Subject variety matters: not always flowers/clouds. ${T01_NOT}`;
+    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, spacious. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, never a cute animal picked at random. ${T01_NOT}`;
     const T02_GLOBAL_WITH_TEXT = '\n\nHip modern Christian worship poster (worship-night / merch graphic aesthetic), grungy, layered and print-textured — follow the specific STYLE archetype described above for letterform, color, texture and layering — including its OWN typography approach (varies by style; do not force the same bold-condensed + cursive-script formula on every card). A bold palette that VARIES per card (blue/teal/orange/red/mustard/cream/black — not always orange), and thin justified small-caps styling applied ONLY to the user\'s own smaller lines — no invented captions, no invented Bible reference. Mature, editorial and cool — ABSOLUTELY NOT cute: NO rounded bubble letters, NO pastel candy colors, NO hearts, NO flowers, NO smiley faces, NO doodle stickers. Also NO 3D/beveled letters, NO cheesy propaganda/sports look, NO slanted italic. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
