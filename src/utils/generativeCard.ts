@@ -19,6 +19,12 @@ export interface GrainPalette {
   blobs: [string, string, string]; // M은 밝음 → 중간 → 어두움 순
   ink: string;
   mid: boolean;
+  /**
+   * 여러 색이 한 장에 섞이는 팔레트. 덩어리마다 색상(hue)이 아예 다르다.
+   * 글자가 진한 색이라, 진한 색 덩어리 위에 올라가면 읽히지 않는다.
+   * 그래서 drawGrain 이 글자 띠에 bg 색 빛무리를 한 겹 덮어 읽을 자리를 낸다.
+   */
+  vivid?: boolean;
 }
 
 export const GRAIN_PALETTES: GrainPalette[] = [
@@ -39,6 +45,7 @@ export const GRAIN_PALETTES: GrainPalette[] = [
   { id: 'L14', name: '하늘 복숭아', bg: '#f4f1f0', blobs: ['#c4d3ec', '#f4cdbd', '#ece3d8'], ink: '#33384a', mid: false },
   { id: 'L15', name: '아쿠아',      bg: '#ecf4f2', blobs: ['#aedbd4', '#cfe5e0', '#d9dcef'], ink: '#21403c', mid: false },
   { id: 'L16', name: '모브',       bg: '#f2ebec', blobs: ['#d6b9c2', '#e5d2cf', '#c9c3d9'], ink: '#3f2c33', mid: false },
+  { id: 'L19', name: '살구 회색',  bg: '#f4f1ee', blobs: ['#e8cdba', '#dcd3cb', '#c9cfd4'], ink: '#453b34', mid: false },
   // 중간 톤 M01–M12 (글자 밝은 색)
   { id: 'M01', name: '새벽 네이비', bg: '#7c8a9f', blobs: ['#f1e4cc', '#9da6b3', '#69788d'], ink: '#f3e7d2', mid: true },
   { id: 'M02', name: '코발트',     bg: '#6f87b2', blobs: ['#e9e6df', '#729fdc', '#5d7196'], ink: '#ffffff', mid: true },
@@ -52,6 +59,35 @@ export const GRAIN_PALETTES: GrainPalette[] = [
   { id: 'M10', name: '카멜',       bg: '#af9982', blobs: ['#e9d2ae', '#cca982', '#8b7969'], ink: '#fbf1e2', mid: true },
   { id: 'M11', name: '올리브 골드', bg: '#9d997b', blobs: ['#f3ecd0', '#decc8b', '#7e7c65'], ink: '#faf5e2', mid: true },
   { id: 'M12', name: '딥 바이올렛', bg: '#7b7394', blobs: ['#f2c9c4', '#b5aae4', '#655f7a'], ink: '#f2ecfb', mid: true },
+  { id: 'M13', name: '인디고',      bg: '#6b7196', blobs: ['#e5e1ef', '#8e92c4', '#565a7d'], ink: '#eeecf8', mid: true },
+  { id: 'M14', name: '머스타드',    bg: '#b89a5e', blobs: ['#f4e6c2', '#d4b876', '#8e7646'], ink: '#fdf6e4', mid: true },
+  { id: 'M15', name: '브릭',       bg: '#a87667', blobs: ['#f0d6c6', '#c89483', '#80574c'], ink: '#fcefe7', mid: true },
+  { id: 'M16', name: '슬레이트',    bg: '#74808a', blobs: ['#dfe4e6', '#9aa8b2', '#5c666f'], ink: '#eef2f4', mid: true },
+  { id: 'M17', name: '모스 그린',   bg: '#7c8a63', blobs: ['#e8ecc9', '#a4b184', '#5f6b4b'], ink: '#f2f5e2', mid: true },
+  { id: 'M18', name: '라일락 그레이', bg: '#8d8699', blobs: ['#ece3f0', '#ada4bb', '#6d677a'], ink: '#f5f0f8', mid: true },
+  // 깊은 톤 D01–D08 (글자 밝은 색). 기존 L·M 이 둘 다 밝은 편이라 카드가 전부 화사했다.
+  // 처음엔 거의 검정까지 내렸는데 "너무 찐하다"(사용자, 2026-10-27)여서 밝기를 한 단계 올렸다.
+  // 그랬더니 덩어리끼리 밝기가 비슷해져 번짐이 사라지고 단색 판처럼 보였다. 그래서 바탕 밝기는
+  // 그대로 두고 덩어리만 위아래로 벌렸다(A안, 사용자 승인 2026-10-27). 가라앉았지만 색은 흐른다.
+  { id: 'D02', name: '깊은 숲',    bg: '#55665a', blobs: ['#b2cbb5', '#6b8071', '#2e3a32'], ink: '#eff5ec', mid: true },
+  { id: 'D03', name: '밤바다',     bg: '#4c5f70', blobs: ['#a8c6da', '#5f7789', '#273440'], ink: '#eef5f9', mid: true },
+  { id: 'D04', name: '자정 보라',  bg: '#5d5470', blobs: ['#c0b4d8', '#6f6587', '#352e44'], ink: '#f3eefa', mid: true },
+  { id: 'D05', name: '적갈',       bg: '#6b5244', blobs: ['#cfa68a', '#80644f', '#3b2a21'], ink: '#faeee3', mid: true },
+  { id: 'D06', name: '검은 올리브', bg: '#62643f', blobs: ['#c2c49a', '#777a52', '#383a22'], ink: '#f6f7e6', mid: true },
+  { id: 'D07', name: '심해 틸',    bg: '#43615f', blobs: ['#9cc2bf', '#527573', '#213534'], ink: '#eaf7f4', mid: true },
+  { id: 'D08', name: '포도',       bg: '#5e4659', blobs: ['#bd95b3', '#705467', '#35232f'], ink: '#f8ecf4', mid: true },
+  // 섞인 톤 V01–V10 (글자 진한 색). 한 장 안에서 색상이 서로 멀리 떨어진다.
+  // 기존 L 은 한 계열 안에서만 번져서 늘 '한 가지 색 카드' 였다. 레퍼런스(2026-10-27)가 이 쪽이다.
+  { id: 'V01', name: '오로라',     bg: '#f2f1ec', blobs: ['#2f7cc4', '#ef8b3c', '#72b78c'], ink: '#23262b', mid: false, vivid: true },
+  { id: 'V02', name: '수채 봄',    bg: '#f4f2f6', blobs: ['#7fb8e8', '#f2a8c4', '#b9a4e6'], ink: '#2d2a3a', mid: false, vivid: true },
+  { id: 'V03', name: '에메랄드 바이올렛', bg: '#f1f4f2', blobs: ['#13a378', '#7a6ae8', '#a8e0cd'], ink: '#2a2546', mid: false, vivid: true },
+  { id: 'V04', name: '해질녘',     bg: '#f7f1ea', blobs: ['#e86a4e', '#f3b43f', '#6b8fc4'], ink: '#38261f', mid: false, vivid: true },
+  { id: 'V05', name: '청귤 하늘',  bg: '#f1f5ef', blobs: ['#5bb8d4', '#b8d44f', '#f0cf6a'], ink: '#243528', mid: false, vivid: true },
+  { id: 'V06', name: '산호 민트',  bg: '#f3f3f1', blobs: ['#f2756a', '#4fc2b0', '#f7c98a'], ink: '#2b3334', mid: false, vivid: true },
+  { id: 'V07', name: '라일락 레몬', bg: '#f5f3ee', blobs: ['#9b85e0', '#f0d85c', '#8fc9e8'], ink: '#30294a', mid: false, vivid: true },
+  { id: 'V08', name: '장미 세이지', bg: '#f4f1ef', blobs: ['#e0618c', '#8cb87f', '#f3c17a'], ink: '#33222c', mid: false, vivid: true },
+  { id: 'V09', name: '코발트 피치', bg: '#f2f2f4', blobs: ['#2a5fc4', '#f59b7a', '#9fd4e0'], ink: '#1f2740', mid: false, vivid: true },
+  { id: 'V10', name: '열대',       bg: '#f0f4f1', blobs: ['#12998c', '#f0a23c', '#6f7fd4'], ink: '#1f332f', mid: false, vivid: true },
 ];
 
 // 글씨 배치. bodyTop 은 본문 상단의 카드 높이 대비 위치.
@@ -59,25 +95,56 @@ export const GRAIN_PALETTES: GrainPalette[] = [
 //  hero       — 핵심 구절만 아주 크게, 나머지 작게, 왼쪽 정렬 (시안 A)
 //  centerHero — 가운데 정렬, 핵심 구절만 조금 크게, 가는 십자 장식 (시안 C)
 // hero 계열은 본문이 두 조각 이상으로 나뉠 때만 쓴다. 한 덩어리 문장은 키울 데가 없다.
-const GRAIN_LAYOUTS = [
-  { bodyTop: 0.62, align: 'left' as const, kind: 'uniform' as const },
-  { bodyTop: 0.40, align: 'center' as const, kind: 'uniform' as const },
-  { bodyTop: 0.14, align: 'left' as const, kind: 'uniform' as const },
-  { bodyTop: 0.16, align: 'center' as const, kind: 'uniform' as const },
-  { bodyTop: 0.70, align: 'center' as const, kind: 'uniform' as const },
-  { bodyTop: 0.22, align: 'right' as const, kind: 'uniform' as const },
-  { bodyTop: 0.58, align: 'right' as const, kind: 'uniform' as const },
+//
+// measure 는 글이 들어갈 단의 폭(카드 폭 대비). 기본 0.78.
+//   같은 문장도 단이 좁으면 줄이 많아지고 넓으면 한두 줄로 떨어져, 읽는 리듬이 꽤 달라진다.
+//   색·위치만 바꾸는 것보다 "다른 구조"로 보이게 하는 값이라 일부 배치에만 준다.
+// refTop 은 주소(요 3:16)를 본문 위에 두는 변형. 기본은 본문 아래.
+interface GrainLayout {
+  bodyTop: number;
+  align: CanvasTextAlign;
+  kind: 'uniform' | 'hero' | 'centerHero';
+  mark?: boolean;
+  measure?: number;
+  refTop?: boolean;
+}
+
+/** 단의 기본 폭. 좌우 11% 씩 여백. */
+const GRAIN_MEASURE = 0.78;
+
+const GRAIN_LAYOUTS: GrainLayout[] = [
+  { bodyTop: 0.62, align: 'left', kind: 'uniform' },
+  { bodyTop: 0.40, align: 'center', kind: 'uniform' },
+  { bodyTop: 0.14, align: 'left', kind: 'uniform' },
+  { bodyTop: 0.16, align: 'center', kind: 'uniform' },
+  { bodyTop: 0.70, align: 'center', kind: 'uniform' },
+  { bodyTop: 0.22, align: 'right', kind: 'uniform' },
+  { bodyTop: 0.58, align: 'right', kind: 'uniform' },
+  // 아래 다섯은 2026-10-27 추가분. 좁은 단·넓은 단·주소 위 배치로 구조를 벌린다.
+  { bodyTop: 0.08, align: 'center', kind: 'uniform' },
+  { bodyTop: 0.32, align: 'left', kind: 'uniform', measure: 0.62 },
+  { bodyTop: 0.46, align: 'right', kind: 'uniform', measure: 0.66 },
+  { bodyTop: 0.12, align: 'left', kind: 'uniform', refTop: true },
+  { bodyTop: 0.64, align: 'center', kind: 'uniform', measure: 0.88 },
   // 강조 배치는 본문이 나뉠 때만 쓴다. 기본 배치보다 수를 많이 둬 자주 나오게 한다.
-  { bodyTop: 0.46, align: 'left' as const, kind: 'hero' as const },
-  { bodyTop: 0.22, align: 'left' as const, kind: 'hero' as const },
-  { bodyTop: 0.56, align: 'left' as const, kind: 'hero' as const },
-  { bodyTop: 0.50, align: 'right' as const, kind: 'hero' as const },
-  { bodyTop: 0.26, align: 'right' as const, kind: 'hero' as const },
-  { bodyTop: 0.34, align: 'center' as const, kind: 'centerHero' as const, mark: true },
-  { bodyTop: 0.52, align: 'center' as const, kind: 'centerHero' as const, mark: false },
-  { bodyTop: 0.20, align: 'center' as const, kind: 'centerHero' as const, mark: true },
+  { bodyTop: 0.46, align: 'left', kind: 'hero' },
+  { bodyTop: 0.22, align: 'left', kind: 'hero' },
+  { bodyTop: 0.56, align: 'left', kind: 'hero' },
+  { bodyTop: 0.50, align: 'right', kind: 'hero' },
+  { bodyTop: 0.26, align: 'right', kind: 'hero' },
+  { bodyTop: 0.34, align: 'center', kind: 'centerHero', mark: true },
+  { bodyTop: 0.52, align: 'center', kind: 'centerHero', mark: false },
+  { bodyTop: 0.20, align: 'center', kind: 'centerHero', mark: true },
+  // 아래 다섯도 2026-10-27 추가분.
+  { bodyTop: 0.30, align: 'left', kind: 'hero', measure: 0.66 },
+  { bodyTop: 0.18, align: 'left', kind: 'hero', refTop: true },
+  { bodyTop: 0.60, align: 'left', kind: 'hero', measure: 0.88 },
+  { bodyTop: 0.38, align: 'right', kind: 'hero', measure: 0.70 },
+  { bodyTop: 0.42, align: 'center', kind: 'centerHero', mark: false, measure: 0.70 },
 ];
-const UNIFORM_LAYOUT_COUNT = 7;
+// uniform 배치는 반드시 배열 앞쪽에 모여 있어야 한다. resolveLayoutIndex 가 이 수를
+// 경계로 삼아 "강조 없음 → 앞쪽, 강조 있음 → 뒤쪽" 을 가른다.
+const UNIFORM_LAYOUT_COUNT = 12;
 
 /**
  * 본문을 의미 조각으로 나눈다. 줄바꿈·쉼표·가운뎃점이 기준이다.
@@ -323,6 +390,7 @@ export interface GenerativeSpec {
   refPill?: boolean;  // (aura) 주소를 오벌 알약 테두리로
   grainPal?: GrainPalette; // (grain) 28색 팔레트
   layout?: number;    // (grain) GRAIN_LAYOUTS 인덱스
+  shape?: GrainShape; // (grain) 색 덩어리가 놓이는 모양
   sparkle?: boolean;  // (grain) 사용 안 함 — 별 장식은 2026-10-24에 제거했다. 항상 false
   /**
    * (grain) 어디를 크게 쓸지.
@@ -384,6 +452,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   // 조각이 하나뿐인 문장에는 hero 계열을 쓰지 않는다
   const layoutPool = autoEmphasisSpan(text) ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
   const layout = Math.floor(rnd() * layoutPool);
+  const shape = GRAIN_SHAPES[Math.floor(rnd() * GRAIN_SHAPES.length)];
   // 별(반짝이) 장식은 제거했다(2026-10-24 요청 4).
   // 난수 소비는 그대로 둔다 — 빼면 이후 난수가 밀려 같은 시드의 색·배치가 달라진다.
   rnd();
@@ -394,6 +463,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
     palette: { name: grainPal.name, bg: grainPal.bg, ink: grainPal.ink },
     grainPal,
     layout,
+    shape,
     sparkle: false,
   };
 }
@@ -422,25 +492,140 @@ function grainTile(w: number, h: number, seed: number): HTMLCanvasElement | null
 }
 
 // 배경색 + 크게 번진 색 덩어리 3개 + 그레인 두 겹
-function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, spec: GenerativeSpec) {
+/**
+ * 색 덩어리가 놓이는 '모양'. 색만 바꾸면 어느 카드나 같은 구도로 보여서 모양도 돌린다.
+ *  soft   — 둥근 덩어리가 흩어진다 (지금까지의 기본)
+ *  drift  — 길쭉한 타원이 비스듬히 흐른다
+ *  band   — 한쪽 가장자리에 붙은 넓은 띠 (레퍼런스의 왼쪽 파란 띠)
+ *  corner — 모서리에서 대각선으로 쓸려 들어온다
+ */
+/** 글자가 실제로 놓이는 띠. 배경의 대비 보정이 이 자리를 기준으로 삼는다. */
+interface TextBand { top: number; height: number }
+
+export type GrainShape = 'soft' | 'drift' | 'band' | 'corner';
+export const GRAIN_SHAPES: GrainShape[] = ['soft', 'drift', 'band', 'corner'];
+
+interface Blob {
+  color: string;
+  cx: number; cy: number;   // 중심 (0~1)
+  rx: number; ry: number;   // 반지름 (카드 폭 대비)
+  rot: number;              // 기울기(라디안)
+  alpha: number;
+}
+
+/**
+ * 모양별 덩어리 배치.
+ *
+ * mid/vivid 팔레트는 글자 대비가 걸려 있어서 마지막 덩어리의 세로 위치를 글자 띠에 고정한다.
+ *  · mid   — 가장 어두운 덩어리를 글자 뒤로 (밝은 글자를 받쳐 준다)
+ *  · vivid — 진한 색이 글자를 덮을 수 있어, 그릴 때 bg 빛무리를 따로 한 겹 올린다(아래)
+ */
+function planBlobs(
+  shape: GrainShape, pal: GrainPalette, textY: number, rnd: () => number,
+): Blob[] {
+  const [c0, c1, c2] = pal.blobs;
+  const jitter = (n: number) => (rnd() - 0.5) * n;
+
+  if (shape === 'band') {
+    // 가장자리에 붙은 띠. 세로 띠는 폭이 좁고 키가 크다.
+    const vertical = rnd() < 0.6;
+    const side = rnd() < 0.5 ? 0 : 1;
+    const mk = (color: string, along: number, thick: number, pos: number): Blob =>
+      vertical
+        ? { color, cx: pos, cy: along, rx: thick, ry: thick * 2.6, rot: 0, alpha: 1 }
+        : { color, cx: along, cy: pos, rx: thick * 2.2, ry: thick * 0.85, rot: 0, alpha: 1 };
+    const near = side ? 1.04 : -0.04;
+    const far = side ? -0.04 : 1.04;
+    return [
+      mk(c0, 0.28 + jitter(0.2), 0.30, near),
+      mk(c1, 0.78 + jitter(0.2), 0.34, far),
+      { color: c2, cx: 0.5 + jitter(0.3), cy: textY, rx: 0.55, ry: 0.55, rot: 0, alpha: 0.85 },
+    ];
+  }
+
+  if (shape === 'corner') {
+    // 모서리 세 곳에서 크게 쓸려 들어온다.
+    const corners: [number, number][] = [[-0.05, -0.05], [1.05, -0.05], [-0.05, 1.05], [1.05, 1.05]];
+    const pick = corners.sort(() => rnd() - 0.5).slice(0, 3);
+    return [c0, c1, c2].map((color, i) => ({
+      color,
+      cx: pick[i][0], cy: pick[i][1],
+      rx: 0.62 + rnd() * 0.2, ry: 0.62 + rnd() * 0.2,
+      rot: 0, alpha: 1,
+    }));
+  }
+
+  if (shape === 'drift') {
+    // 길쭉한 타원이 같은 방향으로 흐른다.
+    const flow = -0.7 + rnd() * 1.4;
+    return [c0, c1, c2].map((color, i) => ({
+      color,
+      cx: 0.15 + rnd() * 0.7,
+      cy: 0.15 + (i + rnd()) * 0.27,
+      rx: 0.52 + rnd() * 0.2,
+      ry: (0.52 + rnd() * 0.2) * (0.34 + rnd() * 0.18),
+      rot: flow + jitter(0.35),
+      alpha: 1,
+    }));
+  }
+
+  // soft — 지금까지의 기본
+  return [c0, c1, c2].map((color) => ({
+    color,
+    cx: -0.1 + rnd() * 1.2,
+    cy: 0.1 + rnd() * 0.8,
+    rx: 0.4 + rnd() * 0.15, ry: 0.4 + rnd() * 0.15,
+    rot: 0, alpha: 1,
+  }));
+}
+
+/** 한 덩어리를 그린다. 타원·기울기는 좌표계를 돌려서 만든다. */
+function paintBlob(ctx: CanvasRenderingContext2D, w: number, h: number, b: Blob, scale = 1.5) {
+  const r = w * b.rx * scale;
+  ctx.save();
+  ctx.translate(w * b.cx, h * b.cy);
+  if (b.rot) ctx.rotate(b.rot);
+  if (b.ry !== b.rx) ctx.scale(1, b.ry / b.rx);
+  const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+  g.addColorStop(0, hexA(b.color, b.alpha));
+  g.addColorStop(0.45, hexA(b.color, b.alpha * 0.72));
+  g.addColorStop(0.75, hexA(b.color, b.alpha * 0.28));
+  g.addColorStop(1, hexA(b.color, 0));
+  ctx.fillStyle = g;
+  // 돌려 둔 좌표계에서도 화면을 덮도록 넉넉히 칠한다
+  ctx.fillRect(-w * 2.5, -h * 2.5, w * 5, h * 5);
+  ctx.restore();
+}
+
+function drawGrain(
+  ctx: CanvasRenderingContext2D, w: number, h: number, spec: GenerativeSpec,
+  /** resolveLayoutIndex 를 거친 '실제로 쓰이는' 배치 */
+  layout: GrainLayout,
+  /** 글자를 재 보고 clamp 까지 끝낸 실제 자리 */
+  band: TextBand,
+) {
   const pal = spec.grainPal!;
   const rnd = mulberry32(spec.seed ^ 0x27d4eb2d);
   ctx.fillStyle = pal.bg;
   ctx.fillRect(0, 0, w, h);
 
+  // 전에는 spec.layout(해석 전)과 bodyTop(clamp 전)으로 짐작했다. 그러면 강조를 끄거나
+  // 본문이 길어 글자가 위로 올라갔을 때 보정이 엉뚱한 자리에 놓여 글자가 묻혔다.
+  const textY = Math.min(0.92, Math.max(0.08, (band.top + band.height / 2) / h));
+  const bandR = Math.min(0.62, Math.max(0.34, band.height / h * 0.75));
+  const blobs = planBlobs(spec.shape ?? 'soft', pal, textY, rnd);
+
   // M 팔레트는 글자가 밝은 색이라, 가장 어두운 덩어리를 글자 뒤에 두어 대비를 확보한다.
-  const layout = GRAIN_LAYOUTS[spec.layout ?? 0];
-  const textY = Math.min(0.85, layout.bodyTop + 0.1);
-  const loose = () => ({ cx: -0.1 + rnd() * 1.2, r: 0.4 + rnd() * 0.15 });
-  const blobs = pal.mid
-    ? [
-        { color: pal.blobs[0], cy: 1 - textY, ...loose() },
-        { color: pal.blobs[1], cy: 0.15 + rnd() * 0.7, ...loose() },
-        // 가장 어두운 덩어리는 세로뿐 아니라 가로도 글자 쪽에 맞추고 크게 그린다.
-        // 세로만 맞추면 블러가 커서 글자 띠를 못 덮고 대비가 무너진다.
-        { color: pal.blobs[2], cy: textY, cx: 0.5 + (rnd() - 0.5) * 0.2, r: 0.58 + rnd() * 0.12 },
-      ]
-    : pal.blobs.map((color) => ({ color, cy: 0.1 + rnd() * 0.8, ...loose() }));
+  // 모양이 무엇이든 이 제약은 지킨다 — 세로뿐 아니라 가로도 글자 쪽에 맞추고 크게 그린다.
+  if (pal.mid) {
+    const last = blobs[blobs.length - 1];
+    last.cy = textY;
+    last.cx = 0.5 + (rnd() - 0.5) * 0.2;
+    last.rx = Math.max(last.rx, 0.58 + rnd() * 0.12);
+    last.ry = Math.max(last.ry, last.rx * 0.8, bandR);
+    last.rot = 0;
+    last.alpha = 1;
+  }
 
   // 색 덩어리는 가장자리가 서서히 사라지는 방사형 그라데이션으로 그린다.
   //
@@ -448,20 +633,30 @@ function drawGrain(ctx: CanvasRenderingContext2D, w: number, h: number, spec: Ge
   // 지원되지 않는다. 지원되지 않으면 **조용히 무시돼** 테두리가 또렷한 원이 그대로
   // 남는다. 아이폰에서 "그라데이션이 아니라 또렷한 원 도형" 으로 보이던 원인이다.
   // 그라데이션은 어디서나 같게 그려진다.
-  ctx.save();
-  for (const b of blobs) {   // 어두운 덩어리가 마지막이라 글자 뒤에 얹힌다
-    const cx = w * b.cx;
-    const cy = h * b.cy;
-    const r = w * b.r * 1.5;               // 흐려지는 만큼 더 넓게 퍼뜨린다
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-    g.addColorStop(0, hexA(b.color, 1));
-    g.addColorStop(0.45, hexA(b.color, 0.72));
-    g.addColorStop(0.75, hexA(b.color, 0.28));
-    g.addColorStop(1, hexA(b.color, 0));
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
+  for (const b of blobs) paintBlob(ctx, w, h, b);   // 어두운 덩어리가 마지막이라 글자 뒤에 얹힌다
+
+  // 밝은 글자(M·D)는 덩어리를 글자 쪽으로 끌어오는 것만으로는 부족했다.
+  // 실제 픽셀을 재 보니 336조합 중 62개가 대비 3 아래였고 전부 M 이었다.
+  // 그래서 가장 어두운 색을 글자 띠에 한 겹 더 깔아 바닥 대비를 만든다.
+  if (pal.mid) {
+    paintBlob(ctx, w, h, {
+      color: pal.blobs[2],
+      cx: 0.5, cy: textY,
+      rx: 0.80, ry: bandR,
+      rot: 0, alpha: 0.72,
+    }, 1.4);
   }
-  ctx.restore();
+
+  // 섞인 톤은 진한 색이 글자를 덮을 수 있다. 글자 띠에 bg 색 빛무리를 한 겹 올려
+  // 읽을 자리를 낸다(레퍼런스에서 글자가 늘 밝은 부분에 놓이는 것과 같은 처리).
+  if (pal.vivid) {
+    paintBlob(ctx, w, h, {
+      color: pal.bg,
+      cx: 0.5, cy: textY,
+      rx: 0.72, ry: bandR,
+      rot: 0, alpha: 0.9,
+    }, 1.35);
+  }
 
   const tile = grainTile(w, h, spec.seed);
   if (tile) {
@@ -599,11 +794,13 @@ function drawHeroText(
   text: string,
   reference: string | undefined,
   spec: GenerativeSpec,
-  layout: (typeof GRAIN_LAYOUTS)[number],
-): void {
+  layout: GrainLayout,
+  /** true 면 그리지 않고 글자가 놓일 자리만 돌려준다. 배경 보정이 그 자리를 봐야 한다. */
+  measureOnly = false,
+): TextBand {
   const pal = spec.grainPal!;
   const centered = layout.align === 'center';
-  const maxW = width * 0.78;
+  const maxW = width * (layout.measure ?? GRAIN_MEASURE);
   const x = centered ? width / 2 : layout.align === 'right' ? width * 0.89 : width * 0.11;
   const parts = emphasisParts(text, spec.emphasis);
   const key = parts?.key ?? text;
@@ -654,11 +851,29 @@ function drawHeroText(
   let top = height * layout.bodyTop;
   const maxTop = height * 0.9 - totalH;
   if (top > maxTop) top = Math.max(height * 0.07, maxTop);
+  if (measureOnly) return { top, height: totalH };
 
   ctx.textAlign = layout.align;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = pal.ink;
   let y = top;
+
+  // 주소는 기본이 본문 아래다. refTop 배치만 위로 올린다.
+  // totalH 에 이미 refPx*2.4 가 들어 있어, 위로 올려도 전체 높이는 그대로다.
+  const drawRef = (at: number) => {
+    if (!reference) return;
+    const anyCtx = ctx as unknown as { letterSpacing?: string };
+    const hasLS = 'letterSpacing' in anyCtx;
+    ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
+    ctx.fillStyle = pal.ink;
+    ctx.globalAlpha = 0.68;
+    if (hasLS) anyCtx.letterSpacing = `${(refPx * 0.12).toFixed(1)}px`;
+    ctx.fillText(reference, x, at);
+    if (hasLS) anyCtx.letterSpacing = '0px';
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = pal.ink;
+  };
+  if (layout.refTop) { drawRef(top + refPx); y = top + refPx * 2.4; }
 
   const drawRest = (lines: string[]) => {
     if (!lines.length) return;
@@ -681,7 +896,7 @@ function drawHeroText(
   drawRest(afterLines);
 
   // C 는 핵심 구절 아래에 가는 십자 표시를 둔다 (일부 변형은 없이)
-  if (centered && (layout as { mark?: boolean }).mark !== false) {
+  if (centered && layout.mark !== false) {
     y += gap;
     ctx.save();
     ctx.globalAlpha = 0.35;
@@ -693,17 +908,8 @@ function drawHeroText(
     ctx.restore();
   }
 
-  if (reference) {
-    const anyCtx = ctx as unknown as { letterSpacing?: string };
-    const hasLS = 'letterSpacing' in anyCtx;
-    ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
-    ctx.fillStyle = pal.ink;
-    ctx.globalAlpha = 0.68;
-    if (hasLS) anyCtx.letterSpacing = `${(refPx * 0.12).toFixed(1)}px`;
-    ctx.fillText(reference, x, y + refPx * 2.2);
-    if (hasLS) anyCtx.letterSpacing = '0px';
-    ctx.globalAlpha = 1;
-  }
+  if (!layout.refTop) drawRef(y + refPx * 2.2);
+  return { top, height: totalH };
 }
 
 function renderGrainCard(
@@ -715,15 +921,18 @@ function renderGrainCard(
   reference: string | undefined,
   spec: GenerativeSpec,
 ): string {
-  drawGrain(ctx, width, height, spec);
-
   const pal = spec.grainPal!;
   const layout = GRAIN_LAYOUTS[resolveLayoutIndex(text, spec)];
+
+  // 배경의 대비 보정이 글자 자리를 알아야 해서, 글자를 먼저 재고 배경을 그린다.
+  // 재는 일은 measureText 만 쓰므로 캔버스에 아무것도 남기지 않는다.
   if (layout.kind !== 'uniform') {
+    const band = drawHeroText(ctx, width, height, text, reference, spec, layout, true);
+    drawGrain(ctx, width, height, spec, layout, band);
     drawHeroText(ctx, width, height, text, reference, spec, layout);
     return canvas.toDataURL('image/png');
   }
-  const maxW = width * 0.78;          // 좌우 여백 11%씩
+  const maxW = width * (layout.measure ?? GRAIN_MEASURE);
   const minPx = Math.round(width * 0.045 * fontScale(spec.font));
   const step = Math.max(1, Math.round(width * 0.003));
   const vFits = (px: number, count: number) =>
@@ -783,11 +992,16 @@ function renderGrainCard(
   const maxTop = height * 0.93 - totalH;
   if (top > maxTop) top = Math.max(height * 0.06, maxTop);
 
+  // 글자 자리가 확정된 뒤에 배경을 그린다(위 hero 경로와 같은 이유).
+  drawGrain(ctx, width, height, spec, layout, { top, height: totalH });
+
   const x = layout.align === 'left' ? width * 0.11 : layout.align === 'right' ? width * 0.89 : width / 2;
   ctx.textAlign = layout.align;
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = pal.ink;
-  let y = top + fontPx * 0.95;
+  // refTop 배치는 주소를 본문 위에 둔다. totalH 는 그대로라 카드 밖으로 나가지 않는다.
+  const refH = reference ? refPx * 1.9 : 0;
+  let y = top + (layout.refTop ? refH : 0) + fontPx * 0.95;
   for (const l of lines) { ctx.fillText(l, x, y); y += lineH; }
 
   if (reference) {
@@ -797,7 +1011,9 @@ function renderGrainCard(
     ctx.fillStyle = pal.ink;
     ctx.globalAlpha = 0.75;
     if (hasLS) anyCtx.letterSpacing = `${(refPx * 0.12).toFixed(1)}px`;
-    ctx.fillText(reference, x, top + bodyH + refPx * 1.35);
+    // 아래 배치의 기준점은 top 이다. refH 를 또 더하면 totalH 에서 이미 잡아 둔 몫을
+    // 두 번 세는 셈이라, 하단으로 clamp 된 카드에서 주소가 카드 밖으로 밀렸다.
+    ctx.fillText(reference, x, layout.refTop ? top + refPx * 1.25 : top + bodyH + refPx * 1.35);
     if (hasLS) anyCtx.letterSpacing = '0px';
     ctx.globalAlpha = 1;
   }
