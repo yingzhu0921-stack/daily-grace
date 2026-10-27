@@ -203,9 +203,16 @@ npx esbuild src/utils/<모듈>.ts --bundle --format=iife --global-name=GC --outf
 2. 요청받지 않은 기능을 임의로 추가하지 않는다.
 3. 한 가지를 고칠 때 무관한 파일을 건드리지 않는다.
 4. 변경 전 관련 코드를 읽고 영향 범위를 확인한다.
-5. 변경 후 **`npx tsc -p tsconfig.app.json --noEmit`** 과 `npm run build` 로 검증한다.
-   **`npx tsc --noEmit` 은 쓰지 않는다.** 루트 `tsconfig.json` 은 `"files": []` 에 프로젝트 참조만
-   있어서 검사할 파일이 없고, 항상 조용히 통과한다. 실제로 `useRef` 미임포트를 놓쳤다.
+5. 변경 후 **`npm run typecheck`** 과 `npm run build` 로 검증한다.
+   `npm run typecheck` 은 `tsconfig.app.json`(src)과 `tsconfig.functions.json`(functions)을 **둘 다** 돈다.
+   - **`npx tsc --noEmit` 은 쓰지 않는다.** 루트 `tsconfig.json` 은 `"files": []` 에 프로젝트 참조만
+     있어서 검사할 파일이 없고, 항상 조용히 통과한다. 실제로 `useRef` 미임포트를 놓쳤다.
+   - **`functions/` 를 빼놓지 않는다.** `tsconfig.app.json` 은 `"include": ["src"]` 라
+     서버 코드를 전혀 보지 않는다. 예전에 `generate-image.ts` 에서 정의되지 않은 이름을 참조해
+     T01 생성이 통째로 죽었는데, tsc·build·eslint 가 **전부 통과했다.**
+     `tsconfig.functions.json` 이 그래서 있다(`@cloudflare/workers-types` 사용).
+   - **eslint 는 정의되지 않은 이름을 잡아 주지 않는다.** 타입검사로만 잡힌다.
+   - `functions/` 도 `npm run lint` 대상이다. 서버 코드만 고쳤어도 린트를 돌린다.
 6. 근거 없는 추측으로 코드를 바꾸지 않는다.
 7. `.env`, API 키, 비밀번호 등 민감정보를 출력하거나 외부로 보내지 않는다.
 8. 파일 삭제, 배포, 외부 업로드는 승인 없이 하지 않는다.
