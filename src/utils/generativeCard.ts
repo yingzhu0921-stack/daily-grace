@@ -218,6 +218,28 @@ export interface EmphasisParts {
  * 고른 구간으로 본문을 앞 / 강조 / 뒤 세 토막으로 나눈다.
  * **자르는 자리는 언제나 어절 경계**이고, 원문 글자는 하나도 바뀌지 않는다.
  */
+/**
+ * 문구를 고쳐도 강조한 말이 그대로 남아 있으면, 바뀐 어절 번호로 옮겨 준다.
+ * 찾지 못하면 undefined 를 돌려 자동 강조로 되돌린다 — 엉뚱한 자리를 크게 쓰는 것보다 낫다.
+ */
+export function remapEmphasis(
+  oldText: string,
+  newText: string,
+  choice: EmphasisChoice | undefined,
+): EmphasisChoice | undefined {
+  if (!choice || choice === 'none') return choice;
+  const oldWords = emphasisWords(oldText);
+  const newWords = emphasisWords(newText);
+  const target = oldWords.slice(choice.from, choice.to + 1);
+  if (!target.length) return undefined;
+  for (let i = 0; i + target.length <= newWords.length; i++) {
+    if (target.every((w, k) => newWords[i + k] === w)) {
+      return { from: i, to: i + target.length - 1 };
+    }
+  }
+  return undefined;
+}
+
 export function emphasisParts(text: string, choice?: EmphasisChoice): EmphasisParts | null {
   if (choice === 'none') return null;
   const span = choice ?? autoEmphasisSpan(text);
@@ -554,6 +576,19 @@ function fitLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): st
 }
 
 /**
+ * 줄 길이를 고르게 나눈다. 들어가는 가장 적은 줄 수를 먼저 쓴다.
+ * 탐욕적으로 채우면 마지막 줄에 짧은 어절 하나만 남는 일이 잦아서,
+ * 강조를 고른 카드의 줄바꿈이 어색해 보였다.
+ */
+function balancedLines(ctx: CanvasRenderingContext2D, text: string, maxW: number): string[] {
+  for (let n = 1; n <= 6; n++) {
+    const got = wrapKeepAll(ctx, text, maxW, n);
+    if (got) return got;
+  }
+  return fitLines(ctx, text, maxW);
+}
+
+/**
  * 핵심 구절을 크게 쓰는 배치(시안 A·C).
  * 본문 단어는 바꾸지 않는다. 어디서 줄을 바꾸고 무엇을 크게 쓸지만 정한다.
  */
@@ -586,7 +621,7 @@ function drawHeroText(
   let keyLines: string[] = [];
   while (keyPx >= minKeyPx) {
     ctx.font = `${boldW} ${keyPx}px ${spec.font}`;
-    keyLines = fitLines(ctx, key, maxW);
+    keyLines = balancedLines(ctx, key, maxW);
     // 짧은 어절이 한 줄에 혼자 남으면 한 단계 줄여 다시 묶는다
     if (keyLines.length <= (centered ? 2 : 3) && !hasLoneWord(keyLines)) break;
     keyPx -= Math.max(1, Math.round(width * 0.004));
@@ -594,8 +629,8 @@ function drawHeroText(
 
   let restPx2 = Math.round(width * (centered ? 0.046 : 0.040) * fs);
   ctx.font = `400 ${restPx2}px ${spec.font}`;
-  const beforeLines = beforeSegs.flatMap((r) => fitLines(ctx, r, maxW));
-  const afterLines = afterSegs.flatMap((r) => fitLines(ctx, r, maxW));
+  const beforeLines = beforeSegs.flatMap((r) => balancedLines(ctx, r, maxW));
+  const afterLines = afterSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const restCount = beforeLines.length + afterLines.length;
   const gapCount = (beforeLines.length ? 1 : 0) + (afterLines.length ? 1 : 0);
 

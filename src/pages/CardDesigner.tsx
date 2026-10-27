@@ -12,7 +12,7 @@ import { FontPicker, fontOptions } from '@/components/FontPicker';
 import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
-import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, canEmphasize, type GenerativeStyle, type GenerativeSpec, type EmphasisChoice } from '@/utils/generativeCard';
+import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, canEmphasize, remapEmphasis, type GenerativeStyle, type GenerativeSpec, type EmphasisChoice } from '@/utils/generativeCard';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -1506,60 +1506,28 @@ export default function Designer() {
   );
 
   // Auto Template 선택 화면
-  const TEMPLATE_INFO = [
-    {
-      id: 'T01',
-      name: '귀여운 손글씨',
-      mood: '따뜻함 · 감사 · 일상 · 위로',
-      example: '오늘도 은혜',
-      hint: '파스텔 낙서 + 손글씨',
-      preview: {
-        background: 'linear-gradient(135deg, #BBD7F2 0%, #F7E0E4 52%, #F7E5A7 100%)',
-        color: '#2F5D7A',
-        accent: '#F08A9B',
-        font: "'Cafe24SuperMagic', 'GowunDodum', sans-serif",
-      },
-    },
-    {
-      id: 'T02',
-      name: '힙한 포스터',
-      mood: '힙한 · 에디토리얼 · 강렬함',
-      example: '복음을 전파하라',
-      hint: '볼드 콘덴스드 + 그런지',
-      preview: {
-        background: 'linear-gradient(135deg, #E8623A 0%, #d4491f 100%)',
-        color: '#1A1A1A',
-        accent: '#F0E6D2',
-        font: "'PaperBlack', sans-serif",
-      },
-    },
-    {
-      id: 'T03',
-      name: '그레인 그라데이션',
-      mood: '번진 색 · 필름 그레인 · 차분한 명조',
-      example: '은혜가 머무는 곳',
-      hint: '코드로 즉시 생성 · 철자 정확 · 무료',
-      preview: {
-        background: 'linear-gradient(150deg, #8FB0DE 0%, #F3E6DE 55%, #C39AD0 100%)',
-        color: '#2E2A4A',
-        accent: '#2E2A4A',
-        font: "'SongMyung', serif",
-      },
-    },
-    {
-      id: 'T04',
-      name: '감성 심플',
-      mood: '쉼 · 고요 · 감성 사진',
-      example: '잠잠히 머물다',
-      hint: '감성 사진 + 심플 텍스트',
-      preview: {
-        background: 'linear-gradient(180deg, #f3c98f 0%, #eaa46f 55%, #d98a63 100%)',
-        color: '#FFF8EA',
-        accent: '#FFF8EA',
-        font: "'RidiBatang', serif",
-      },
-    },
+  // 설명·배지는 실제 생성 경로에 맞춘다.
+  //  T01·T02 = AI 가 글자까지 그린다(aiText) → 오탈자 확인이 필요하고 시간이 걸린다
+  //  T03      = 코드 렌더, AI 호출 0 → 바로 나오고 철자가 정확하다
+  //  T04      = AI 사진 + 코드 글자 → 사진은 시간이 걸리지만 글자는 정확하다
+  // (요청서의 T02 배지 '바로 생성 · 철자 정확' 은 코드와 반대라 고쳤다)
+  const TEMPLATE_INFO: {
+    id: string; name: string; desc: string; badge: string;
+    tone: 'ai' | 'instant'; thumb: string | null;
+  }[] = [
+    { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: null },
+    { id: 'T02', name: '강렬한 포스터', desc: '큰 글씨가 꽉 차는 포스터예요',                 badge: 'AI 글씨 · 오탈자 확인', tone: 'ai',      thumb: null },
+    { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: null },
+    { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: null },
   ];
+
+  // 비율 칩에 쓰는 이름과, 비율 모양을 보여 줄 작은 틀의 크기(px)
+  const RATIO_INFO: Record<string, { label: string; w: number; h: number }> = {
+    '4:5':  { label: '세로 게시물', w: 16, h: 20 },
+    '9:16': { label: '휴대폰 배경', w: 13, h: 23 },
+    '1:1':  { label: '정사각형',   w: 19, h: 19 },
+    '16:9': { label: '가로 화면',   w: 24, h: 14 },
+  };
 
   const renderAutoTemplate = () => {
     const handleGenerate = async () => {
@@ -1621,95 +1589,80 @@ export default function Designer() {
         </div>
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] mb-2">카드 비율</h3>
-          <div className="grid grid-cols-2 gap-2">
-            {(['4:5', '9:16', '1:1', '16:9'] as Ratio[]).map((ratio) => (
-              <button
-                key={ratio}
-                disabled={isGenerating}
-                onClick={() => setMeta(m => ({ ...m, ratio }))}
-                className={`h-10 rounded-lg border text-sm font-semibold transition-colors ${
-                  meta.ratio === ratio
-                    ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white'
-                    : 'border-[#E3E2E0] text-[#4A4A4A] hover:border-[#1F1F1F]/40'
-                }`}
-              >
-                {{ '9:16': '휴대폰 배경 9:16', '1:1': '정사각형 1:1', '4:5': '세로 게시물 4:5', '16:9': '가로 화면 16:9' }[ratio]}
-              </button>
-            ))}
+          <div className="grid grid-cols-4 gap-2">
+            {(['4:5', '9:16', '1:1', '16:9'] as Ratio[]).map((ratio) => {
+              const { label, w, h } = RATIO_INFO[ratio];
+              const on = meta.ratio === ratio;
+              return (
+                <button
+                  key={ratio}
+                  disabled={isGenerating}
+                  onClick={() => setMeta(m => ({ ...m, ratio }))}
+                  className={`flex min-h-[78px] flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors ${
+                    on ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white' : 'border-[#E3E2E0] text-[#4A4A4A] hover:border-[#1F1F1F]/40'
+                  }`}
+                >
+                  {/* 비율 모양을 그대로 보여 주는 작은 틀 */}
+                  <span
+                    className={`block shrink-0 rounded-[3px] border-[1.5px] ${on ? 'border-white' : 'border-[#9E9C98]'}`}
+                    style={{ width: w, height: h }}
+                  />
+                  <span className="text-[11px] font-semibold leading-tight [word-break:keep-all]">{label}</span>
+                  <span className={`text-[10px] leading-none ${on ? 'text-white/60' : 'text-[#B5B3AF]'}`}>{ratio}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
-          {TEMPLATE_INFO.map(({ id, name, mood, example, hint, preview }) => (
-            <button
-              key={id}
-              disabled={isGenerating}
-              onClick={() => setSelectedTemplateId(id)}
-              className={`p-3 rounded-lg border text-left transition-colors ${
-                selectedTemplateId === id
-                  ? 'border-[#1F1F1F] bg-[#1F1F1F]/5'
-                  : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
-              }`}
-            >
-              <div
-                className="relative h-24 rounded-md overflow-hidden mb-3 shadow-sm"
-                style={{ background: preview.background }}
-              >
-                {/* 종이/스트릿 계열만 도트 질감 (사진 계열은 매끈하게) */}
-                {(id === 'T01' || id === 'T02') && (
-                  <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: 'radial-gradient(circle at 20% 20%, #000 1px, transparent 1px)', backgroundSize: '9px 9px' }} />
-                )}
-
-                {/* T01 귀여운 손글씨 — 손글씨 + 낙서 + 물결 밑줄 */}
-                {id === 'T01' && (
-                  <>
-                    <span className="absolute top-2 right-3 text-[13px] leading-none" style={{ color: preview.accent }}>✿</span>
-                    <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
-                      <p className="text-[15px] leading-tight" style={{ color: preview.color, fontFamily: preview.font }}>{example}</p>
-                      <svg width="46" height="7" viewBox="0 0 46 7" className="mt-1.5" fill="none">
-                        <path d="M1 4C6 1.5 10 6 15 3.5S25 1 30 4s10 1 15-1" stroke={preview.accent} strokeWidth="2" strokeLinecap="round" />
-                      </svg>
-                    </div>
-                  </>
-                )}
-
-                {/* T02 힙 — 볼드 콘덴스드 + 스크립트 오버레이 느낌 */}
-                {id === 'T02' && (
-                  <>
-                    <span className="absolute top-1.5 left-3 right-3 text-[6px] tracking-[0.15em] font-bold" style={{ color: preview.accent }}>믿음 —— 소망 —— 사랑</span>
-                    <div className="absolute left-3 right-3 top-1/2 -translate-y-1/2">
-                      <p className="text-[20px] leading-none" style={{ color: preview.color, fontFamily: preview.font, fontWeight: 800, letterSpacing: '-0.03em' }}>{example}</p>
-                    </div>
-                  </>
-                )}
-
-                {/* T03 감성 타이포 — 세리프 큰 타이포 (위계) */}
-                {id === 'T03' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
-                    <p className="text-[9px] tracking-wide leading-none mb-0.5" style={{ color: preview.color, fontFamily: preview.font, opacity: 0.85 }}>은혜가</p>
-                    <p className="text-[19px] leading-none" style={{ color: preview.color, fontFamily: preview.font }}>머무는 곳</p>
+        <div>
+          <h3 className="text-sm font-semibold text-[#1F1F1F] mb-2">어떤 느낌으로 만들까요?</h3>
+          <div className="grid grid-cols-2 gap-3">
+            {TEMPLATE_INFO.map(({ id, name, desc, badge, tone, thumb }) => {
+              const on = selectedTemplateId === id;
+              return (
+                <button
+                  key={id}
+                  disabled={isGenerating}
+                  onClick={() => setSelectedTemplateId(id)}
+                  className={`rounded-2xl border bg-white p-2.5 text-left transition-colors ${
+                    on ? 'border-[#1F1F1F] ring-1 ring-[#1F1F1F]' : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
+                  }`}
+                >
+                  {/* 고른 비율 그대로의 완성 카드가 들어갈 자리.
+                      샘플 이미지는 아직 없다 — 사용자가 나중에 준다.
+                      성경 본문을 샘플로 내장하지 않는다(CLAUDE.md 11장). */}
+                  <div
+                    className="relative w-full overflow-hidden rounded-xl bg-[#F3F2F1]"
+                    style={{ aspectRatio: meta.ratio.replace(':', ' / ') }}
+                  >
+                    {thumb ? (
+                      <img src={thumb} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="absolute inset-0 flex items-center justify-center text-[11px] text-[#B5B3AF]">
+                        미리보기 준비 중
+                      </span>
+                    )}
+                    {on && (
+                      <span className="absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-[#1F1F1F] text-[12px] text-white">
+                        ✓
+                      </span>
+                    )}
                   </div>
-                )}
-
-                {/* T04 감성 심플 — 세리프 작은 중앙 정렬 + 작은 출처 */}
-                {id === 'T04' && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center px-4 text-center">
-                    <p className="text-[13px] leading-snug" style={{ color: preview.color, fontFamily: preview.font, textShadow: '0 1px 4px rgba(0,0,0,.18)' }}>{example}</p>
-                    <p className="text-[8px] mt-1.5 tracking-wide" style={{ color: preview.color, fontFamily: preview.font, opacity: 0.8 }}>시 46:10</p>
-                  </div>
-                )}
-              </div>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-[11px] font-semibold text-[#7E7C78] mb-0.5">{id}</p>
-                  <p className="text-sm font-semibold text-[#1F1F1F] leading-tight">{name}</p>
-                </div>
-                <span className="shrink-0 max-w-[82px] text-[10px] leading-3 px-1.5 py-0.5 rounded-md bg-[#F3F2F1] text-[#7E7C78] text-right">
-                  {hint}
-                </span>
-              </div>
-              <p className="text-xs text-[#9E9C98] mt-2 leading-relaxed">{mood}</p>
-            </button>
-          ))}
+                  {/* 이름·배지는 한 줄 고정, 설명만 어절 단위로 접는다 */}
+                  <p className="mt-2.5 truncate text-[15px] font-semibold text-[#1F1F1F]">{name}</p>
+                  {/* 설명이 한 줄인 카드와 두 줄인 카드가 섞여 배지 높이가 어긋났다. 두 줄 자리를 비워 둔다. */}
+                  <p className="mt-1 min-h-[35px] text-[12px] leading-[1.45] text-[#7E7C78] [word-break:keep-all]">{desc}</p>
+                  <span
+                    className={`mt-2 inline-block max-w-full truncate rounded-full px-2 py-1 text-[11px] font-medium ${
+                      tone === 'ai' ? 'bg-[#FDF3E3] text-[#9A6A1E]' : 'bg-[#EAF4EE] text-[#2F6B4A]'
+                    }`}
+                  >
+                    {badge}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
         <button
           onClick={handleGenerate}
@@ -2097,8 +2050,13 @@ export default function Designer() {
       const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
       const build = buildT03Result;
       // 글꼴이 아직 안 받아졌으면 기본 글꼴로 다시 구워진다. 받아온 뒤 한 번 더 그린다.
-      // 글이 바뀌면 어절 번호가 어긋난다. '강조 없음'만 이어 가고 구간은 자동으로 되돌린다.
-      const keepEmphasis = autoResult.genEmphasis === 'none' ? 'none' : undefined;
+      // 글이 바뀌면 어절 번호가 어긋난다. 강조한 말이 새 문구에도 그대로 있으면 번호만 옮기고,
+      // 사라졌으면 자동 강조로 되돌린다.
+      const keepEmphasis = remapEmphasis(
+        autoResult.genBodyText || '',
+        clauses.join('\n'),
+        autoResult.genEmphasis,
+      );
       if (autoResult.template === 'T03') {
         preloadGrainFonts(raw).then(() => {
           setAutoResult(buildT03Result(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, keepEmphasis));
@@ -2602,6 +2560,14 @@ export default function Designer() {
     const tapWord = async (i: number) => {
       if (emphasisBusy) return;                    // 그리는 중에 또 누르면 순서가 엉킨다
       const now = emphasisPick?.applied ?? null;
+      // 이미 고른 칸을 다시 누르면 해제한다. 한 어절이든 범위든 같다 —
+      // 칠해진 걸 누르는 건 "이거 취소"라는 뜻이지 "여기서 다시 시작"이 아니다.
+      if (now && i >= now.from && i <= now.to) {
+        setEmphasisPick({ from: null, applied: null });
+        setEmphasisBusy(true);
+        try { await applyEmphasis('none'); } finally { setEmphasisBusy(false); }
+        return;
+      }
       const span = !now || now.from !== now.to
         ? { from: i, to: i }
         : { from: Math.min(now.from, i), to: Math.max(now.from, i) };
@@ -2916,13 +2882,13 @@ export default function Designer() {
           </div>
         </div>
         {autoResult.aiText && autoResult.template !== 'T03' && (
-          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E]">
-            포스터 느낌을 위해 AI가 글자까지 그렸어요. 저장 전 오탈자를 꼭 확인하세요.
+          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E] [word-break:keep-all]">
+            AI가 글씨까지 그렸어요. 저장 전에 글자를 한 번 확인해 주세요.
           </div>
         )}
                 {autoResult.template === 'T03' && (
-          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A]">
-            코드로 생성돼 철자가 정확해요 · 다시 생성은 무료예요 · 문구 수정은 배경 그대로 반영돼요.
+          <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#3E7C5A] [word-break:keep-all]">
+            코드로 그려서 철자가 정확해요. 다시 생성과 문구 수정 모두 바로 반영돼요.
           </div>
         )}
         {emphasisPick !== null ? (
@@ -2932,9 +2898,9 @@ export default function Designer() {
                 {emphasisBusy
                   ? '카드를 다시 그리는 중…'
                   : emphasisPick.applied && emphasisPick.applied.from === emphasisPick.applied.to
-                  ? '다른 단어를 누르면 거기까지 넓어져요.'
+                  ? '다른 단어를 누르면 거기까지 넓어져요. 다시 누르면 해제돼요.'
                   : emphasisPick.applied
-                  ? '아무 단어나 누르면 거기서 새로 골라요.'
+                  ? '고른 단어를 누르면 해제, 밖을 누르면 새로 골라요.'
                   : '크게 쓸 단어를 눌러요.'}
               </p>
             </div>
