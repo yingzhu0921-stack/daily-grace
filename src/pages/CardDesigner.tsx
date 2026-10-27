@@ -1628,13 +1628,12 @@ export default function Designer() {
                     on ? 'border-[#1F1F1F] ring-1 ring-[#1F1F1F]' : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
                   }`}
                 >
-                  {/* 고른 비율 그대로의 완성 카드가 들어갈 자리.
-                      샘플 이미지는 아직 없다 — 사용자가 나중에 준다.
+                  {/* 샘플 이미지가 들어갈 자리. 비율은 고른 비율과 무관하게 항상 4:5 로 고정한다 —
+                      여기서 보여주는 건 '어떤 스타일인지'지 '어떤 비율인지'가 아니다(사용자 결정 2026-10-27,
+                      시안 A 의 "고른 비율대로" 지시를 대체).
+                      샘플 이미지는 아직 없다 — 사용자가 개역한글 본문으로 만들어 준다.
                       성경 본문을 샘플로 내장하지 않는다(CLAUDE.md 11장). */}
-                  <div
-                    className="relative w-full overflow-hidden rounded-xl bg-[#F3F2F1]"
-                    style={{ aspectRatio: meta.ratio.replace(':', ' / ') }}
-                  >
+                  <div className="relative w-full aspect-[4/5] overflow-hidden rounded-xl bg-[#F3F2F1]">
                     {thumb ? (
                       <img src={thumb} alt="" className="h-full w-full object-cover" />
                     ) : (
