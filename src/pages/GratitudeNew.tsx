@@ -211,7 +211,7 @@ export default function GratitudeNew() {
             </button>
           )}
           <div className="mt-2 text-[12px] text-[#8A8A8A]">
-            마지막 줄에 쓰면 다음 번호가 흐리게 떠요. Enter 를 치거나 눌러서 이어 쓰면 돼요.
+            마지막 줄에 쓰면 다음 번호가 흐리게 떠요. Enter를 치거나 그 번호를 눌러서 이어 쓰면 돼요.
           </div>
         </div>
       </div>

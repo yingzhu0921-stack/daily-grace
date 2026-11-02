@@ -659,7 +659,7 @@ export default function Designer() {
           <p className="text-[12px] font-semibold text-[#2E2E2E]">
             입력 콘텐츠 안내
           </p>
-          <p className="mt-1 text-[11px] leading-4 text-[#7E7C78]">
+          <p className="mt-1 text-[11px] leading-4 text-[#7E7C78] [word-break:keep-all]">
             하루은혜는 성경 본문이나 찬양 가사 등의 콘텐츠를 직접 제공하지 않습니다. 카드에 들어가는 문구와 이미지는 사용자가 직접 입력하거나 업로드합니다.
           </p>
         </div>
@@ -677,7 +677,7 @@ export default function Designer() {
           <p className="text-[12px] font-semibold text-[#2E2E2E]">
             콘텐츠 이용 안내
           </p>
-          <div className="mt-1.5 space-y-2 text-[11px] leading-4 text-[#7E7C78]">
+          <div className="mt-1.5 space-y-2 text-[11px] leading-4 text-[#7E7C78] [word-break:keep-all]">
             <p>
               하루은혜는 사용자가 직접 입력하거나 업로드한 콘텐츠를 기록하고, 카드 및 이미지 등의 형태로 디자인할 수 있도록 돕는 서비스입니다.
             </p>
@@ -1293,7 +1293,7 @@ export default function Designer() {
     const steps = activeTrack === 'auto'
       ? [
           { id: 'record', label: '내용' },
-          { id: 'auto-template', label: '템플릿' },
+          { id: 'auto-template', label: '스타일' },
           { id: 'auto-preview', label: '확인' },
         ]
       : activeTrack === 'photo'
@@ -1519,7 +1519,7 @@ export default function Designer() {
         placeholder={"카드로 남기고 싶은 문구를 입력해주세요\n말씀 · 묵상 · 기도 · 감사 등"}
         className="flex-1 min-h-[190px] p-4 border border-[#E3E2E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none text-[15px] leading-7"
       />
-      <p className="text-[11px] leading-4 text-[#9B9B9B]">
+      <p className="text-[11px] leading-4 text-[#9B9B9B] [word-break:keep-all]">
         입력한 내용은 카드 생성을 위해 AI가 분석합니다. 이름·연락처·주소 등 개인정보는 입력하지 마세요.
       </p>
       <div className="grid grid-cols-1 gap-2">
@@ -3110,7 +3110,7 @@ export default function Designer() {
               <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
                 {flowStep === 'entry' ? '말씀카드 만들기' :
                  flowStep === 'record' ? '카드 내용 입력' :
-                 flowStep === 'auto-template' ? '템플릿 선택' :
+                 flowStep === 'auto-template' ? '스타일 선택' :
                  flowStep === 'auto-preview' ? '미리보기' :
                  flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
               </h1>
@@ -3953,7 +3953,7 @@ export default function Designer() {
                       '따뜻한 동화',
                       '심플 낙서',
                       '감성 사진',
-                      '미니멀감성',
+                      '미니멀 감성',
                       '빈티지 필름'
                     ].map((style, idx) => (
                       <button
@@ -4091,8 +4091,8 @@ export default function Designer() {
                     className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
                   >
                     {isExpandingPrompt && !isGenerating
-                      ? renderGenerationContent('prompt', '배경 만들기', '배경 준비 중...')
-                      : renderGenerationContent('background', meta.bgImageUrl ? '새 배경 만들기' : '배경 만들기', '이미지 생성 중...')}
+                      ? renderGenerationContent('prompt', '이 설명으로 만들기', '배경 준비 중...')
+                      : renderGenerationContent('background', meta.bgImageUrl ? '다시 만들기' : '이 설정으로 만들기', '이미지 생성 중...')}
                   </Button>
                 </div>
               </TabsContent>
@@ -4420,30 +4420,38 @@ function Toolbar({
           <TabsTrigger
             value="text"
             title="텍스트"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="텍스트"
+            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
           >
             <Type className="w-6 h-6" />
+            <span className="text-[10px] leading-none font-medium">텍스트</span>
           </TabsTrigger>
           <TabsTrigger
             value="font"
             title="폰트"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="폰트"
+            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
           >
             <span className="text-lg font-bold">가</span>
+            <span className="text-[10px] leading-none font-medium">폰트</span>
           </TabsTrigger>
           <TabsTrigger
             value="color"
             title="색상"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="색상"
+            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
           >
             <Palette className="w-6 h-6" />
+            <span className="text-[10px] leading-none font-medium">색상</span>
           </TabsTrigger>
           <TabsTrigger
             value="size"
             title="크기"
-            className="px-4 py-3 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="크기"
+            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
           >
             <Ruler className="w-6 h-6" />
+            <span className="text-[10px] leading-none font-medium">크기</span>
           </TabsTrigger>
         </TabsList>
 

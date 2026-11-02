@@ -375,8 +375,12 @@ export default function NotificationSettings() {
             variant="outline"
             className="w-full h-12 text-[#7E7C78] hover:text-[#2E2E2E] hover:bg-[#F7F6F4] border-[#E8E7E5]"
           >
-            시간 다시 설정
+            알림 시간을 기본값으로
           </Button>
+          {/* 무엇이 바뀌는지 적어 둔다. '시간 다시 설정' 만으로는 무엇을 되돌리는지 알 수 없었다. */}
+          <p className="mt-2 text-[12px] leading-5 text-[#9B9B9B] text-center [word-break:keep-all]">
+            Q.T 09:00 · 기도 21:00 · 감사 22:00 으로 되돌립니다. 알림을 켜 둔 상태는 그대로예요.
+          </p>
         </div>
 
         {/* 도움말 */}

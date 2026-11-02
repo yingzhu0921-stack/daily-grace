@@ -390,7 +390,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             
             <div className="mt-4 text-center">
               <p className="text-[13px] text-[#8A8A8A]">
-                새 카테고리 만들기 ({categories.length}/10)
+                {categories.length}/10개 사용 중
               </p>
             </div>
           </div>
@@ -416,7 +416,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
         <DialogContent className="max-w-[420px] rounded-3xl p-0 gap-0">
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative">
             <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
-              새 카테고리 만들기
+              카테고리 추가
             </DialogTitle>
             <DialogDescription className="sr-only">
               카테고리 이름, 색상, 포함할 필드를 선택하여 새 카테고리를 만듭니다

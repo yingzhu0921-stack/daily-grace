@@ -166,12 +166,12 @@ export default function PrayerNew() {
               type="checkbox" 
               checked={splitLines} 
               onChange={e => setSplitLines(e.target.checked)}
-              className="w-4 h-4 rounded border-[#E8E7E5] text-[#7A6BB8] focus:ring-[#7A6BB8]"
+              className="w-4 h-4 rounded border-[#E8E7E5] accent-[#7A6BB8] focus:ring-[#7A6BB8]"
             />
             줄마다 별도 기도제목으로 저장
           </label>
           <div className="mt-2 text-[12px] text-[#8A8A8A]">
-            줄바꿈으로 길게 적어도 돼요. 저장하면 리스트에 한 줄 요약으로 보여줘요.
+            켜 두면 줄 하나하나가 따로 저장돼요. 한 가지를 길게 적을 때는 꺼 주세요.
           </div>
         </div>
       </div>
