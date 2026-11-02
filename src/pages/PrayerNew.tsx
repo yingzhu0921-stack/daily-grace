@@ -14,11 +14,23 @@ export default function PrayerNew() {
   const location = useLocation();
   const { user, loading } = useAuth();
   const [text, setText] = useState('');
-  const [splitLines, setSplitLines] = useState(true);
+  // 줄줄이 적는 사람과 한 가지를 길게 적는 사람이 갈린다. 전역 기본값으로는 둘 중
+  // 한쪽이 매번 체크박스를 고쳐야 했다. 그래서 마지막에 쓴 설정을 기억한다.
+  const [splitLines, setSplitLines] = useState(() => {
+    try {
+      const saved = localStorage.getItem('prayer_split_lines');
+      return saved === null ? true : saved === '1';
+    } catch {
+      return true;
+    }
+  });
   const [showLoginModal, setShowLoginModal] = useState(false);
   // 저장 직후 로그인 유도 창을 띄우는 동안 이동을 잠시 미뤄 둔다
   const afterNudgeRef = useRef<(() => void) | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // 저장할 때와 같은 기준으로 센다(빈 줄 제외). 숫자가 어긋나면 미리보기가 거짓말이 된다.
+  const lineCount = text.split('\n').filter(line => line.trim()).length;
 
   const adjustTextareaHeight = (textarea: HTMLTextAreaElement | null) => {
     if (textarea) {
@@ -161,18 +173,28 @@ export default function PrayerNew() {
             className="record-field w-full min-h-[120px] text-[18px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
             style={{ overflowY: 'hidden' }}
           />
+          {/* 줄이 하나뿐이면 켜도 꺼도 결과가 같다. 그때는 묻지 않는다. */}
+          {lineCount > 1 && (
           <label className="flex items-center gap-2 text-sm text-[#666] mt-4">
             <input 
               type="checkbox" 
               checked={splitLines} 
-              onChange={e => setSplitLines(e.target.checked)}
+              onChange={e => {
+                setSplitLines(e.target.checked);
+                try { localStorage.setItem('prayer_split_lines', e.target.checked ? '1' : '0'); } catch { /* 못 저장해도 이번 화면에선 동작한다 */ }
+              }}
               className="w-4 h-4 rounded border-[#E8E7E5] accent-[#7A6BB8] focus:ring-[#7A6BB8]"
             />
             줄마다 별도 기도제목으로 저장
           </label>
-          <div className="mt-2 text-[12px] text-[#8A8A8A]">
-            켜 두면 줄 하나하나가 따로 저장돼요. 한 가지를 길게 적을 때는 꺼 주세요.
-          </div>
+          )}
+          {/* 전에는 저장하고 목록을 봐야 몇 개로 쪼개졌는지 알 수 있었다. 미리 보여 준다. */}
+          {lineCount > 1 && (
+            <div className="mt-2 text-[12px] text-[#6E6E6E]">
+              저장하면 <span className="font-semibold text-[#7A6BB8]">기도제목 {splitLines ? lineCount : 1}개</span>로 들어가요.
+              {splitLines ? ' 한 가지를 길게 적는 중이면 꺼 주세요.' : ' 줄마다 따로 남기려면 켜 주세요.'}
+            </div>
+          )}
         </div>
       </div>
     </>
