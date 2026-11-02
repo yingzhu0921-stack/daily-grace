@@ -22,6 +22,17 @@ type Category = {
   updatedAt?: string;
 };
 
+// 기록 종류가 가질 수 있는 입력칸.
+// 만들 때와 고칠 때가 같은 목록을 써야 한다 — 전에는 만들 때만 고를 수 있어서,
+// 본문칸 없이 만든 카테고리(설교·찬양)는 나중에 본문을 켤 방법이 아예 없었다.
+const RECORD_FIELDS = [
+  { id: 'title', label: '제목 입력란', desc: '말씀 제목을 입력할 수 있습니다' },
+  { id: 'passage', label: '본문 입력란', desc: '성경 본문을 입력할 수 있습니다' },
+  { id: 'content', label: '내용 입력란', desc: '자유롭게 내용을 입력할 수 있습니다' },
+  { id: 'application', label: '오늘의 적용', desc: '실천할 내용을 입력할 수 있습니다' },
+  { id: 'answered', label: '응답 여부 체크', desc: '완료/응답 여부를 체크할 수 있습니다' },
+];
+
 // 기본 카테고리 (하드코딩, 삭제 불가)
 const DEFAULT_CATEGORIES: Category[] = [
   { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -82,7 +93,9 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   const [newIcon, setNewIcon] = useState<IconName>('bookOpen');
   const [editName, setEditName] = useState('');
   const [editDescription, setEditDescription] = useState('');
-  const [selectedFields, setSelectedFields] = useState<string[]>(['title', 'content']);
+  // 본문을 기본으로 켠다. 설교·찬양처럼 말씀·가사를 적는 카테고리가 본문칸 없이 만들어져
+  // 나중에 "본문 쓸 데가 없다"가 되는 일이 잦았다. 필요 없으면 만들 때 끄면 된다.
+  const [selectedFields, setSelectedFields] = useState<string[]>(['title', 'passage', 'content']);
   const [includeInGoal, setIncludeInGoal] = useState(true);
   const [newDescription, setNewDescription] = useState('');
   const [activeDays, setActiveDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
@@ -90,6 +103,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [editOriginalName, setEditOriginalName] = useState('');
   const [editIncludeInGoal, setEditIncludeInGoal] = useState(true);
+  const [editFields, setEditFields] = useState<string[]>(['title', 'content']);
   const [editActiveDays, setEditActiveDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
 
   // Load categories
@@ -247,11 +261,12 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
     setEditOriginalName(category.name); // Track original name
     setEditIncludeInGoal(category.includeInGoal ?? true);
     setEditActiveDays(category.activeDays ?? [0, 1, 2, 3, 4, 5, 6]);
+    setEditFields(category.fields?.length ? category.fields : ['title', 'content']);
     setShowEditDialog(true);
   };
 
   const handleSaveEdit = async () => {
-    if (!editingCategory || !editName.trim()) return;
+    if (!editingCategory || !editName.trim() || editFields.length === 0) return;
 
     try {
       // Check if description follows the default pattern "{original name}에 대해 기록해보세요"
@@ -272,6 +287,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
         description: finalDescription,
         includeInGoal: editIncludeInGoal,
         activeDays: editActiveDays,
+        fields: editFields,
       });
 
       await loadCategories();
@@ -284,6 +300,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
       setEditOriginalName('');
       setEditIncludeInGoal(true);
       setEditActiveDays([0, 1, 2, 3, 4, 5, 6]);
+      setEditFields(['title', 'content']);
 
       toast.success('카테고리가 수정되었습니다');
     } catch (error) {
@@ -501,13 +518,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 포함할 필드 * (최소 1개)
               </label>
               <div className="space-y-2">
-                {[
-                  { id: 'title', label: '제목 입력란', desc: '말씀 제목을 입력할 수 있습니다' },
-                  { id: 'passage', label: '본문 입력란', desc: '성경 본문을 입력할 수 있습니다' },
-                  { id: 'content', label: '내용 입력란', desc: '자유롭게 내용을 입력할 수 있습니다' },
-                  { id: 'application', label: '오늘의 적용', desc: '실천할 내용을 입력할 수 있습니다' },
-                  { id: 'answered', label: '응답 여부 체크', desc: '완료/응답 여부를 체크할 수 있습니다' },
-                ].map(field => (
+                {RECORD_FIELDS.map(field => (
                   <label
                     key={field.id}
                     className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFAF9] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
@@ -634,7 +645,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               카테고리 수정
             </DialogTitle>
             <DialogDescription className="sr-only">
-              카테고리 이름과 설명을 수정합니다
+              카테고리 이름·설명·입력칸을 수정합니다
             </DialogDescription>
             <button
               onClick={() => {
@@ -645,6 +656,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setEditOriginalName('');
                 setEditIncludeInGoal(true);
                 setEditActiveDays([0, 1, 2, 3, 4, 5, 6]);
+                setEditFields(['title', 'content']);
               }}
               className="absolute right-6 top-6 p-1 hover:bg-[#F5F5F5] rounded-lg transition-colors"
             >
@@ -679,6 +691,45 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{editName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
+              </p>
+            </div>
+
+            {/* 포함할 필드 — 만들 때와 같은 목록 */}
+            <div className="pt-2 border-t border-[#F0EFED]">
+              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+                포함할 필드 * (최소 1개)
+              </label>
+              <div className="space-y-2">
+                {RECORD_FIELDS.map(field => (
+                  <label
+                    key={field.id}
+                    className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFAF9] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      checked={editFields.includes(field.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setEditFields([...editFields, field.id]);
+                        } else {
+                          setEditFields(editFields.filter(f => f !== field.id));
+                        }
+                      }}
+                      className="w-5 h-5 rounded border-[#EDEDED] accent-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="text-[14px] font-medium text-[#2E2E2E] mb-0.5">
+                        {field.label}
+                      </div>
+                      <div className="text-[13px] text-[#8A8A8A] leading-relaxed">
+                        {field.desc}
+                      </div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+              <p className="text-[12px] text-[#8A8A8A] mt-2 leading-relaxed [word-break:keep-all]">
+                칸을 꺼도 이미 쓴 내용은 지워지지 않아요. 다시 켜면 그대로 보입니다.
               </p>
             </div>
 
@@ -753,6 +804,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setEditOriginalName('');
                 setEditIncludeInGoal(true);
                 setEditActiveDays([0, 1, 2, 3, 4, 5, 6]);
+                setEditFields(['title', 'content']);
               }}
               variant="outline"
               className="flex-1 h-12 border-[#EDEDED] text-[#7E7C78] hover:bg-[#F5F5F5] rounded-xl text-[15px]"
@@ -761,7 +813,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </Button>
             <Button
               onClick={handleSaveEdit}
-              disabled={!editName.trim()}
+              disabled={!editName.trim() || editFields.length === 0}
               className="flex-1 h-12 bg-[#2E2E2E] hover:bg-[#1E1E1E] text-white disabled:bg-[#E8E7E5] disabled:text-[#ACACAC] rounded-xl text-[15px] font-medium"
             >
               저장
