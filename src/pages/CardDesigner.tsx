@@ -2513,8 +2513,13 @@ export default function Designer() {
         }
 
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-        // 먼저 보관함에 저장하고 완료 창에서 기기 저장·공유를 선택합니다.
 
+        // 수동 편집 경로에만 있던 검사가 여기엔 없었다. 그림이 제대로 안 그려져도
+        // 그대로 저장돼, 보관함에 반쯤 하얀 카드가 남았다(10-31 요청 19).
+        if (!verseInput.trim()) throw new Error('카드에 넣을 문구가 없습니다.');
+        if (dataUrl.length < 1000) throw new Error('카드 이미지가 비어 있어요. 다시 만들어 주세요.');
+
+        // 먼저 보관함에 저장하고 완료 창에서 기기 저장·공유를 선택합니다.
         await saveCard({
           id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
