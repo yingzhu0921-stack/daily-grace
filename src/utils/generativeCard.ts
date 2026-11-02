@@ -579,18 +579,24 @@ function planBlobs(
   }));
 }
 
-/** 한 덩어리를 그린다. 타원·기울기는 좌표계를 돌려서 만든다. */
-function paintBlob(ctx: CanvasRenderingContext2D, w: number, h: number, b: Blob, scale = 1.5) {
+/**
+ * 한 덩어리를 그린다. 타원·기울기는 좌표계를 돌려서 만든다.
+ *
+ * flat=true 는 글자를 받치는 '읽기 바닥'용이다. 보통 덩어리의 감쇠(1 → .72 → .28 → 0)는
+ * 가파라서, 글자 띠의 가장자리에 닿는 획은 거의 보정을 못 받았다. 그래서 M 톤의 최저 대비가
+ * 2.32 까지 내려갔다. 평탄한 감쇠는 띠 안쪽을 고르게 덮고 바깥에서만 빠르게 사라진다.
+ */
+function paintBlob(ctx: CanvasRenderingContext2D, w: number, h: number, b: Blob, scale = 1.5, flat = false) {
   const r = w * b.rx * scale;
   ctx.save();
   ctx.translate(w * b.cx, h * b.cy);
   if (b.rot) ctx.rotate(b.rot);
   if (b.ry !== b.rx) ctx.scale(1, b.ry / b.rx);
   const g = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-  g.addColorStop(0, hexA(b.color, b.alpha));
-  g.addColorStop(0.45, hexA(b.color, b.alpha * 0.72));
-  g.addColorStop(0.75, hexA(b.color, b.alpha * 0.28));
-  g.addColorStop(1, hexA(b.color, 0));
+  const stops: [number, number][] = flat
+    ? [[0, 1], [0.55, 0.98], [0.78, 0.74], [0.92, 0.26], [1, 0]]
+    : [[0, 1], [0.45, 0.72], [0.75, 0.28], [1, 0]];
+  for (const [at, k] of stops) g.addColorStop(at, hexA(b.color, b.alpha * k));
   ctx.fillStyle = g;
   // 돌려 둔 좌표계에서도 화면을 덮도록 넉넉히 칠한다
   ctx.fillRect(-w * 2.5, -h * 2.5, w * 5, h * 5);
@@ -642,9 +648,9 @@ function drawGrain(
     paintBlob(ctx, w, h, {
       color: pal.blobs[2],
       cx: 0.5, cy: textY,
-      rx: 0.80, ry: bandR,
-      rot: 0, alpha: 0.72,
-    }, 1.4);
+      rx: 0.86, ry: bandR * 1.15,
+      rot: 0, alpha: 0.92,
+    }, 1.45, true);
   }
 
   // 섞인 톤은 진한 색이 글자를 덮을 수 있다. 글자 띠에 bg 색 빛무리를 한 겹 올려
@@ -653,9 +659,9 @@ function drawGrain(
     paintBlob(ctx, w, h, {
       color: pal.bg,
       cx: 0.5, cy: textY,
-      rx: 0.72, ry: bandR,
-      rot: 0, alpha: 0.9,
-    }, 1.35);
+      rx: 0.78, ry: bandR * 1.1,
+      rot: 0, alpha: 0.92,
+    }, 1.4, true);
   }
 
   const tile = grainTile(w, h, spec.seed);
