@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Plus } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { routes } from '@/config/routes';
 import { BottomNav } from '@/components/BottomNav';
@@ -8,13 +8,10 @@ import { getAllRecords } from '@/utils/recordsQuery';
 import { RecordCard } from '@/components/RecordCard';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import * as categoryStorage from '@/utils/categoryStorage';
-import { getAllCards, type VerseCard } from '@/utils/verseCardDB';
 
 type Category = Pick<categoryStorage.Category, 'id' | 'name' | 'color' | 'icon' | 'includeInGoal' | 'description'> & {
   fields?: categoryStorage.Category['fields'];
 };
-
-type TabType = 'records' | 'cards';
 
 const LEGACY_COLOR_MAP: Record<string, string> = {
   '#4F8A5B': '#7DB87D',
@@ -52,14 +49,16 @@ const Records: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
-  const tabParam = (searchParams.get('tab') as TabType) || 'records';
 
-  const [activeTab, setActiveTab] = useState<TabType>(tabParam);
+  // 말씀카드는 /cards/vault 한 곳에서만 본다. 예전 '말씀카드' 탭 링크로 들어오면 그리로 보낸다.
+  // (탭 쪽은 카드를 눌러도 열리지 않는 반쪽이어서 2026-11-02 에 없앴다.)
+  useEffect(() => {
+    if (searchParams.get('tab') === 'cards') navigate(routes.cardsVault, { replace: true });
+  }, [searchParams, navigate]);
+
   const [records, setRecords] = useState<any[]>([]);
   const [filteredRecords, setFilteredRecords] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [cards, setCards] = useState<VerseCard[]>([]);
-  const [isLoadingCards, setIsLoadingCards] = useState(false);
 
   // id 는 기록의 type 과 같아야 한다. 종류 필터가 record.type 과 직접 비교하기 때문이다.
   // 예전에는 '1'~'4' 라서 어떤 기록과도 맞지 않아 필터가 항상 빈 화면이었다.
@@ -71,14 +70,6 @@ const Records: React.FC = () => {
   ];
 
   const [customCategories, setCustomCategories] = useState<Category[]>([]);
-
-  // 탭 변경 핸들러
-  const handleTabChange = (tab: TabType) => {
-    setActiveTab(tab);
-    const newSearchParams = new URLSearchParams(searchParams);
-    newSearchParams.set('tab', tab);
-    setSearchParams(newSearchParams);
-  };
 
   // 커스텀 카테고리 로드
   useEffect(() => {
@@ -126,24 +117,6 @@ const Records: React.FC = () => {
     setRecords(allRecords);
   }, []);
 
-  // Load cards
-  useEffect(() => {
-    const loadCards = async () => {
-      if (activeTab === 'cards') {
-        try {
-          setIsLoadingCards(true);
-          const loadedCards = await getAllCards();
-          setCards(loadedCards);
-        } catch (error) {
-          console.error('Failed to load cards:', error);
-        } finally {
-          setIsLoadingCards(false);
-        }
-      }
-    };
-
-    loadCards();
-  }, [activeTab]);
 
   // Filter records by date and category
   useEffect(() => {
@@ -188,36 +161,10 @@ const Records: React.FC = () => {
           <div className="w-10" />
         </div>
 
-        {/* 탭 */}
-        <div className="max-w-[480px] mx-auto px-6 flex gap-6 pt-2">
-          <button
-            onClick={() => handleTabChange('records')}
-            className={`pb-3 text-[15px] font-medium transition-colors relative ${
-              activeTab === 'records' ? 'text-[#2E2E2E]' : 'text-[#ACACAC]'
-            }`}
-          >
-            전체 기록
-            {activeTab === 'records' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1F1F1F]" />
-            )}
-          </button>
-          <button
-            onClick={() => handleTabChange('cards')}
-            className={`pb-3 text-[15px] font-medium transition-colors relative ${
-              activeTab === 'cards' ? 'text-[#2E2E2E]' : 'text-[#ACACAC]'
-            }`}
-          >
-            말씀카드
-            {activeTab === 'cards' && (
-              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#1F1F1F]" />
-            )}
-          </button>
-        </div>
       </header>
 
       <main className="max-w-[480px] mx-auto px-6 pb-8">
         {/* 전체 기록 탭 */}
-        {activeTab === 'records' && (
           <>
             {/* 상단 헤더에 이미 '보관함' 이, 탭에 '전체 기록' 이 있다.
                 날짜로 걸러 볼 때만 그 날짜를 제목으로 보여 준다. */}
@@ -297,67 +244,8 @@ const Records: React.FC = () => {
               )}
             </div>
           </>
-        )}
 
         {/* 말씀카드 탭 */}
-        {activeTab === 'cards' && (
-          <div className="pt-4">
-            {isLoadingCards ? (
-              <div className="flex items-center justify-center py-20">
-                <div className="text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#7B9AAC] border-r-transparent mb-4"></div>
-                  <p className="text-sm text-[#7E7C78]">카드 불러오는 중...</p>
-                </div>
-              </div>
-            ) : cards.length > 0 ? (
-              <div className="grid grid-cols-2 gap-4">
-                {cards.map(card => (
-                  <div
-                    key={card.id}
-                    className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                    onClick={() => navigate('/cards/vault')}
-                  >
-                    {card.imageDataUrl ? (
-                      <img
-                        src={card.imageDataUrl}
-                        alt={card.text}
-                        className="w-full h-auto object-cover"
-                      />
-                    ) : (
-                      <div
-                        className="aspect-square flex items-center justify-center p-6"
-                        style={{ backgroundColor: card.bg.startsWith('#') ? card.bg : '#7B9AAC' }}
-                      >
-                        <div className="text-center">
-                          <p className="text-white text-[14px] font-medium line-clamp-4">
-                            {card.text}
-                          </p>
-                          {card.ref && (
-                            <p className="text-white/80 text-[11px] mt-2">{card.ref}</p>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="bg-white rounded-2xl px-6 py-10 text-center">
-                <p className="text-[14px] text-[#7E7C78] leading-relaxed mb-4">
-                  아직 만든 카드가 없어요.<br />
-                  '카드 만들기'에서 시작해보세요.
-                </p>
-                <button
-                  onClick={() => navigate(routes.cardDesigner)}
-                  className="px-5 py-2.5 bg-[#1F1F1F] text-white rounded-full text-[14px] font-medium hover:bg-[#333333] transition-colors inline-flex items-center gap-2"
-                >
-                  <Plus className="w-4 h-4" strokeWidth={2} />
-                  카드 만들기
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </main>
 
       <BottomNav />

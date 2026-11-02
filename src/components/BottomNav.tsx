@@ -4,6 +4,7 @@ import { Home, Palette, Archive, Settings, Plus, BookOpen, Heart, Star, PencilLi
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import * as categoryStorage from '@/utils/categoryStorage';
+import { routes } from '@/config/routes';
 
 type CustomCategory = {
   id: string;
@@ -87,8 +88,16 @@ export const BottomNav: React.FC = () => {
     }))
   ];
 
+  // 말씀카드 보관함(/cards/vault)은 '보관함' 에 속한다. 경로 앞부분만 비교하면
+  // '보관함'(/records) 에도 '카드 만들기'(/cards/designer) 에도 걸리지 않아
+  // 그 화면에서는 하단메뉴가 아무것도 켜지지 않았다.
+  const EXTRA_PATHS: Record<string, string[]> = {
+    '/records': [routes.cardsVault],
+  };
+
   const isActive = (path: string) => {
     if (path === '/') return location.pathname === '/';
+    if (EXTRA_PATHS[path]?.some((p) => location.pathname.startsWith(p))) return true;
     return location.pathname.startsWith(path);
   };
 
