@@ -8,7 +8,15 @@ export type RecordType = 'meditation' | 'prayer' | 'gratitude' | 'diary';
 
 export type UnifiedRecord = {
   id: string;
-  type: RecordType;
+  /**
+   * 기본 기록은 RecordType, 커스텀 기록은 '그 카테고리의 id'.
+   * 보관함 종류 필터가 record.type 과 카테고리 id 를 직접 비교하기 때문이다.
+   */
+  type: RecordType | string;
+  /** 커스텀 기록일 때만. 어느 카테고리의 기록인지 — 화면 이동과 이름표에 쓴다. */
+  categoryId?: string;
+  categoryName?: string;
+  categoryColor?: string;
   title: string;
   content: string;
   createdAt: string;
@@ -61,8 +69,47 @@ export function getAllRecords(): UnifiedRecord[] {
     date: toDateKey(d.createdAt),
   }));
 
-  return [...meditations, ...prayers, ...gratitudes, ...diaries]
+  // 커스텀 기록(설교·찬양 등)도 같은 목록에 들어가야 한다.
+  // 전에는 빠져 있어서 보관함의 종류 필터를 눌러도 늘 비었고,
+  // '내 기록에서 가져오기' 에도 아예 나오지 않았다.
+  const customs = readCustomRecords();
+
+  return [...meditations, ...prayers, ...gratitudes, ...diaries, ...customs]
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+}
+
+/** localStorage 의 커스텀 기록을 공통 모양으로 바꾼다. 저장 형식이 snake_case 와 섞여 있다. */
+function readCustomRecords(): UnifiedRecord[] {
+  let records: any[] = [];
+  let categories: any[] = [];
+  try { records = JSON.parse(localStorage.getItem('custom_records') || '[]'); } catch { /* 손상된 캐시는 없는 것으로 본다 */ }
+  try {
+    categories = JSON.parse(
+      sessionStorage.getItem('custom_categories') || localStorage.getItem('custom_categories') || '[]',
+    );
+  } catch { /* 위와 같다 */ }
+  const byId = new Map<string, any>(categories.map((c: any) => [c.id, c]));
+
+  return records
+    .map((r: any) => {
+      const categoryId = r.categoryId || r.category_id;
+      const createdAt = r.createdAt || r.created_at;
+      if (!categoryId || !createdAt) return null;
+      const cat = byId.get(categoryId);
+      return {
+        id: r.id,
+        type: categoryId,
+        categoryId,
+        categoryName: cat?.name,
+        categoryColor: cat?.color,
+        // 제목이 없으면 본문·내용에서 끌어온다. 목록에 빈 줄이 남지 않게.
+        title: r.title || cat?.name || '기록',
+        content: r.content || r.passage || '',
+        createdAt,
+        date: toDateKey(createdAt),
+      } as UnifiedRecord;
+    })
+    .filter((r): r is UnifiedRecord => r !== null);
 }
 
 export function getRecordsByDate(dateStr: string): UnifiedRecord[] {
@@ -74,13 +121,13 @@ export function getTodayRecords(): UnifiedRecord[] {
   return getRecordsByDate(today);
 }
 
-export function hasRecordOnDate(dateStr: string, type?: RecordType): boolean {
+export function hasRecordOnDate(dateStr: string, type?: RecordType | string): boolean {
   const records = getRecordsByDate(dateStr);
   if (!type) return records.length > 0;
   return records.some(r => r.type === type);
 }
 
-export function searchRecords(query: string, types?: RecordType[]): UnifiedRecord[] {
+export function searchRecords(query: string, types?: (RecordType | string)[]): UnifiedRecord[] {
   const all = getAllRecords();
   const filtered = types ? all.filter(r => types.includes(r.type)) : all;
   

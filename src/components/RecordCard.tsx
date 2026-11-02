@@ -5,10 +5,15 @@ import { routes } from '@/config/routes';
 
 type RecordCardProps = {
   id: string;
-  type: RecordType;
+  /** 기본 네 종류이거나, 커스텀 카테고리의 id */
+  type: RecordType | string;
   title: string;
   content: string;
   date: string;
+  /** 커스텀 기록일 때만 온다 */
+  categoryId?: string;
+  categoryName?: string;
+  categoryColor?: string;
 };
 
 const typeConfig: Record<RecordType, { icon: IconName; color: string; label: string; route: string }> = {
@@ -18,9 +23,15 @@ const typeConfig: Record<RecordType, { icon: IconName; color: string; label: str
   diary: { icon: 'pencilLine', color: 'rgba(221,149,125,1)', label: '일기', route: routes.diary },
 };
 
-export function RecordCard({ id, type, title, content, date }: RecordCardProps) {
+export function RecordCard({ id, type, title, content, date, categoryId, categoryName, categoryColor }: RecordCardProps) {
   const navigate = useNavigate();
-  const config = typeConfig[type];
+  // 커스텀 카테고리는 typeConfig 에 없다. 그대로 두면 config 가 undefined 라 터진다.
+  const config = typeConfig[type as RecordType] ?? {
+    icon: 'pencilLine' as IconName,
+    color: categoryColor || 'rgba(123,154,172,1)',
+    label: categoryName || '기록',
+    route: `/custom/${categoryId || type}`,
+  };
 
   const handleClick = () => {
     navigate(`${config.route}/${id}`);

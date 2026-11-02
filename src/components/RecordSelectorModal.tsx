@@ -27,7 +27,7 @@ interface RecordSelectorModalProps {
   purpose?: 'text' | 'background';
 }
 
-const getCategoryInfo = (type: RecordType) => {
+const getCategoryInfo = (type: RecordType | string, record?: Record) => {
   switch (type) {
     case 'meditation':
       return { icon: BookOpen, color: '#7DB87D', name: 'Q.T' };
@@ -38,6 +38,12 @@ const getCategoryInfo = (type: RecordType) => {
     case 'diary':
       return { icon: Edit3, color: '#DD957D', name: '일기' };
   }
+  // 커스텀 카테고리(설교·찬양 등). 이름·색은 기록에 함께 실려 온다.
+  return {
+    icon: Edit3,
+    color: (record as any)?.categoryColor || '#7B9AAC',
+    name: (record as any)?.categoryName || '기록',
+  };
 };
 
 const getContentPreview = (record: Record) => {
@@ -62,7 +68,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [confirmedText, setConfirmedText] = useState('');
   const [step, setStep] = useState<'select' | 'confirm'>('select');
-  const [activeType, setActiveType] = useState<'all' | RecordType>('all');
+  const [activeType, setActiveType] = useState<'all' | RecordType | string>('all');
   const [query, setQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
   const [options, setOptions] = useState<string[]>([]);
@@ -185,12 +191,23 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     `${record.title || ''} ${getRecordText(record)}`.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase())
   );
 
-  const filters: { key: 'all' | RecordType; label: string }[] = [
+  // 기본 네 종류 + 실제로 기록이 있는 커스텀 카테고리.
+  // 'QT' 만 혼자 점이 없었다. 앱의 다른 곳은 모두 'Q.T' 다.
+  const customFilters = Array.from(
+    new Map(
+      records
+        .filter((r: any) => r.categoryId)
+        .map((r: any) => [r.categoryId as string, (r.categoryName as string) || '기록']),
+    ),
+  ).map(([key, label]) => ({ key, label }));
+
+  const filters: { key: string; label: string }[] = [
     { key: 'all', label: '전체' },
-    { key: 'meditation', label: 'QT' },
+    { key: 'meditation', label: 'Q.T' },
     { key: 'prayer', label: '기도' },
     { key: 'gratitude', label: '감사' },
     { key: 'diary', label: '일기' },
+    ...customFilters,
   ];
 
   return (
@@ -244,7 +261,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
               </div>
             ) : (
               filteredRecords.slice(0, visibleCount).map((record) => {
-                const categoryInfo = getCategoryInfo(record.type);
+                const categoryInfo = getCategoryInfo(record.type, record);
                 const contentPreview = getContentPreview(record);
 
                 return (

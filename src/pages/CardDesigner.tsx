@@ -299,12 +299,43 @@ function readLocalRecordList(key: string, type: string) {
   }
 }
 
+/**
+ * 커스텀 기록(설교·찬양 등)을 선택 창이 읽을 수 있는 모양으로 바꾼다.
+ * type 은 그 카테고리의 id 다 — 종류 필터가 이 값으로 걸러낸다.
+ */
+function readCustomRecordsForSelector() {
+  let records: any[] = [];
+  let categories: any[] = [];
+  try { records = JSON.parse(localStorage.getItem('custom_records') || '[]'); } catch { /* 손상된 캐시는 없는 것으로 */ }
+  try {
+    categories = JSON.parse(
+      sessionStorage.getItem('custom_categories') || localStorage.getItem('custom_categories') || '[]',
+    );
+  } catch { /* 위와 같다 */ }
+  const byId = new Map<string, any>(categories.map((c: any) => [c.id, c]));
+
+  return records.map((r: any) => {
+    const categoryId = r.categoryId || r.category_id;
+    const cat = byId.get(categoryId);
+    return {
+      ...r,
+      type: categoryId,
+      categoryId,
+      categoryName: cat?.name,
+      categoryColor: cat?.color,
+      created_at: r.createdAt || r.created_at,
+    };
+  }).filter((r: any) => r.categoryId);
+}
+
 function getLocalRecordsForSelector() {
   return [
     ...readLocalRecordList('meditations', 'meditation'),
     ...readLocalRecordList('prayers', 'prayer'),
     ...readLocalRecordList('gratitudes', 'gratitude'),
     ...readLocalRecordList('diaries', 'diary'),
+    // 커스텀 기록이 빠져 있어서 설교·찬양은 '내 기록에서 가져오기' 에 아예 나오지 않았다.
+    ...readCustomRecordsForSelector(),
   ];
 }
 
