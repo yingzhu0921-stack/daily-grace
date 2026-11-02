@@ -1509,6 +1509,10 @@ export default function Designer() {
       >
         ✨ 내 기록에서 가져오기
       </button>
+      {/* 안내는 입력칸 '앞' 에 둔다. 아래 작은 회색 글씨로 있을 때는 다 쓰고 나서야 눈에 띄었다. */}
+      <p className="rounded-lg bg-[#F7F6F4] px-3 py-2 text-[12px] leading-5 text-[#6E6E6E] [word-break:keep-all]">
+        입력한 내용은 카드 생성을 위해 AI가 분석합니다. 이름·연락처·주소 등 개인정보는 입력하지 마세요.
+      </p>
       <textarea
         value={verseInput}
         onChange={(e) => {
@@ -1519,9 +1523,6 @@ export default function Designer() {
         placeholder={"카드로 남기고 싶은 문구를 입력해주세요\n말씀 · 묵상 · 기도 · 감사 등"}
         className="flex-1 min-h-[190px] p-4 border border-[#E3E2E0] rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1F1F1F] resize-none text-[15px] leading-7"
       />
-      <p className="text-[11px] leading-4 text-[#9B9B9B] [word-break:keep-all]">
-        입력한 내용은 카드 생성을 위해 AI가 분석합니다. 이름·연락처·주소 등 개인정보는 입력하지 마세요.
-      </p>
       <div className="grid grid-cols-1 gap-2">
         <button
           onClick={() => {

@@ -181,10 +181,11 @@ const Records: React.FC = () => {
             )}
 
             {/* Category Filter */}
-            <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
+            {/* 칩은 줄어들면 안 된다. flex 기본값이 shrink:1 이라 글자가 잘렸다("찬양" → "찬") */}
+            <div className="mb-4 flex gap-2 overflow-x-auto pb-2 hide-scrollbar">
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
+                className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
                   selectedCategory === 'all'
                     ? 'bg-[#1F1F1F] text-white'
                     : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
@@ -196,7 +197,7 @@ const Records: React.FC = () => {
                 <button
                   key={cat.id}
                   onClick={() => setSelectedCategory(cat.id)}
-                  className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
+                  className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
                     selectedCategory === cat.id
                       ? 'text-[#2E2E2E]'
                       : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'
@@ -212,7 +213,7 @@ const Records: React.FC = () => {
                   <button
                     key={cat.id}
                     onClick={() => setSelectedCategory(cat.id)}
-                    className={`px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
+                    className={`shrink-0 px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#2E2E2E]/20 ${
                       selectedCategory === cat.id
                         ? 'text-[#2E2E2E]'
                         : 'bg-white text-[#7C7C7C] border border-[#E8E7E5]'

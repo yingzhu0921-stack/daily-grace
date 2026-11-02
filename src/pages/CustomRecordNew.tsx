@@ -425,7 +425,7 @@ const CustomRecordNew = () => {
                 value={formData.title as string}
                 onChange={(e) => handleInputChange('title', e.target.value)}
                 placeholder={`${category.name} 제목을 입력하세요`}
-                className="border-none bg-transparent px-0 text-lg font-semibold leading-relaxed text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="record-field border-none text-lg font-semibold leading-relaxed text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
               />
             </section>
           )}
@@ -443,7 +443,7 @@ const CustomRecordNew = () => {
                   requestAnimationFrame(() => window.scrollTo(0, scrollPos));
                 }}
                 placeholder={`${category.name} 관련 본문이나 구절을 적어보세요`}
-                className="min-h-[120px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="record-field min-h-[120px] resize-none border-none text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
                 style={{ overflowY: 'hidden' }}
               />
             </section>
@@ -462,7 +462,7 @@ const CustomRecordNew = () => {
                   requestAnimationFrame(() => window.scrollTo(0, scrollPos));
                 }}
                 placeholder={`${category.name} 내용을 기록해보세요`}
-                className="min-h-[120px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="record-field min-h-[120px] resize-none border-none text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
                 style={{ overflowY: 'hidden' }}
               />
             </section>

@@ -115,10 +115,10 @@ export const BottomNav: React.FC = () => {
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors"
               >
                 <Icon
-                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#C0C0C0]'}`}
+                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}
                   strokeWidth={active ? 2 : 1.5}
                 />
-                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#C0C0C0]'}`}>
+                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}>
                   {tab.label}
                 </span>
               </button>
@@ -143,10 +143,10 @@ export const BottomNav: React.FC = () => {
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors"
               >
                 <Icon
-                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#C0C0C0]'}`}
+                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}
                   strokeWidth={active ? 2 : 1.5}
                 />
-                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#C0C0C0]'}`}>
+                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}>
                   {tab.label}
                 </span>
               </button>

@@ -176,11 +176,18 @@ const CardsVault: React.FC = () => {
       <main className="max-w-5xl mx-auto px-4 pb-8 pt-4">
         {/* Loading State */}
         {isLoading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-[#7B9AAC] border-r-transparent mb-4"></div>
-              <p className="text-sm text-[#7E7C78]">카드 불러오는 중...</p>
-            </div>
+          /* 글자 한 줄만 띄우다가 격자가 튀어나와 화면이 밀렸다.
+             들어올 자리와 같은 모양으로 미리 깔아 둔다. */
+          <div className="grid grid-cols-2 gap-4" aria-busy="true" aria-label="카드 불러오는 중">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={`card-skeleton-${i}`}
+                aria-hidden
+                className="rounded-2xl bg-white shadow-sm overflow-hidden"
+              >
+                <div className="aspect-[4/5] bg-[#F0EFED] animate-pulse" />
+              </div>
+            ))}
           </div>
         ) : cards.length > 0 ? (
           <div className="grid grid-cols-2 gap-4">

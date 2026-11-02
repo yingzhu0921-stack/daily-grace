@@ -55,6 +55,13 @@ const IndexNew = () => {
   const { user } = useAuth();
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
+  // 커스텀 카테고리는 서버에서 늦게 온다. 그동안 칸이 4개였다가 6개로 늘며 화면이 밀렸다.
+  // 지난번 개수를 기억해 그만큼 빈 칸을 미리 깔아 둔다.
+  const [categoriesReady, setCategoriesReady] = useState(false);
+  const rememberedCustomCount = (() => {
+    try { return Math.min(6, Math.max(0, Number(localStorage.getItem('custom_category_count') || 0))); }
+    catch { return 0; }
+  })();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
   const [goalProgress, setGoalProgress] = useState({ completed: 0, total: 4 });
   const [streakDays, setStreakDays] = useState(0);
@@ -123,8 +130,11 @@ const IndexNew = () => {
         // 캐시 업데이트
         sessionStorage.setItem('custom_categories', JSON.stringify(customs));
         setCustomCategories(customs);
+        try { localStorage.setItem('custom_category_count', String(customs.length)); } catch { /* 저장 못 해도 동작엔 지장 없다 */ }
       } catch (error) {
         console.error('❌ Failed to load custom categories on Index page:', error);
+      } finally {
+        setCategoriesReady(true);
       }
     };
 
@@ -392,6 +402,15 @@ const IndexNew = () => {
                 </button>
               );
             })}
+            {!categoriesReady && customCategories.length === 0 &&
+              Array.from({ length: rememberedCustomCount }).map((_, i) => (
+                <div
+                  key={`routine-skeleton-${i}`}
+                  aria-hidden
+                  className="h-[120px] rounded-[24px] bg-white animate-pulse"
+                  style={{ border: '1px solid #EFEFEF' }}
+                />
+              ))}
           </div>
 
           {/* 카테고리 추가 버튼 */}

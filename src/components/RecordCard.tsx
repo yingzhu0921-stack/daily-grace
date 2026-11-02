@@ -52,8 +52,8 @@ export function RecordCard({ id, type, title, content, date, categoryId, categor
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-medium text-[#9B9B9B]">{config.label}</span>
-            <span className="text-xs text-[#BDBDBD]">{date}</span>
+            <span className="text-xs font-medium text-[#6E6E6E]">{config.label}</span>
+            <span className="text-xs text-[#767676]">{date}</span>
           </div>
           
           <h3 className="text-[15px] font-semibold text-[#2E2E2E] mb-1 truncate">

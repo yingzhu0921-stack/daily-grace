@@ -158,7 +158,7 @@ export default function PrayerNew() {
               requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             }}
             placeholder="기도 제목(내용)을 적어보세요&#10;예) 아버지의 건강 회복을 위해"
-            className="w-full min-h-[120px] bg-transparent text-[18px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
+            className="record-field w-full min-h-[120px] text-[18px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
             style={{ overflowY: 'hidden' }}
           />
           <label className="flex items-center gap-2 text-sm text-[#666] mt-4">

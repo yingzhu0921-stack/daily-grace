@@ -186,7 +186,7 @@ export default function GratitudeNew() {
               });
             }}
             placeholder="1.&#10;2.&#10;3.&#10;4."
-            className="w-full min-h-[120px] bg-transparent text-[16px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
+            className="record-field w-full min-h-[120px] text-[16px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
             style={{ overflowY: 'hidden' }}
           />
           {/* 다음 번호 미리보기. 흐릿하게 떠 있다가 누르거나 Enter 를 치면 진짜 줄이 된다. */}

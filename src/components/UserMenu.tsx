@@ -58,25 +58,34 @@ export const UserMenu: React.FC = () => {
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-48 bg-white border-[#E3E2E0]">
+        {/* '내 정보' 는 설정 안의 계정 화면으로 바로 가는 길이라, 이름만으로는 '설정' 과
+            무엇이 다른지 알 수 없었다. 각자 무엇을 담고 있는지 한 줄씩 적어 둔다. */}
         <DropdownMenuItem
           onClick={() => navigate('/settings/account')}
-          className="text-[#2E2E2E] hover:bg-[#F3F2F1] cursor-pointer"
+          className="text-[#2E2E2E] hover:bg-[#F3F2F1] cursor-pointer items-start py-2"
         >
-          <User className="mr-2 h-4 w-4" />
-          <span>내 정보</span>
+          <User className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+          <span className="flex flex-col">
+            <span>내 정보</span>
+            <span className="text-[11px] leading-4 text-[#6E6E6E]">프로필 · 계정</span>
+          </span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate('/settings')}
-          className="text-[#2E2E2E] hover:bg-[#F3F2F1] cursor-pointer"
+          className="text-[#2E2E2E] hover:bg-[#F3F2F1] cursor-pointer items-start py-2"
         >
-          <Settings className="mr-2 h-4 w-4" />
-          <span>설정</span>
+          <Settings className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+          <span className="flex flex-col">
+            <span>설정</span>
+            <span className="text-[11px] leading-4 text-[#6E6E6E]">알림 · 내보내기 · 약관</span>
+          </span>
         </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-[#E3E2E0]" />
+        {/* 로그아웃은 얇은 줄 하나로만 나뉘어 '설정' 과 거의 같아 보였다. */}
+        <DropdownMenuSeparator className="my-1.5 bg-[#E3E2E0]" />
         <DropdownMenuItem
           onClick={handleLogout}
           disabled={isLoggingOut}
-          className="text-[#2E2E2E] hover:bg-[#F3F2F1] cursor-pointer disabled:opacity-50"
+          className="text-[#C2553A] hover:bg-[#FBF0EC] focus:bg-[#FBF0EC] focus:text-[#C2553A] cursor-pointer disabled:opacity-50"
         >
           <LogOut className="mr-2 h-4 w-4" />
           <span>{isLoggingOut ? '로그아웃 중...' : '로그아웃'}</span>
