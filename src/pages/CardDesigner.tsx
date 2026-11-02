@@ -1497,7 +1497,9 @@ export default function Designer() {
             if (!verseInput.trim()) { toast.error('내용을 입력해주세요'); return; }
             continueWithText(verseInput.trim());
           }}
-          className="px-4 py-3 bg-[#1F1F1F] text-white rounded-lg font-medium hover:bg-[#333333]"
+          // 눌러 놓고 오류를 보여 주기보다 못 누르게 하는 편이 알기 쉽다.
+          disabled={!verseInput.trim()}
+          className="px-4 py-3 bg-[#1F1F1F] text-white rounded-lg font-medium hover:bg-[#333333] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-[#1F1F1F]"
         >
           {activeTrack === 'manual' ? '이 문구로 편집하기' : '이 문구로 스타일 선택'}
         </button>
@@ -3162,8 +3164,12 @@ export default function Designer() {
           </button>
           <button
             className="h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-[#1F1F1F] hover:bg-[#333333] text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={isSaving}
+            // 문구가 비면 저장할 수 없다. 전에는 글자 없는 카드가 그대로 저장돼
+            // 보관함에 반쯤 빈 카드로 남았다(10-31 요청 19 와 같은 뿌리).
+            disabled={isSaving || !t.content.trim()}
+            title={!t.content.trim() ? '문구를 입력하면 저장할 수 있어요' : undefined}
             onClick={async () => {
+              if (!t.content.trim()) { toast.error('카드에 넣을 문구를 입력해주세요'); return; }
               requireAuth(async () => {
                 setIsSaving(true);
                 try {
