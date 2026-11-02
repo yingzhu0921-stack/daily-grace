@@ -239,14 +239,14 @@ const CardsVault: React.FC = () => {
 
       {/* Detail View Modal */}
       <Dialog open={!!selectedCard} onOpenChange={(open) => !open && setSelectedCard(null)}>
-        <DialogContent hideCloseButton className="max-w-[90vw] max-h-[90vh] p-0 bg-transparent border-none shadow-none">
+        <DialogContent hideCloseButton className="max-w-[90vw] max-h-[85vh] overflow-y-auto overscroll-contain p-0 bg-transparent border-none shadow-none">
           <DialogTitle className="sr-only">말씀카드</DialogTitle>
           {selectedCard && (
             <div className="relative">
               {/* Close Button */}
               <button
                 onClick={() => setSelectedCard(null)}
-                className="absolute -top-12 right-0 p-2 bg-white/90 hover:bg-white rounded-full transition-colors z-10"
+                className="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white rounded-full transition-colors z-10 shadow"
               >
                 <X className="w-5 h-5 text-[#2E2E2E]" />
               </button>
@@ -257,7 +257,7 @@ const CardsVault: React.FC = () => {
                   <img 
                     src={selectedCard.imageDataUrl} 
                     alt={selectedCard.text}
-                    className="w-full h-auto max-h-[70vh] object-contain"
+                    className="w-full h-auto max-h-[52vh] object-contain"
                   />
                 ) : (
                   <div
@@ -302,8 +302,8 @@ const CardsVault: React.FC = () => {
                 </button>
               </div>
 
-              {/* 삭제는 줄을 띄우고 구분선 아래, 글자만. 실수로 닿지 않게 둔다. */}
-              <div className="mt-5 pt-4 border-t border-[#EDEDED]">
+              {/* 삭제는 구분선 아래 글자만. 실수로 닿지 않게 두되 세로 공간은 아껴 쓴다. */}
+              <div className="mt-3 pt-3 border-t border-[#EDEDED] pb-2">
                 <button
                   onClick={() => setPendingDelete(selectedCard.id)}
                   className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[#C2553A] text-sm font-medium rounded-xl hover:bg-[#FBF0EC] transition-colors"

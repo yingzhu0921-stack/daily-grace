@@ -123,7 +123,7 @@ export default function DiaryNew() {
               requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             }}
             placeholder="오늘의 마음을 자유롭게 적어보세요…"
-            className="record-field border-0 text-[16px] leading-7 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 min-h-[120px]"
+            className="bg-transparent border-0 text-[16px] leading-7 resize-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 min-h-[120px]"
             style={{ overflowY: 'hidden' }}
           />
           {/* 빈 화면에 "0자" 만 덩그러니 떠 있지 않게, 쓰기 시작하면 입력창 끝에 붙여 보여 준다 */}

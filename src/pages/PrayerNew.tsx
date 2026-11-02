@@ -65,10 +65,15 @@ export default function PrayerNew() {
   };
 
   // 저장을 마친 뒤 한 번만 로그인을 권하고, 창을 닫으면 상세로 이동한다
-  const finishSave = (prayerId: string) => {
+  /**
+   * prayerId 가 null 이면 목록에서 멈춘다.
+   * 여러 줄을 나눠 저장했는데 첫 기도의 상세 화면으로 보내면, 한 건만 저장된 것처럼 보인다.
+   * 실제로는 다 저장돼 있어서 뒤로 나가야 비로소 보였다.
+   */
+  const finishSave = (prayerId: string | null) => {
     const go = () => {
       navigate('/prayer', { replace: true });
-      setTimeout(() => navigate(`/prayer/${prayerId}`), 0);
+      if (prayerId) setTimeout(() => navigate(`/prayer/${prayerId}`), 0);
     };
     if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
     else go();
@@ -100,8 +105,13 @@ export default function PrayerNew() {
       ));
       savedPrayer = prayers[0];
 
-      toast.success(saveFeedback(Boolean(user)));
-      finishSave(savedPrayer.id);
+      toast.success(
+        prayers.length > 1
+          ? `기도제목 ${prayers.length}개를 저장했어요`
+          : saveFeedback(Boolean(user)),
+      );
+      // 여러 개면 목록에서 멈춰 전부 보이게 한다. 하나면 지금까지처럼 그 기도로 간다.
+      finishSave(prayers.length > 1 ? null : savedPrayer.id);
     } else {
       savedPrayer = await create({
         title: value,
@@ -170,7 +180,7 @@ export default function PrayerNew() {
               requestAnimationFrame(() => window.scrollTo(0, scrollPos));
             }}
             placeholder="기도 제목(내용)을 적어보세요&#10;예) 아버지의 건강 회복을 위해"
-            className="record-field w-full min-h-[120px] text-[18px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
+            className="w-full min-h-[120px] bg-transparent text-[18px] leading-7 outline-none resize-none placeholder-[#B6B6B6] border-none"
             style={{ overflowY: 'hidden' }}
           />
           {/* 줄이 하나뿐이면 켜도 꺼도 결과가 같다. 그때는 묻지 않는다. */}

@@ -4427,37 +4427,37 @@ function Toolbar({
             value="text"
             title="텍스트"
             aria-label="텍스트"
-            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
+            className="px-3 py-1.5 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0"
           >
-            <Type className="w-6 h-6" />
-            <span className="text-[10px] leading-none font-medium">텍스트</span>
+            <Type className="w-5 h-5" />
+            <span className="text-[9px] leading-tight font-medium">텍스트</span>
           </TabsTrigger>
           <TabsTrigger
             value="font"
             title="폰트"
             aria-label="폰트"
-            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
+            className="px-3 py-1.5 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0"
           >
-            <span className="text-lg font-bold">가</span>
-            <span className="text-[10px] leading-none font-medium">폰트</span>
+            <span className="text-base font-bold leading-none">가</span>
+            <span className="text-[9px] leading-tight font-medium">폰트</span>
           </TabsTrigger>
           <TabsTrigger
             value="color"
             title="색상"
             aria-label="색상"
-            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
+            className="px-3 py-1.5 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0"
           >
-            <Palette className="w-6 h-6" />
-            <span className="text-[10px] leading-none font-medium">색상</span>
+            <Palette className="w-5 h-5" />
+            <span className="text-[9px] leading-tight font-medium">색상</span>
           </TabsTrigger>
           <TabsTrigger
             value="size"
             title="크기"
             aria-label="크기"
-            className="px-3 py-2 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0.5"
+            className="px-3 py-1.5 rounded-full data-[state=active]:bg-[#1F1F1F] data-[state=active]:text-white data-[state=inactive]:text-[#7E7C78] transition-all min-h-[44px] min-w-[44px] flex flex-col items-center justify-center gap-0"
           >
-            <Ruler className="w-6 h-6" />
-            <span className="text-[10px] leading-none font-medium">크기</span>
+            <Ruler className="w-5 h-5" />
+            <span className="text-[9px] leading-tight font-medium">크기</span>
           </TabsTrigger>
         </TabsList>
 

@@ -247,23 +247,3 @@ button[aria-selected="true"].has-record-multi::after {
 .hide-scrollbar::-webkit-scrollbar {
   display: none; /* Chrome, Safari, Opera */
 }
-
-/* 기록 쓰기 화면의 입력칸.
-   전에는 테두리도 배경도 없어서, 빈 상태에서는 어디를 눌러야 쓸 수 있는지 보이지 않았다.
-   화면마다 클래스를 길게 늘어놓다 보니 조금씩 달라져 있기도 했다. 한 곳에 모은다. */
-.record-field {
-  background-color: #FAFAF9;
-  border: 1px solid #EDEDED;
-  border-radius: 12px;
-  padding: 12px 14px;
-  transition: border-color .15s ease, background-color .15s ease;
-}
-
-.record-field:focus,
-.record-field:focus-visible,
-.record-field:focus-within {
-  background-color: #FFFFFF;
-  border-color: #1F1F1F;
-  outline: none;
-  box-shadow: none;
-}

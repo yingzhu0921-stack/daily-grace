@@ -172,7 +172,7 @@ export const MeditationEditor = forwardRef<MeditationEditorHandle, MeditationEdi
           ref={titleRef}
           value={title}
           onChange={(e) => handleChange('title', e.target.value)}
-          className="record-field border-none text-lg font-semibold leading-relaxed text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="border-none bg-transparent px-0 text-lg font-semibold leading-relaxed text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
           placeholder="오늘의 묵상 제목을 입력하세요"
         />
       </section>
@@ -185,7 +185,7 @@ export const MeditationEditor = forwardRef<MeditationEditorHandle, MeditationEdi
           value={passage}
           onChange={(e) => handleChange('passage', e.target.value, e.target)}
           rows={1}
-          className="record-field min-h-[56px] resize-none border-none text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="min-h-[32px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
           style={{ overflowY: 'hidden' }}
           placeholder="읽은 말씀을 적어보세요"
         />
@@ -198,7 +198,7 @@ export const MeditationEditor = forwardRef<MeditationEditorHandle, MeditationEdi
           ref={contentRef}
           value={content}
           onChange={(e) => handleChange('content', e.target.value, e.target)}
-          className="record-field min-h-[120px] resize-none border-none text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
+          className="min-h-[120px] resize-none border-none bg-transparent px-0 text-base leading-[1.8] text-[#2E2E2E] placeholder:text-[#D0D0D0] focus-visible:ring-0 focus-visible:ring-offset-0"
           style={{ overflowY: 'hidden' }}
           placeholder="묵상 내용을 자유롭게 적어보세요"
         />
