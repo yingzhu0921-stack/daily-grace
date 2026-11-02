@@ -27,13 +27,13 @@ const Legal: React.FC = () => {
       <main className="max-w-3xl mx-auto px-5 py-6 pb-12">
         <section className="mb-8">
           <p className="text-[13px] font-medium text-[#7E7C78] mb-2">
-            Daily Grace
+            하루은혜
           </p>
           <h2 className="text-[28px] font-bold leading-tight text-[#2E2E2E]">
             이용약관 및 콘텐츠 정책
           </h2>
           <p className="mt-3 text-[14px] leading-6 text-[#7E7C78]">
-            Daily Grace는 사용자가 직접 입력한 기록과 말씀을 바탕으로 묵상, 기록, 말씀카드 제작을 돕는 서비스입니다.
+            하루은혜는 사용자가 직접 입력한 기록과 말씀을 바탕으로 묵상, 기록, 말씀카드 제작을 돕는 서비스입니다.
           </p>
         </section>
 
@@ -61,13 +61,13 @@ const Legal: React.FC = () => {
             </h3>
             <div className="space-y-3 text-[15px] leading-7 text-[#4B4A47]">
               <p>
-                Daily Grace는 성경 본문을 제공하지 않습니다.
+                하루은혜는 성경 본문을 제공하지 않습니다.
               </p>
               <p>
                 앱에서 사용되는 모든 말씀 및 본문 텍스트는 사용자가 직접 입력한 내용입니다.
               </p>
               <p>
-                Daily Grace는 사용자가 입력한 텍스트를 기반으로 기록 작성, 카드 제작, 이미지 생성 등의 기능을 제공합니다.
+                하루은혜는 사용자가 입력한 텍스트를 기반으로 기록 작성, 카드 제작, 이미지 생성 등의 기능을 제공합니다.
               </p>
               <p>
                 사용자는 개인정보나 민감한 정보가 포함된 내용을 입력하거나 업로드할 때 신중하게 확인해야 합니다.

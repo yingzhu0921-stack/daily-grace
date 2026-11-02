@@ -345,7 +345,7 @@ export async function downloadAsText(): Promise<void> {
   const backupData = await exportAllData();
   const date = new Date().toISOString().split('T')[0];
 
-  let text = `Daily Grace 백업\n`;
+  let text = `하루은혜 백업\n`;
   text += `내보내기 날짜: ${new Date(backupData.exportDate).toLocaleString('ko-KR')}\n`;
   text += `사용자: ${backupData.user.email}\n`;
   text += `\n${'='.repeat(60)}\n\n`;
