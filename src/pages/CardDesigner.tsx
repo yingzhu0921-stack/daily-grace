@@ -3516,7 +3516,7 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
-        className="flex-1 min-h-0 flex items-center justify-center px-4 bg-gray-200 overflow-hidden"
+        className="flex-1 min-h-[180px] flex items-center justify-center px-4 bg-gray-200 overflow-hidden"
       >
         {/* Card Preview - aspect-ratio with full width and max height */}
         <RatioBox
@@ -3860,8 +3860,12 @@ export default function Designer() {
 
       {/* ── 하단 편집 패널 ── */}
       <div
+        // 키보드가 올라오면 패널을 접는다.
+        // 패널이 280px 고정이라, 키보드(약 340px)까지 빠지면 카드가 그릴 자리를 거의 다 잃었다.
+        // 글자는 카드 위에 직접 쓰는 구조라, 쓰려고 탭하는 순간 쓸 카드가 사라지는 셈이었다.
+        // 키보드가 떠 있는 동안에는 패널을 쓸 일도 없다.
         className={`flex-none bg-white/70 backdrop-blur-xl border-t border-white/30 shadow-[0_-4px_20px_rgba(0,0,0,0.15)] flex flex-col transition-all duration-200 overflow-hidden ${
-          isPanelCollapsed ? 'h-8' : 'h-[280px]'
+          isPanelCollapsed || keyboardHeight > 0 ? 'h-8' : 'h-[280px]'
         }`}>
           {/* Handlebar */}
           <div

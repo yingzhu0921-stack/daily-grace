@@ -190,7 +190,10 @@ const CardsVault: React.FC = () => {
             ))}
           </div>
         ) : cards.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
+          /* items-start 가 없으면 한 줄의 칸이 가장 높은 카드에 맞춰 늘어난다.
+             가로가 넓은 카드(16:9 등)는 이미지가 짧아 칸의 흰 바탕이 아래에 남았다.
+             이미지에 흰 여백이 있는 게 아니라 칸이 남은 것이다. */
+          <div className="grid grid-cols-2 gap-4 items-start">
             {cards.map(card => (
               <div
                 key={card.id}
