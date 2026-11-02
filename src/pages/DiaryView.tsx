@@ -3,10 +3,12 @@ import { useEffect, useState } from "react";
 import { get, remove, type Diary } from "@/utils/diaryStorage";
 import { ChevronLeft, Share2, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
 
 export default function DiaryView() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [diary, setDiary] = useState<Diary | null>(null);
 
   useEffect(() => {
@@ -25,7 +27,6 @@ export default function DiaryView() {
   }
 
   const del = async () => {
-    if (!confirm("이 일기를 삭제할까요?")) return;
     await remove(diary.id);
     navigate("/diary", { replace: true });
   };
@@ -92,7 +93,7 @@ export default function DiaryView() {
               공유하기
             </button>
             <button
-              onClick={del}
+              onClick={() => setShowDeleteDialog(true)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
             >
               삭제하기
@@ -100,6 +101,12 @@ export default function DiaryView() {
           </div>
         </div>
       </div>
+      <DeleteRecordDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        label="일기"
+        onConfirm={del}
+      />
     </div>
   );
 }

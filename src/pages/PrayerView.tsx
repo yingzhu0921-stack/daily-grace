@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { get, remove, toggleAnswered, update } from '@/utils/prayerStorage';
+import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
 import type { PrayerNote } from '@/types/prayer';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
@@ -17,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function PrayerView() {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [note, setNote] = useState<PrayerNote | null>(null);
   const [isAnsweredDialogOpen, setIsAnsweredDialogOpen] = useState(false);
   const [answeredDetail, setAnsweredDetail] = useState('');
@@ -72,7 +74,6 @@ export default function PrayerView() {
   };
 
   const handleDelete = () => {
-    if (!id || !confirm('정말 삭제하시겠습니까?')) return;
     remove(id);
     toast.success('삭제되었습니다');
     navigate('/prayer');
@@ -185,7 +186,7 @@ export default function PrayerView() {
               공유하기
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
             >
               삭제하기
@@ -246,6 +247,12 @@ export default function PrayerView() {
           </div>
         </DialogContent>
       </Dialog>
+      <DeleteRecordDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        label="기도"
+        onConfirm={handleDelete}
+      />
     </>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Share2, Download, Edit3, Trash2, X, Plus } from 'lucide-react';
+import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
 import { withAuth } from '@/components/auth/withAuth';
 import { routes } from '@/config/routes';
 import { toast } from 'sonner';
@@ -15,6 +16,7 @@ import { getAllCards, deleteCard, migrateFromLocalStorage, type VerseCard } from
 const CardsVault: React.FC = () => {
   const navigate = useNavigate();
   const [cards, setCards] = useState<VerseCard[]>([]);
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
   const [selectedCard, setSelectedCard] = useState<VerseCard | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -57,24 +59,23 @@ const CardsVault: React.FC = () => {
       const blob = await response.blob();
       const file = new File([blob], 'verse-card.png', { type: 'image/png' });
 
-      if (navigator.share && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          files: [file],
-          title: '말씀카드',
-          text: card.text,
+      if (!navigator.share || !navigator.canShare?.({ files: [file] })) {
+        // 예전에는 여기서 조용히 내려받았다. 그래서 PC 에서는 '공유'와 '저장'이 똑같이
+        // 파일만 떨어뜨렸고, 버튼이 왜 둘인지 알 수 없었다. 이제는 왜 안 되는지 말해 준다.
+        toast.info('이 브라우저는 이미지 공유를 지원하지 않아요', {
+          description: "'저장'으로 내려받은 뒤 보내 주세요. 휴대폰에서는 공유가 바로 열려요.",
         });
-        toast.success('카드를 공유했어요!');
-      } else {
-        // Fallback: Download
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `verse-card-${card.id}.png`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('카드를 다운로드했어요!');
+        return;
       }
+
+      await navigator.share({
+        files: [file],
+        title: '말씀카드',
+        text: card.text,
+      });
     } catch (error) {
+      // 사용자가 공유창을 닫은 것은 실패가 아니다. 그걸 오류로 띄우면 뭔가 잘못된 줄 안다.
+      if ((error as DOMException)?.name === 'AbortError') return;
       console.error('Share error:', error);
       toast.error('공유에 실패했어요');
     }
@@ -268,41 +269,54 @@ const CardsVault: React.FC = () => {
                 )}
               </div>
 
-              {/* Action Buttons */}
-              <div className="grid grid-cols-2 gap-3 mt-4">
+              {/* 주된 동작 셋. 삭제는 여기 끼우지 않는다 — 되돌릴 수 없는 동작이라
+                  같은 크기로 나란히 두면 잘못 눌린다. */}
+              <div className="grid grid-cols-3 gap-2 mt-4">
                 <button
                   onClick={() => handleShare(selectedCard)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Share2 className="w-4 h-4" />
-                  공유하기
+                  공유
                 </button>
                 <button
                   onClick={() => handleDownload(selectedCard)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Download className="w-4 h-4" />
-                  다운로드
+                  저장
                 </button>
                 <button
                   onClick={() => handleEdit(selectedCard)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#C89B3C] hover:bg-[#b88b2c] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#C89B3C] hover:bg-[#b88b2c] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Edit3 className="w-4 h-4" />
-                  편집하기
+                  편집
                 </button>
+              </div>
+
+              {/* 삭제는 줄을 띄우고 구분선 아래, 글자만. 실수로 닿지 않게 둔다. */}
+              <div className="mt-5 pt-4 border-t border-[#EDEDED]">
                 <button
-                  onClick={() => handleDelete(selectedCard.id)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 bg-[#D97B5D] hover:bg-[#c96b4d] text-white rounded-xl text-sm font-medium transition-colors"
+                  onClick={() => setPendingDelete(selectedCard.id)}
+                  className="w-full flex items-center justify-center gap-1.5 py-2.5 text-[#C2553A] text-sm font-medium rounded-xl hover:bg-[#FBF0EC] transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
-                  삭제
+                  삭제하기
                 </button>
               </div>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* 카드 삭제는 '실행 취소' 토스트만 있고 확인이 없었다. 토스트를 놓치면 그대로 사라진다. */}
+      <DeleteRecordDialog
+        open={pendingDelete !== null}
+        onOpenChange={(open) => { if (!open) setPendingDelete(null); }}
+        label="말씀카드"
+        onConfirm={() => { if (pendingDelete) handleDelete(pendingDelete); setPendingDelete(null); }}
+      />
 
       {/* Bottom Navigation */}
       <BottomNav />

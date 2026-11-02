@@ -6,6 +6,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import * as categoryStorage from '@/utils/categoryStorage';
+import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
 
 type Category = {
   id: string;
@@ -32,6 +33,7 @@ type CustomRecord = {
 const CustomRecordView = () => {
   const navigate = useNavigate();
   const { categoryId, recordId } = useParams<{ categoryId: string; recordId: string }>();
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [category, setCategory] = useState<Category | null>(null);
   const [record, setRecord] = useState<CustomRecord | null>(null);
 
@@ -176,7 +178,6 @@ const CustomRecordView = () => {
   };
 
   const handleDelete = () => {
-    if (!confirm('이 기록을 삭제할까요?')) return;
 
     if (!recordId) return;
 
@@ -324,7 +325,7 @@ const CustomRecordView = () => {
               공유하기
             </button>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteDialog(true)}
               className="flex-1 py-2.5 rounded-xl text-sm font-medium text-[#DD957D] bg-white border border-[#E8E7E5] hover:bg-[#FFF5F2] transition-colors"
             >
               삭제하기
@@ -338,6 +339,12 @@ const CustomRecordView = () => {
             </p>
           </div>
         </main>
+      <DeleteRecordDialog
+        open={showDeleteDialog}
+        onOpenChange={setShowDeleteDialog}
+        label="기록"
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };
