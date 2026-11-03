@@ -33,9 +33,11 @@ const T01_ART = 'FLAT, MINIMAL illustration in the style of a modern Korean/Japa
   + 'charmingly wonky, never geometric or polished. Any character is a chunky little blob body with a round face, '
   + 'TINY DOT EYES and a small deadpan flat mouth, drawn with tiny dots and short thin lines only. A character always has CLEARLY DRAWN HAIR with a real shape and simple limbs — never a bald featureless egg. No eyebrows, '
   + 'no blush, no smile lines, no expressive cartoon faces. '
+  + 'When the figure note for this card does not say who the person is, do NOT fall back to a long-haired girlish figure — '
+  + 'that default is what made every card look like the same girl. Vary it. '
   + 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
   + 'Clean smooth surface with at most a very subtle paper grain. '
-  + 'VERY FEW ELEMENTS — one small subject taken from the verse\'s own words, placed LOW in the frame, with a large plain '
+  + 'VERY FEW ELEMENTS — one small subject taken from the verse\'s own words or from the moment it describes, placed LOW in the frame, with a large plain '
   + 'empty area of the ground colour in the UPPER HALF. Quiet, spacious and a little offbeat.';
 
 /** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
@@ -81,6 +83,11 @@ type AutoCardAnalysis = {
   emotionalTone?: string;
   emotionalMovement?: string;
   visualEnergy?: string;
+  /**
+   * 말씀이 '무슨 일이 일어나는 장면'일 때, 그 실제 순간.
+   * 문장 속 명사가 아니라 앞뒤 맥락에서 온다. 서사가 아니면 빈 값.
+   */
+  situation?: string;
   literalObjectsToAvoid?: string[];
   t01SceneConcept?: string;
   t02GraphicConcept?: string;
@@ -404,7 +411,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
         {
           role: 'system',
           content: `You are an art director for "Daily Grace" faith cards. Work in this order: (1) analyze the message meaning, (2) detect any Bible reference, (3) decide the typography hierarchy, (4) plan the layout, (5) describe a background that ADAPTS to that typography and message. Typography and meaning drive the design; the background adapts to the text layout, never the other way around. The card's HERO is the user's text as poster typography. Return JSON only:
-{"lines":[{"text":"","scale":1}],"textAlign":"center","textZone":"center","useBrush":false,"mood":"","templates":["T01","T03","T04"],"coreMeaning":"","emotionalTone":"","emotionalMovement":"","visualEnergy":"","literalObjectsToAvoid":[""],"t01SceneConcept":"","t02GraphicConcept":"","t03NatureConcept":"","t04NatureConcept":"","sceneRationale":"","backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
+{"lines":[{"text":"","scale":1}],"textAlign":"center","textZone":"center","useBrush":false,"mood":"","templates":["T01","T03","T04"],"coreMeaning":"","emotionalTone":"","emotionalMovement":"","visualEnergy":"","situation":"","literalObjectsToAvoid":[""],"t01SceneConcept":"","t02GraphicConcept":"","t03NatureConcept":"","t04NatureConcept":"","sceneRationale":"","backgroundConcept":"","visualMotifs":[""],"palette":"","lighting":"","composition":"","typographyTone":"","fontMood":"bold","avoidImagery":[""]}
 
 ABSOLUTE TEXT RULE — rearrange the presentation freely, never modify the words:
 - BEFORE describing the background, plan the typography: identify key phrases, the dominant idea, and supporting text, then build the hierarchy and layout.
@@ -496,21 +503,30 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
   · emotionalTone: the feeling (e.g. comfort, awe, resolve, longing, gratitude, surrender)
   · emotionalMovement: how the feeling/state CHANGES or MOVES (e.g. "from heaviness to release", "holding steady through pressure", "reaching outward", "quiet waiting before dawn")
   · visualEnergy: one of quiet / gentle / hopeful / strong / dynamic
-  · literalObjectsToAvoid: 2-4 obvious literal noun-substitutions that would be too on-the-nose for THIS message (e.g. 비우라→"empty bowl", 기다림→"clock", 손 들어→"raised hands", 회복→"bandage/broken object")
-  · t01SceneConcept: for the flat handwriting card — ONE small simple subject that is TRACEABLE TO THE MESSAGE'S OWN WORDS, IMAGERY OR METAPHOR, placed LOW in the frame; keep the upper half empty. Write it in this exact shape: "<the subject in English> — from '<the Korean word or phrase in the message it comes from>'". ANIMALS ARE ALLOWED ONLY when the message itself names an animal or an animal is its direct biblical metaphor (sheep/shepherd, dove, eagle, lion). Picking a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) just because it is cute, when the message never mentions it, is a FAILURE — the reader must be able to see why it is there. If no concrete object fits, use light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing exactly what the message describes. Not a busy scene, not one giant literal noun.
+  · situation: THE MOMENT THIS TEXT DESCRIBES — fill this FIRST, before any scene concept. If the message is a NARRATIVE passage of scripture (something happens; someone speaks or acts at a particular place and time), name the ACTUAL moment in one short English phrase: who is present, where they physically are, and what is happening (e.g. "Jesus dying on the cross at Golgotha, late afternoon"; "Thomas touching the risen Jesus' wounds in a closed room, eight days after the resurrection"; "Peter stepping out of the boat onto the water at night"). Work it out from the WHOLE episode the sentence belongs to, NOT from the nouns inside this one sentence. A Bible reference in the text tells you which episode it is — use it. If the message is NOT a narrative moment (a prayer, a gratitude note, a diary line, a song lyric, a promise or a teaching with no scene), leave it EMPTY — do not invent a scene for it.
+    WHEN IN DOUBT, LEAVE IT EMPTY. Only fill situation when you actually recognise the episode and are confident which moment it is. You are recalling the passage from your own knowledge, not looking it up, so a guess can be wrong — and a confidently wrong Bible scene is far worse than a plain one. If the text has no reference and you cannot place it, or you are unsure which of several moments it is, leave situation EMPTY and let the scene come from the message's own words instead.
+  · SITUATION OVERRIDES WORDS: when situation is filled, every scene concept MUST depict THAT moment. A noun in the sentence that belongs to a DIFFERENT moment of the episode must NOT become the subject. Example of the failure this prevents: for 요19:30 ("신 포도주를 받으신 후에 … 다 이루었다 … 영혼이 떠나가시니라") the situation is the crucifixion, so the subject is the cross and that hour — NOT a wine cup, even though 포도주 is the only concrete noun in the sentence. Draw the moment, never the stray prop.
+  · literalObjectsToAvoid: 2-4 obvious literal noun-substitutions that would be too on-the-nose for THIS message (e.g. 비우라→"empty bowl", 기다림→"clock", 손 들어→"raised hands", 회복→"bandage/broken object"). This list is handed straight to the illustrator as a ban, so NEVER put anything in it that situation requires — if situation is the crucifixion, "cross" does not belong here. Instead, put the stray props: for 요19:30 the thing to ban is the wine cup, not the cross.
+  · t01SceneConcept: for the flat handwriting card — ONE small simple subject placed LOW in the frame; keep the upper half empty. Not a busy scene, not one giant literal noun. How you choose the subject depends on whether situation is filled:
+    (a) situation IS FILLED (a narrative moment) — depict THAT moment and nothing else. Name what is physically there at that hour: the place, the time of day, and, if people belong in the moment, the figures actually present doing what they are actually doing. Write it in this exact shape: "<the subject in English> — the moment of '<the situation>'". Do NOT add any object from elsewhere in the sentence or the episode. Do NOT have a figure perform an action the moment does not contain (no kneeling before a cup, no bowing to a prop). If the defining object of that moment is a cross, a tomb, a boat, a well or a manger, NAME IT PLAINLY — for THIS verse it is the subject, not a cliché.
+    (b) situation IS EMPTY (a prayer, gratitude, diary line, lyric, teaching) — ONE small subject TRACEABLE TO THE MESSAGE'S OWN WORDS, IMAGERY OR METAPHOR. Write it in this exact shape: "<the subject in English> — from '<the Korean word or phrase in the message it comes from>'". If no concrete object fits, use light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing exactly what the message describes.
+    ANIMALS ARE ALLOWED ONLY when the message itself names an animal or an animal is its direct biblical metaphor (sheep/shepherd, dove, eagle, lion). Picking a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) just because it is cute, when the message never mentions it, is a FAILURE — the reader must be able to see why it is there.
   · t02GraphicConcept: for the hip poster — give BOTH (a) a verse-derived MOOD/energy (color contrast, layers, direction, repetition, space) AND (b) ONE concrete verse-related NON-HUMAN subject/motif that could appear as a bold duotone cutout or texture (e.g. an open door, a mountain path, waves, light breaking through clouds, a flame, a mountain, a road, rays, a torn horizon). NO people, NO faces, NO hands or body parts. The background should visibly connect to the message. (e.g. 담대함→"a road climbing upward, strong diagonal lines, high contrast"; 소망→"light breaking through dark clouds"). Keep it one clear non-human subject, not a busy scene.
   · t03NatureConcept: for the dreamy emotional film photo — a NATURE scene ONLY (shallow depth, blur, film grain, and the MOVEMENT of wind/mist/rain/ripples/light). NO still-life, NO indoor props, NO single symbolic object, NO forced religious symbol. Express the meaning as a natural STATE and its motion. Keep nature variety (do not always use flowers).
-  · t04NatureConcept: for the calm minimal FILM card — a specific, calm aesthetic 35mm-film SCENE whose SUBJECT is translated from THIS verse's own imagery/metaphor and emotionalMovement. NOT limited to nature: it can be an everyday film-diary moment (a cafe window, a desk with a book, a quiet room corner, a windowsill, warm interior light, a city street at dusk, hands, a small still-life of meaningful objects) OR a natural scene (valley/path=journey, stream=living water, sheltering rock/shade=refuge, first light=hope, clearing sky after rain=peace, harvest field=provision, shoreline=being led). Choose whatever best fits the verse; go beyond generic mountains/lake/sunset. Keep a calm low-contrast area for text. Name the concrete scene AND why it fits.
+  · t04NatureConcept: IGNORE THE WORD "Nature" IN THIS FIELD'S NAME — it is a leftover and it is NOT a nature-only field. For the calm minimal FILM card — a specific, calm aesthetic 35mm-film SCENE whose SUBJECT is translated from THIS verse's own imagery/metaphor and emotionalMovement. NOT limited to nature: it can be an everyday film-diary moment (a cafe window, a desk with a book, a quiet room corner, a windowsill, warm interior light, a city street at dusk, hands, a small still-life of meaningful objects) OR a natural scene (valley/path=journey, stream=living water, sheltering rock/shade=refuge, first light=hope, clearing sky after rain=peace, harvest field=provision, shoreline=being led). Choose whatever best fits the verse; go beyond generic mountains/lake/sunset. Keep a calm low-contrast area for text. Name the concrete scene AND why it fits.
   · sceneRationale: one short phrase explaining WHY the chosen scene connects to coreMeaning/emotionalMovement (used only as reasoning for the image prompt; it is NEVER rendered as text in the image)
 - backgroundConcept: leave as a one-sentence fallback scene, but the per-template concepts above take priority.
 - METAPHOR EXAMPLES (these show the LEVEL of translation only — do NOT copy them by default; always translate THIS message freshly):
   · 비움(emptying): bad = an empty bowl; T03 = mist lifting to reveal opening space; T04 = a quiet wide beach after the tide has drawn back
-  · 기다림(waiting): bad = a clock; T03 = wind stilled over grass just before dawn; T04 = a wide horizon not yet brightened
+  · 기다림(waiting): bad = a clock; T03 = wind stilled over grass just before dawn; T04 = a chair by a window in the hour before anyone comes home
   · 회복(restoration): bad = a bandage or broken object; T03 = soft light returning between raindrops; T04 = a forest regaining color after the rain
-  · 내려놓음(letting go): bad = an open palm; T03 = a leaf drifting slowly across water; T04 = clouds scattering in the wind under an open sky
+  · 내려놓음(letting go): bad = an open palm; T03 = a leaf drifting slowly across water; T04 = a bag set down inside a doorway at the end of a long day
+  · 쉼(rest): bad = a bed; T03 = still air over water at dusk; T04 = an empty street in the late afternoon, shadows gone long
+  · 동행(being accompanied): bad = two stick figures; T03 = two currents meeting in one stream; T04 = a stairwell lit from the floor above
+  NOTE ON T04: the four T04 examples above are deliberately MIXED — beach, window, forest, doorway, street, stairwell. T04 is NOT a landscape template. Roughly half of all T04 scenes should be everyday, human places rather than nature.
 - visualMotifs: 3-5 subtle concrete motifs (English) from the meaning, varied across generations
 - palette / lighting / composition / typographyTone: short English direction strings; composition must leave clear, calm, low-contrast space exactly where the typography will sit (match your chosen textAlign) and push focal interest away from the text
-- avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text`,
+- avoidImagery: cliché visuals to avoid (crosses, church buildings, Bibles, doves, hands) unless explicitly in the user's text OR named by situation. A cross is a cliché when it is pasted onto an unrelated message; it is NOT a cliché when situation IS the crucifixion. Judge by the moment, not by the object. Never list something that situation requires.`,
         },
         { role: 'user', content: verse.trim() + (varietyNote ? `\n\n${varietyNote}` : '') },
       ], 900, 'gpt-4o');
@@ -533,7 +549,10 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
       const needsRetry =
         !analysis.sceneRationale?.trim() ||                       // 연결 설명 없음
         (!t03.trim() && !t04.trim() && !analysis.backgroundConcept?.trim()) || // 장면 개념 없음
-        STILL_LIFE_RE.test(`${t03} ${t04}`) ||                    // T03/T04가 정물/실내
+        // T04 는 빼야 한다. 위 t04NatureConcept 규칙이 "책상·방·정물·창가"를 권장하는데
+        // 이 정규식이 desk·room·still-life 를 잡아서, 실내·일상이 뽑힐 때마다 재분석으로
+        // 버려졌다. 그래서 날씨만 바뀐 바다·숲만 남았다. 정물 금지는 T03 전용 규칙이다.
+        STILL_LIFE_RE.test(t03) ||                                // T03이 정물/실내
         VAGUE_RE.test(allConcepts) ||                             // 진부/모호
         t01BadAnimal ||                                          // T01이 말씀에 없는 동물을 고름
         reusesPrevSubject;                                       // 이전 소재 재사용
@@ -543,11 +562,12 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
             {
               role: 'system',
               content: `You translate a Korean faith message's EMOTION and MOVEMENT into per-template visual concepts. Output JSON only: {"coreMeaning":"","emotionalMovement":"","t01SceneConcept":"","t02GraphicConcept":"","t03NatureConcept":"","t04NatureConcept":"","sceneRationale":"","backgroundConcept":""}.
-RULES: Do NOT draw the message's nouns literally and do NOT substitute a concept with one obvious object.
+RULES: Do NOT draw the message's nouns literally and do NOT substitute a concept with one obvious object.${analysis.situation ? `
+- THE MOMENT THIS MESSAGE DESCRIBES IS ALREADY SETTLED: ${analysis.situation}. Every concept below must belong to THAT moment. t01SceneConcept and t04NatureConcept depict it directly. t02GraphicConcept must stay NON-HUMAN, so for a moment that is mostly about people (a washing of feet, a touching of wounds, a wrestling), translate it into the place, object or trace that stands for it — never people, faces or hands. Do not take a noun from the sentence that belongs to a different moment, and do not have a figure do something this moment does not contain. If the defining object of the moment is a cross, a tomb, a boat, a well or a manger, name it plainly — here it is the subject, not a cliché.` : ''}
 - t03NatureConcept: NATURE ONLY — dreamy blurred film photo with natural MOTION (wind/mist/rain/ripples/light). NO still-life, NO indoor props, NO single symbolic object.
-- t04NatureConcept: a calm aesthetic 35mm-film SCENE whose SUBJECT fits THIS verse's imagery/metaphor — NOT limited to nature (may be a cafe window, desk with a book, quiet room, windowsill, city street at dusk, hands, a small still-life) OR a natural scene (valley/path=journey, stream=living water, sheltering rock=refuge, first light=hope, clearing sky=peace, harvest field=provision, shoreline=being led). Go beyond generic mountains/lake/sunset. Name the concrete scene and why it fits.
+- t04NatureConcept: ignore the word "Nature" in this field's name — it is NOT a nature-only field. A calm aesthetic 35mm-film SCENE whose SUBJECT fits THIS verse's imagery/metaphor — roughly half the time an everyday human place (a cafe window, desk with a book, quiet room, windowsill, a doorway, a stairwell, a street at dusk, hands, a small still-life) and otherwise a natural scene (valley/path=journey, stream=living water, sheltering rock=refuge, first light=hope, clearing sky=peace, harvest field=provision, shoreline=being led). Go beyond generic mountains/lake/sunset. Name the concrete scene and why it fits.
 - t02GraphicConcept: a verse-derived mood + ONE concrete verse-related NON-HUMAN subject for a bold duotone cutout/texture (an open door, a path, waves, light through clouds, a flame, mountains, rays) — NO people/faces/hands. The background must connect to the message.
-- t01SceneConcept: ONE small subject traceable to the message's own words/imagery, written as "<subject> — from '<Korean word or phrase>'". NO cute animal unless the message names an animal or an animal is its direct metaphor. Prefer light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing what the message describes. Not one giant literal noun.
+- t01SceneConcept: ONE small subject. ${analysis.situation ? `The moment above is settled, so depict THAT moment: write it as "<subject> — the moment of '<the moment>'". Name what is physically there — the place, the hour, and the figures actually present doing what they actually do. Do NOT fall back to a noun from the sentence that belongs elsewhere, and if the moment's defining object is a cross, a tomb, a boat, a well or a manger, name it plainly.` : `Traceable to the message's own words/imagery, written as "<subject> — from '<Korean word or phrase>'". Prefer light, a path, a door, a window, a hill, water, a plant, a lamp, or one small person doing what the message describes.`} NO cute animal unless the message names an animal or an animal is its direct metaphor. Not one giant literal noun.
 - sceneRationale: why the scene connects to the meaning (reasoning only).
 BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to flowers/meadow/sunset unless the message names them. Also BANNED for t01SceneConcept: a cute animal the message never mentions. English.`,
             },
@@ -615,6 +635,22 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     };
     const chosenConcept = (conceptByTemplate[selectedTemplate] || analysis.backgroundConcept || '').trim();
     if (chosenConcept) analysis.backgroundConcept = chosenConcept;
+
+    // 그릴 장면이 요구하는 것을 금지 목록에서 떨어낸다.
+    // 이 목록은 이미지 프롬프트에 "Avoid these too-literal objects" 로 그대로 들어간다.
+    // 1차 분석이 'cross' 를 넣고 재분석이 십자가 장면을 만들면 둘이 정면으로 싸운다.
+    // 재분석은 이 목록을 갱신하지 않으므로, 여기서 최종 장면 기준으로 정리한다.
+    if (Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length) {
+      // 낱말 단위로 비교한다. 부분 문자열로 보면 cup 이 cupboard 에, hand 가 handrail 에,
+      // arm 이 warm 에 걸려서, 계속 막아야 할 금지어까지 같이 지워진다.
+      const stem = (w: string) => w.replace(/(ies|es|s)$/, (m) => (m === 'ies' ? 'y' : ''));
+      const words = (t: string) => (t.toLowerCase().match(/[a-z]{3,}/g) || []).map(stem);
+      const required = new Set(words(`${analysis.situation || ''} ${chosenConcept}`));
+      analysis.literalObjectsToAvoid = analysis.literalObjectsToAvoid.filter(
+        // 금지어의 알맹이 낱말이 장면·상황에 들어 있으면, 그건 그려야 할 것이다.
+        (item) => !words(String(item || '')).some((w) => required.has(w)),
+      );
+    }
 
     // 동물 판정은 '실제로 그려질 최종 장면'을 봐야 한다.
     // t01SceneConcept 가 비면 backgroundConcept 로 폴백되므로, 앞의 검사만으로는 새어나간다.
@@ -723,6 +759,25 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const variations = templateVariations[selectedTemplate] || templateVariations.T02;
     const variationIndex = Math.abs(templateIndex) % variations.length;
     const variation = variations[variationIndex];
+
+    /**
+     * T04 피사체 갈래. 위 아키타입 8가지는 날씨·시간만 정해서, 날씨만 바뀐 바다·숲이
+     * 계속 나왔다. 이건 "무엇을 찍을지"가 아니라 "같은 뜻을 어느 갈래로 번역할지"를 돌린다.
+     * 뜻은 여전히 THE SCENE(구절)이 정한다 — 아래 양보 규칙 두 개가 그걸 지킨다.
+     */
+    const t04Registers = [
+      'SUBJECT REGISTER for this card — a NATURAL place: translate the verse into a landscape, water, weather, a field, a path or growing things.',
+      'SUBJECT REGISTER for this card — an INDOOR everyday moment: translate the verse into a lived-in room, a window from inside, a doorway, a stairwell, a chair, a table by the light. A human place, not a styled interior.',
+      'SUBJECT REGISTER for this card — an OUTDOOR HUMAN place: translate the verse into a street, an alley, steps, a rooftop, a bus window, a fence along a path, a lit window seen from outside at dusk.',
+      'SUBJECT REGISTER for this card — a CLOSE SMALL thing: translate the verse into hands, one or two objects resting somewhere, something held or set down, a shadow falling across a surface. Shot close, shallow focus.',
+      'SUBJECT REGISTER for this card — a THRESHOLD or passage: translate the verse into a door left open, a gate, a bridge, a tunnel mouth, a window just opened, the top of a set of stairs — somewhere between one place and the next.',
+    ];
+    // 길이 5·보폭 3은 서로소라 5장이면 다섯 갈래가 모두 나온다. 분위기(길이 8·보폭 1)와
+    // 주기가 달라 40장까지 '갈래 × 날씨' 조합이 반복되지 않는다.
+    const t04Register = selectedTemplate === 'T04'
+      ? `${t04Registers[Math.abs(templateIndex * 3 + 1) % t04Registers.length]}
+THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, never WHAT the meaning is. Two cases override it completely: (1) the message itself names a concrete place or thing (the sea, the wilderness, a vine, sheep, a mountain, a boat, a well) — then draw THAT, whatever this register says; (2) THE MOMENT BEING DEPICTED is given above — then draw that moment, and ignore this register entirely. Never bend the verse to fit the register; when they disagree, the verse wins.`
+      : '';
     // T01 아키타입 = "표현 방식(레이아웃/두들 밀도/질감)"만. 무엇을 그릴지(피사체)는 위 THE SCENE이 결정.
     // 배치만 다르게 한다. 종이 질감·테이프·연필 점 같은 소품은 참고 스타일에서 금지다.
     const t01DesignArchetypes = [
@@ -753,8 +808,12 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       'PEOPLE: if THE SCENE calls for a person, draw a person with curly or wavy hair.',
       'PEOPLE: if THE SCENE calls for a person, draw a person with a cap or a head covering over visible hair.',
     ];
+    // 이 로테이션은 THE SCENE/THE MOMENT 뒤에 붙는다. 더 구체적이라 모델이 이쪽을 따르기 쉬워서,
+    // 아무 조건 없이 두면 십자가의 예수님이 '작은 아이'나 '여성'으로 갈아끼워진다.
+    // 그래서 '누구인지 정해지지 않은 보통 사람'일 때만 쓰도록 못을 박는다.
     const t01Figure = selectedTemplate === 'T01'
-      ? t01Figures[Math.abs(templateIndex * 5 + 2) % t01Figures.length]
+      ? `${t01Figures[Math.abs(templateIndex * 5 + 2) % t01Figures.length]}
+THIS CASTING NOTE APPLIES ONLY TO AN UNSPECIFIED, GENERIC EVERYDAY PERSON. If THE SCENE or THE MOMENT above names who is there — anyone the passage itself identifies — draw THAT person as the moment requires and IGNORE this note completely. Never recast a named figure as a child, an older person, a woman, a man or two figures because this note says so.`
       : '';
     const t01Layout = selectedTemplate === 'T01'
       ? t01DesignArchetypes[Math.abs(templateIndex) % t01DesignArchetypes.length]
@@ -908,7 +967,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         ? 'This is a HIP, TEXTURED, design-forward worship poster — contemporary graphic-design quality, deliberately grungy, layered and print-like. Bold and characterful rather than clean and restrained.'
         : 'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
       (selectedTemplate !== 'T03' && analysis.backgroundConcept)
-        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.coreMeaning ? ` (Core meaning: ${analysis.coreMeaning}.)` : ''}${analysis.emotionalMovement ? ` Convey the emotional movement "${analysis.emotionalMovement}".` : ''} A person who reads the verse should immediately feel the image FITS it — the background is NOT decoration, it is the visual of this specific message. Derive the imagery ONLY from this concept; do NOT invent an unrelated pretty scene, and do NOT fall back to a generic default (random flowers, meadow, mountains, sunset, forest, ocean, sky, clouds) unless the concept names it.${Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length ? ` Avoid these too-literal objects: ${analysis.literalObjectsToAvoid.join(', ')}.` : ''} Translate the emotion/movement into this template's visual language rather than a single literal noun.`
+        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? ` THE MOMENT BEING DEPICTED IS: ${analysis.situation}. Draw that moment and only that moment — no object or action from any other part of the passage, and no figure doing something this moment does not contain.` : ''}${analysis.coreMeaning ? ` (Core meaning: ${analysis.coreMeaning}.)` : ''}${analysis.emotionalMovement ? ` Convey the emotional movement "${analysis.emotionalMovement}".` : ''} A person who reads the verse should immediately feel the image FITS it — the background is NOT decoration, it is the visual of this specific message. Derive the imagery ONLY from this concept; do NOT invent an unrelated pretty scene, and do NOT fall back to a generic default (random flowers, meadow, mountains, sunset, forest, ocean, sky, clouds) unless the concept names it.${Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length ? ` Avoid these too-literal objects: ${analysis.literalObjectsToAvoid.join(', ')}.` : ''} Translate the emotion/movement into this template's visual language rather than a single literal noun.`
         : '',
       selectedTemplate === 'T03'
         ? `THIS TEMPLATE IS A PURE GRAINY GRADIENT — do NOT draw any scene, subject, object, person, or photo. Only a soft aesthetic grainy gradient. COLOR (CRITICAL): use ONE single color family for the whole image — ${t03Family}. Soft tonal variations WITHIN that one family only; do NOT mix many different hues, do NOT make a rainbow/multi-color pastel blend. COMPOSITION (IMPORTANT — make each card distinct, not a flat even blob): give the gradient a clear DIRECTION and a LIGHT SOURCE — e.g. a diagonal light sweep, a glowing bright corner or edge, a soft radial bloom off-center, a vertical dawn-like band, or aurora-like streaks. Vary this composition per card so cards differ in more than just hue. Fine even film grain throughout. The Korean typography is added later by code, so leave NO text in the image.`
@@ -996,7 +1055,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
             `T01 FONT VARIANT (render the lettering in EXACTLY this handwriting style): ${t01TypographyStyle}. ${T01_LETTER_RULE}`,
             'CRITICAL FONT RULE: you have a strong habit of defaulting to ONE rounded medium marker cute handwriting — DO NOT. Commit fully to the variant above so the letterform is CLEARLY different from other T01 cards. A thin diary pen, a chunky bubble hand, a wide block sticker hand, a loose brush shape and a felt-tip note are all VERY different shapes and weights — make that difference obvious through SHAPE and WEIGHT, never through texture. The handwriting is what should vary most between cards.',
             `VARIATION SEED: ${templateIndex}. Also vary the ground colour, the subject, the figure (or no figure) and the composition from other T01 generations — two cards from the same verse must not look like the same drawing.`,
-            'SCENE-FROM-VERSE RULE (CRITICAL): the ONE small illustrated subject must come from THE SCENE above, which was derived from the verse\'s OWN words — e.g. a lamp or path for guidance, a hill and light for reverence, a door for welcome, water for refreshing, a seed and sprout for growth. A reader should be able to point at the drawing and say which part of the verse it came from. Do NOT swap in a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) or random flowers and clouds for cuteness — if the verse never mentions that creature, drawing it is a FAILURE. Draw the verse\'s own motif, flat and outline-free, low in the frame.',
+            'SCENE-FROM-VERSE RULE (CRITICAL): the ONE small illustrated subject must come from THE SCENE above, which was derived either from the verse\'s OWN words or from the moment the verse describes (THE MOMENT above, when one is given — then the subject may be something the sentence never names, such as the cross) — e.g. a lamp or path for guidance, a hill and light for reverence, a door for welcome, water for refreshing, a seed and sprout for growth. A reader should be able to point at the drawing and say which part of the verse — or which part of the moment it describes — it came from. Do NOT swap in a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) or random flowers and clouds for cuteness — if the verse never mentions that creature, drawing it is a FAILURE. Draw the verse\'s own motif, flat and outline-free, low in the frame.',
             heroLine?.text
               ? `EMPHASIS RULE: at most, put ONE soft color HIGHLIGHT band behind the single most important phrase "${heroLine.text}" (like a marker highlight). NO underlines, NO circles. Do NOT mark ordinary/connective words; most lines have NO decoration. Emphasis lands on meaning, not random words.`
               : 'EMPHASIS RULE: no underlines or circles; at most one soft highlight band on one key phrase.',
@@ -1040,7 +1099,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         : 'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
-    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, spacious. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, never a cute animal picked at random. ${T01_NOT}`;
+    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, spacious. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
     const T02_GLOBAL_WITH_TEXT = '\n\nHip modern Christian worship poster (worship-night / merch graphic aesthetic), grungy, layered and print-textured — follow the specific STYLE archetype described above for letterform, color, texture and layering — including its OWN typography approach (varies by style; do not force the same bold-condensed + cursive-script formula on every card). A bold palette that VARIES per card (blue/teal/orange/red/mustard/cream/black — not always orange), and thin justified small-caps styling applied ONLY to the user\'s own smaller lines — no invented captions, no invented Bible reference. Mature, editorial and cool — ABSOLUTELY NOT cute: NO rounded bubble letters, NO pastel candy colors, NO hearts, NO flowers, NO smiley faces, NO doodle stickers. Also NO 3D/beveled letters, NO cheesy propaganda/sports look, NO slanted italic. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
@@ -1062,6 +1121,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       config.styleLock,
       personalizedBrief,
       selectedTemplate === 'T02' ? '' : variation,
+      t04Register,
       moodHint,
       aiText ? aiTextBlock : layoutDirective,
       cropSafeNote,
