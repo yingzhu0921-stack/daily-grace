@@ -841,12 +841,20 @@ function drawHeroText(
   const beforeLines = beforeSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const afterLines = afterSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const restCount = beforeLines.length + afterLines.length;
-  const gapCount = (beforeLines.length ? 1 : 0) + (afterLines.length ? 1 : 0);
 
   let keyLH = keyPx * 1.22;
   let restLH = restPx2 * 1.49;
   const refPx = Math.round(width * 0.027);
   const gap = width * 0.03;
+  /**
+   * 강조 줄 앞뒤 여백. 앞뒤가 요구가 다르다.
+   * 앞 — 큰 줄을 그리기 전에 이미 keyLH(= keyPx * 1.22) 만큼 내려가므로 여백이 거의 필요 없다.
+   *      전에는 여기에 gap 을 또 더해서, 작은 줄과 큰 줄 사이만 휑하게 떴다.
+   * 뒤 — 큰 글자 아래에 작은 줄이 붙는데 그쪽 restLH 는 작아서, 받쳐 줄 여백이 필요하다.
+   */
+  const gapBefore = width * 0.006;
+  const gapAfter = width * 0.018;
+  const blockGaps = (beforeLines.length ? gapBefore : 0) + (afterLines.length ? gapAfter : 0);
   // 십자 표시를 그리는 배치는 표시 몫으로 gap 을 한 번 더 쓴다. 전에는 이걸 totalH 에
   // 안 넣어서, 실제로 그려지는 글자 뭉치가 잰 높이보다 gap 만큼 길었다.
   const markGap = centered && layout.mark !== false ? gap : 0;
@@ -858,7 +866,7 @@ function drawHeroText(
   let refGap = Math.max(refPx * 2.2, keyPx * 1.15);
   // refTop 배치는 주소가 본문 위에 있고 그 아래는 작은 줄이라 예전 간격이 맞다.
   const refSpace = () => (layout.refTop ? refPx * 2.4 : markGap + refGap + refPx);
-  let totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refSpace();
+  let totalH = keyLines.length * keyLH + restCount * restLH + blockGaps + refSpace();
 
   // 그래도 카드 높이를 넘으면 전체를 비례해 줄인다
   const avail = height * 0.84;
@@ -869,7 +877,7 @@ function drawHeroText(
     keyLH = keyPx * 1.22;
     restLH = restPx2 * 1.49;
     refGap = Math.max(refPx * 2.2, keyPx * 1.15);   // keyPx 가 줄었으니 여백도 다시 잡는다
-    totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refSpace();
+    totalH = keyLines.length * keyLH + restCount * restLH + blockGaps + refSpace();
   }
 
   let top = height * layout.bodyTop;
@@ -914,9 +922,9 @@ function drawHeroText(
   // 언제나 원문 순서대로 그린다. 강조가 가운데여도 앞 → 강조 → 뒤 순서다.
   // 순서를 바꾸면 사용자가 쓴 문장이 뒤집혀 읽힌다.
   drawRest(beforeLines);
-  if (beforeLines.length) y += gap;
+  if (beforeLines.length) y += gapBefore;
   drawKey();
-  if (afterLines.length) y += gap;
+  if (afterLines.length) y += gapAfter;
   drawRest(afterLines);
 
   // C 는 핵심 구절 아래에 가는 십자 표시를 둔다 (일부 변형은 없이)
