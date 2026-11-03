@@ -1414,7 +1414,7 @@ export default function Designer() {
           method: 'POST',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'photo-text', imageBase64: photoData, text: photoText.trim() }),
+          body: JSON.stringify({ action: 'photo-text', imageBase64: photoData, text: photoText.trim(), ratio: meta.ratio }),
         });
         const data = await res.json() as any;
         if (!res.ok) throw new Error(data.error || '생성 실패');

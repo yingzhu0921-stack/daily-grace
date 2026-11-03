@@ -12,6 +12,13 @@ interface ExtendedEnv extends Env {
 const IMAGE_GENERATION_MODEL = 'gpt-image-2.5-flare';
 
 /**
+ * 이미지 품질. 전에는 아예 보내지 않아서 OpenAI 기본값('auto')에 맡겨졌고,
+ * 어느 등급으로 과금되는지 코드만으로는 알 수 없었다. 명시해서 고정한다.
+ * 'low' | 'medium' | 'high'. 올리면 글자 선명도가 오르고 비용도 오른다.
+ */
+const IMAGE_QUALITY = 'medium';
+
+/**
  * T01 그림체. 이 스타일은 배경 지시문·스타일락·글자 지시문 여러 곳에 들어간다.
  * 예전에는 각자 따로 적혀 있어 한쪽은 "질감 없음", 다른 쪽은 "크레용/수채 질감" 처럼
  * 서로 어긋났다. 그래서 여기 한 번만 적고 가져다 쓴다.
@@ -1073,7 +1080,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: IMAGE_GENERATION_MODEL, prompt: bgPromptFinal + approvedTypography, size: ratioToSize[requestedRatio], n: 1 }),
+      body: JSON.stringify({ model: IMAGE_GENERATION_MODEL, prompt: bgPromptFinal + approvedTypography, size: ratioToSize[requestedRatio], quality: IMAGE_QUALITY, n: 1 }),
     });
     const imgData = await imgRes.json<any>();
     if (!imgRes.ok) {
@@ -1115,8 +1122,14 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
 
   // ── photo-text: 업로드된 사진에 AI로 텍스트 배치 ──
   if (action === 'photo-text') {
-    const { imageBase64, text } = body;
+    const { imageBase64, text, ratio } = body;
     if (!imageBase64 || !text) return Response.json({ error: '이미지와 텍스트가 필요합니다.' }, { status: 400 });
+
+    // 전에는 1024x1024 로 박혀 있어서, 세로 카드를 골라도 정사각으로 만든 뒤
+    // 화면에서 잘라 썼다. 고른 비율에 맞는 크기로 만든다.
+    // ratioToSize 는 정확한 비율이 아니라 세로/가로/정사각 세 대표 크기로 모은다
+    // (9:16·2:3·3:4·4:5 가 모두 1024x1536). 나머지 차이는 화면에서 잘라 맞춘다.
+    const photoSize = (typeof ratio === 'string' && ratioToSize[ratio]) || '1024x1024';
 
     const base64Data = imageBase64.replace(/^data:image\/[a-z+]+;base64,/, '');
     const binary = atob(base64Data);
@@ -1139,7 +1152,8 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       `The result should feel like a professionally designed inspirational card where the typography perfectly complements the photo.`
     );
     formData.append('n', '1');
-    formData.append('size', '1024x1024');
+    formData.append('size', photoSize);
+    formData.append('quality', IMAGE_QUALITY);
 
     const editRes = await fetch('https://api.openai.com/v1/images/edits', {
       method: 'POST',
@@ -1186,7 +1200,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: { 'Authorization': `Bearer ${env.OPENAI_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ model: IMAGE_GENERATION_MODEL, prompt: finalPrompt, size, n: 1 }),
+      body: JSON.stringify({ model: IMAGE_GENERATION_MODEL, prompt: finalPrompt, size, quality: IMAGE_QUALITY, n: 1 }),
     });
 
     const imgData = await imgRes.json<any>();
