@@ -111,6 +111,12 @@ interface GrainLayout {
 
 /** 단의 기본 폭. 좌우 11% 씩 여백. */
 const GRAIN_MEASURE = 0.78;
+/**
+ * 본문 행간. 1.72 는 줄 사이가 떠서 여러 줄이 한 문단으로 읽히지 않았다.
+ * 한글은 받침 때문에 글자 높이가 라틴보다 커서 1.4 아래로 가면 답답해진다.
+ * 줄 수 판정(vFits)과 실제 그리는 높이가 같은 값을 써야 카드 밖으로 밀리지 않는다.
+ */
+const GRAIN_LH = 1.55;
 
 const GRAIN_LAYOUTS: GrainLayout[] = [
   { bodyTop: 0.62, align: 'left', kind: 'uniform' },
@@ -838,10 +844,21 @@ function drawHeroText(
   const gapCount = (beforeLines.length ? 1 : 0) + (afterLines.length ? 1 : 0);
 
   let keyLH = keyPx * 1.22;
-  let restLH = restPx2 * 1.65;
+  let restLH = restPx2 * 1.49;
   const refPx = Math.round(width * 0.027);
   const gap = width * 0.03;
-  let totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refPx * 2.4;
+  // 십자 표시를 그리는 배치는 표시 몫으로 gap 을 한 번 더 쓴다. 전에는 이걸 totalH 에
+  // 안 넣어서, 실제로 그려지는 글자 뭉치가 잰 높이보다 gap 만큼 길었다.
+  const markGap = centered && layout.mark !== false ? gap : 0;
+  /**
+   * 주소 앞 여백. 예전에는 주소 자신의 크기(refPx)로만 정했다. 그런데 바로 위 줄이
+   * 큰 강조 글씨일 때도 간격이 그대로여서, 주소가 본문에 달라붙어 네 번째 줄처럼 보였다.
+   * 앞 줄이 클수록 함께 벌어지게 한다.
+   */
+  let refGap = Math.max(refPx * 2.2, keyPx * 1.15);
+  // refTop 배치는 주소가 본문 위에 있고 그 아래는 작은 줄이라 예전 간격이 맞다.
+  const refSpace = () => (layout.refTop ? refPx * 2.4 : markGap + refGap + refPx);
+  let totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refSpace();
 
   // 그래도 카드 높이를 넘으면 전체를 비례해 줄인다
   const avail = height * 0.84;
@@ -850,8 +867,9 @@ function drawHeroText(
     keyPx = Math.max(12, Math.round(keyPx * k));
     restPx2 = Math.max(10, Math.round(restPx2 * k));
     keyLH = keyPx * 1.22;
-    restLH = restPx2 * 1.65;
-    totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refPx * 2.4;
+    restLH = restPx2 * 1.49;
+    refGap = Math.max(refPx * 2.2, keyPx * 1.15);   // keyPx 가 줄었으니 여백도 다시 잡는다
+    totalH = keyLines.length * keyLH + restCount * restLH + gap * gapCount + refSpace();
   }
 
   let top = height * layout.bodyTop;
@@ -914,7 +932,7 @@ function drawHeroText(
     ctx.restore();
   }
 
-  if (!layout.refTop) drawRef(y + refPx * 2.2);
+  if (!layout.refTop) drawRef(y + refGap);
   return { top, height: totalH };
 }
 
@@ -942,7 +960,7 @@ function renderGrainCard(
   const minPx = Math.round(width * 0.045 * fontScale(spec.font));
   const step = Math.max(1, Math.round(width * 0.003));
   const vFits = (px: number, count: number) =>
-    count * px * 1.72 + (reference ? px * 0.6 * 1.9 : 0) <= height * 0.84;
+    count * px * GRAIN_LH + (reference ? px * 0.6 * 1.9 : 0) <= height * 0.84;
 
   // 사용자가 Enter로 넣은 줄바꿈이 있으면 그 배치를 그대로 존중한다(편집 안내의 약속).
   // 줄바꿈이 없을 때만 스펙대로 1→4줄 균형 분할을 시도한다.
@@ -978,7 +996,7 @@ function renderGrainCard(
   }
 
   ctx.font = `400 ${fontPx}px ${spec.font}`;
-  const lineH = fontPx * 1.72;
+  const lineH = fontPx * GRAIN_LH;
   // 주소도 카드 밖으로 나가지 않게 맞춘다
   let refPx = Math.round(fontPx * 0.6);
   if (reference) {
