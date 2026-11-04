@@ -3960,7 +3960,7 @@ export default function Designer() {
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
                       '맑은 수채화',
-                      '따뜻한 동화',
+                      '플랫 일러스트',
                       '심플 낙서',
                       '감성 사진',
                       '미니멀 감성',
@@ -4014,7 +4014,7 @@ export default function Designer() {
                     className="w-full h-20 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#1F1F1F] focus:ring-2 focus:ring-[#1F1F1F]/20"
                   />
                   <p className="mt-1.5 text-[11px] leading-4 text-[#9B9B9B]">
-                    짧게 적어도 AI가 장면을 유지하며 빛·색감·구도를 다듬어줘요. 기록이나 카드 글씨 없이도 만들 수 있어요. 개인정보는 입력하지 마세요.
+                    짧게 적어도 AI가 장면을 유지하며 고른 스타일에 맞게 다듬어줘요. 기록이나 카드 글씨 없이도 만들 수 있어요. 개인정보는 입력하지 마세요.
                   </p>
                 </section>
 

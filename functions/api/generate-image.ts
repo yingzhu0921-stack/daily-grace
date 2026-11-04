@@ -1,6 +1,7 @@
 import { getSessionUser } from './_lib/session';
 import type { Env } from './_lib/db';
 import { backgroundExpansionInstructions, buildManualBackgroundPrompt } from './_lib/manualBackground';
+import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { consumeRateLimit } from './_lib/rateLimit';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
 
@@ -27,23 +28,15 @@ const IMAGE_QUALITY = 'medium';
  * 색면만으로 형태를 만들고, 뭉툭하고 살짝 삐뚤한 모양, 점 눈에 무표정,
  * 크림 바탕에 쨍한 색 몇 개, 요소는 아주 적게.
  */
-const T01_ART = 'FLAT, MINIMAL illustration in the style of a modern Korean/Japanese indie sticker or zine artist. '
-  + 'SOLID FLAT COLOR FILLS with NO OUTLINES AT ALL — shapes are defined by color alone, never by a drawn line. '
-  + 'NO shading, NO gradients, NO highlights. Simple BLOBBY, slightly LOPSIDED shapes with soft hand-drawn edges — '
-  + 'charmingly wonky, never geometric or polished. Any character is a chunky little blob body with a round face, '
-  + 'TINY DOT EYES and a small deadpan flat mouth, drawn with tiny dots and short thin lines only. A character always has CLEARLY DRAWN HAIR with a real shape and simple limbs — never a bald featureless egg. No eyebrows, '
-  + 'no blush, no smile lines, no expressive cartoon faces. '
+const T01_ART = T01_FLAT_MEDIUM
+  + T01_FIGURE_LOOK
   + 'When the figure note for this card does not say who the person is, do NOT fall back to a long-haired girlish figure — '
   + 'that default is what made every card look like the same girl. Vary it. '
-  + 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
-  + 'Clean smooth surface with at most a very subtle paper grain. '
+  + T01_ACCENT_COLOURS
+  + 'over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
+  + T01_SURFACE
   + 'VERY FEW ELEMENTS — one small subject taken from the verse\'s own words or from the moment it describes, placed LOW in the frame, with a large plain '
   + 'empty area of the ground colour in the UPPER HALF. Quiet, spacious and a little offbeat.';
-
-/** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
-const T01_NOT = 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
-  + 'NO crayon, NO pencil or colored-pencil, NO pastel texture, NO watercolor, NO marker bleed, NO halftone dots, '
-  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted, NOT dark, NOT photo-realistic, NOT a church poster.';
 
 const NO_TEXT = 'IMPORTANT: NO text, letters, words, or writing of any kind in the image.';
 const NO_FACES = 'NO human faces, portraits, or close-up characters.';
