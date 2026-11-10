@@ -38,6 +38,8 @@ function fixture(overrides = {}) {
     setExpandedPrompt: value => { state.expanded = value; },
     setIsEditing: value => { state.editing = value; },
     setPhotoText: value => { state.photo = value; },
+    // 절 번호 빼기는 test-ui-safety 에서 따로 확인한다. 여기서는 흐름만 본다.
+    stripVerseNumbers: value => value,
     toast: { success() {} }, ...overrides,
   };
   bindings.continueWithText = callback('continueWithText', bindings);

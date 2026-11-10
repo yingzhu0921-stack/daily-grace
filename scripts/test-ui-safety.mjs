@@ -160,7 +160,55 @@ test('all manual styles preserve scene constraints and generate backgrounds only
       assert.doesNotMatch(expansion, /깊이감을 살린다/);
       assert.match(expansion, /직접 그려도 됩니다/);
     }
+
+    // 사람은 수채화·플랫 일러스트·심플 낙서에서만 허용한다(2026-11-10 사용자 결정). 미니멀·사진은 사람 없이.
+    const peopleAllowed = ['맑은 수채화', '플랫 일러스트', '심플 낙서'].includes(style ?? '');
+    if (peopleAllowed) {
+      assert.match(expansion, /3-1\. 사람은 예외/);
+      assert.match(prompt, /PEOPLE:/);
+    } else {
+      assert.doesNotMatch(expansion, /사람은 예외/);
+      assert.match(expansion, /지정하지 않은 주인공, 인물/);
+      assert.doesNotMatch(prompt, /PEOPLE:/);
+      // 사람을 허용하지 않는 스타일의 규칙 4 는 원래 문장 그대로여야 한다.
+      assert.match(expansion, /풍경을 선으로 표현하며 캐릭터를 강제로 추가하지 않습니다\./);
+    }
   }
+});
+
+test('card text drops verse numbers only when they are clearly verse numbers', () => {
+  const { stripVerseNumbers: strip } = load('src/utils/verseNumbers.ts');
+  // 이어지는 절 번호는 뺀다. 출처는 남는다.
+  assert.equal(strip('[히6:13-15] 13 하나님이 약속하실 때에 14 이르시되 15 그가 참아'), '[히6:13-15] 하나님이 약속하실 때에 이르시되 그가 참아');
+  assert.equal(strip('13 하나님이\n14 이르시되\n15 그가\n히6:13-15'), '하나님이\n이르시되\n그가\n히6:13-15');
+  // 한 절은 출처의 시작 절과 같을 때만.
+  assert.equal(strip('[요3:16] 16 하나님이 세상을 이처럼'), '[요3:16] 하나님이 세상을 이처럼');
+  assert.equal(strip('5 하나님은 사랑이시라'), '5 하나님은 사랑이시라');
+  // 본문의 숫자는 남긴다.
+  assert.equal(strip('오늘 3 가지 감사했어요'), '오늘 3 가지 감사했어요');
+  assert.equal(strip('3 가지 감사 4 번째 기도'), '3 가지 감사 4 번째 기도');
+  assert.equal(strip('[마5:3-4] 3 심령이 가난한 자는 4 애통하는 자는 12 제자'), '[마5:3-4] 심령이 가난한 자는 애통하는 자는 12 제자');
+  // 진짜 성경 출처가 없으면 아무것도 빼지 않는다 — 기도제목 번호 목록, 날짜, 시간.
+  for (const keep of [
+    '7 그는 육체에 계실 때에 8 그가 아들이시면서도',
+    '1 엄마 건강 2 아빠 직장 3 자녀 믿음',
+    '[기도제목] 1 엄마 건강\n2 아빠 직장\n3 자녀 믿음',
+    '16 기도제목\n오후 3:16 기도',
+    '3 월의 목표 4 월의 기도',
+    '필요 3:16 16 하나님이 17 그를',
+    // 문장 중간·끝의 시간 표현은 출처가 아니다(전도서·시편·아가 약어와 모양이 같다).
+    '16 기도제목\n기도 전 3:16 묵상',
+    '16 오늘의 묵상\n아 3:16에 다시 읽자',
+    '16 기도제목\n기도 전 3:16',
+    // 앞의 분류 괄호는 출처가 아니다.
+    '[묵상] 13 번째 기도\n히6:13',
+  ]) assert.equal(strip(keep), keep);
+  // 긴 줄표 범위와, 끝에 번역본까지 붙은 출처.
+  assert.equal(strip('[히6:13–15] 13 하나님이 14 이르시되 15 그가'), '[히6:13–15] 하나님이 이르시되 그가');
+  assert.equal(strip('13 하나님이\n14 이르시되\n15 그가\n(히 6:13-15 개역개정)'), '하나님이\n이르시되\n그가\n(히 6:13-15 개역개정)');
+  // 이어지는 번호 사이에 다른 숫자가 끼면 손대지 않는다.
+  const mixed = '[시23:1-3] 1 여호와는 나의 목자시니 2 그가 나를 푸른 풀밭에 5 개 3 내 영혼을';
+  assert.equal(strip(mixed), mixed);
 });
 
 function fakeStorage(initial = {}) {

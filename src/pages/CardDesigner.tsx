@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
 import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, canEmphasize, remapEmphasis, type GenerativeStyle, type GenerativeSpec, type EmphasisChoice } from '@/utils/generativeCard';
+import { stripVerseNumbers } from '@/utils/verseNumbers';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -1167,7 +1168,10 @@ export default function Designer() {
     setRecordSelectorOpen(true);
   };
 
-  const continueWithText = (phrase: string) => {
+  const continueWithText = (raw: string) => {
+    // 여러 절을 이어 붙인 말씀의 절 번호(13 … 14 … 15)는 카드에서 뺀다(2026-11-10 사용자 결정).
+    // 출처는 남고, 기록 원문은 그대로다. '문구 수정'에서 직접 고친 글에는 손대지 않는다.
+    const phrase = stripVerseNumbers(raw);
     setVerseInput(phrase);
     setT(s => ({ ...s, content: phrase }));
     if (activeTrack === 'manual') {
