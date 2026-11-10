@@ -221,7 +221,9 @@ const IndexNew = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF9] pb-nav">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#EDEDED]">
+      {/* 스크롤하면 같이 올라간다(2026-11-10 사용자 결정). 완료·연속·프로필은 들어올 때 한 번 보면 되는 정보라,
+          고정해 두면 홈 화면 앱에서 시계 줄·하단 바와 함께 기록 볼 공간만 좁혔다. */}
+      <header className="bg-[#FAFAF9] border-b border-[#EDEDED]">
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {/* Goal Progress */}
