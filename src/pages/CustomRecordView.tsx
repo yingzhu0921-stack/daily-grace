@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
+import { deleteCustomRecord } from '@/utils/customRecordSync';
 
 type Category = {
   id: string;
@@ -181,13 +182,8 @@ const CustomRecordView = () => {
 
     if (!recordId) return;
 
-    const saved = localStorage.getItem('custom_records');
-    if (saved) {
-      const records: CustomRecord[] = JSON.parse(saved);
-      const updatedRecords = records.filter(r => r.id !== recordId);
-      localStorage.setItem('custom_records', JSON.stringify(updatedRecords));
-      window.dispatchEvent(new Event('recordsUpdated'));
-    }
+    // 삭제 표시 + 서버 즉시 삭제까지 하는 공용 경로(동기화 준비 전에 지우면 되살아나던 문제).
+    deleteCustomRecord(recordId);
 
     toast({
       title: "기록이 삭제되었습니다",

@@ -7,6 +7,7 @@ import { ko } from 'date-fns/locale';
 import { SwipeableItem } from '@/components/SwipeableItem';
 import { toast } from 'sonner';
 import * as categoryStorage from '@/utils/categoryStorage';
+import { deleteCustomRecord } from '@/utils/customRecordSync';
 
 type Category = {
   id: string;
@@ -50,15 +51,10 @@ const CustomRecordList = () => {
   };
 
   const handleDelete = (id: string) => {
-    const saved = localStorage.getItem('custom_records');
-    if (saved) {
-      const allRecords: CustomRecord[] = JSON.parse(saved);
-      const filtered = allRecords.filter(r => r.id !== id);
-      localStorage.setItem('custom_records', JSON.stringify(filtered));
-      window.dispatchEvent(new Event('recordsUpdated'));
-      refresh();
-      toast.success('기록이 삭제되었습니다');
-    }
+    // 삭제 표시 + 서버 즉시 삭제까지 하는 공용 경로를 쓴다(동기화 준비 전에 지우면 되살아나던 문제).
+    deleteCustomRecord(id);
+    refresh();
+    toast.success('기록이 삭제되었습니다');
   };
 
   useEffect(() => {
