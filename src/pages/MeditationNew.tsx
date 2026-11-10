@@ -13,9 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { TimePicker } from '@/components/onboarding/TimePicker';
 import { ApplicationItem } from '@/types/meditation';
 import { saveFeedback } from '@/utils/saveFeedback';
+import { useReturnAfterSave } from '@/hooks/useReturnAfterSave';
 
 const MeditationNew = () => {
   const navigate = useNavigate();
+  const { notifySaved, returnToOrigin } = useReturnAfterSave();
   const { user, loading } = useAuth();
   const [title, setTitle] = useState('');
   const [passage, setPassage] = useState('');
@@ -210,11 +212,11 @@ const MeditationNew = () => {
 
   const navigateToNote = () => {
     if (!savedNoteId) return;
+    // 저장 후 들어온 곳으로 돌아간다. 방금 쓴 큐티는 알림의 '보기'로 연다.
+    // 알림 설정 창을 닫은 뒤에 띄워야 '보기'를 누를 수 있다.
     const go = () => {
-      navigate('/meditation', { replace: true });
-      setTimeout(() => {
-        navigate(`/meditation/${savedNoteId}?new=${savedNoteId}`);
-      }, 0);
+      notifySaved('큐티를 저장했어요', `/meditation/${savedNoteId}`);
+      returnToOrigin();
     };
     // 알림 모달을 닫은 지금이 물어볼 자리다. 저장 직후에 바로 띄우면 창이 겹친다.
     if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) {

@@ -266,20 +266,21 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
 2. 절대 새로운 성경 구절/성경 문장을 지어내거나 인용해서 넣지 않는다. 입력에 없는 성경 본문 추가 금지.
 3. 결과물은 성경 본문(번역 문장)을 그대로 복사·인용하면 안 된다. 사용자 글 안에 성경 구절이 인용돼 있어도, 그 구절을 그대로 가져오지 말고 핵심 의미를 "새로운 자기 표현의 짧은 문구"로 다시 쓴다. (출력은 성경 본문이 아니라 항상 창작 문구)
 4. 사용자 글에 없는 새로운 사실/교리/내용을 만들어내지 않는다. 있는 내용의 핵심만.
-5. 카드에 담길 분량으로: 한 줄 또는 두 줄, 18~40자 정도. 너무 짧아 앙상하면 안 되고, 세 줄을 넘지도 않는다.
+5. 카드에 담길 분량으로: 두 줄 안팎, 30~60자 정도. 짧게 끊어 앙상한 한 구절보다, 사용자 글의 상황과 마음이 함께 담긴 한두 문장이 낫다. 세 줄을 넘지는 않는다.
 6. 말투가 가장 중요하다. 설교조·훈계조로 쓰지 않는다.
    · **"~하라, ~하리라, ~살라, ~되라, ~이다, ~한다" 같은 선포형·단정형 종결은 쓰지 않는다.** 딱딱하게 읽힌다.
    · 혼자 조용히 되뇌거나 카드에 담아 두고 싶은, 자연스러운 말투로 쓴다.
    · "~하기", "~하는 것" 같은 할일메모체도 쓰지 않는다.
 7. 후보 3개는 **각각 다른 말투로 하나씩** 만든다. 순서도 이대로 한다.
-   · 1번 — 부드러운 해요체. 예: "불안한 오늘도 주님 안에서 쉬어가요"
+   · 1번 — 부드러운 해요체. 예: "일이 손에 잡히지 않아 불안한 오늘도, 주님 안에서 잠시 쉬어가요"
    · 2번 — 고백·기도체. "~습니다" 로 맺거나, 간구라면 "~소서" 로 맺는다.
-     예: "내 힘으로 버티려 했던 걸 내려놓습니다" / "오늘도 주님의 평안으로 덮어 주소서"
-   · 3번 — 명사형 마무리. 서술어 없이 짧게 끊는다. 예: "불안한 날에 머무는 주님의 쉼"
-8. JSON 배열만 출력한다. 예: ["비울수록 채워지는 은혜 안에 머물러요","내 뜻을 내려놓고 그 마음으로 걷겠습니다","낮아지는 자리에서 배우는 사랑"]`,
+     예: "내 힘으로 끝까지 버티려 했던 마음을 오늘은 주님 앞에 내려놓습니다" / "흔들리는 이 마음을 오늘도 주님의 평안으로 덮어 주소서"
+   · 3번 — 명사형 마무리. 서술어 없이 끝맺는다. 예: "마음이 소란한 날에도 조용히 곁에 머무는 주님의 쉼"
+8. JSON 배열만 출력한다. 예: ["욕심을 비워 낼수록 채워 주시는 은혜 안에 오늘도 머물러요","내 뜻을 앞세우던 걸음을 멈추고 그 마음으로 다시 걷겠습니다","가장 낮은 자리에서 비로소 배우게 되는 사랑"]`,
         },
         { role: 'user', content: source },
-      ]);
+      // 작은 모델은 말투 규칙을 자주 놓치고 문장이 어색했다(2026-11-10 사용자 요청으로 상향).
+      ], 700, 'gpt-4o');
       let options: string[] = [];
       try {
         const m = (raw || '').match(/\[[\s\S]*\]/);
@@ -319,7 +320,6 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
     const t01Ground = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid light colour from edge to edge — no gradient, no frame, at most a very subtle paper grain. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
     // T01 소재 갈래. 구체적 사물이 없는 말씀일 때 쓰라고 준 목록이 "빛·길·문·창·언덕·물·식물·등불"
     // 여덟 개로 고정돼 있어서, 추상적인 말씀은 매번 산을 오르는 사람 아니면 열린 문이 됐다.
     // 카드마다 찾아볼 곳을 바꿔 준다. 길이 7·보폭 3은 서로소라 7장이면 모든 갈래가 나온다.
@@ -335,6 +335,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     ];
     const t01SubjectDomain = t01SubjectDomains[Math.abs(templateIndex * 3 + 1) % t01SubjectDomains.length];
     const T01_SUBJECT_SEARCH = `WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid light colour from edge to edge — no gradient, no frame, at most a very subtle paper grain. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -811,9 +812,9 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
     ];
     // T01 인물 로테이션 — 지시가 "머리 모양이 있을 것"까지만이라 모델이 매번 같은
     // 갈색 단발 여자아이로 수렴했다. 절반 가까이는 아예 사람을 빼서 소재도 넓힌다.
-    const t01Figures = [
     // "사람을 빼라"는 항목에도 캐스팅을 적어 둔다. 장면이 사람을 요구하면 어차피 그려지는데,
     // 그때 지시가 없으면 모델 기본값(갈색 뽀글머리 여자아이)이 나왔다. 곱슬머리 항목은 뺐다.
+    const t01Figures = [
       'PEOPLE: prefer NO person — show THE SCENE through its setting, object or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a MAN with short straight black hair.',
       'PEOPLE: prefer NO person — show THE SCENE through its place, water, weather or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a SMALL BOY with a straight black bowl cut.',
       'PEOPLE: prefer NO person — show THE SCENE through the single object at its centre instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw an OLDER WOMAN with grey hair in a low bun.',
@@ -1264,7 +1265,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         content: backgroundExpansionInstructions(style),
       },
       { role: 'user', content: scene },
-    ], 600);
+    // 작은 모델은 말씀 맥락을 못 읽고 영어 낱말이 섞였다('evoking합니다'). 2026-11-10 사용자 승인으로 상향.
+    ], 600, 'gpt-4o');
     return Response.json({ expandedPrompt: expanded });
   }
 

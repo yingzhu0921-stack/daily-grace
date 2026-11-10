@@ -8,6 +8,7 @@ import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { gratitudeSchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
+import { useReturnAfterSave } from '@/hooks/useReturnAfterSave';
 
 const TEMPLATE = `1. 
 2. 
@@ -41,6 +42,7 @@ function parseItems(src: string) {
 
 export default function GratitudeNew() {
   const navigate = useNavigate();
+  const { notifySaved, returnToOrigin } = useReturnAfterSave();
   const location = useLocation();
   const { user, loading } = useAuth();
   const [text, setText] = useState(TEMPLATE);
@@ -104,8 +106,9 @@ export default function GratitudeNew() {
 
     const saved = await create(items);
 
-    toast.success(saveFeedback(Boolean(user)));
-    const go = () => { navigate(`/gratitude/${saved.id}`, { replace: true }); };
+    // 저장 후 들어온 곳으로 돌아간다. 방금 쓴 감사는 알림의 '보기'로 연다.
+    notifySaved(saveFeedback(Boolean(user)), `/gratitude/${saved.id}`);
+    const go = returnToOrigin;
     // 입력 도중이 아니라 저장을 마친 지금 한 번만 묻는다
     if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) {
       afterNudgeRef.current = go;

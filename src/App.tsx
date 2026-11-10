@@ -9,6 +9,7 @@ import { useDataSync } from "./hooks/useDataSync";
 import { LoginModal } from "@/components/LoginModal";
 import { checkAndShowReminder } from "@/utils/notifications";
 import { AppRoutes } from "./AppRoutes";
+import { recordRoute } from "@/utils/routeHistory";
 
 const queryClient = new QueryClient();
 
@@ -36,6 +37,14 @@ const ModalManager = () => {
   );
 };
 
+/** 화면이 바뀔 때마다 직전 경로를 기억한다(저장 후 돌아갈 곳 판단용). */
+const RouteTracker = () => {
+  const location = useLocation();
+  // 주소 뒤 ?… 만 바뀌어 history 가 한 칸 쌓이는 경우도 있으니 search 까지 한 단위로 기록한다.
+  useEffect(() => { recordRoute(location.pathname + location.search); }, [location.pathname, location.search]);
+  return null;
+};
+
 const AppContent = () => { 
   const { loading } = useAuth();
   // 데이터 동기화 (로그인 시 자동으로 클라우드에서 로드)
@@ -55,6 +64,7 @@ const AppContent = () => {
       <TooltipProvider>
         <ShadcnToaster />
         <Sonner />
+        <RouteTracker />
         <AppRoutes />
         <ModalManager />
       </TooltipProvider>

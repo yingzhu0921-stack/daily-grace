@@ -8,9 +8,11 @@ import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { prayerSchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
+import { useReturnAfterSave } from '@/hooks/useReturnAfterSave';
 
 export default function PrayerNew() {
   const navigate = useNavigate();
+  const { notifySaved, returnToOrigin } = useReturnAfterSave();
   const location = useLocation();
   const { user, loading } = useAuth();
   const [text, setText] = useState('');
@@ -64,19 +66,10 @@ export default function PrayerNew() {
     toast.success('전체 내용이 복사되었어요!');
   };
 
-  // 저장을 마친 뒤 한 번만 로그인을 권하고, 창을 닫으면 상세로 이동한다
-  /**
-   * prayerId 가 null 이면 목록에서 멈춘다.
-   * 여러 줄을 나눠 저장했는데 첫 기도의 상세 화면으로 보내면, 한 건만 저장된 것처럼 보인다.
-   * 실제로는 다 저장돼 있어서 뒤로 나가야 비로소 보였다.
-   */
-  const finishSave = (prayerId: string | null) => {
-    const go = () => {
-      navigate('/prayer', { replace: true });
-      if (prayerId) setTimeout(() => navigate(`/prayer/${prayerId}`), 0);
-    };
-    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
-    else go();
+  // 저장을 마친 뒤 한 번만 로그인을 권하고, 창을 닫으면 들어온 곳으로 돌아간다.
+  const finishSave = () => {
+    if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = returnToOrigin;
+    else returnToOrigin();
   };
 
   const handleSave = async () => {
@@ -105,13 +98,12 @@ export default function PrayerNew() {
       ));
       savedPrayer = prayers[0];
 
-      toast.success(
-        prayers.length > 1
-          ? `기도제목 ${prayers.length}개를 저장했어요`
-          : saveFeedback(Boolean(user)),
+      // 여러 개면 '보기'가 목록을 연다. 첫 기도 하나만 열면 한 건만 저장된 것처럼 보였다.
+      notifySaved(
+        prayers.length > 1 ? `기도제목 ${prayers.length}개를 저장했어요` : saveFeedback(Boolean(user)),
+        prayers.length > 1 ? '/prayer' : `/prayer/${savedPrayer.id}`,
       );
-      // 여러 개면 목록에서 멈춰 전부 보이게 한다. 하나면 지금까지처럼 그 기도로 간다.
-      finishSave(prayers.length > 1 ? null : savedPrayer.id);
+      finishSave();
     } else {
       savedPrayer = await create({
         title: value,
@@ -120,8 +112,8 @@ export default function PrayerNew() {
         answeredAt: null
       });
 
-      toast.success(saveFeedback(Boolean(user)));
-      finishSave(savedPrayer.id);
+      notifySaved(saveFeedback(Boolean(user)), `/prayer/${savedPrayer.id}`);
+      finishSave();
     }
   };
 

@@ -9,9 +9,11 @@ import { showLoginNudgeAfterSave } from '@/hooks/useLoginNudge';
 import { toast } from 'sonner';
 import { diarySchema } from '@/utils/validation';
 import { saveFeedback } from '@/utils/saveFeedback';
+import { useReturnAfterSave } from '@/hooks/useReturnAfterSave';
 
 export default function DiaryNew() {
   const navigate = useNavigate();
+  const { notifySaved, returnToOrigin } = useReturnAfterSave();
   const location = useLocation();
   const { user, loading } = useAuth();
   const [text, setText] = useState("");
@@ -61,8 +63,9 @@ export default function DiaryNew() {
 
     const saved = await create(text.trim());
     
-    toast.success(saveFeedback(Boolean(user)));
-    const go = () => navigate(`/diary/${saved.id}`, { replace: true });
+    // 저장 후 들어온 곳으로 돌아간다. 방금 쓴 일기는 알림의 '보기'로 연다.
+    notifySaved(saveFeedback(Boolean(user)), `/diary/${saved.id}`);
+    const go = returnToOrigin;
     // 입력 도중이 아니라 저장을 마친 지금 한 번만 묻는다
     if (showLoginNudgeAfterSave(user, () => setShowLoginModal(true))) afterNudgeRef.current = go;
     else go();

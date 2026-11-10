@@ -1550,7 +1550,7 @@ export default function Designer() {
               onClick={() => openRecordSelector('photo')}
               className="text-[12px] font-semibold text-[#4F8A5B] underline underline-offset-2"
             >
-              ✨ 내 기록에서 가져오기
+              내 기록에서 가져오기
             </button>
           </div>
           <textarea
@@ -1586,7 +1586,7 @@ export default function Designer() {
         onClick={() => openRecordSelector('auto')}
         className="w-full rounded-lg border border-[#D9DDD5] bg-[#F7F8F4] px-4 py-3 text-left text-[13px] font-semibold text-[#4F8A5B] hover:bg-[#F1F4ED]"
       >
-        ✨ 내 기록에서 가져오기
+        내 기록에서 가져오기
       </button>
       {/* 안내는 입력칸 '앞' 에 둔다. 아래 작은 회색 글씨로 있을 때는 다 쓰고 나서야 눈에 띄었다. */}
       <p className="rounded-lg bg-[#F7F6F4] px-3 py-2 text-[12px] leading-5 text-[#6E6E6E] [word-break:keep-all]">
@@ -4144,7 +4144,7 @@ export default function Designer() {
                       disabled={isGenerating || isExpandingPrompt}
                       className="shrink-0 text-[12px] font-semibold text-[#4F8A5B]"
                     >
-                      ✨ 내 기록에서 가져오기
+                      내 기록에서 가져오기
                     </button>
                   </div>
                   <textarea
@@ -4275,26 +4275,15 @@ export default function Designer() {
                   {/* 배경 이미지가 있을 때: 이미지 교체 버튼 + 필터 */}
                   {meta.bgImageUrl && (
                     <>
-                      {/* 이미지 교체 버튼 */}
+                      {/* 이미지 교체 — 시트 안 다른 버튼과 같은 얇은 테두리 한 줄로 맞춘다. */}
                       <section>
                         <button
+                          type="button"
                           onClick={() => fileInputRef.current?.click()}
-                          className="w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 border-[#1F1F1F] bg-[#1F1F1F]/5 hover:bg-[#1F1F1F]/10 transition-colors group"
+                          className="w-full h-11 flex items-center justify-center gap-2 rounded-xl border border-[#E8E7E5] bg-white text-[13px] font-medium text-[#2E2E2E] hover:border-[#1F1F1F] transition-colors"
                         >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                              <Upload className="w-5 h-5 text-[#1F1F1F]" />
-                            </div>
-                            <div className="text-left">
-                              <h3 className="text-[13px] font-semibold text-[#2E2E2E]">
-                                🔄 이미지 교체
-                              </h3>
-                              <p className="text-[11px] text-[#7E7C78]">
-                                새로운 사진으로 변경하기
-                              </p>
-                            </div>
-                          </div>
-                          <ChevronLeft className="w-5 h-5 text-[#1F1F1F] rotate-180 group-hover:translate-x-1 transition-transform" />
+                          <Upload className="w-4 h-4" />
+                          다른 사진으로 바꾸기
                         </button>
                       </section>
 
