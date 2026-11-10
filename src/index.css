@@ -135,9 +135,19 @@ All colors MUST be HSL.
   }
 }
 
+.pb-nav { padding-bottom: 5rem; }
+
 @supports (padding-top: env(safe-area-inset-top)) {
+  /* 하단 바가 쓰는 클래스인데 정의가 없어서, 홈 화면 앱에서 글씨가 아이폰 하단 막대에 붙었다. */
+  .safe-area-inset-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
   .pt-safe {
     padding-top: env(safe-area-inset-top);
+  }
+  /* 하단 바(64px)를 쓰는 화면의 바닥 여백. 홈 화면 앱에선 하단 바가 아이폰 하단 막대만큼 더 높아진다. */
+  .pb-nav {
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom));
   }
   .pb-safe {
     padding-bottom: env(safe-area-inset-bottom);

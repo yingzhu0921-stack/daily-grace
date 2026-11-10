@@ -89,7 +89,7 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-[#FAFAF9] pb-nav">
       {/* 헤더 */}
       <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
         <button
