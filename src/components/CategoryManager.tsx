@@ -340,12 +340,13 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     onClick={() => handleSelectCategory(category)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {/* 모양·선 굵기를 홈 카테고리 카드와 같게 둔다. 전에는 원 + 굵은 선이라 다른 아이콘처럼 보였다. */}
                       <div
-                        className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                         style={{ backgroundColor: `${normalizeCategoryColor(category.color)}28` }}
                       >
                         {category.icon ? (
-                          <AppIcon name={category.icon as IconName} size={20} color={normalizeCategoryColor(category.color)} strokeWidth={2} />
+                          <AppIcon name={category.icon as IconName} size={20} color={normalizeCategoryColor(category.color)} strokeWidth={1.5} />
                         ) : (
                           <span className="text-[14px] font-medium" style={{ color: normalizeCategoryColor(category.color) }}>
                             {category.name.charAt(0)}

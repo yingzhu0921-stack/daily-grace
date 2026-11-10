@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Popover,
@@ -16,6 +16,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
   const [hour, setHour] = useState(value?.split(':')[0] || '09');
   const [minute, setMinute] = useState(value?.split(':')[1] || '00');
   const [isOpen, setIsOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   const hours = Array.from({ length: 24 }, (_, i) => i.toString().padStart(2, '0'));
   const minutes = Array.from({ length: 60 }, (_, i) => i.toString().padStart(2, '0'));
@@ -38,8 +39,18 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
           <span className="font-medium">{displayTime}</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-72 p-5 pointer-events-auto" align="center">
-        <div className="space-y-5">
+      {/* 열릴 때 첫 칸('시')에 자동 포커스를 주지 않는다. iOS 사파리는 이미 포커스가 간 select 를
+          탭하면 선택 휠을 열지 않아서, '분'을 먼저 건드려 포커스를 옮겨야만 '시'를 바꿀 수 있었다.
+          대신 창 자체에 포커스를 둬서, 키보드로 연 사람도 다음 Tab 에 '시'로 들어가게 한다. */}
+      <PopoverContent
+        className="w-72 p-5 pointer-events-auto"
+        align="center"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          panelRef.current?.focus({ preventScroll: true });
+        }}
+      >
+        <div ref={panelRef} tabIndex={-1} className="space-y-5 outline-none">
           <div className="text-base font-semibold text-center">시간 설정</div>
           <div className="flex gap-3 items-center justify-center">
             <div className="flex flex-col gap-2">

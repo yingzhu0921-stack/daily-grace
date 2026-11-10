@@ -174,7 +174,8 @@ export const BottomNav: React.FC = () => {
                 >
                   {/* Accent line */}
                   <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ backgroundColor: type.color, borderRadius: '16px 16px 0 0' }} />
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${type.color}15` }}>
+                  {/* 아이콘 배경 진하기·모양·선 굵기는 홈 카테고리 카드와 같게 둔다. 전에는 배경이 절반 진하기라 색이 달라 보였다. */}
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${type.color}28` }}>
                     {typeof Icon === 'string' ? (
                       <AppIcon name={Icon} size={20} color={type.color} strokeWidth={1.5} />
                     ) : Icon ? (
