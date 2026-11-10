@@ -404,6 +404,12 @@ function loadImageSize(url: string): Promise<{ width: number; height: number }> 
 
 /** 편집 화면 글상자의 안쪽 여백(px). 저장할 때 줄을 나누는 폭도 이만큼 빼야 화면과 같아진다. */
 const TEXT_BOX_PADDING = 20;
+/**
+ * 글씨 크기·여백의 기준 카드 폭. 글씨 크기 18px 는 "카드 폭이 360px 일 때 18px" 라는 뜻이다.
+ * 전에는 화면 픽셀 그대로라, 아래 패널을 열어 카드가 작아지면 글씨는 그대로여서 두 줄이 다섯 줄이 됐고,
+ * 저장본도 저장 순간의 카드 크기에 따라 글씨 비율이 달라졌다(2026-11-10 사용자 영상).
+ */
+const TEXT_BASE_CARD_WIDTH = 360;
 
 async function cropImageToRatio(imageDataUrl: string, ratio: Ratio): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -857,6 +863,21 @@ export default function Designer() {
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+  /** 화면 카드 폭. 글씨를 카드 폭에 비례해 그리는 데 쓴다. */
+  const [cardWidth, setCardWidth] = useState(0);
+  const canvasObserverRef = useRef<ResizeObserver | null>(null);
+  const attachCanvas = useCallback((el: HTMLDivElement | null) => {
+    (canvasRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+    canvasObserverRef.current?.disconnect();
+    canvasObserverRef.current = null;
+    if (!el) return;
+    setCardWidth(el.clientWidth);
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(entries => setCardWidth(entries[0]?.contentRect.width || el.clientWidth));
+    observer.observe(el);
+    canvasObserverRef.current = observer;
+  }, []);
+  const textScale = cardWidth > 0 ? cardWidth / TEXT_BASE_CARD_WIDTH : 1;
 
   /**
    * 배경이 밝은지. 글씨색 기본값과 글상자 점선 색을 여기에 맞춘다.
@@ -883,7 +904,7 @@ export default function Designer() {
     }
     return () => { cancelled = true; };
   }, [meta.bgImageUrl, meta.bgColor]);
-  const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
+  const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br'; halfW?:number; halfH?:number }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
 
   // contentEditable을 비제어 컴포넌트로 관리
@@ -967,9 +988,15 @@ export default function Designer() {
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
     
+    // 글상자 반쪽 크기(카드 대비 %). 이동할 때 상자 전체가 카드 안에 머물게 한다.
+    // 전에는 상자 가운데만 5~95% 안이면 돼서 상자 절반이 카드 밖으로 나갔다.
+    const cardRect = canvasRef.current.getBoundingClientRect();
+    const boxRect = document.getElementById('text-container')?.getBoundingClientRect();
+    const halfW = boxRect && cardRect.width ? (boxRect.width / cardRect.width) * 50 : undefined;
+    const halfH = boxRect && cardRect.height ? (boxRect.height / cardRect.height) * 50 : undefined;
     dragRef.current = {
       startX: clientX, startY: clientY,
-      sx: t.x, sy: t.y, sw: t.w, sh: t.h, mode
+      sx: t.x, sy: t.y, sw: t.w, sh: t.h, mode, halfW, halfH
     };
     
     const doc = (e.currentTarget as HTMLElement).ownerDocument;
@@ -1002,8 +1029,10 @@ export default function Designer() {
     
     if (currentDrag.mode === 'move') {
       // 이동 모드 - 여유로운 범위 (5~95%)로 자유 이동
-      let newX = clamp(currentDrag.sx + dx, 5, 95);
-      let newY = clamp(currentDrag.sy + dy, 5, 95);
+      const hw = Math.min(currentDrag.halfW ?? 5, 50);
+      const hh = Math.min(currentDrag.halfH ?? 5, 50);
+      let newX = clamp(currentDrag.sx + dx, hw, 100 - hw);
+      let newY = clamp(currentDrag.sy + dy, hh, 100 - hh);
 
       // 스냅 로직: 중앙에 가까우면 자동 스냅
       const snapThreshold = 3;
@@ -1113,7 +1142,7 @@ export default function Designer() {
     maxWidth: '95%',
     transform: 'translate(-50%,-50%)',
     textAlign: t.align,
-    letterSpacing: `${t.letterSpacing}px`,
+    letterSpacing: `${t.letterSpacing * textScale}px`,
     lineHeight: t.lineHeight,
     color: t.color,
     fontFamily: 
@@ -1157,15 +1186,15 @@ export default function Designer() {
       t.fontFamily === 'CaveatBrush' ? `'Caveat Brush', cursive` :
       t.fontFamily === 'Cafe24SuperMagic' ? `'Cafe24SuperMagic', sans-serif` :
       `'Lora', serif`,
-    fontSize: t.fontSize,
+    fontSize: t.fontSize * textScale,
     fontWeight: t.bold ? 700 : 400,
     fontStyle: t.italic ? 'italic' : 'normal',
     textDecoration: t.underline ? 'underline' : 'none',
-    textShadow: t.shadow.enabled ? `${t.shadow.x}px ${t.shadow.y}px ${t.shadow.blur}px ${t.shadow.color}` : 'none',
-    WebkitTextStroke: t.stroke.enabled ? `${t.stroke.width}px ${t.stroke.color}` : undefined,
+    textShadow: t.shadow.enabled ? `${t.shadow.x * textScale}px ${t.shadow.y * textScale}px ${t.shadow.blur * textScale}px ${t.shadow.color}` : 'none',
+    WebkitTextStroke: t.stroke.enabled ? `${t.stroke.width * textScale}px ${t.stroke.color}` : undefined,
     wordBreak: 'keep-all',
     overflowWrap: 'break-word',
-  }),[t]);
+  }),[t, textScale]);
 
   const boxBg = useMemo(()=> t.box.enabled ? `${t.box.color}${Math.round(t.box.opacity/100*255).toString(16).padStart(2,'0')}` : 'transparent',[t]);
 
@@ -3458,8 +3487,9 @@ export default function Designer() {
                     // 화면 카드 → 저장 캔버스 배율. 전에는 `width / 900 * 2.2` 라는 고정 공식이라 화면 카드
                     // 크기와 무관했고, 글상자의 좌우 여백도 빼지 않고 줄을 나눴다. 그래서 화면에선 두 줄이던
                     // 문구가 저장본에선 한 줄로 합쳐졌다. 화면 카드 폭을 못 읽으면 예전 공식으로 둔다.
-                    const editorCardWidth = canvasRef.current?.clientWidth || 0;
-                    const scaleFactor = editorCardWidth > 0 ? width / editorCardWidth : (width / 900) * 2.2;
+                    // 화면은 카드 폭 TEXT_BASE_CARD_WIDTH 기준으로 글씨를 비례해 그린다. 저장도 같은 기준이라,
+                    // 패널을 열고 저장하든 닫고 저장하든 글씨 비율이 같다.
+                    const scaleFactor = width / TEXT_BASE_CARD_WIDTH;
                     const fontSize = t.fontSize * scaleFactor;
                     // 화면 글상자: 너비 t.w%(최대 95%), 안쪽 여백 TEXT_BOX_PADDING px.
                     const boxWidth = (width * Math.min(t.w, 95)) / 100;
@@ -3721,7 +3751,7 @@ export default function Designer() {
         >
             <div
               id="card-preview"
-              ref={canvasRef}
+              ref={attachCanvas}
               className="relative w-full h-full rounded-[28px] shadow-xl overflow-hidden"
               style={{
                 background: meta.bgColor,
@@ -3876,7 +3906,7 @@ export default function Designer() {
                     left: textBoxStyle.left,
                     top: textBoxStyle.top,
                     width: textBoxStyle.width,
-                    minHeight: '100px',
+                    minHeight: `${100 * textScale}px`,
                     height: 'auto',
                     maxWidth: textBoxStyle.maxWidth,
                     transform: textBoxStyle.transform,
@@ -3884,7 +3914,7 @@ export default function Designer() {
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    padding: `${TEXT_BOX_PADDING}px`,
+                    padding: `${TEXT_BOX_PADDING * textScale}px`,
                     boxSizing: 'border-box',
                     pointerEvents: isBgEditMode ? 'none' : 'auto',
                     cursor: isEditing || isTextEmpty ? 'text' : (isBgEditMode ? 'default' : 'grab'),
@@ -3924,7 +3954,7 @@ export default function Designer() {
                       className="absolute inset-0 -z-10"
                       style={{
                         backgroundColor: boxBg,
-                        borderRadius: t.box.radius
+                        borderRadius: t.box.radius * textScale
                       }}
                     />
                   )}
@@ -4010,7 +4040,7 @@ export default function Designer() {
                     <>
                       {/* Top-Left */}
                       <div
-                        className="ui-control resize-handle touch-none absolute -top-1 -left-1 cursor-nwse-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -top-[22px] -left-[22px] cursor-nwse-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-tl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tl')}
@@ -4019,7 +4049,7 @@ export default function Designer() {
                       </div>
                       {/* Top-Right */}
                       <div
-                        className="ui-control resize-handle touch-none absolute -top-1 -right-1 cursor-nesw-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -top-[22px] -right-[22px] cursor-nesw-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-tr')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tr')}
@@ -4028,7 +4058,7 @@ export default function Designer() {
                       </div>
                       {/* Bottom-Left */}
                       <div
-                        className="ui-control resize-handle touch-none absolute -bottom-1 -left-1 cursor-nesw-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -bottom-[22px] -left-[22px] cursor-nesw-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-bl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-bl')}
@@ -4037,7 +4067,7 @@ export default function Designer() {
                       </div>
                       {/* Bottom-Right */}
                       <div
-                        className="ui-control resize-handle touch-none absolute -bottom-1 -right-1 cursor-nwse-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -bottom-[22px] -right-[22px] cursor-nwse-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-br')}
                         onTouchStart={(e) => onDragStart(e, 'resize-br')}
@@ -4221,7 +4251,8 @@ export default function Designer() {
                       disabled={isGenerating || isExpandingPrompt}
                       className="shrink-0 text-[12px] font-semibold text-[#4F8A5B]"
                     >
-                      내 기록에서 가져오기
+                      {/* 2026-11-10 사용자: '가져오기'만으론 무엇을 가져오는지(카드 글씨? 배경?) 알기 어려웠다 */}
+                      내 기록 내용으로 채우기
                     </button>
                   </div>
                   <textarea
@@ -4315,16 +4346,29 @@ export default function Designer() {
                 </div>
 
                 {/* Bottom Button - Fixed */}
-                <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110]">
+                {/* 그림이 생긴 뒤에는 '다시 만들기'만 있어서, 필터를 고른 다음 어디로 가야 할지 몰랐다(2026-11-10 사용자).
+                    다른 탭처럼 '완료'를 두고, 다시 만들기(유료 생성)는 옆의 보조 버튼으로 뺀다. */}
+                <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110] flex gap-2">
                   <Button
                     onClick={() => expandedPrompt ? generateBackground() : expandPrompt(true)}
                     disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
-                    className="w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
+                    className={meta.bgImageUrl
+                      ? 'flex-1 min-h-11 py-2 bg-white hover:bg-[#F5F4F2] text-[#1F1F1F] border border-[#1F1F1F] rounded-xl text-[14px] font-medium'
+                      : 'w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium'}
                   >
                     {isExpandingPrompt && !isGenerating
-                      ? renderGenerationContent('prompt', '이 설명으로 만들기', '배경 준비 중...')
-                      : renderGenerationContent('background', meta.bgImageUrl ? '다시 만들기' : '이 설정으로 만들기', '이미지 생성 중...')}
+                      ? renderGenerationContent('prompt', '이 설명으로 만들기', '배경 준비 중...', undefined, !meta.bgImageUrl)
+                      : renderGenerationContent('background', meta.bgImageUrl ? '다시 만들기' : '이 설정으로 만들기', '이미지 생성 중...', undefined, !meta.bgImageUrl)}
                   </Button>
+                  {meta.bgImageUrl && (
+                    <Button
+                      onClick={() => setBgOpen(false)}
+                      disabled={isGenerating || isExpandingPrompt}
+                      className="flex-1 min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium"
+                    >
+                      완료
+                    </Button>
+                  )}
                 </div>
               </TabsContent>
 

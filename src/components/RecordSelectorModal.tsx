@@ -222,6 +222,9 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
           ...(viewport ? { top: `${Math.round(viewport.mid)}px` } : {}),
         }}
         overlayClassName="z-[9998]"
+        // 창이 열리자마자 검색칸에 커서가 가서 아이폰 키보드가 올라왔다. 창이 반으로 줄어 기록이 두 개만 보이고
+        // 아래로 내릴 수 없었다(2026-11-10 사용자 영상). 검색은 사용자가 칸을 누를 때만 연다.
+        onOpenAutoFocus={(e) => e.preventDefault()}
       >
         <DialogHeader className={short ? 'pb-1' : 'pb-3'}>
           <DialogTitle className={short ? 'text-base' : 'text-lg sm:text-xl'}>
