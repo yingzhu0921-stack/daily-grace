@@ -269,14 +269,11 @@ const MeditationNew = () => {
     });
   };
 
+  // 들어온 곳으로 돌아간다. 전에는 늘 Q.T 목록으로 가서, 캘린더·홈에서 열었다가 뒤로 가면 엉뚱한 화면이 나왔다.
+  // (기도·감사·일기 작성 화면은 이미 뒤로 가기였다)
   const handleBack = () => {
-    if (hasContent) {
-      if (confirm('작성 중인 내용이 있어요. 나가시겠어요?')) {
-        navigate('/meditation');
-      }
-    } else {
-      navigate('/meditation');
-    }
+    if (hasContent && !confirm('작성 중인 내용이 있어요. 나가시겠어요?')) return;
+    returnToOrigin();
   };
 
   return (

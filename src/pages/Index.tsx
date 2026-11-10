@@ -63,8 +63,9 @@ const IndexNew = () => {
     catch { return 0; }
   })();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
-  const [goalProgress, setGoalProgress] = useState({ completed: 0, total: 4 });
-  const [streakDays, setStreakDays] = useState(0);
+  // 첫 그림부터 계산값으로 시작한다. 빈 값(0/4·0일)으로 그렸다가 바꾸면 홈에 돌아올 때마다 숫자가 깜빡였다.
+  const [goalProgress, setGoalProgress] = useState(() => getTodayGoalCount());
+  const [streakDays, setStreakDays] = useState(() => getStreakDays());
   const [recentRecords, setRecentRecords] = useState<any[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const todayCounts = getRecordCounts(toLocal(new Date()));
@@ -97,6 +98,11 @@ const IndexNew = () => {
     const interval = setInterval(updateStats, 30000); // 30초마다 업데이트
     return () => clearInterval(interval);
   }, []);
+
+  // 커스텀 카테고리를 다 불러오면 목표 개수(분모)를 바로 다시 센다. 전에는 30초 뒤에야 4 → 6 으로 바뀌었다.
+  useEffect(() => {
+    if (categoriesReady) setGoalProgress(getTodayGoalCount(customCategories));
+  }, [categoriesReady, customCategories]);
 
   // 최신 기록 로드
   useEffect(() => {

@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { BottomNav } from '@/components/BottomNav';
-import { hasRecordOnDate } from '@/utils/recordsQuery';
+import { getAllRecords, type UnifiedRecord } from '@/utils/recordsQuery';
+import { RecordCard } from '@/components/RecordCard';
+import { routes } from '@/config/routes';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -14,42 +16,83 @@ type Category = {
   description?: string;
 };
 
+/**
+ * 'YYYY-MM-DD' 를 그 날의 0시(기기 시간대)로 읽는다. new Date('2026-11-08') 은 UTC 0시로 읽혀서
+ * 한국보다 늦은 시간대에선 전날이 된다.
+ */
+function parseLocalDate(value: string | null): Date | null {
+  const m = value?.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!m) return null;
+  const date = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  // 없는 날짜(2026-02-31 등)는 Date 가 다음 달로 넘겨 버린다. 그런 값은 받지 않는다.
+  if (date.getMonth() !== Number(m[2]) - 1 || date.getDate() !== Number(m[3])) return null;
+  return date;
+}
+
 const Calendar: React.FC = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dateParam = searchParams.get('date');
-  const [selectedDate, setSelectedDate] = useState(dateParam ? new Date(dateParam) : new Date());
+  const [selectedDate, setSelectedDate] = useState(() => parseLocalDate(dateParam) ?? new Date());
 
   // URL 파라미터로부터 날짜 초기화
   useEffect(() => {
-    if (dateParam) {
-      setSelectedDate(new Date(dateParam));
-    }
+    const parsed = parseLocalDate(dateParam);
+    if (parsed) setSelectedDate(parsed);
   }, [dateParam]);
+
+  /**
+   * 기록을 날짜별로 한 번만 묶는다. 전에는 달력 칸(최대 42개)마다 전체 기록을 다시 읽고 정렬했다.
+   * 동기화나 다른 화면에서 기록이 바뀌면 'recordsUpdated' 가 온다 — 그때 다시 묶는다.
+   */
+  const [recordsVersion, setRecordsVersion] = useState(0);
+  useEffect(() => {
+    const onUpdate = () => setRecordsVersion(v => v + 1);
+    window.addEventListener('recordsUpdated', onUpdate);
+    return () => window.removeEventListener('recordsUpdated', onUpdate);
+  }, []);
+  const recordsByDate = useMemo(() => {
+    const map = new Map<string, UnifiedRecord[]>();
+    for (const r of getAllRecords()) {
+      const list = map.get(r.date);
+      if (list) list.push(r); else map.set(r.date, [r]);
+    }
+    return map;
+    // recordsVersion 은 다시 묶으라는 신호다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recordsVersion]);
+
+  /**
+   * 날짜를 누르면 그 자리에서 고른다(2026-11-10 사용자 결정). 전에는 누르자마자 보관함으로 넘어가서
+   * 아래의 날짜·기록 칸을 쓸 일이 없었다. 주소에도 남겨 두어, 기록을 열었다가 돌아와도 고른 날이 유지된다.
+   */
+  const selectDate = (date: Date) => {
+    setSelectedDate(date);
+    setSearchParams({ date: toLocalDateString(date) }, { replace: true });
+  };
 
   // 기본 카테고리
   const defaultCategories = [
     { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, path: '/meditation/new', type: 'meditation' as const },
     { id: '2', name: '기도', color: '#A57DB8', icon: 'heart' as IconName, path: '/prayer/new', type: 'prayer' as const },
-    { id: '3', name: '감사', color: '#E8C87D', icon: 'sparkles' as IconName, path: '/gratitude/new', type: 'gratitude' as const },
+    { id: '3', name: '감사', color: '#E8C87D', icon: 'star' as IconName, path: '/gratitude/new', type: 'gratitude' as const },
     { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, path: '/diary/new', type: 'diary' as const },
   ];
 
   // 캘린더 함수들
-  const handlePrevMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() - 1);
-    setSelectedDate(newDate);
+  // 달을 옮길 때 날짜는 그 달의 마지막 날을 넘지 않게 한다. setMonth 로 옮기면 1월 31일 → '2월 31일' →
+  // 3월 3일처럼 한 달을 건너뛰었다.
+  const shiftMonth = (delta: number) => {
+    const y = selectedDate.getFullYear();
+    const m = selectedDate.getMonth() + delta;
+    const lastDay = new Date(y, m + 1, 0).getDate();
+    selectDate(new Date(y, m, Math.min(selectedDate.getDate(), lastDay)));
   };
-
-  const handleNextMonth = () => {
-    const newDate = new Date(selectedDate);
-    newDate.setMonth(newDate.getMonth() + 1);
-    setSelectedDate(newDate);
-  };
+  const handlePrevMonth = () => shiftMonth(-1);
+  const handleNextMonth = () => shiftMonth(1);
 
   const handleToday = () => {
-    setSelectedDate(new Date());
+    selectDate(new Date());
   };
 
   const getMonthDays = () => {
@@ -84,6 +127,13 @@ const Calendar: React.FC = () => {
   const isToday = (date: Date) => date.getDate() === today.getDate() && date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
   const isSelected = (date: Date) => date.getDate() === selectedDate.getDate() && date.getMonth() === selectedDate.getMonth() && date.getFullYear() === selectedDate.getFullYear();
   const isCurrentMonth = (date: Date) => date.getMonth() === selectedDate.getMonth();
+  const selectedStr = toLocalDateString(selectedDate);
+  const dayRecords = recordsByDate.get(selectedStr) ?? [];
+  const selectedIsToday = isToday(selectedDate);
+  const selectedIsFuture = selectedStr > toLocalDateString(today);
+  const recordRoute: Record<string, string> = {
+    meditation: routes.qt, prayer: routes.prayer, gratitude: routes.thanks, diary: routes.diary,
+  };
 
   return (
     <div className="min-h-screen bg-[#FAFAF9] pb-nav">
@@ -152,42 +202,29 @@ const Calendar: React.FC = () => {
                 const selected = isSelected(date);
                 const todayDate = isToday(date);
                 const dateStr = toLocalDateString(date);
-                const hasRecord = hasRecordOnDate(dateStr);
+                const hasRecord = recordsByDate.has(dateStr);
                 const currentMonth = isCurrentMonth(date);
 
                 return (
+                  // 표시 규칙은 기록 유무와 상관없이 하나다: 고른 날 = 검정, 오늘 = 테두리, 기록 있음 = 점.
+                  // 전에는 기록이 있으면 고른 날과 오늘이 둘 다 초록이라 무엇이 선택인지 구분이 안 됐다.
+                  // hover 배경은 두지 않는다 — 아이폰에선 누른 뒤에도 회색 네모가 그대로 남았다.
                   <button
                     key={index}
-                    onClick={() => {
-                      setSelectedDate(date);
-                      // Always navigate to filtered archive
-                      navigate(`/records?date=${dateStr}`);
-                    }}
-                    className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-all relative ${
-                      selected && todayDate && hasRecord
-                        ? 'bg-[#7DB87D] text-white font-semibold'
-                        : selected && todayDate
+                    onClick={() => selectDate(date)}
+                    className={`aspect-square rounded-xl flex flex-col items-center justify-center transition-colors relative ${
+                      selected
                         ? 'bg-[#2E2E2E] text-white font-semibold'
-                        : selected && hasRecord
-                        ? 'bg-[#7DB87D] text-white font-semibold'
-                        : selected
-                        ? 'bg-[#F9F8F6] text-[#2E2E2E] font-medium'
-                        : todayDate && hasRecord
-                        ? 'bg-[#7DB87D] text-white font-semibold'
                         : todayDate
-                        ? 'bg-[#2E2E2E] text-white font-semibold'
-                        : hasRecord
-                        ? 'text-[#2E2E2E] hover:bg-[#F9F8F6] font-medium'
+                        ? 'text-[#2E2E2E] font-semibold ring-[1.5px] ring-inset ring-[#2E2E2E]'
                         : currentMonth
-                        ? 'text-[#2E2E2E] hover:bg-[#F9F8F6]'
+                        ? 'text-[#2E2E2E]'
                         : 'text-[#D0D0D0]'
                     }`}
                   >
                     <span className="text-[15px]">{date.getDate()}</span>
                     {hasRecord && (
-                      <div className={`absolute bottom-1.5 w-1 h-1 rounded-full ${
-                        selected || todayDate ? 'bg-white' : 'bg-[#7DB87D]'
-                      }`} />
+                      <div className={`absolute bottom-1.5 w-1 h-1 rounded-full ${selected ? 'bg-white' : 'bg-[#7DB87D]'}`} />
                     )}
                   </button>
                 );
@@ -200,34 +237,52 @@ const Calendar: React.FC = () => {
             <h3 className="text-[20px] font-semibold text-[#2E2E2E] mb-4">
               {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일 {['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'][selectedDate.getDay()]}
             </h3>
-            {!hasRecordOnDate(toLocalDateString(selectedDate)) && (
-              <p className="text-[14px] text-[#ACACAC] mb-3">아직 이 날의 기록이 없어요 :)</p>
+            {/* 오늘만 새로 쓸 수 있다. 지난 날은 몰아 쓰지 않게 하고(사용자 결정), 저장도 늘 오늘 날짜로 된다.
+                그래서 지난 날·앞으로의 날에는 버튼을 숨기고 그날 기록만 보여 준다. */}
+            {selectedIsToday && (
+              <div className="flex gap-2 overflow-x-auto pb-2 mb-4">
+                {defaultCategories.map((category) => {
+                  const existing = dayRecords.find(r => r.type === category.type);
+                  return (
+                    <button
+                      key={category.id}
+                      // 오늘 이미 쓴 종류면 그 기록을 연다. 전에는 기록이 있어도 늘 빈 새 작성 화면이 열렸다.
+                      onClick={() => navigate(existing ? `${recordRoute[category.type]}/${existing.id}` : category.path)}
+                      className="flex items-center gap-1.5 px-3.5 py-2 rounded-full whitespace-nowrap transition-colors"
+                      style={{
+                        backgroundColor: existing ? `${category.color}28` : '#FFFFFF',
+                        border: `1px solid ${existing ? `${category.color}66` : '#E8E7E5'}`,
+                      }}
+                    >
+                      <AppIcon name={category.icon} size={16} color={category.color} strokeWidth={1.5} />
+                      <span className="text-[13px] font-medium text-[#2E2E2E]">{category.name}</span>
+                      {existing && <span className="text-[11px]" style={{ color: category.color }}>완료</span>}
+                    </button>
+                  );
+                })}
+              </div>
             )}
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              {defaultCategories.map((category) => {
-                const selectedDateStr = toLocalDateString(selectedDate);
-                const hasRecordForType = hasRecordOnDate(selectedDateStr, category.type);
 
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => navigate(category.path)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap transition-all ${
-                      hasRecordForType ? 'shadow-md' : 'opacity-50'
-                    }`}
-                    style={{
-                      backgroundColor: `${category.color}${hasRecordForType ? '20' : '10'}`,
-                      border: `1px solid ${category.color}${hasRecordForType ? '40' : '20'}`
-                    }}
-                  >
-                    <AppIcon name={category.icon} size={16} color={category.color} strokeWidth={2} />
-                    <span className="text-[14px] font-medium" style={{ color: category.color }}>
-                      {category.name}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
+            {dayRecords.length > 0 ? (
+              <>
+                <div className="space-y-3">
+                  {dayRecords.map((record) => (
+                    <RecordCard key={record.id} {...record} />
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => navigate(`/records?date=${selectedStr}`)}
+                  className="mt-3 text-[12px] font-medium text-[#7A7A7A]"
+                >
+                  보관함에서 보기 →
+                </button>
+              </>
+            ) : (
+              <p className="text-[14px] text-[#ACACAC]">
+                {selectedIsToday ? '아직 오늘의 기록이 없어요' : selectedIsFuture ? '아직 오지 않은 날이에요' : '이 날은 기록이 없어요'}
+              </p>
+            )}
           </div>
         </section>
       </main>
