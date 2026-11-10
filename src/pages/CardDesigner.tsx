@@ -127,6 +127,39 @@ function ratioToAspect(ratio: Ratio | string) {
   return w && h ? `${w}/${h}` : '4/5';
 }
 
+/** 0(검정)~1(흰색) 밝기. '#RRGGBB'·'#RGB'나 그라데이션 문자열 속 첫 색을 읽는다. 못 읽으면 null. */
+function colorLightness(color: string | undefined): number | null {
+  const m = color?.match(/#([0-9a-f]{6}|[0-9a-f]{3})\b/i);
+  if (!m) return null;
+  const h = m[1].length === 3 ? m[1].split('').map(c => c + c).join('') : m[1];
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(h.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** 배경 그림의 평균 밝기(0~1). 작게 줄여 잰다. 다른 출처라 픽셀을 못 읽거나 실패하면 null. */
+function measureImageLightness(url: string): Promise<number | null> {
+  return new Promise(resolve => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      try {
+        const size = 24;
+        const c = document.createElement('canvas');
+        c.width = size; c.height = size;
+        const ctx = c.getContext('2d');
+        if (!ctx) return resolve(null);
+        ctx.drawImage(img, 0, 0, size, size);
+        const d = ctx.getImageData(0, 0, size, size).data;
+        let sum = 0;
+        for (let i = 0; i < d.length; i += 4) sum += (0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2]) / 255;
+        resolve(sum / (d.length / 4));
+      } catch { resolve(null); }
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
 function hexToRgba(hex: string, opacity: number) {
   const normalized = hex.replace('#', '');
   const value = normalized.length === 3
@@ -824,6 +857,32 @@ export default function Designer() {
   // 캔버스 참조
   const canvasRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * 배경이 밝은지. 글씨색 기본값과 글상자 점선 색을 여기에 맞춘다.
+   * 2026-11-10 사용자: 흰 배경(심플 낙서)에 기본 흰 글씨·흰 점선이라 글상자가 안 보였다.
+   * 사용자가 글씨색을 직접 골랐거나, 저장된 카드·자동완성 결과를 불러온 색이면 건드리지 않는다.
+   */
+  const [bgIsLight, setBgIsLight] = useState(false);
+  const textColorChosenRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    const apply = (light: boolean) => {
+      if (cancelled) return;
+      setBgIsLight(light);
+      if (textColorChosenRef.current) return;
+      setT(s => (s.color === '#FFFFFF' || s.color === '#1F1F1F')
+        ? { ...s, color: light ? '#1F1F1F' : '#FFFFFF' }
+        : s);
+    };
+    if (meta.bgImageUrl) {
+      measureImageLightness(meta.bgImageUrl).then(l => { if (l !== null) apply(l > 0.62); });
+    } else {
+      const l = colorLightness(meta.bgColor);
+      if (l !== null) apply(l > 0.62);
+    }
+    return () => { cancelled = true; };
+  }, [meta.bgImageUrl, meta.bgColor]);
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br' }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
 
@@ -845,6 +904,7 @@ export default function Designer() {
           setMeta(state.meta);
         }
         if (state.textStyle) {
+          textColorChosenRef.current = true;
           setT(state.textStyle);
           // Ensure text content is set in the contentEditable element
           setTimeout(() => {
@@ -2328,6 +2388,7 @@ export default function Designer() {
     const applyPreviewEditState = () => {
       const typography = autoResult.typography || getAutoTypography(autoResult.template);
       setMeta(m => ({ ...m, ratio: previewRatio, bgImageUrl: autoResult.image, bgScale: 100 }));
+      textColorChosenRef.current = true;
       setT(s => ({
         ...s,
         content: verseInput,
@@ -3156,6 +3217,7 @@ export default function Designer() {
               bgDarken: 0,
               bgBlur: 0,
             });
+            textColorChosenRef.current = false;
             setT({
               content: '텍스트를 입력하세요.',
               fontFamily: 'Inter',
@@ -3644,16 +3706,17 @@ export default function Designer() {
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
         className="flex-1 min-h-[180px] flex items-center justify-center px-4 bg-gray-200 overflow-hidden"
+        style={{ containerType: 'size' }}
       >
-        {/* Card Preview - aspect-ratio with full width and max height */}
+        {/* 카드 틀은 남은 칸의 너비·높이 중 좁은 쪽에 맞춘다. 전에는 세로 비율이면 '높이 100%, 너비는 최대 100%'라,
+            아래 시트를 내려 칸이 길어지면 너비만 막히고 높이는 그대로 늘어 틀이 4:5보다 길쭉해졌다.
+            그림은 비율대로라 위아래에 배경색 띠가 생겼다(2026-11-10 사용자 영상). */}
         <RatioBox
           ratio={meta.ratio}
           className="shadow-2xl"
           style={(() => {
             const [w, h] = meta.ratio.split(':').map(Number);
-            return h > w
-              ? { height: '100%', width: 'auto', maxWidth: '100%' }
-              : { width: '100%', height: 'auto', maxHeight: '100%' };
+            return { width: `min(100cqw, calc(100cqh * ${w} / ${h}))`, height: 'auto' };
           })()}
         >
             <div
@@ -3825,6 +3888,9 @@ export default function Designer() {
                     boxSizing: 'border-box',
                     pointerEvents: isBgEditMode ? 'none' : 'auto',
                     cursor: isEditing || isTextEmpty ? 'text' : (isBgEditMode ? 'default' : 'grab'),
+                    // 아이폰 Safari 는 손가락을 누른 채 움직이면 먼저 화면 스크롤로 가져가서 끌기 신호가 오지 않았다
+                    // (2026-11-10 사용자: 글상자가 안 움직임. 컴퓨터에서는 정상). 글씨를 고치는 중에는 커서·선택이 되게 풀어 둔다.
+                    touchAction: isEditing ? 'auto' : 'none',
                   }}
                   onMouseDown={(e) => {
                     if (isBgEditMode || isEditing) return;
@@ -3849,7 +3915,7 @@ export default function Designer() {
                 >
                   {/* 선택 시 Dashed Border — 배경 선택 안내가 떠 있을 땐 안내 문구를 가로질러서 숨긴다 */}
                   {!isEditing && !isBgEditMode && !showBgPrompt && (
-                    <div className="ui-control dashed-border absolute inset-0 border-2 border-dashed border-white/60 rounded-lg pointer-events-none" />
+                    <div className={`ui-control dashed-border absolute inset-0 border-2 border-dashed rounded-lg pointer-events-none ${bgIsLight ? 'border-[#1F1F1F]/45' : 'border-white/60'}`} />
                   )}
 
                   {/* 박스 배경 */}
@@ -3944,7 +4010,7 @@ export default function Designer() {
                     <>
                       {/* Top-Left */}
                       <div
-                        className="ui-control resize-handle absolute -top-1 -left-1 cursor-nwse-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -top-1 -left-1 cursor-nwse-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-tl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tl')}
@@ -3953,7 +4019,7 @@ export default function Designer() {
                       </div>
                       {/* Top-Right */}
                       <div
-                        className="ui-control resize-handle absolute -top-1 -right-1 cursor-nesw-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -top-1 -right-1 cursor-nesw-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-tr')}
                         onTouchStart={(e) => onDragStart(e, 'resize-tr')}
@@ -3962,7 +4028,7 @@ export default function Designer() {
                       </div>
                       {/* Bottom-Left */}
                       <div
-                        className="ui-control resize-handle absolute -bottom-1 -left-1 cursor-nesw-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -bottom-1 -left-1 cursor-nesw-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-bl')}
                         onTouchStart={(e) => onDragStart(e, 'resize-bl')}
@@ -3971,7 +4037,7 @@ export default function Designer() {
                       </div>
                       {/* Bottom-Right */}
                       <div
-                        className="ui-control resize-handle absolute -bottom-1 -right-1 cursor-nwse-resize z-30"
+                        className="ui-control resize-handle touch-none absolute -bottom-1 -right-1 cursor-nwse-resize z-30"
                         style={{ padding: '16px' }}
                         onMouseDown={(e) => onDragStart(e, 'resize-br')}
                         onTouchStart={(e) => onDragStart(e, 'resize-br')}
@@ -4018,6 +4084,7 @@ export default function Designer() {
                 onPanelOpen={() => setIsPanelCollapsed(false)}
                 onOpenFontPicker={() => setFontPickerOpen(true)}
                 onImportRecord={() => openRecordSelector('manual-text')}
+                onTextColorPicked={() => { textColorChosenRef.current = true; }}
               />
             </div>
           )}
@@ -4176,7 +4243,7 @@ export default function Designer() {
                   <button onClick={() => expandPrompt(false)}
                     disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
                     className="text-sm underline disabled:opacity-40">
-                    배경 설명 먼저 확인·수정 (선택)
+                    그리기 전에 배경 설명 보기·고치기
                   </button>
                 )}
                 {/* 확장된 프롬프트 확인 */}
@@ -4184,7 +4251,7 @@ export default function Designer() {
                   <section>
                     <div className="flex items-center justify-between mb-1.5">
                       <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
-                        배경 설명 수정 (선택)
+                        배경 설명 (고쳐서 만들 수 있어요)
                       </h2>
                       <button
                         onClick={() => setExpandedPrompt('')}
@@ -4548,7 +4615,7 @@ export default function Designer() {
  * ───────────────────────────────────────────────────────── */
 function Toolbar({
   active, setActive,
-  t, setT, meta, setMeta, onPanelOpen, onOpenFontPicker, onImportRecord
+  t, setT, meta, setMeta, onPanelOpen, onOpenFontPicker, onImportRecord, onTextColorPicked
 }:{
   active: 'text'|'font'|'color'|'size';
   setActive: (a:any)=>void;
@@ -4557,6 +4624,8 @@ function Toolbar({
   onPanelOpen?: () => void;
   onOpenFontPicker?: () => void;
   onImportRecord?: () => void;
+  /** 사용자가 글씨색을 직접 골랐다. 그 뒤로는 배경 밝기에 맞춰 글씨색을 바꾸지 않는다. */
+  onTextColorPicked?: () => void;
 }) {
   return (
     <div className="h-full min-h-0 flex flex-col bg-transparent">
@@ -4709,7 +4778,7 @@ function Toolbar({
 
           {/* 색상 탭: 텍스트 색상 + 외곽선/그림자/박스 토글 */}
           <TabsContent value="color" className="mt-0 space-y-2 sm:space-y-3 pb-2 sm:pb-4">
-            <ColorRow label="텍스트 색상" value={t.color} onPick={(c)=>setT(s=>({...s,color:c}))} dark={false}/>
+            <ColorRow label="텍스트 색상" value={t.color} onPick={(c)=>{ onTextColorPicked?.(); setT(s=>({...s,color:c})); }} dark={false}/>
 
             {/* 외곽선 */}
             <div className="space-y-1.5">
