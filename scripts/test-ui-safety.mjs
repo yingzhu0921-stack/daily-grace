@@ -131,6 +131,22 @@ test('API JSON validation rejects malformed, oversized, and unsafe IDs', async (
   assert.equal(api.validId('../unsafe'), false);
 });
 
+test('manual backgrounds warn the image model about the edges the display ratio crops', () => {
+  const { buildManualBackgroundPrompt, cropSafeNote } = load('functions/api/_lib/manualBackground.ts');
+  // 9:16 은 2:3 으로 만들어 좌우를 각 8%씩 잘라 낸다. 안내가 없으면 인물이 양옆에서 잘렸다.
+  assert.match(cropSafeNote('1024x1536', '9:16'), /LEFT and RIGHT ~8%.*central 84%/);
+  assert.match(cropSafeNote('1024x1536', '4:5'), /TOP and BOTTOM ~8%/);
+  assert.match(cropSafeNote('1536x1024', '4:3'), /LEFT and RIGHT ~6%/);
+  assert.equal(cropSafeNote('1024x1024', '1:1'), '');
+  assert.equal(cropSafeNote('1024x1536', '2:3'), '');
+  assert.equal(cropSafeNote('1024x1024', undefined), '');
+  const note = cropSafeNote('1024x1536', '9:16');
+  assert.ok(buildManualBackgroundPrompt('scene', '심플 낙서', note).includes(note));
+  assert.doesNotMatch(buildManualBackgroundPrompt('scene', '심플 낙서'), /CROP-SAFE/);
+  // 인물이 한가운데라 가운데 글상자와 얼굴이 겹쳤다(2026-11-10 사용자 결정: 인물은 아래쪽, 위는 글씨 자리).
+  assert.match(buildManualBackgroundPrompt('scene', '감성 사진'), /COMPOSITION: place the main subject, and any people, in the LOWER half/);
+});
+
 test('all manual styles preserve scene constraints and generate backgrounds only', () => {
   const { manualBackgroundStyles, buildManualBackgroundPrompt, backgroundExpansionInstructions } = load('functions/api/_lib/manualBackground.ts');
   for (const style of [...Object.keys(manualBackgroundStyles), undefined, 'unknown']) {
@@ -166,7 +182,13 @@ test('all manual styles preserve scene constraints and generate backgrounds only
     if (peopleAllowed) {
       assert.match(expansion, /3-1\. 사람은 예외/);
       assert.match(prompt, /PEOPLE:/);
+      // 성경 장면의 인물은 실제 모습대로, 주인공 크기로(2026-11-10 사용자 결정: 너무 간접적이었다).
+      assert.match(expansion, /1-1-2\. 그 순간이 성경 속 사건이고/);
+      assert.match(prompt, /BIBLE SCENES:/);
+      assert.match(prompt, /never a distant speck/);
     } else {
+      assert.doesNotMatch(expansion, /1-1-2\./);
+      assert.doesNotMatch(prompt, /BIBLE SCENES:/);
       assert.doesNotMatch(expansion, /사람은 예외/);
       assert.match(expansion, /지정하지 않은 주인공, 인물/);
       assert.doesNotMatch(prompt, /PEOPLE:/);

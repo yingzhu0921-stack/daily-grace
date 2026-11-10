@@ -1,6 +1,6 @@
 import { getSessionUser } from './_lib/session';
 import type { Env } from './_lib/db';
-import { backgroundExpansionInstructions, buildManualBackgroundPrompt } from './_lib/manualBackground';
+import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { consumeRateLimit } from './_lib/rateLimit';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
@@ -1279,8 +1279,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ], 300)
       : 'beautiful peaceful scene';
 
-    const finalPrompt = buildManualBackgroundPrompt(translated, style);
     const size = ratio ? ratioToSize[ratio] || '1024x1024' : '1024x1024';
+    const finalPrompt = buildManualBackgroundPrompt(translated, style, cropSafeNote(size, ratio));
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
