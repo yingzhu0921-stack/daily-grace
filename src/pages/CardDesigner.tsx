@@ -1330,8 +1330,9 @@ export default function Designer() {
         console.error('❌ generate-image API error:', response.status, errorData);
 
         if (response.status === 429) {
-          toast.error('API 요청 한도 초과', {
-            description: 'API 요청 한도에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+          // 서버가 시간당·하루·서비스 전체 중 어디에 걸렸는지에 맞는 문구를 준다(하루 한도에 '1-2분 후'는 틀린 안내).
+          toast.error('사용 한도에 도달했어요', {
+            description: errorData.error || '잠시 후 다시 시도해주세요.',
             duration: 5000,
           });
           return;
@@ -1386,12 +1387,13 @@ export default function Designer() {
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({ error: '' }));
         console.error('API error:', errorData);
 
         if (response.status === 429) {
-          toast.error('API 요청 한도 초과', {
-            description: 'API 요청 한도에 도달했습니다. 1-2분 후에 다시 시도해주세요.',
+          // 서버가 시간당·하루·서비스 전체 중 어디에 걸렸는지에 맞는 문구를 준다(하루 한도에 '1-2분 후'는 틀린 안내).
+          toast.error('사용 한도에 도달했어요', {
+            description: errorData.error || '잠시 후 다시 시도해주세요.',
             duration: 5000,
           });
           return;
@@ -1771,7 +1773,7 @@ export default function Designer() {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: '오류' }));
-          if (res.status === 429) { toast.error('API 요청 한도 초과', { description: '잠시 후 다시 시도해주세요.' }); return; }
+          if (res.status === 429) { toast.error('사용 한도에 도달했어요', { description: err.error || '잠시 후 다시 시도해주세요.' }); return; }
           throw new Error(err.error || '생성 실패');
         }
         const data = await res.json();
@@ -2836,7 +2838,7 @@ export default function Designer() {
         });
         if (!res.ok) {
           const err = await res.json().catch(() => ({ error: '오류' }));
-          if (res.status === 429) { toast.error('API 요청 한도 초과'); return; }
+          if (res.status === 429) { toast.error('사용 한도에 도달했어요', { description: err.error || '잠시 후 다시 시도해주세요.' }); return; }
           throw new Error(err.error || '생성 실패');
         }
         const rdata = await res.json();

@@ -22,7 +22,9 @@ function load(path, bindings = {}) {
       // 상대경로는 scripts/ 기준으로 찾아서 못 읽는다. 저장소 안의 모듈은 여기서 짚어 준다.
       : name === './cardStyles'
         ? load('functions/api/_lib/cardStyles.ts')
-        : require(name),
+        : name === './rateLimit'
+          ? load('functions/api/_lib/rateLimit.ts', bindings)
+          : require(name),
     ...bindings,
   });
   return exports;
@@ -290,4 +292,77 @@ test('failed record deletions remain queued until cloud confirmation', () => {
   assert.deepEqual(Array.from(api.getDeletedRecordIds('prayers')), ['prayer-1']);
   api.clearRecordDeletion('prayers', 'prayer-1');
   assert.deepEqual(Array.from(api.getDeletedRecordIds('prayers')), []);
+});
+
+// 유료 AI 하루 한도(2026-11-10 사용자 결정: '넉넉하게'). rate_limits 테이블을 흉내 낸 가짜 DB로 센다.
+function clock(start) {
+  let now = start;
+  class FakeDate extends Date { static now() { return now; } }
+  return { Date: FakeDate, set: value => { now = value; } };
+}
+
+function fakeRateDb() {
+  const rows = new Map();
+  return {
+    rows,
+    prepare: () => ({
+      bind: (bucket, key, windowStart) => ({
+        first: async () => {
+          const id = `${bucket}|${key}|${windowStart}`;
+          rows.set(id, (rows.get(id) || 0) + 1);
+          return { count: rows.get(id) };
+        },
+      }),
+    }),
+  };
+}
+
+test('AI calls stop at the per-account daily limit even when hourly limits reset', async () => {
+  const time = clock(Date.UTC(2026, 10, 10, 1, 0, 0));
+  const { checkAiLimits, AI_LIMITS } = load('functions/api/_lib/aiLimits.ts', { crypto, Date: time.Date });
+  const db = fakeRateDb();
+  {
+    let allowed = 0;
+    let lastScope = '';
+    // 매시간 시간당 한도만큼 시도한다. 시간당 한도로는 막히지 않고, 하루 합계에서 막혀야 한다.
+    for (let hour = 0; hour < 5; hour++) {
+      time.set(Date.UTC(2026, 10, 10, 1 + hour, 0, 0));
+      for (let i = 0; i < AI_LIMITS['generate-image'].perHour; i++) {
+        const r = await checkAiLimits(db, 'user-a', 'generate-image');
+        if (r.allowed) allowed++; else lastScope = r.scope;
+      }
+    }
+    assert.equal(allowed, AI_LIMITS['generate-image'].perDay);
+    assert.equal(lastScope, 'day');
+    // 다른 계정은 영향을 받지 않는다.
+    assert.equal((await checkAiLimits(db, 'user-b', 'generate-image')).allowed, true);
+    // 하루는 한국 자정에 바뀐다. 한국 시간 11/10 오후 11시(UTC 14시)에는 아직 막히고,
+    // 11/11 오전 0시 30분(UTC 11/10 15:30)에는 다시 된다. 전에는 UTC 자정(한국 오전 9시) 기준이었다.
+    time.set(Date.UTC(2026, 10, 10, 14, 0, 0));
+    assert.equal((await checkAiLimits(db, 'user-a', 'generate-image')).allowed, false);
+    time.set(Date.UTC(2026, 10, 10, 15, 30, 0));
+    assert.equal((await checkAiLimits(db, 'user-a', 'generate-image')).allowed, true);
+  }
+});
+
+test('image-making AI calls share one service-wide daily cap; text calls do not count toward it', async () => {
+  const time = clock(Date.UTC(2026, 10, 10, 3, 0, 0));
+  const { checkAiLimits, GLOBAL_IMAGES_PER_DAY } = load('functions/api/_lib/aiLimits.ts', { crypto, Date: time.Date });
+  const db = fakeRateDb();
+  {
+    let allowed = 0;
+    let scope = '';
+    // 계정을 많이 만들어 각자 조금씩 써도 서비스 전체 합계에서 막혀야 한다.
+    for (let u = 0; u < 60 && !scope; u++) {
+      for (let i = 0; i < 10; i++) {
+        const r = await checkAiLimits(db, `user-${u}`, i % 2 ? 'auto-complete' : 'generate-image');
+        if (r.allowed) allowed++; else { scope = r.scope; break; }
+      }
+    }
+    assert.equal(allowed, GLOBAL_IMAGES_PER_DAY);
+    assert.equal(scope, 'service');
+    // 글만 다루는 호출은 서비스 전체 그림 한도와 무관하다.
+    assert.equal((await checkAiLimits(db, 'user-x', 'condense')).allowed, true);
+    assert.equal((await checkAiLimits(db, 'user-x', 'unknown-action')).allowed, true);
+  }
 });
