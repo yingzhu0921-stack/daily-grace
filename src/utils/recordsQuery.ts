@@ -17,6 +17,7 @@ export type UnifiedRecord = {
   categoryId?: string;
   categoryName?: string;
   categoryColor?: string;
+  categoryIcon?: string;
   title: string;
   content: string;
   createdAt: string;
@@ -102,6 +103,7 @@ function readCustomRecords(): UnifiedRecord[] {
         categoryId,
         categoryName: cat?.name,
         categoryColor: cat?.color,
+        categoryIcon: cat?.icon,
         // 제목이 없으면 본문·내용에서 끌어온다. 목록에 빈 줄이 남지 않게.
         title: r.title || cat?.name || '기록',
         content: r.content || r.passage || '',

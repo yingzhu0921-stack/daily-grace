@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { AppIcon, IconName } from './ui/AppIcon';
 import { RecordType } from '@/utils/recordsQuery';
 import { routes } from '@/config/routes';
+import { normalizeColor } from '@/utils/categoryStorage';
 
 type RecordCardProps = {
   id: string;
@@ -14,21 +15,29 @@ type RecordCardProps = {
   categoryId?: string;
   categoryName?: string;
   categoryColor?: string;
+  categoryIcon?: string;
 };
 
+// 색·아이콘은 홈 카테고리 카드(src/pages/Index.tsx defaultCategories)와 같게 둔다.
+// 전에는 진한 색 배경에 흰 아이콘, 감사는 반짝이 아이콘이라 홈과 다른 앱처럼 보였다.
 const typeConfig: Record<RecordType, { icon: IconName; color: string; label: string; route: string }> = {
-  meditation: { icon: 'bookOpen', color: 'rgba(125,184,125,1)', label: 'Q.T', route: routes.qt },
-  prayer: { icon: 'heart', color: 'rgba(165,125,184,1)', label: '기도', route: routes.prayer },
-  gratitude: { icon: 'sparkles', color: 'rgba(232,200,125,1)', label: '감사', route: routes.thanks },
-  diary: { icon: 'pencilLine', color: 'rgba(221,149,125,1)', label: '일기', route: routes.diary },
+  meditation: { icon: 'bookOpen', color: '#7DB87D', label: 'Q.T', route: routes.qt },
+  prayer: { icon: 'heart', color: '#A57DB8', label: '기도', route: routes.prayer },
+  gratitude: { icon: 'star', color: '#E8C87D', label: '감사', route: routes.thanks },
+  diary: { icon: 'pencilLine', color: '#DD957D', label: '일기', route: routes.diary },
 };
 
-export function RecordCard({ id, type, title, content, date, categoryId, categoryName, categoryColor }: RecordCardProps) {
+/** 홈 아이콘 배경과 같은 진하기(16%). 6자리 hex 가 아니면 color-mix 로 같은 효과를 낸다. */
+const tint = (color: string) =>
+  /^#[0-9a-f]{6}$/i.test(color) ? `${color}28` : `color-mix(in srgb, ${color} 16%, transparent)`;
+
+export function RecordCard({ id, type, title, content, date, categoryId, categoryName, categoryColor, categoryIcon }: RecordCardProps) {
   const navigate = useNavigate();
   // 커스텀 카테고리는 typeConfig 에 없다. 그대로 두면 config 가 undefined 라 터진다.
   const config = typeConfig[type as RecordType] ?? {
-    icon: 'pencilLine' as IconName,
-    color: categoryColor || 'rgba(123,154,172,1)',
+    // 커스텀 카테고리는 홈 카드처럼 그 카테고리의 아이콘을 쓴다(전엔 모두 연필).
+    icon: (categoryIcon || 'pencilLine') as IconName,
+    color: normalizeColor(categoryColor || '#7BA8DB'),
     label: categoryName || '기록',
     route: `/custom/${categoryId || type}`,
   };
@@ -45,9 +54,9 @@ export function RecordCard({ id, type, title, content, date, categoryId, categor
       <div className="flex items-start gap-3">
         <div 
           className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ backgroundColor: config.color }}
+          style={{ backgroundColor: tint(config.color) }}
         >
-          <AppIcon name={config.icon} size={20} color="#fff" strokeWidth={1.75} />
+          <AppIcon name={config.icon} size={20} color={config.color} strokeWidth={1.5} />
         </div>
         
         <div className="flex-1 min-w-0">

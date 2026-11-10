@@ -36,7 +36,8 @@ const RGBA_COLOR_MAP: Record<string, string> = {
   'rgba(221,149,125,1)': '#DD957D',
 };
 
-const normalizeColor = (color?: string) => {
+/** 예전 색값(진한 톤, rgba)을 지금 팔레트로 바꾼다. 캐시에서 바로 읽는 화면도 같이 쓴다. */
+export const normalizeColor = (color?: string) => {
   if (!color) return '#7DB87D';
   if (color.startsWith('rgba')) return RGBA_COLOR_MAP[color.replace(/\s/g, '')] || color;
   const upper = color.toUpperCase();
