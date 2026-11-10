@@ -35,9 +35,9 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
   return (
     // 1·3단계처럼 가운데 폭을 제한한다. 제한이 없으면 데스크톱(약 1024px)에서
     // 카드와 '다음' 버튼이 화면 끝까지 늘어나 오른쪽이 잘린 것처럼 보인다.
-    <div className="flex flex-col h-full px-6 py-8 bg-[#FAFAF9] items-center">
+    <div className="flex flex-col h-full px-6 py-6 bg-[#FAFAF9] items-center">
       <div className="flex-1 w-full max-w-[420px] overflow-y-auto">
-        <div className="mb-8">
+        <div className="mb-6">
           <h2 className="text-[24px] font-bold leading-[32px] text-[#1F1F1F] mb-2">
             하루를 어떻게<br />하나님과 함께하고 싶나요?
           </h2>
@@ -48,25 +48,29 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
 
         <div className="space-y-3">
           {categories.map(({ icon: Icon, color, name, desc, time, setTime }) => (
+            // 한 줄 카드. 전에는 시간 버튼이 카드마다 큰 한 줄을 차지해서 세 장이 한 화면에 안 들어갔다
+            // (아이폰 14 사파리에서 감사 카드가 잘리고, SE 에선 두 장만 보였다).
             <div
               key={name}
-              className="relative rounded-2xl bg-white overflow-hidden px-5 py-4 flex items-center gap-4"
+              className="relative rounded-2xl bg-white overflow-hidden px-4 py-3.5 flex items-center gap-3"
               style={{ border: '1px solid #EFEFEF' }}
             >
               {/* Accent line */}
               <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ backgroundColor: color }} />
               {/* Icon */}
               <div
-                className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 mt-1"
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{ backgroundColor: `${color}20` }}
               >
                 <Icon className="w-5 h-5" style={{ color }} strokeWidth={1.5} />
               </div>
               {/* Content */}
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <h3 className="text-[15px] font-semibold text-[#1F1F1F] mb-0.5">{name}</h3>
-                <p className="text-[12px] text-[#7A7A7A] mb-2">{desc}</p>
-                <TimePicker value={time} onChange={setTime} />
+                <p className="text-[12px] text-[#7A7A7A] truncate">{desc}</p>
+              </div>
+              <div className="shrink-0">
+                <TimePicker value={time} onChange={setTime} compact />
               </div>
             </div>
           ))}

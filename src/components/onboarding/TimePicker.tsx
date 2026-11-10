@@ -10,9 +10,11 @@ import { Clock } from 'lucide-react';
 interface TimePickerProps {
   value?: string;
   onChange: (time: string) => void;
+  /** 작은 버튼. 온보딩처럼 한 화면에 여러 개를 넣을 때 쓴다. */
+  compact?: boolean;
 }
 
-export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
+export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, compact = false }) => {
   const [hour, setHour] = useState(value?.split(':')[0] || '09');
   const [minute, setMinute] = useState(value?.split(':')[1] || '00');
   const [isOpen, setIsOpen] = useState(false);
@@ -33,9 +35,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange }) => {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="w-full h-14 rounded-xl bg-[#F7F6F4] hover:bg-[#E8E7E5] text-[#2E2E2E] border border-[#E8E7E5] flex items-center justify-center gap-2 text-base"
+          className={`${compact ? 'h-10 px-3 text-[15px]' : 'w-full h-14 text-base'} rounded-xl bg-[#F7F6F4] hover:bg-[#E8E7E5] text-[#2E2E2E] border border-[#E8E7E5] flex items-center justify-center gap-2`}
         >
-          <Clock size={18} className="text-[#7DB87D]" />
+          <Clock size={compact ? 16 : 18} className="text-[#7DB87D]" />
           <span className="font-medium">{displayTime}</span>
         </Button>
       </PopoverTrigger>
