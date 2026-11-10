@@ -391,6 +391,8 @@ export interface GenerativeSpec {
   style: GenerativeStyle;
   palette: GenerativePalette;
   font: string;
+  /** 본문 굵기. 없으면 400. 같은 글꼴을 굵기만 달리 두 번 쓸 때 필요하다. */
+  fontWeight?: number;
   ring?: boolean;     // (aura) 글자 주위 얇은 타원 링
   accentKind?: 'sparkle' | 'line' | 'arc' | 'none'; // (aura) 미세 악센트
   refPill?: boolean;  // (aura) 주소를 오벌 알약 테두리로
@@ -407,14 +409,25 @@ export interface GenerativeSpec {
   emphasis?: EmphasisChoice;
 }
 
-const GRAIN_BODY_FONTS = [
-  "'Gowun Batang', serif",          // 명조 — 차분한 기본
-  "'Gowun Dodum', sans-serif",      // 고딕 — 깔끔하고 현대적
-  "'BusanDandiGothic', sans-serif", // 부산단디 — 또렷하고 자간이 넓다
-  "'SeoulNamsan', sans-serif",      // 서울남산 — 가늘고 단정하다
-  "'NoonnuBasicGothic', sans-serif",// 눈누기초 — 굵고 힘이 있다
-  "'LeeSunSinDotum', sans-serif",   // 이순신돋움 — 중간 굵기, 살짝 각지다
+/**
+ * 본문 글꼴. 순서와 개수를 바꾸지 않는다 — 시드로 몇 번째를 고르는지 정하므로,
+ * 바꾸면 같은 문장의 카드가 다른 글꼴로 다시 그려진다.
+ *
+ * 2026-11-10: 3·4번(부산단디고딕·서울남산체)은 앱에 넣어 배포해도 되는지 확인이 안 돼서
+ * IBM Plex Sans KR 로 바꿨다(사용자 결정, OFL). 3번은 보통, 4번은 Light 로 둔다.
+ */
+const GRAIN_BODY_FONTS: { css: string; weight: number }[] = [
+  { css: "'Gowun Batang', serif", weight: 400 },          // 명조 — 차분한 기본
+  { css: "'Gowun Dodum', sans-serif", weight: 400 },      // 고딕 — 깔끔하고 현대적
+  { css: "'IBM Plex Sans KR', sans-serif", weight: 400 }, // 또렷하고 폭이 넓다 (부산단디 자리)
+  { css: "'IBM Plex Sans KR', sans-serif", weight: 300 }, // 가늘고 단정하다 (서울남산 자리)
+  { css: "'NoonnuBasicGothic', sans-serif", weight: 400 },// 눈누기초 — 굵고 힘이 있다
+  { css: "'LeeSunSinDotum', sans-serif", weight: 400 },   // 이순신돋움 — 중간 굵기, 살짝 각지다
 ];
+
+function bodyWeight(spec: { fontWeight?: number }): number {
+  return spec.fontWeight ?? 400;
+}
 
 /** 글꼴마다 같은 px 라도 보이는 크기가 조금씩 다르다. */
 function fontScale(css: string): number {
@@ -425,11 +438,13 @@ function fontScale(css: string): number {
 
 /**
  * 강조에 쓸 굵기. 굵은 자형이 없는 글꼴에 700 을 주면 억지로 굵게 그려져 지저분해진다.
- * 고운바탕만 700 을 들고 있다.
+ * 굵은 자형을 실제로 들고 있는 글꼴에만 700 을 주고, 나머지는 본문 굵기 그대로(크기로 강조).
+ * IBM Plex Light 자리는 가는 인상이 그 글꼴의 성격이라 강조도 본문 굵기로 둔다.
  */
-function fontBoldWeight(css: string): number {
-  // 굵은 자형을 실제로 들고 있는 글꼴에만 700 을 준다
-  return css.includes('Gowun Batang') || css.includes('BusanDandi') ? 700 : 400;
+function fontBoldWeight(css: string, body = 400): number {
+  if (css.includes('Gowun Batang')) return 700;
+  if (css.includes('IBM Plex Sans KR') && body >= 400) return 700;
+  return body;
 }
 
 export async function preloadGrainFonts(text = ''): Promise<void> {
@@ -437,15 +452,16 @@ export async function preloadGrainFonts(text = ''): Promise<void> {
   // 구글 한글 웹폰트는 유니코드 구간별로 잘게 쪼개져 있다. 실제 글자를 함께 넘겨야
   // 그 글자가 든 구간을 받아온다. 안 넘기면 한글 구간이 빠져 글자마다 다른 글꼴이 섞인다.
   const sample = `${text} 가나다라마바사아자차카타파하 0123456789:` ;
-  const families = [...GRAIN_BODY_FONTS, GRAIN_REF_FONT];
+  const faces = [...GRAIN_BODY_FONTS, { css: GRAIN_REF_FONT, weight: 400 }];
   await Promise.all(
-    families.map((css) =>
-      document.fonts.load(`400 64px ${css}`, sample).catch(() => undefined),
+    faces.map(({ css, weight }) =>
+      document.fonts.load(`${weight} 64px ${css}`, sample).catch(() => undefined),
     ),
   );
-  await document.fonts
-    .load("700 64px 'Gowun Batang', serif", sample)
-    .catch(() => undefined);
+  await Promise.all([
+    "700 64px 'Gowun Batang', serif",
+    "700 64px 'IBM Plex Sans KR', sans-serif",
+  ].map((f) => document.fonts.load(f, sample).catch(() => undefined)));
 }
 
 const GRAIN_REF_FONT = "'Gowun Dodum', sans-serif";
@@ -454,7 +470,7 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   const seed = seedOverride ?? hashSeed(text || 'grace');
   const rnd = mulberry32(seed);
   const grainPal = GRAIN_PALETTES[Math.floor(rnd() * GRAIN_PALETTES.length)];
-  const font = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
+  const face = GRAIN_BODY_FONTS[Math.floor(rnd() * GRAIN_BODY_FONTS.length)];
   // 조각이 하나뿐인 문장에는 hero 계열을 쓰지 않는다
   const layoutPool = autoEmphasisSpan(text) ? GRAIN_LAYOUTS.length : UNIFORM_LAYOUT_COUNT;
   const layout = Math.floor(rnd() * layoutPool);
@@ -465,7 +481,8 @@ export function pickGrainSpec(text: string, seedOverride?: number): GenerativeSp
   return {
     seed,
     style: 'grain',
-    font,
+    font: face.css,
+    fontWeight: face.weight,
     palette: { name: grainPal.name, bg: grainPal.bg, ink: grainPal.ink },
     grainPal,
     layout,
@@ -823,7 +840,7 @@ function drawHeroText(
 
   // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
   const fs = fontScale(spec.font);
-  const boldW = fontBoldWeight(spec.font);
+  const boldW = fontBoldWeight(spec.font, bodyWeight(spec));
   let keyPx = Math.round(width * (centered ? 0.072 : 0.100) * fs);
   const minKeyPx = Math.round(width * (centered ? 0.05 : 0.062) * fs);
   const hasLoneWord = (ls: string[]) => ls.length > 1 && ls.some((l) => l.trim().split(/\s+/).length === 1 && [...l.trim()].length <= 3);
@@ -837,7 +854,7 @@ function drawHeroText(
   }
 
   let restPx2 = Math.round(width * (centered ? 0.046 : 0.040) * fs);
-  ctx.font = `400 ${restPx2}px ${spec.font}`;
+  ctx.font = `${bodyWeight(spec)} ${restPx2}px ${spec.font}`;
   const beforeLines = beforeSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const afterLines = afterSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const restCount = beforeLines.length + afterLines.length;
@@ -909,7 +926,7 @@ function drawHeroText(
 
   const drawRest = (lines: string[]) => {
     if (!lines.length) return;
-    ctx.font = `400 ${restPx2}px ${spec.font}`;
+    ctx.font = `${bodyWeight(spec)} ${restPx2}px ${spec.font}`;
     ctx.globalAlpha = 0.78;
     for (const line of lines) { y += restLH; ctx.fillText(line, x, y); }
     ctx.globalAlpha = 1;
@@ -976,7 +993,7 @@ function renderGrainCard(
   let fontPx = Math.round(width * 0.065 * fontScale(spec.font));
   let lines: string[] | null = null;
   while (fontPx >= minPx && !lines) {
-    ctx.font = `400 ${fontPx}px ${spec.font}`;
+    ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
     if (hasUserBreaks) {
       const got = forceWrap(ctx, text, maxW);
       // 쪼개지지 않고 사용자 줄 그대로 들어갈 때만 채택
@@ -992,18 +1009,18 @@ function renderGrainCard(
   // 최소 크기로도 안 들어가면 줄 수를 늘린다. 글자를 빼거나 줄이지는 않는다.
   if (!lines) {
     fontPx = minPx;
-    ctx.font = `400 ${fontPx}px ${spec.font}`;
+    ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
     if (!hasUserBreaks) for (let n = 5; n <= 12 && !lines; n++) lines = wrapKeepAll(ctx, text, maxW, n);
     if (!lines) lines = forceWrap(ctx, text, maxW);
     // 줄 수가 아주 많아도 카드 밖으로 나가지 않도록 끝까지 줄인다(원문 보존 우선).
     while (!vFits(fontPx, lines.length) && fontPx > width * 0.014) {
       fontPx -= step;
-      ctx.font = `400 ${fontPx}px ${spec.font}`;
+      ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
       lines = forceWrap(ctx, text, maxW);
     }
   }
 
-  ctx.font = `400 ${fontPx}px ${spec.font}`;
+  ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
   const lineH = fontPx * GRAIN_LH;
   // 주소도 카드 밖으로 나가지 않게 맞춘다
   let refPx = Math.round(fontPx * 0.6);
@@ -1015,7 +1032,7 @@ function renderGrainCard(
       refPx -= 1;
       ctx.font = `400 ${refPx}px ${GRAIN_REF_FONT}`;
     }
-    ctx.font = `400 ${fontPx}px ${spec.font}`;
+    ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
   }
   const bodyH = lines.length * lineH;
   const totalH = bodyH + (reference ? refPx * 1.9 : 0);

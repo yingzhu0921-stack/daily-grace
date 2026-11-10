@@ -47,7 +47,7 @@ type Align = 'left' | 'center' | 'right';
 
 type TextStyle = {
   content: string;
-  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora' | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada' | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo' | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush' | 'Cafe24SuperMagic';
+  fontFamily: 'Inter' | 'SerifKR' | 'NotoSans' | 'NanumGothic' | 'NanumMyeongjo' | 'Jua' | 'BlackHanSans' | 'DoHyeon' | 'NanumPen' | 'Sunflower' | 'GothicA1' | 'GamjaFlower' | 'GowunDodum' | 'GowunBatang' | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung' | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora' | 'KBLJump' | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada' | 'RidiBatang' | 'MaruBuri' | 'SeoulHangang' | 'Hyunok' | 'Kkubullim' | 'GangwonModoo' | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush' | 'Cafe24SuperMagic';
   fontSize: number;         // px
   lineHeight: number;       // 1.2 ~ 1.8
   letterSpacing: number;    // -1 ~ 2(px)
@@ -1084,8 +1084,8 @@ export default function Designer() {
       t.fontFamily === 'PaperBlack' ? `'PaperBlack', sans-serif` :
       t.fontFamily === 'PaperLight' ? `'PaperLight', sans-serif` :
       t.fontFamily === 'Taenada' ? `'Taenada', sans-serif` :
-      t.fontFamily === 'RidiBatang' ? `'RidiBatang', serif` :
-      t.fontFamily === 'SeoulHangang' ? `'SeoulHangang', sans-serif` :
+      // 리디바탕·서울한강으로 저장된 예전 카드도 마루부리로 그린다(앱 배포 라이선스 미확인으로 교체).
+      t.fontFamily === 'RidiBatang' || t.fontFamily === 'SeoulHangang' || t.fontFamily === 'MaruBuri' ? `'MaruBuri', serif` :
       t.fontFamily === 'Hyunok' ? `'Hyunok', sans-serif` :
       t.fontFamily === 'Kkubullim' ? `'Kkubullim', sans-serif` :
       t.fontFamily === 'GangwonModoo' ? `'GangwonModoo', sans-serif` :
@@ -1803,8 +1803,10 @@ export default function Designer() {
     'PaperBlack': "'PaperBlack', sans-serif",
     'PaperLight': "'PaperLight', sans-serif",
     'Taenada': "'Taenada', sans-serif",
-    'RidiBatang': "'RidiBatang', serif",
-    'SeoulHangang': "'SeoulHangang', sans-serif",
+    // 예전 이름은 마루부리로 그린다(앱 배포 라이선스 미확인으로 교체).
+    'RidiBatang': "'MaruBuri', serif",
+    'SeoulHangang': "'MaruBuri', serif",
+    'MaruBuri': "'MaruBuri', serif",
     'Hyunok': "'Hyunok', sans-serif",
     'Kkubullim': "'Kkubullim', sans-serif",
     'GangwonModoo': "'GangwonModoo', sans-serif",
@@ -2074,7 +2076,7 @@ export default function Designer() {
       image,
       template,
       aiText: true, // 글자를 코드가 이미 구웠으므로 오버레이 없음
-      fonts: { primary: 'RidiBatang', secondary: 'RidiBatang' },
+      fonts: { primary: 'MaruBuri', secondary: 'MaruBuri' },
       lines: [
         { text: bodyText, scale: 1 },
         ...(reference ? [{ text: reference, scale: 0.5 }] : []),
@@ -3428,8 +3430,7 @@ export default function Designer() {
                       t.fontFamily === 'PaperBlack' ? 'PaperBlack, sans-serif' :
                       t.fontFamily === 'PaperLight' ? 'PaperLight, sans-serif' :
                       t.fontFamily === 'Taenada' ? 'Taenada, sans-serif' :
-                      t.fontFamily === 'RidiBatang' ? 'RidiBatang, serif' :
-                      t.fontFamily === 'SeoulHangang' ? 'SeoulHangang, sans-serif' :
+                      t.fontFamily === 'RidiBatang' || t.fontFamily === 'SeoulHangang' || t.fontFamily === 'MaruBuri' ? 'MaruBuri, serif' :
                       t.fontFamily === 'Hyunok' ? 'Hyunok, sans-serif' :
                       t.fontFamily === 'Kkubullim' ? 'Kkubullim, sans-serif' :
                       t.fontFamily === 'GangwonModoo' ? 'GangwonModoo, sans-serif' :
@@ -3444,6 +3445,11 @@ export default function Designer() {
                     const fontWeight = t.bold ? 'bold' : 'normal';
                     const fontStyle = t.italic ? 'italic' : 'normal';
                     
+                    // 저장 직전에 그 글꼴을 실제 문구 글자까지 받아 둔다. 화면에 보였어도 느린 망에선
+                    // 덜 받았을 수 있고, 그러면 캔버스가 대체 글꼴로 그린다(자동완성 저장은 이미 기다린다).
+                    if (document.fonts?.load) {
+                      await document.fonts.load(`${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`, t.content).catch(() => undefined);
+                    }
                     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
                     ctx.fillStyle = t.color;
                     ctx.textAlign = t.align;
@@ -4683,9 +4689,17 @@ function Toolbar({
               }}
               className="w-full py-3 px-4 rounded-xl border border-[#E3E2E0] bg-white text-[#2E2E2E] text-sm hover:border-[#1F1F1F] transition-colors"
             >
-              <span style={{ fontFamily: t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif KR' : t.fontFamily === 'NotoSans' ? 'Noto Sans KR' : t.fontFamily === 'NanumGothic' ? 'Nanum Gothic' : t.fontFamily === 'NanumMyeongjo' ? 'Nanum Myeongjo' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? 'Gowun Dodum' : t.fontFamily === 'GowunBatang' ? 'Gowun Batang' : t.fontFamily === 'SongMyung' ? 'Song Myung' : t.fontFamily === 'Hahmlet' ? 'Hahmlet' : t.fontFamily === 'NanumPen' ? 'Nanum Pen Script' : t.fontFamily === 'NanumBrush' ? 'Nanum Brush Script' : t.fontFamily === 'GamjaFlower' ? 'Gamja Flower' : t.fontFamily === 'HiMelody' ? 'Hi Melody' : t.fontFamily === 'Gaegu' ? 'Gaegu' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? 'Black Han Sans' : t.fontFamily === 'DoHyeon' ? 'Do Hyeon' : t.fontFamily === 'Sunflower' ? 'Sunflower' : t.fontFamily === 'Dongle' ? 'Dongle' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair Display' : 'Lora' }}>
-                {t.fontFamily === 'Inter' ? 'Inter' : t.fontFamily === 'SerifKR' ? 'Noto Serif' : t.fontFamily === 'NotoSans' ? 'Noto Sans' : t.fontFamily === 'NanumGothic' ? '나눔고딕' : t.fontFamily === 'NanumMyeongjo' ? '나눔명조' : t.fontFamily === 'GothicA1' ? 'Gothic A1' : t.fontFamily === 'GowunDodum' ? '고운도둠' : t.fontFamily === 'GowunBatang' ? '고운바탕' : t.fontFamily === 'SongMyung' ? '송명조' : t.fontFamily === 'Hahmlet' ? '함릿체' : t.fontFamily === 'NanumPen' ? '나눔손글씨' : t.fontFamily === 'NanumBrush' ? '나눔붓' : t.fontFamily === 'GamjaFlower' ? '감자꽃' : t.fontFamily === 'HiMelody' ? '하이멜로디' : t.fontFamily === 'Gaegu' ? '개구쟁이' : t.fontFamily === 'Jua' ? 'Jua' : t.fontFamily === 'BlackHanSans' ? '검은고딕' : t.fontFamily === 'DoHyeon' ? '도현체' : t.fontFamily === 'Sunflower' ? '해바라기' : t.fontFamily === 'Dongle' ? '동글체' : t.fontFamily === 'Roboto' ? 'Roboto' : t.fontFamily === 'Montserrat' ? 'Montserrat' : t.fontFamily === 'Playfair' ? 'Playfair' : 'Lora'}
-              </span>
+              {/* 이름과 미리보기는 폰트 목록에서 찾는다. 전에는 긴 조건식이라 목록에 없는 폰트(눈누 폰트들)는
+                  전부 'Lora'로 보였다. 예전 리디바탕·서울한강 카드는 마루부리로 그리므로 마루부리로 보여 준다. */}
+              {(() => {
+                const legacy = t.fontFamily === 'RidiBatang' || t.fontFamily === 'SeoulHangang';
+                const current = fontOptions.find(o => o.value === (legacy ? 'MaruBuri' : t.fontFamily));
+                return (
+                  <span style={{ fontFamily: current?.family || 'Lora' }}>
+                    {current?.label || t.fontFamily}
+                  </span>
+                );
+              })()}
             </button>
           </TabsContent>
 

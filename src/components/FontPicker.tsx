@@ -7,7 +7,8 @@ export type FontFamily =
   | 'NanumBrush' | 'HiMelody' | 'Gaegu' | 'Dongle' | 'SongMyung'
   | 'Hahmlet' | 'Playfair' | 'Montserrat' | 'Roboto' | 'Lora'
   | 'GangwonTunTun' | 'PaperBlack' | 'PaperLight' | 'Taenada'
-  | 'RidiBatang' | 'SeoulHangang' | 'Hyunok' | 'GangwonModoo'
+  // RidiBatang·SeoulHangang 은 예전에 저장된 카드를 열기 위해 남겨 둔다. 둘 다 마루부리로 그린다.
+  | 'RidiBatang' | 'SeoulHangang' | 'MaruBuri' | 'Hyunok' | 'GangwonModoo'
   | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush'
   | 'Cafe24SuperMagic';
 
@@ -27,14 +28,14 @@ export const fontOptions: FontOption[] = [
   // 깔끔한 고딕
   { value: 'PaperBlack', label: '페이퍼블랙', family: 'PaperBlack' },
   { value: 'PaperLight', label: '페이퍼라이트', family: 'PaperLight' },
-  { value: 'SeoulHangang', label: '서울한강', family: 'SeoulHangang' },
   { value: 'GangwonModoo', label: '강원모두', family: 'GangwonModoo' },
   { value: 'JeonnamBarun', label: '전남바른', family: 'JeonnamBarun' },
   // 손글씨/감성
   { value: 'Hyunok', label: '현옥샘', family: 'Hyunok' },
   { value: 'Incheon', label: '인천자람', family: 'Incheon' },
   // 세리프/명조 · 교육체 개성
-  { value: 'RidiBatang', label: '리디바탕', family: 'RidiBatang' },
+  // 리디바탕·서울한강은 앱 배포 라이선스가 확인되지 않아 마루부리(OFL) 하나로 합쳤다(2026-11-10).
+  { value: 'MaruBuri', label: '마루부리', family: 'MaruBuri' },
   { value: 'Keris', label: '케리스', family: 'Keris' },
   // 영문 (레트로/브러시)
   { value: 'Limelight', label: 'Limelight', family: 'Limelight' },

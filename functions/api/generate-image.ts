@@ -343,7 +343,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       'T01': {
         backgroundPrompt: `A ${T01_ART} The Korean hand-lettering goes in that open upper area. ${T01_NOT}`,
         styleLock: `T01 = FLAT INDIE STICKER (선 없는 단순 플랫 그림): ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
-        fonts: { primary: 'Cafe24SuperMagic', secondary: 'SeoulHangang' },
+        fonts: { primary: 'Cafe24SuperMagic', secondary: 'MaruBuri' },
       },
       // T02 — 스트릿 워십 포스터 (힙한 Gen-Z 굿즈 감성, AI가 글자까지 그림. 세부 스타일은 아키타입이 결정)
       'T02': {
@@ -361,7 +361,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       'T04': {
         backgroundPrompt: 'A 35mm FILM photograph — aesthetic, analog and intimate. Visible fine film GRAIN, slightly faded/muted color and soft contrast (Kodak Portra / Fuji film tones), very subtle halation only. NO strong light leak: do NOT bleed bright orange/amber glow in from the frame edges or corners, and keep the border areas clean and evenly exposed. The SUBJECT is chosen from the verse meaning (see the scene above) and is NOT limited to nature — it can be an everyday film-diary moment: a cafe window, a desk with a book, a quiet corner of a room, a windowsill, warm interior light, city lights or a street at dusk, hands, a small still-life of meaningful objects — OR a calm natural scene (light through leaves, water, a path, hazy sky). Choose whatever best expresses THIS verse. STRONGLY AVOID the epic majestic-landscape / calendar-wallpaper look (no sweeping mountain panoramas, no dramatic golden sunsets over the sea, no postcard vistas). Keep a calm low-contrast negative-space area where simple centered text stays perfectly legible. No text, no letters — background photo only.',
         styleLock: 'T04 = AESTHETIC FILM SIMPLE (감성 심플): a quiet FILM-diary photo — young, analog, understated and emotional (like a 35mm film snapshot on Pinterest), NOT an old-fashioned scenic landscape that only older audiences like. The SCENE is the mood and the text sits very simply and cleanly — calm, centered, evenly-sized, quietly readable, generous breathing room. The typography stays understated; the film photo carries the emotion. Never loud, never busy, never a big typographic headline.',
-        fonts: { primary: 'PaperLight', secondary: 'SeoulHangang' },
+        fonts: { primary: 'PaperLight', secondary: 'MaruBuri' },
       },
     };
 
@@ -704,12 +704,12 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         { primary: 'SongMyung', secondary: 'SongMyung' },
         { primary: 'Hahmlet', secondary: 'Hahmlet' },
         { primary: 'GowunBatang', secondary: 'GowunBatang' },
-        { primary: 'RidiBatang', secondary: 'RidiBatang' },
+        { primary: 'MaruBuri', secondary: 'MaruBuri' },
         { primary: 'KirangHaerang', secondary: 'KirangHaerang' },
         { primary: 'HiMelody', secondary: 'HiMelody' },
       ],
       T04: [
-        { primary: 'RidiBatang', secondary: 'RidiBatang' },
+        { primary: 'MaruBuri', secondary: 'MaruBuri' },
         { primary: 'GowunBatang', secondary: 'GowunBatang' },
         { primary: 'Hahmlet', secondary: 'Hahmlet' },
         { primary: 'SongMyung', secondary: 'SongMyung' },
