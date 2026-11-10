@@ -81,9 +81,14 @@ type Props = {
   open: boolean;
   onClose: () => void;
   onSelectCategory?: (category: Category) => void;
+  /**
+   * 홈에서 카드를 길게 눌러 고른 동작. nonce 가 바뀔 때마다 한 번 실행한다.
+   * 관리 창을 열지 않고 수정 창(또는 삭제 확인)만 바로 띄운다.
+   */
+  request?: { action: 'edit' | 'delete'; id: string; nonce: number } | null;
 };
 
-export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCategory }) => {
+export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCategory, request }) => {
   const { requireAuth, showLoginModal, setShowLoginModal, loginCallbackUrl, cancelPendingCallback } = useAuth();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,6 +115,19 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   useEffect(() => {
     loadCategories();
   }, []);
+
+  // 홈에서 길게 눌러 고른 수정·삭제를 실행한다. 목록이 아직 안 왔으면 온 뒤에 실행된다.
+  const [handledNonce, setHandledNonce] = useState<number | null>(null);
+  useEffect(() => {
+    if (!request || request.nonce === handledNonce || loading) return;
+    const target = categories.find(c => c.id === request.id);
+    setHandledNonce(request.nonce);
+    if (!target || ['1', '2', '3', '4'].includes(target.id)) return;
+    if (request.action === 'edit') handleStartEdit(target);
+    else void handleDeleteCategory(target.id);
+    // 핸들러들은 렌더마다 새로 만들어지지만 같은 일을 한다. request 가 바뀔 때만 실행하면 된다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [request, loading, categories]);
 
   const loadCategories = async () => {
     try {
@@ -361,7 +379,8 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     </div>
 
                     {!isDefaultCategory && (
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      // 늘 보이게 둔다. 전에는 마우스를 올려야(hover) 나타나서 폰에서는 수정·삭제 버튼이 보이지 않았다.
+                      <div className="flex items-center gap-1">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

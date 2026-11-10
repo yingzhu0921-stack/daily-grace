@@ -85,8 +85,10 @@ const MeditationList = () => {
           {items.map((n) => (
             <SwipeableItem
               key={n.id}
-              onEdit={() => navigate(`/meditation/${n.id}`)}
+              onEdit={() => navigate(`/meditation/${n.id}/edit`)}
               onDelete={() => handleDelete(n.id)}
+              // 밀어서 휴지통을 누르면 한 번 묻는다. 전에는 확인 없이 바로 지워졌다.
+              deleteLabel="Q.T 기록"
               editColor="#7DB87D"
               deleteColor="#E06B6B"
             >

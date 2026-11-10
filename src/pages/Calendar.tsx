@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { BottomNav } from '@/components/BottomNav';
 import { getAllRecords, type UnifiedRecord } from '@/utils/recordsQuery';
-import { RecordCard } from '@/components/RecordCard';
+import { SwipeableRecordCard } from '@/components/SwipeableRecordCard';
 import { routes } from '@/config/routes';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -267,7 +267,7 @@ const Calendar: React.FC = () => {
               <>
                 <div className="space-y-3">
                   {dayRecords.map((record) => (
-                    <RecordCard key={record.id} {...record} />
+                    <SwipeableRecordCard key={record.id} {...record} />
                   ))}
                 </div>
                 <button

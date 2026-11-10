@@ -88,8 +88,10 @@ export default function PrayerList() {
           {items.map((p) => (
             <SwipeableItem
               key={p.id}
-              onEdit={() => navigate(`/prayer/${p.id}`)}
+              onEdit={() => navigate(`/prayer/${p.id}/edit`)}
               onDelete={() => handleDelete(p.id)}
+              // 밀어서 휴지통을 누르면 한 번 묻는다. 전에는 확인 없이 바로 지워졌다.
+              deleteLabel="기도 기록"
               editColor="#A57DB8"
               deleteColor="#E06B6B"
             >

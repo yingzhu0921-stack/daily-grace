@@ -144,6 +144,8 @@ const CustomRecordList = () => {
               key={record.id}
               onEdit={() => navigate(`/custom/${categoryId}/edit/${record.id}`)}
               onDelete={() => handleDelete(record.id)}
+              // 밀어서 휴지통을 누르면 한 번 묻는다. 전에는 확인 없이 바로 지워졌다.
+              deleteLabel="기록"
               editColor={category.color}
               deleteColor="#E06B6B"
             >

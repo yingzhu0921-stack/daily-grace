@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Leaf, Plus, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
@@ -7,11 +7,13 @@ import { BottomNav } from '@/components/BottomNav';
 import { CategoryManager } from '@/components/CategoryManager';
 import { UserMenu } from '@/components/UserMenu';
 import { getAllRecords, hasRecordOnDate, getRecordCounts } from '@/utils/recordsQuery';
-import { RecordCard } from '@/components/RecordCard';
+import { SwipeableRecordCard } from '@/components/SwipeableRecordCard';
 import { getTodayGoalCount, getStreakDays } from '@/utils/recordsQuery';
 import { toLocalDateString as toLocal } from '@/utils/dateHelpers';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import * as categoryStorage from '@/utils/categoryStorage';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 type Category = {
   id: string;
@@ -63,6 +65,51 @@ const IndexNew = () => {
     catch { return 0; }
   })();
   const [showCategoryManager, setShowCategoryManager] = useState(false);
+
+  /**
+   * 카드를 길게 누르면 수정·삭제 메뉴(2026-11-10 사용자 결정). 전에는 카테고리 관리 창을 열어 찾아 들어가야 했고,
+   * 그 창의 버튼은 폰에선 보이지도 않았다. 짧게 누르면 지금처럼 그 카테고리로 간다.
+   */
+  const [menuCategory, setMenuCategory] = useState<any | null>(null);
+  const [categoryRequest, setCategoryRequest] = useState<{ action: 'edit' | 'delete'; id: string; nonce: number } | null>(null);
+  const pressTimer = useRef<number | null>(null);
+  const pressStart = useRef<{ x: number; y: number } | null>(null);
+  const longPressed = useRef(false);
+  const [hintSeen, setHintSeen] = useState(() => {
+    try { return localStorage.getItem('category_longpress_hint_seen') === '1'; } catch { return true; }
+  });
+  const cancelPress = () => {
+    if (pressTimer.current) window.clearTimeout(pressTimer.current);
+    pressTimer.current = null;
+  };
+  const startPress = (category: any, e: React.PointerEvent) => {
+    longPressed.current = false;
+    pressStart.current = { x: e.clientX, y: e.clientY };
+    cancelPress();
+    pressTimer.current = window.setTimeout(() => {
+      longPressed.current = true;
+      navigator.vibrate?.(10);
+      if (category.listPath) {
+        toast('기본 카테고리는 수정·삭제할 수 없어요');
+      } else {
+        setMenuCategory(category);
+      }
+      if (!hintSeen) {
+        setHintSeen(true);
+        try { localStorage.setItem('category_longpress_hint_seen', '1'); } catch { /* 다시 보여도 괜찮다 */ }
+      }
+    }, 500);
+  };
+  const movePress = (e: React.PointerEvent) => {
+    // 스크롤하려고 끌면 길게 누르기가 아니다.
+    const s0 = pressStart.current;
+    if (s0 && Math.hypot(e.clientX - s0.x, e.clientY - s0.y) > 10) cancelPress();
+  };
+  const runCategoryAction = (action: 'edit' | 'delete') => {
+    if (!menuCategory) return;
+    setCategoryRequest({ action, id: menuCategory.id, nonce: Date.now() });
+    setMenuCategory(null);
+  };
   // 첫 그림부터 계산값으로 시작한다. 빈 값(0/4·0일)으로 그렸다가 바꾸면 홈에 돌아올 때마다 숫자가 깜빡였다.
   const [goalProgress, setGoalProgress] = useState(() => getTodayGoalCount());
   const [streakDays, setStreakDays] = useState(() => getStreakDays());
@@ -104,10 +151,17 @@ const IndexNew = () => {
     if (categoriesReady) setGoalProgress(getTodayGoalCount(customCategories));
   }, [categoriesReady, customCategories]);
 
-  // 최신 기록 로드
+  // 최신 기록 로드. 밀어서 지우거나 다른 화면·동기화로 바뀌면 'recordsUpdated' 가 온다 — 그때 다시 읽고
+  // 오늘 완료·연속 숫자도 다시 센다.
   useEffect(() => {
-    const records = getAllRecords().slice(0, 5); // 최신 5개
-    setRecentRecords(records);
+    const load = () => {
+      setRecentRecords(getAllRecords().slice(0, 5)); // 최신 5개
+      setGoalProgress(getTodayGoalCount());
+      setStreakDays(getStreakDays());
+    };
+    load();
+    window.addEventListener('recordsUpdated', load);
+    return () => window.removeEventListener('recordsUpdated', load);
   }, []);
 
   // 커스텀 카테고리 로드
@@ -353,9 +407,15 @@ const IndexNew = () => {
 
         {/* 루틴 섹션 - 2열 그리드 */}
         <section className="mb-8">
-          <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide mb-4">
-            MY ROUTINE
-          </h2>
+          <div className="flex items-baseline justify-between mb-4">
+            <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide">
+              MY ROUTINE
+            </h2>
+            {/* 길게 누르기는 눈에 안 보이는 동작이라, 직접 만든 카테고리가 있을 때 처음 한 번만 알려 준다. */}
+            {!hintSeen && customCategories.length > 0 && (
+              <span className="text-[11px] text-[#ACACAC]">카드를 길게 누르면 수정·삭제</span>
+            )}
+          </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             {allCategories.map((category) => {
@@ -367,9 +427,20 @@ const IndexNew = () => {
               return (
                 <button
                   key={category.id}
-                  onClick={() => handleCategoryClick(category)}
-                  className="relative h-[120px] rounded-[24px] p-4 flex flex-col justify-between transition-all active:scale-[0.97] overflow-hidden bg-white text-left"
-                  style={{ border: '1px solid #EFEFEF' }}
+                  onClick={() => {
+                    // 길게 눌러 메뉴를 띄운 뒤 손을 떼면 click 이 따라온다. 그때는 이동하지 않는다.
+                    if (longPressed.current) { longPressed.current = false; return; }
+                    handleCategoryClick(category);
+                  }}
+                  onPointerDown={(e) => startPress(category, e)}
+                  onPointerMove={movePress}
+                  onPointerUp={cancelPress}
+                  onPointerLeave={cancelPress}
+                  onPointerCancel={cancelPress}
+                  onContextMenu={(e) => e.preventDefault()}
+                  className="relative h-[120px] rounded-[24px] p-4 flex flex-col justify-between transition-all active:scale-[0.97] overflow-hidden bg-white text-left select-none"
+                  // 아이폰에서 길게 누르면 뜨는 기본 메뉴(복사 등)를 막는다.
+                  style={{ border: '1px solid #EFEFEF', WebkitTouchCallout: 'none' }}
                 >
                   {/* 상단 Accent Line */}
                   <div
@@ -448,7 +519,7 @@ const IndexNew = () => {
 
             <div className="space-y-3">
               {recentRecords.map((record) => (
-                <RecordCard key={record.id} {...record} />
+                <SwipeableRecordCard key={record.id} {...record} />
               ))}
             </div>
           </section>
@@ -459,7 +530,38 @@ const IndexNew = () => {
       <BottomNav />
 
       {/* 카테고리 관리 모달 */}
-      <CategoryManager open={showCategoryManager} onClose={() => setShowCategoryManager(false)} />
+      <CategoryManager open={showCategoryManager} onClose={() => setShowCategoryManager(false)} request={categoryRequest} />
+
+      {/* 카드를 길게 눌렀을 때의 메뉴 */}
+      <Dialog open={!!menuCategory} onOpenChange={(o) => { if (!o) setMenuCategory(null); }}>
+        <DialogContent hideCloseButton className="w-[calc(100%-32px)] max-w-[340px] rounded-3xl p-5 gap-0">
+          <DialogTitle className="text-[16px] font-semibold text-[#2E2E2E] text-center">{menuCategory?.name}</DialogTitle>
+          <DialogDescription className="sr-only">카테고리 수정 또는 삭제</DialogDescription>
+          <div className="mt-4 space-y-2">
+            <button
+              type="button"
+              onClick={() => runCategoryAction('edit')}
+              className="w-full h-12 rounded-xl border border-[#E8E7E5] bg-white text-[15px] font-medium text-[#2E2E2E] hover:bg-[#F9F8F6]"
+            >
+              수정
+            </button>
+            <button
+              type="button"
+              onClick={() => runCategoryAction('delete')}
+              className="w-full h-12 rounded-xl border border-[#E8E7E5] bg-white text-[15px] font-medium text-[#DD5F4E] hover:bg-[#FFF5F2]"
+            >
+              삭제
+            </button>
+            <button
+              type="button"
+              onClick={() => setMenuCategory(null)}
+              className="w-full h-11 rounded-xl text-[14px] text-[#7E7C78]"
+            >
+              취소
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

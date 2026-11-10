@@ -1,6 +1,7 @@
 import { motion, PanInfo, useMotionValue, useTransform } from 'framer-motion';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
+import { DeleteRecordDialog } from './DeleteRecordDialog';
 
 type SwipeableItemProps = {
   children: React.ReactNode;
@@ -8,6 +9,11 @@ type SwipeableItemProps = {
   onDelete?: () => void;
   editColor?: string;
   deleteColor?: string;
+  /**
+   * 무엇을 지우는지('Q.T 기록' 등). 주면 지우기 전에 한 번 묻는다.
+   * 전에는 목록 화면에서 밀어서 휴지통을 누르면 확인 없이 바로 지워졌다.
+   */
+  deleteLabel?: string;
 };
 
 export function SwipeableItem({ 
@@ -15,9 +21,11 @@ export function SwipeableItem({
   onEdit, 
   onDelete,
   editColor = '#6BAAB8',
-  deleteColor = '#E06B6B'
+  deleteColor = '#E06B6B',
+  deleteLabel,
 }: SwipeableItemProps) {
   const [isRevealed, setIsRevealed] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   const x = useMotionValue(0);
   const opacity = useTransform(x, [-120, -60, 0], [1, 1, 0]);
 
@@ -37,7 +45,8 @@ export function SwipeableItem({
 
   const handleDelete = () => {
     setIsRevealed(false);
-    onDelete?.();
+    if (deleteLabel) setConfirmOpen(true);
+    else onDelete?.();
   };
 
   return (
@@ -80,6 +89,14 @@ export function SwipeableItem({
       >
         {children}
       </motion.div>
+      {deleteLabel && (
+        <DeleteRecordDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          label={deleteLabel}
+          onConfirm={() => onDelete?.()}
+        />
+      )}
     </div>
   );
 }

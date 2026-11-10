@@ -84,8 +84,10 @@ export default function DiaryList() {
           {items.map(d => (
             <SwipeableItem
               key={d.id}
-              onEdit={() => navigate(`/diary/${d.id}`)}
+              onEdit={() => navigate(`/diary/${d.id}/edit`)}
               onDelete={() => handleDelete(d.id)}
+              // 밀어서 휴지통을 누르면 한 번 묻는다. 전에는 확인 없이 바로 지워졌다.
+              deleteLabel="일기"
               editColor="#DD957D"
               deleteColor="#E06B6B"
             >

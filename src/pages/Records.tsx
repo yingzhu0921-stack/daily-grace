@@ -5,7 +5,7 @@ import { AppIcon } from '@/components/ui/AppIcon';
 import { routes } from '@/config/routes';
 import { BottomNav } from '@/components/BottomNav';
 import { getAllRecords } from '@/utils/recordsQuery';
-import { RecordCard } from '@/components/RecordCard';
+import { SwipeableRecordCard } from '@/components/SwipeableRecordCard';
 import { toLocalDateString } from '@/utils/dateHelpers';
 import * as categoryStorage from '@/utils/categoryStorage';
 
@@ -111,10 +111,12 @@ const Records: React.FC = () => {
     return () => window.removeEventListener('categoriesUpdated', handleCategoriesUpdated);
   }, []);
 
-  // Load all records
+  // Load all records. 밀어서 지우거나 동기화로 바뀌면 'recordsUpdated' 가 온다 — 그때 다시 읽는다.
   useEffect(() => {
-    const allRecords = getAllRecords();
-    setRecords(allRecords);
+    const load = () => setRecords(getAllRecords());
+    load();
+    window.addEventListener('recordsUpdated', load);
+    return () => window.removeEventListener('recordsUpdated', load);
   }, []);
 
 
@@ -230,7 +232,7 @@ const Records: React.FC = () => {
             <div className="space-y-3">
               {filteredRecords.length > 0 ? (
                 filteredRecords.map(record => (
-                  <RecordCard key={record.id} {...record} />
+                  <SwipeableRecordCard key={record.id} {...record} />
                 ))
               ) : (
                 <div className="text-center py-12">
