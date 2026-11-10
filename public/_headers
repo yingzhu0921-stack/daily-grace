@@ -1,0 +1,11 @@
+# 보안 헤더 (2026-11-10 점검 6번). Cloudflare Pages 정적 파일에만 붙는다(/api 함수 응답에는 안 붙음).
+#
+# 외부 출처는 폰트뿐이다: 구글 폰트(css·파일), jsdelivr(눈누 폰트 파일), 네이버 한글(마루부리 css·파일).
+# 폰트를 새로 추가할 때 다른 곳에서 불러오면 여기 font-src/style-src 에도 넣어야 화면에 나온다.
+# 그림은 같은 사이트(/api)·data:·blob: 만 쓴다. 외부 API 는 서버(functions)에서만 부른다.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://hangeul.pstatic.net; font-src 'self' data: https://fonts.gstatic.com https://cdn.jsdelivr.net https://hangeul.pstatic.net; img-src 'self' data: blob:; connect-src 'self' data: blob:; media-src 'self' data: blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()

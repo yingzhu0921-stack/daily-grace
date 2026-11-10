@@ -366,3 +366,124 @@ test('image-making AI calls share one service-wide daily cap; text calls do not 
     assert.equal((await checkAiLimits(db, 'user-x', 'unknown-action')).allowed, true);
   }
 });
+
+// ── 카드 그림 업로드 (2026-11-10 점검 4·5번) ──
+const webBindings = { atob, TextEncoder, Headers, Uint8Array, String };
+const PNG_BYTES = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0, 0, 0, 13, ...Buffer.from('IHDR'), ...new Array(17).fill(1)];
+const HEIC_BYTES = [0, 0, 0, 24, ...Buffer.from('ftypheic'), 0, 0, 0, 0, ...Buffer.from('mif1heic'), 0, 0, 0, 8, ...Buffer.from('meta')];
+const dataUrl = (type, bytes) => `data:${type};base64,${Buffer.from(bytes).toString('base64')}`;
+
+test('card images are accepted by their real bytes, not by the type the upload claims', () => {
+  const { decodeImageDataUrl, imageResponseHeaders } = load('functions/api/_lib/imageUpload.ts', webBindings);
+  const png = decodeImageDataUrl(dataUrl('image/png', PNG_BYTES));
+  assert.equal(png.ok, true);
+  assert.equal(png.contentType, 'image/png');
+  assert.equal(decodeImageDataUrl(dataUrl('image/jpeg', [0xff, 0xd8, 0xff, 0xe0, 1, 2])).contentType, 'image/jpeg');
+  const WEBP = [...Buffer.from('RIFF'), 12, 0, 0, 0, ...Buffer.from('WEBPVP8 '), 0, 0, 0, 0];
+  assert.equal(decodeImageDataUrl(dataUrl('image/webp', WEBP)).contentType, 'image/webp');
+  // 일부 브라우저는 HEIC 사진을 형식 없이 읽는다. 내용이 그림이면 받는다.
+  const heic = decodeImageDataUrl(dataUrl('application/octet-stream', HEIC_BYTES));
+  assert.equal(heic.ok, true);
+  assert.equal(heic.contentType, 'image/heic');
+  // 그림이라고 적었지만 내용이 HTML 이면 거절한다. SVG 도 받지 않는다.
+  assert.equal(decodeImageDataUrl(dataUrl('image/png', [...Buffer.from('<html><script>x</script>')])).reason, 'not-image');
+  assert.equal(decodeImageDataUrl('data:image/svg+xml,%3Csvg%20onload%3D%22x%22%3E').reason, 'not-image');
+  // 서명만 붙이고 첫 구조가 맞지 않는 단순 위장은 거절한다(Codex 검토). 모든 위장을 막는 것은 아니며, 남는 위험은 제공할 때 nosniff·sandbox 로 막는다.
+  const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  assert.equal(decodeImageDataUrl(dataUrl('image/png', [...PNG_SIG, ...Buffer.from('<html><script>alert(1)</script></html>')])).reason, 'not-image');
+  assert.equal(decodeImageDataUrl(dataUrl('image/jpeg', [0xff, 0xd8, 0xff, ...Buffer.from('<html>')])).reason, 'not-image');
+  assert.equal(decodeImageDataUrl(dataUrl('image/webp', [...Buffer.from('RIFF'), 0xff, 0xff, 0, 0, ...Buffer.from('WEBP<html>')])).reason, 'not-image');
+  assert.equal(decodeImageDataUrl(dataUrl('image/heic', [0, 0, 1, 0, ...Buffer.from('ftypheic<html>')])).reason, 'not-image');
+  // 풀 수 없는 값은 서버 오류가 아니라 거절이다.
+  assert.equal(decodeImageDataUrl('data:image/png;base64,@@@').reason, 'invalid');
+  assert.equal(decodeImageDataUrl('data:image/png,%E0%A4%A').reason, 'invalid');
+  assert.equal(decodeImageDataUrl('not a data url').reason, 'invalid');
+
+  // 내려줄 때: 그림 형식만 그림으로, 그 밖(이전에 저장된 것)은 내려받기 전용으로.
+  const ok = imageResponseHeaders('image/png');
+  assert.equal(ok.get('Content-Type'), 'image/png');
+  assert.equal(ok.get('X-Content-Type-Options'), 'nosniff');
+  assert.match(ok.get('Content-Security-Policy'), /sandbox/);
+  const old = imageResponseHeaders('text/html');
+  assert.equal(old.get('Content-Type'), 'application/octet-stream');
+  assert.equal(old.get('Content-Disposition'), 'attachment');
+  assert.equal(imageResponseHeaders(undefined).get('Content-Type'), 'application/octet-stream');
+});
+
+function loadCardsHandler(time) {
+  const r2 = new Map();
+  const rate = fakeRateDb();
+  const db = {
+    prepare: sql => ({
+      bind: (...args) => ({
+        first: async () => (/rate_limits/.test(sql) ? rate.prepare(sql).bind(...args).first() : null),
+        run: async () => ({ meta: { changes: 1 } }),
+        all: async () => ({ results: [] }),
+      }),
+    }),
+  };
+  const env = { DB: db, CARDS: { put: async (key, bytes, opts) => { r2.set(key, opts.httpMetadata.contentType); }, delete: async () => {} } };
+  const libs = {
+    '../_lib/session': { getSessionUser: async () => ({ id: 'user-a' }) },
+    '../_lib/requestValidation': load('functions/api/_lib/requestValidation.ts', { Response, JSON, Number }),
+    '../_lib/imageUpload': load('functions/api/_lib/imageUpload.ts', webBindings),
+    '../_lib/rateLimit': load('functions/api/_lib/rateLimit.ts', { crypto, Date: time.Date }),
+  };
+  const { onRequest } = load('functions/api/data/verse-cards.ts', {
+    require: name => libs[name] || require(name),
+    Response, Date: time.Date, JSON,
+  });
+  const save = body => onRequest({
+    env,
+    request: new Request('https://x/api/data/verse-cards', { method: 'POST', body: JSON.stringify({ id: 'card-1', ...body }) }),
+  });
+  return { save, r2 };
+}
+
+test('card saves store only real images and stop after the hourly limit', async () => {
+  const time = clock(Date.UTC(2026, 10, 10, 1, 0, 0));
+  const { save, r2 } = loadCardsHandler(time);
+
+  const html = await save({ imageDataUrl: dataUrl('image/png', [...Buffer.from('<html>')]), bg: dataUrl('image/png', PNG_BYTES) });
+  assert.equal(html.status, 400);
+  assert.equal(r2.size, 0, '하나라도 그림이 아니면 배경도 저장하지 않는다');
+
+  const okRes = await save({ imageDataUrl: dataUrl('image/png', PNG_BYTES), bg: dataUrl('', HEIC_BYTES) });
+  assert.equal(okRes.status, 200);
+  assert.equal(r2.get('img/user-a/card-1'), 'image/png');
+  assert.equal(r2.get('bg/user-a/card-1'), 'image/heic');
+
+  // 색상 배경은 그대로 통과한다.
+  assert.equal((await save({ bg: '#FFFFFF' })).status, 200);
+
+  let limited = null;
+  for (let i = 0; i < 200 && !limited; i++) {
+    const res = await save({ bg: '#FFFFFF' });
+    if (res.status === 429) limited = { at: i + 4, res }; // 앞의 세 번(거절된 것 포함)도 횟수에 든다
+  }
+  assert.ok(limited, '시간당 한도에서 멈춰야 한다');
+  assert.equal(limited.at, 121);
+  assert.ok(Number(limited.res.headers.get('Retry-After')) > 0);
+});
+
+test('card saves also stop at the daily limit, which resets at Korean midnight', async () => {
+  // 매시간 시간당 한도(120)를 다 쓰면 넷째 시간 중간에 하루 한도(400)에 걸린다.
+  const time = clock(Date.UTC(2026, 10, 10, 1, 0, 0));
+  const { save } = loadCardsHandler(time);
+  let ok = 0;
+  let lastError = '';
+  for (let hour = 0; hour < 5; hour++) {
+    time.set(Date.UTC(2026, 10, 10, 1 + hour, 0, 0));
+    for (let i = 0; i < 120; i++) {
+      const res = await save({ bg: '#FFFFFF' });
+      if (res.status === 200) ok++; else lastError = String(res.status);
+    }
+  }
+  assert.equal(ok, 400);
+  assert.equal(lastError, '429');
+  // 한국 11/10 오후 11시(UTC 14시)에는 아직 막히고, 11/11 0시 30분(UTC 15:30)에는 다시 된다.
+  time.set(Date.UTC(2026, 10, 10, 14, 0, 0));
+  assert.equal((await save({ bg: '#FFFFFF' })).status, 429);
+  time.set(Date.UTC(2026, 10, 10, 15, 30, 0));
+  assert.equal((await save({ bg: '#FFFFFF' })).status, 200);
+});

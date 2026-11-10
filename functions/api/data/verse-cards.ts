@@ -1,22 +1,18 @@
 import { getSessionUser } from '../_lib/session';
 import type { Env } from '../_lib/db';
 import { badRequest, readJsonObject, validId, validOptionalString, validOptionalTimestamp, validStringArray } from '../_lib/requestValidation';
+import { decodeImageDataUrl } from '../_lib/imageUpload';
+import { consumeRateLimit } from '../_lib/rateLimit';
 
-// data URL("data:image/png;base64,....") -> 바이트 + content-type
-function decodeDataUrl(dataUrl: string): { bytes: Uint8Array; contentType: string } | null {
-  const m = /^data:([^;,]+)(;base64)?,(.*)$/s.exec(dataUrl || '');
-  if (!m) return null;
-  const contentType = m[1] || 'application/octet-stream';
-  const isB64 = !!m[2];
-  const raw = m[3] || '';
-  if (isB64) {
-    const bin = atob(raw);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return { bytes, contentType };
-  }
-  return { bytes: new TextEncoder().encode(decodeURIComponent(raw)), contentType };
-}
+/**
+ * 카드 저장 횟수 한도(2026-11-10 점검 5번). 전에는 한 계정이 25MB 요청을 제한 없이 보낼 수 있었다.
+ * 카드 한 장 저장이 1회. 예전 기록을 한꺼번에 올리는 경우(로컬에만 있던 카드 백업)도 넉넉히 들어가게 잡았다.
+ * 막힌 카드는 기기에 그대로 남고, 다음에 앱을 열 때 다시 올라간다.
+ */
+const HOUR = 60 * 60 * 1000;
+const CARD_SAVES_PER_HOUR = 120;
+const CARD_SAVES_PER_DAY = 400;
+const KST_OFFSET = 9 * HOUR;
 
 const imgKey = (userId: string, id: string) => `img/${userId}/${id}`;
 const bgKey = (userId: string, id: string) => `bg/${userId}/${id}`;
@@ -74,19 +70,41 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
       return Response.json({ error: 'Card id conflict' }, { status: 409 });
     }
 
+    // 저장 횟수 한도 — R2 에 쓰기 전에 센다.
+    const hourly = await consumeRateLimit(env.DB, 'verse-card-save', user.id, CARD_SAVES_PER_HOUR, HOUR);
+    const daily = hourly.allowed
+      ? await consumeRateLimit(env.DB, 'verse-card-save-day', user.id, CARD_SAVES_PER_DAY, 24 * HOUR, KST_OFFSET)
+      : hourly;
+    if (!daily.allowed) {
+      return Response.json(
+        { error: '카드 저장이 너무 많아 잠시 멈췄어요. 카드는 기기에 저장되어 있고 나중에 다시 올라갑니다.' },
+        { status: 429, headers: { 'Retry-After': String(daily.retryAfterSeconds) } },
+      );
+    }
+
+    // 그림은 실제 내용으로 형식을 확인한다. 하나라도 그림이 아니면 아무것도 저장하지 않는다.
+    const imageDec = typeof b.imageDataUrl === 'string' && b.imageDataUrl.startsWith('data:')
+      ? decodeImageDataUrl(b.imageDataUrl) : null;
+    const bgDec = typeof b.bg === 'string' && b.bg.startsWith('data:')
+      ? decodeImageDataUrl(b.bg) : null;
+    for (const dec of [imageDec, bgDec]) {
+      if (dec && dec.ok === false) {
+        return badRequest(dec.reason === 'not-image'
+          ? '카드에 쓸 수 없는 파일 형식입니다. 사진(JPG·PNG 등)을 사용해 주세요.'
+          : '카드 그림을 읽을 수 없습니다.');
+      }
+    }
+
     const now = new Date().toISOString();
     const createdAt = b.createdAt || now;
 
     // 1) 최종 카드 이미지 -> R2
     let hasImage = 0;
-    if (typeof b.imageDataUrl === 'string' && b.imageDataUrl.startsWith('data:')) {
-      const dec = decodeDataUrl(b.imageDataUrl);
-      if (dec) {
-        await env.CARDS.put(imgKey(user.id, b.id), dec.bytes, {
-          httpMetadata: { contentType: dec.contentType },
-        });
-        hasImage = 1;
-      }
+    if (imageDec?.ok) {
+      await env.CARDS.put(imgKey(user.id, b.id), imageDec.bytes, {
+        httpMetadata: { contentType: imageDec.contentType },
+      });
+      hasImage = 1;
     } else if (typeof b.imageDataUrl === 'string' && b.imageDataUrl.includes('/verse-cards/')) {
       // 이미 R2 URL (하이드레이션된 카드 재저장) -> 기존 이미지 유지
       hasImage = 1;
@@ -95,17 +113,14 @@ export const onRequest: PagesFunction<Env> = async ({ request, env }) => {
     // 2) 배경: data URL이면 R2, 색상 문자열이면 그대로 D1
     let hasBgImage = 0;
     let bgValue = '';
-    if (typeof b.bg === 'string' && b.bg.startsWith('data:')) {
-      const dec = decodeDataUrl(b.bg);
-      if (dec) {
-        await env.CARDS.put(bgKey(user.id, b.id), dec.bytes, {
-          httpMetadata: { contentType: dec.contentType },
-        });
-        hasBgImage = 1;
-      }
+    if (bgDec?.ok) {
+      await env.CARDS.put(bgKey(user.id, b.id), bgDec.bytes, {
+        httpMetadata: { contentType: bgDec.contentType },
+      });
+      hasBgImage = 1;
     } else if (typeof b.bg === 'string' && b.bg.includes('/verse-cards/')) {
       hasBgImage = 1; // 기존 R2 배경 유지
-    } else if (typeof b.bg === 'string') {
+    } else if (typeof b.bg === 'string' && !b.bg.startsWith('data:')) {
       bgValue = b.bg; // 색상 등 짧은 문자열
     }
 
