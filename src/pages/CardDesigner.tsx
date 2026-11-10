@@ -342,6 +342,35 @@ function getLocalRecordsForSelector() {
 /**
  * Crop image to specified aspect ratio (center crop)
  */
+/**
+ * 배경 이미지는 세로(1024×1536)·가로(1536×1024)·정사각 세 모양으로만 만들어지고
+ * (functions/api/generate-image.ts 의 ratioToSize), 고른 비율은 가운데를 잘라 맞춘다.
+ * 같은 모양끼리는 원본 한 장에서 잘라 쓸 수 있지만, 세로↔가로는 잘라 쓸 만큼이 안 남는다.
+ */
+type Orientation = 'portrait' | 'landscape' | 'square';
+const ORIENTATION_LABEL: Record<Orientation, string> = { portrait: '세로', landscape: '가로', square: '정사각' };
+
+function ratioOrientation(ratio: Ratio): Orientation {
+  const [w, h] = ratio.split(':').map(Number);
+  return w === h ? 'square' : w > h ? 'landscape' : 'portrait';
+}
+
+function imageOrientation(width: number, height: number): Orientation {
+  return width === height ? 'square' : width > height ? 'landscape' : 'portrait';
+}
+
+function loadImageSize(url: string): Promise<{ width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ width: img.width, height: img.height });
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/** 편집 화면 글상자의 안쪽 여백(px). 저장할 때 줄을 나누는 폭도 이만큼 빼야 화면과 같아진다. */
+const TEXT_BOX_PADDING = 20;
+
 async function cropImageToRatio(imageDataUrl: string, ratio: Ratio): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -578,6 +607,52 @@ export default function Designer() {
   // 기본 문구('텍스트를 입력하세요.')도 빈 것으로 본다 — 그래야 첫 진입부터 안내가 뜬다.
   // (isTextEmpty 가 아니라 !t.content.trim() 을 쓰던 때는 상자를 한 번 눌렀다 나와야만 떴다)
   const showBgPrompt = !meta.bgImageUrl && isTextEmpty && !isEditing && !isBgEditMode;
+
+  /**
+   * AI 배경의 잘리기 전 원본. 전에는 만든 직후 그때 비율로 잘라 저장하고 원본을 버려서,
+   * 나중에 비율을 바꾸면 이미 잘린 그림을 다시 늘려 써야 했다(4:5 → 9:16 만 바꿔도 망가졌다).
+   * meta 에 넣지 않는 건 카드와 함께 저장되지 않게 하려는 것 — 편집하는 동안에만 필요하다.
+   * croppedUrl 은 지금 깔린 배경이 이 원본에서 나온 것인지 확인하는 표식이다. 사진을 올리거나
+   * 색으로 바꾸면 meta.bgImageUrl 이 달라지므로 이 원본은 저절로 쓰이지 않는다.
+   */
+  const bgSourceRef = useRef<{ originalUrl: string; width: number; height: number; croppedUrl: string } | null>(null);
+  /** 배경과 카드의 방향(세로·가로)이 달라 많이 잘린 상태. 다시 만들기를 권한다. */
+  const [bgRatioMismatch, setBgRatioMismatch] = useState(false);
+  /**
+   * 비율 바꾸기 요청 순번. 자르기는 비동기라, 칩을 빠르게 연달아 누르면 늦게 끝난 앞 요청이
+   * 마지막 선택을 덮어쓸 수 있다. 새 요청이나 새 배경이 생기면 순번이 올라가 앞 결과는 버린다.
+   */
+  const ratioRequestRef = useRef(0);
+
+  const changeRatio = async (next: Ratio) => {
+    // 생성 중에 비율이 바뀌면 결과를 어느 비율로 자를지 어긋난다. 생성 중엔 바꾸지 않는다.
+    if (next === meta.ratio || isGenerating) return;
+    const request = ++ratioRequestRef.current;
+    const src = bgSourceRef.current;
+    if (!src || src.croppedUrl !== meta.bgImageUrl) {
+      setMeta(m => ({ ...m, ratio: next }));
+      return;
+    }
+    if (imageOrientation(src.width, src.height) === ratioOrientation(next)) {
+      setMeta(m => ({ ...m, ratio: next }));
+      const cropped = await cropImageToRatio(src.originalUrl, next).catch(() => null);
+      // 기다리는 사이 다른 비율을 골랐거나 배경이 바뀌었으면 이 결과는 버린다.
+      if (!cropped || request !== ratioRequestRef.current || bgSourceRef.current !== src) return;
+      bgSourceRef.current = { ...src, croppedUrl: cropped };
+      setMeta(m => (m.bgImageUrl !== src.croppedUrl || m.ratio !== next)
+        ? m
+        : { ...m, bgImageUrl: cropped, bgScale: 100, bgPositionX: 50, bgPositionY: 50 });
+      setBgRatioMismatch(false);
+      return;
+    }
+    // 방향이 다르면 잘라 쓸 만큼이 안 남는다. 원본 전체를 깔고 카드를 빈틈없이 덮는 배율로
+    // 맞춘 뒤, 그 비율로 다시 만들기를 권한다. 다시 만들기는 유료 호출이라 자동으로 하지 않는다.
+    const [w, h] = next.split(':').map(Number);
+    const cover = Math.ceil(Math.max(1, (src.width / src.height) / (w / h)) * 100);
+    bgSourceRef.current = { ...src, croppedUrl: src.originalUrl };
+    setMeta(m => ({ ...m, ratio: next, bgImageUrl: src.originalUrl, bgScale: cover, bgPositionX: 50, bgPositionY: 50 }));
+    setBgRatioMismatch(true);
+  };
 
   const openBackgroundSheet = (tab: typeof bgTab = 'ai') => {
     setBgTab(tab);
@@ -1236,6 +1311,7 @@ export default function Designer() {
 
       // Auto-crop image to match requested aspect ratio
       let finalImage = data.image;
+      const originalSize = await loadImageSize(data.image).catch(() => null);
       if (data.requestedRatio && meta.ratio) {
         try {
           finalImage = await cropImageToRatio(data.image, meta.ratio);
@@ -1245,6 +1321,9 @@ export default function Designer() {
         }
       }
 
+      ratioRequestRef.current += 1;
+      bgSourceRef.current = originalSize ? { originalUrl: data.image, ...originalSize, croppedUrl: finalImage } : null;
+      setBgRatioMismatch(false);
       setMeta(m => ({ ...m, bgImageUrl: finalImage, bgScale: 100 }));
       
       // 배경 생성 시 기본 텍스트 지우기
@@ -3168,7 +3247,8 @@ export default function Designer() {
           <select
             className="text-xs px-2 py-1 rounded-md bg-white text-[#2E2E2E] border border-[#E8E7E5]"
             value={meta.ratio}
-            onChange={(e)=>setMeta(m=>({...m, ratio: e.target.value as Ratio}))}
+            disabled={isGenerating}
+            onChange={(e)=>{ void changeRatio(e.target.value as Ratio); }}
           >
             <option value="9:16">9:16</option>
             <option value="16:9">16:9</option>
@@ -3307,11 +3387,15 @@ export default function Designer() {
                     // Calculate text position and size
                     const textX = (width * t.x) / 100;
                     const textY = (height * t.y) / 100;
-                    const textMaxWidth = (width * t.w) / 100;
-                    
-                    // Optimized font size scaling
-                    const scaleFactor = width / 900; // Base scale for 900px width
-                    const fontSize = t.fontSize * scaleFactor * 2.2; // Optimized multiplier
+                    // 화면 카드 → 저장 캔버스 배율. 전에는 `width / 900 * 2.2` 라는 고정 공식이라 화면 카드
+                    // 크기와 무관했고, 글상자의 좌우 여백도 빼지 않고 줄을 나눴다. 그래서 화면에선 두 줄이던
+                    // 문구가 저장본에선 한 줄로 합쳐졌다. 화면 카드 폭을 못 읽으면 예전 공식으로 둔다.
+                    const editorCardWidth = canvasRef.current?.clientWidth || 0;
+                    const scaleFactor = editorCardWidth > 0 ? width / editorCardWidth : (width / 900) * 2.2;
+                    const fontSize = t.fontSize * scaleFactor;
+                    // 화면 글상자: 너비 t.w%(최대 95%), 안쪽 여백 TEXT_BOX_PADDING px.
+                    const boxWidth = (width * Math.min(t.w, 95)) / 100;
+                    const textMaxWidth = Math.max(1, boxWidth - TEXT_BOX_PADDING * 2 * scaleFactor);
                     const lineHeight = fontSize * t.lineHeight;
                     
                     // Set font properties
@@ -3364,6 +3448,10 @@ export default function Designer() {
                     ctx.fillStyle = t.color;
                     ctx.textAlign = t.align;
                     ctx.textBaseline = 'top';
+                    // 화면은 letter-spacing 을 적용한다. 캔버스가 지원할 때만 똑같이 준다.
+                    if ('letterSpacing' in ctx) {
+                      (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = `${(t.letterSpacing || 0) * scaleFactor}px`;
+                    }
                     
                     // Apply stroke
                     if (t.stroke.enabled) {
@@ -3392,17 +3480,31 @@ export default function Designer() {
                       
                       const words = paragraph.split(' ');
                       let currentLine = '';
+                      const fits = (text: string) => ctx.measureText(text).width <= textMaxWidth;
                       
                       for (const word of words) {
                         const testLine = currentLine ? `${currentLine} ${word}` : word;
-                        const metrics = ctx.measureText(testLine);
-                        
-                        if (metrics.width > textMaxWidth && currentLine) {
-                          allLines.push(currentLine);
-                          currentLine = word;
-                        } else {
+                        if (fits(testLine)) {
                           currentLine = testLine;
+                          continue;
                         }
+                        if (currentLine) allLines.push(currentLine);
+                        if (fits(word)) {
+                          currentLine = word;
+                          continue;
+                        }
+                        // 화면은 overflow-wrap: break-word 라 한 줄에 안 들어가는 낱말을 글자 사이에서 끊는다.
+                        // 공백으로만 나누면 띄어쓰기 없는 긴 구절이 저장본에서 상자 밖으로 삐져나간다.
+                        let chunk = '';
+                        for (const ch of Array.from(word)) {
+                          if (chunk && !fits(chunk + ch)) {
+                            allLines.push(chunk);
+                            chunk = ch;
+                          } else {
+                            chunk += ch;
+                          }
+                        }
+                        currentLine = chunk;
                       }
                       
                       if (currentLine) {
@@ -3511,6 +3613,21 @@ export default function Designer() {
       {activeTrack && (
         <div className="flex-none border-b border-[#EDEDED]">
           {renderFlowProgress(flowStep)}
+        </div>
+      )}
+
+      {bgRatioMismatch && meta.bgImageUrl && bgSourceRef.current?.croppedUrl === meta.bgImageUrl && (
+        <div className="flex-none flex items-center gap-2 px-4 py-2 bg-[#FFF8EC] border-b border-[#F1E3C8] text-[12px] text-[#6B5426]">
+          <span className="flex-1 min-w-0">
+            배경이 {ORIENTATION_LABEL[imageOrientation(bgSourceRef.current.width, bgSourceRef.current.height)]} 모양으로 만들어져서 {ORIENTATION_LABEL[ratioOrientation(meta.ratio)]} 카드에선 많이 잘려요.
+          </span>
+          <button
+            type="button"
+            onClick={() => openBackgroundSheet('ai')}
+            className="shrink-0 rounded-full border border-[#6B5426] px-2.5 py-1 font-semibold"
+          >
+            이 비율로 다시 만들기
+          </button>
         </div>
       )}
 
@@ -3694,7 +3811,7 @@ export default function Designer() {
                     flexDirection: 'column',
                     justifyContent: 'center',
                     alignItems: 'center',
-                    padding: '20px',
+                    padding: `${TEXT_BOX_PADDING}px`,
                     boxSizing: 'border-box',
                     pointerEvents: isBgEditMode ? 'none' : 'auto',
                     cursor: isEditing || isTextEmpty ? 'text' : (isBgEditMode ? 'default' : 'grab'),
@@ -3952,10 +4069,37 @@ export default function Designer() {
               <TabsContent value="ai" className="flex-1 mt-0 pt-4 pb-40 overflow-y-auto hide-scrollbar">
                 {/* Content Area */}
                 <div className="px-4 space-y-2.5">
-                  {/* 1. 스타일을 선택하세요 */}
+                  {/* 1. 카드 비율 — 배경은 이 비율로 만들어진다. 만든 뒤 세로↔가로를 바꾸면 많이 잘린다. */}
+                  <section>
+                    <h2 className="text-[13px] font-semibold text-[#2E2E2E] mb-1.5">
+                      1. 카드 비율을 고르세요
+                    </h2>
+                    <div className="grid grid-cols-7 gap-1">
+                      {(['9:16', '4:5', '3:4', '2:3', '1:1', '4:3', '16:9'] as Ratio[]).map((ratio) => (
+                        <button
+                          key={ratio}
+                          type="button"
+                          disabled={isGenerating || isExpandingPrompt}
+                          onClick={() => { void changeRatio(ratio); }}
+                          className={`py-2 rounded-lg border text-[12px] font-medium transition-colors ${
+                            meta.ratio === ratio
+                              ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white'
+                              : 'border-[#E8E7E5] bg-white text-[#2E2E2E] hover:border-[#1F1F1F]'
+                          }`}
+                        >
+                          {ratio}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1.5 text-[11px] leading-4 text-[#9B9B9B]">
+                      배경은 이 비율로 만들어져요. 나중에 세로·가로를 바꾸면 다시 만들어야 해요.
+                    </p>
+                  </section>
+
+                  {/* 2. 스타일을 선택하세요 */}
                   <section>
                   <h2 className="text-[13px] font-semibold text-[#2E2E2E] mb-1.5">
-                    1. 스타일을 선택하세요
+                    2. 스타일을 선택하세요
                   </h2>
                   <div className="grid grid-cols-2 gap-1.5">
                     {[
@@ -3992,7 +4136,7 @@ export default function Designer() {
                  <section>
                   <div className="flex items-center justify-between mb-1.5">
                     <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
-                      2. 배경에 담을 분위기나 내용을 적어주세요
+                      3. 배경에 담을 분위기나 내용을 적어주세요
                     </h2>
                     <button
                       type="button"
