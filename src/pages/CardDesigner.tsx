@@ -1,3 +1,4 @@
+import { renderT02Poster } from '@/utils/t02Poster';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -605,6 +606,9 @@ export default function Designer() {
     fonts: { primary: string; secondary: string };
     lines: { text: string; scale: number }[];
     aiText?: boolean;
+    /** T02: 글자를 구울 때 쓴 스타일 정보와 글자 없는 원래 배경(2026-11-11) */
+    t02?: import('@/utils/t02Poster').T02Info;
+    t02Background?: string;
     textAlign: 'left' | 'center';
     useBrush: boolean;
     textZone?: 'upper' | 'center' | 'lower';
@@ -1715,7 +1719,8 @@ export default function Designer() {
 
   // Auto Template 선택 화면
   // 설명·배지는 실제 생성 경로에 맞춘다.
-  //  T01·T02 = AI 가 글자까지 그린다(aiText) → 오탈자 확인이 필요하고 시간이 걸린다
+  //  T01      = AI 가 글자까지 그린다(aiText) → 오탈자 확인이 필요하고 시간이 걸린다
+  //  T02      = AI 배경 + 코드가 진짜 폰트로 글자를 굽는다(2026-11-11) → 글자는 정확하다
   //  T03      = 코드 렌더, AI 호출 0 → 바로 나오고 철자가 정확하다
   //  T04      = AI 사진 + 코드 글자 → 사진은 시간이 걸리지만 글자는 정확하다
   // (요청서의 T02 배지 '바로 생성 · 철자 정확' 은 코드와 반대라 고쳤다)
@@ -1724,7 +1729,7 @@ export default function Designer() {
     tone: 'ai' | 'instant'; thumb: string | null;
   }[] = [
     { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: null },
-    { id: 'T02', name: '강렬한 포스터', desc: '큰 글씨가 꽉 차는 포스터예요',                 badge: 'AI 글씨 · 오탈자 확인', tone: 'ai',      thumb: null },
+    { id: 'T02', name: '강렬한 포스터', desc: '큰 글씨가 꽉 차는 포스터예요',                 badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: null },
     { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: null },
     { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: null },
   ];
@@ -2201,6 +2206,17 @@ export default function Designer() {
     let image = data?.image;
     if (image) {
       try { image = await cropImageToRatio(image, resultRatio); } catch { image = data.image; }
+    }
+
+    // T02: AI 는 배경만 만들었다. 사용자가 쓴 줄을 진짜 폰트로 구워 넣는다(src/utils/t02Poster.ts).
+    // 구운 뒤에는 글자가 이미지에 들어 있으므로 aiText 처럼 오버레이 없이 그대로 보여 준다.
+    if (template === 'T02' && data?.t02 && image && Array.isArray(data?.lines)) {
+      try {
+        const baked = await renderT02Poster(image, data.lines, data.t02);
+        return { ...data, image: baked, t02Background: image, aiText: true, ratio: resultRatio };
+      } catch {
+        // 굽기에 실패하면 아래 기존 오버레이 경로로 그린다.
+      }
     }
 
     const base = getAutoTypography(template);
@@ -3096,7 +3112,7 @@ export default function Designer() {
             )}
           </div>
         </div>
-        {autoResult.aiText && autoResult.template !== 'T03' && (
+        {autoResult.aiText && autoResult.template !== 'T03' && !autoResult.t02 && (
           <div className="shrink-0 px-4 pt-2 text-center text-[12px] text-[#B0772E] [word-break:keep-all]">
             AI가 글씨까지 그렸어요. 저장 전에 글자를 한 번 확인해 주세요.
           </div>

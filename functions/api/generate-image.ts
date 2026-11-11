@@ -352,8 +352,9 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
       },
       // T02 — 스트릿 워십 포스터 (힙한 Gen-Z 굿즈 감성, AI가 글자까지 그림. 세부 스타일은 아키타입이 결정)
       'T02': {
-        backgroundPrompt: 'A bold, design-forward modern Christian worship poster where the Korean TYPOGRAPHY is the hero. The exact style — background, letterform, colours and layout — is given separately below as THE STYLE FOR THIS CARD; follow it exactly and do not blend in other poster styles. Korean text only, spelled accurately.',
-        styleLock: 'T02 = 강렬한 포스터: one specific poster style per card, given below. Typography is the hero. Mature and cool — not pastel candy, no hearts, no flowers, no smiley faces. Korean text only, accurate spelling.',
+        // 배경만 만든다. 글자는 브라우저가 진짜 폰트로 얹는다(2026-11-11).
+        backgroundPrompt: 'The BACKGROUND ARTWORK for a bold, design-forward modern Christian worship poster. Large Korean typography will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage. The exact background style is given below as THE STYLE FOR THIS CARD; follow it exactly and do not blend in other poster styles.',
+        styleLock: 'T02 = 강렬한 포스터 배경: one specific poster background style per card, given below, leaving clear room for large text. Mature and cool — not pastel candy, no hearts, no flowers, no smiley faces. NO text of any kind.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       // T03 — 감성 타이포 (감성 사진 + 초대형 히어로 타이포 / 에디토리얼)
@@ -373,7 +374,7 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
 
     const GLOBAL_BG_PROMPT = '\n\nCreate a premium Christian typography card background. No text. No letters. No words. No typography. No logos. Large negative space for text overlay. Editorial design quality. Modern premium aesthetic. Clean composition. Soft cinematic lighting. High-end card design. Subtle texture. Text-safe layout. Important visual elements should not occupy the center typography area. Background only.';
     const GLOBAL_BG_PROMPT_T01 = `\n\nCreate a card BACKGROUND only. No text. No letters. No words. No typography. No logos. ${T01_ART} Keep the whole UPPER HALF a large plain empty area of the ground colour for text overlay. ${T01_GROUND} ${T01_NOT} Background only.`;
-    const GLOBAL_BG_PROMPT_T02 = '\n\nCreate a HIP modern worship poster BACKGROUND — bold Korean typography will be overlaid on top by code, so ADD NO TEXT. No letters, no words, no typography, no logos. Style: a high-contrast, grainy DUOTONE (2-tone) surface — either (a) a duotone/tritone PHOTO whose subject is drawn from the verse meaning (hands, a figure, a path, sky, water, a single object) pressed into one bold color + near-black/cream, with visible film grain and halftone, or (b) a gritty print/riso/newspaper-collage texture with torn edges, or (c) a bold flat color field with heavy paper grain. VARY the 2-tone palette per card — cobalt/cream, violet/black, electric-blue/white, red/cream, teal/black, lilac/black, mustard/black — NOT always orange. Leave a large CALM low-contrast zone (center, or one side/half) so overlaid bold text stays perfectly legible; push texture/collage/subject toward the edges or one side. Mature, editorial, punchy. NOT cute: no bubble shapes, no pastel candy colors, no hearts, no flowers, no smiley faces, no doodle stickers. Background only.';
+    const GLOBAL_BG_PROMPT_T02 = '\n\nBackground artwork only — ADD NO TEXT: no letters, no words, no numbers, no logos, no signage. Follow THE STYLE FOR THIS CARD above exactly. Mature and editorial; NOT cute: no hearts, no flowers, no smiley faces, no stickers. No cheesy AI church-poster look: no sun rays, no golden glow, no stormy epic sky.';
 
     // T03 하이브리드 — AI는 그레인 그라데이션 '배경만'(글자는 코드 오버레이). 장면/사물/사진 없이 순수 추상 그라데이션.
     const GLOBAL_BG_PROMPT_T03 = '\n\nCreate a soft, aesthetic GRAINY GRADIENT BACKGROUND — elegant serif Korean typography will be overlaid on top by code, so this image has ABSOLUTELY NO text, letters, words, numbers, logos, objects, people, scenery, or photographic subjects. It is a PURE abstract gradient: a soft tonal gradient in ONE single color family (specified below) with a fine, even film GRAIN over the whole frame (like a grainy gradient phone wallpaper). Use gentle light and dark blooms WITHIN that one family — do NOT blend many different hues, do NOT make a rainbow/multi-color pastel wash. Soft, calm, luminous. Keep the whole surface fairly even/low-contrast so overlaid text stays legible anywhere. Grainy tonal gradient ONLY — nothing else in the image.';
@@ -923,46 +924,70 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // (4) 모든 아키타입에 '쌓은 줄로 65~85% 채우기' 배치, (5) 아키타입과 따로 도는 글자꼴·팔레트가 겹쳐서
     // 결국 '굵은 고딕 쌓기 + 산길 그런지 사진' 하나로 평균이 났다. 이제 스타일 하나가 배경·글자꼴·색·배치를 전부 정하고,
     // 장면 사진은 그 스타일이 쓰는 경우(usesScene)에만 넣는다.
-    const t02Styles: { recipe: string; usesScene: boolean; palettes: string[] }[] = [
+    // 2026-11-11 사용자: "폰트가 촌스럽게 보이게 하는 거 같아" → T02 는 AI 가 글자를 그리지 않는다.
+    // AI 는 아래 스타일의 '배경만' 만들고, 글자는 브라우저가 사용자가 고른 진짜 폰트로 구워 넣는다(src/utils/t02Poster.ts).
+    // 글자 자리(zone)와 잉크 색은 여기서 정해 응답으로 넘기고, 배경은 그 자리를 비워 두게 한다.
+    type T02Palette = { name: string; bg: string; ink: string; sub: string; accent: string };
+    const t02Styles: { key: string; usesScene: boolean; zone: 'lower' | 'center' | 'left' | 'upper'; bg: string; palettes: T02Palette[] }[] = [
       {
-        usesScene: true,
-        palettes: ['cream lettering over a muted teal-and-ochre photo', 'deep red lettering over a faded cream-and-grey photo', 'mustard yellow lettering over a dark navy photo'],
-        recipe: 'FILM PHOTO POSTER. BACKGROUND: one full-bleed, muted, grainy vintage 35mm film photo of the scene subject, with dust and light leaks — flat, overcast, faded colour like an old print; NO sun rays, NO golden glow, NO dramatic sky. LETTERFORM: tall, narrow, condensed sans-serif capitals in one flat ink colour, tightly stacked; the hero phrase is set LARGE (much bigger than the other lines), the other lines small. LAYOUT: the whole text block sits in the LOWER part of the card, left-aligned, over a calmer part of the photo; the upper two thirds belong to the photo. ELEMENTS: nothing else — no stickers, no sparkles.',
+        key: 'film', usesScene: true, zone: 'lower',
+        bg: 'FILM PHOTO POSTER BACKGROUND: one full-bleed, muted, grainy vintage 35mm film photo of the scene subject, faded colour like an old print, dust and soft light leaks — overcast and flat, NO sun rays, NO golden glow, NO dramatic sky. The LOWER 45% of the frame is calm, darker and fairly plain (ground, shadow, water or wall) because large text is printed there.',
+        palettes: [
+          { name: 'muted teal and ochre photo', bg: 'muted teal and ochre tones', ink: '#F3EBDD', sub: '#E9DFCB', accent: '#E8C547' },
+          { name: 'faded cream and grey photo, darkened at the bottom', bg: 'faded cream and grey tones, darker at the bottom', ink: '#F4EEE3', sub: '#EDE3D2', accent: '#D9573B' },
+          { name: 'dark navy dusk photo', bg: 'dark navy and slate tones', ink: '#F1D36B', sub: '#EDE6D6', accent: '#F1D36B' },
+        ],
       },
       {
-        usesScene: false,
-        palettes: ['cream lettering on a solid cobalt blue field', 'hot pink lettering on a solid red field', 'black lettering on a solid acid-green field', 'white lettering on a solid black field'],
-        recipe: 'GIANT TYPE ON ONE COLOUR. BACKGROUND: one solid flat colour from edge to edge with fine paper grain — NO photo, NO scene, NO objects. LETTERFORM: the hero phrase in an ULTRA-HEAVY, WIDE grotesque, broken into short chunks of two to four syllables per line and set ENORMOUS — the hero alone covers at least 60% of the card height, letters as tall as a fifth of the card; every other line is tiny, in a thin plain sans, tucked at the top or bottom edge. LAYOUT: extreme size contrast — one gigantic phrase, everything else very small. ELEMENTS: nothing else.',
+        key: 'field', usesScene: false, zone: 'center',
+        bg: 'COLOUR FIELD BACKGROUND: one solid flat colour from edge to edge, with fine paper grain and a faint uneven screen-print texture — NO photo, NO scene, NO objects, NO shapes. Nothing else.',
+        palettes: [
+          { name: 'cobalt blue', bg: 'solid cobalt blue', ink: '#F4EFE6', sub: '#F4EFE6', accent: '#FFD23F' },
+          { name: 'tomato red', bg: 'solid tomato red', ink: '#FFE3EA', sub: '#FFE3EA', accent: '#111111' },
+          { name: 'acid green', bg: 'solid acid lime green', ink: '#111111', sub: '#111111', accent: '#111111' },
+          { name: 'near black', bg: 'solid near-black', ink: '#F2F2F2', sub: '#BDBDBD', accent: '#FF5A1F' },
+        ],
       },
       {
-        usesScene: false,
-        palettes: ['cream letters with orange scribbles on black', 'white letters with hot-pink scribbles on black', 'pale yellow letters with electric-blue scribbles on black'],
-        recipe: 'BUBBLE LETTERING ON BLACK. BACKGROUND: solid black — NO photo, NO scene. LETTERFORM: chunky, puffy, rounded BUBBLE letters with soft bouncy shapes, words slightly tilted at different angles like streetwear graffiti stickers. LAYOUT: centred, words stacked with playful size changes. ELEMENTS: a few quick hand-drawn scribbles in the accent colour around the words (a small crown, a small cross, little sparks). Bold and cool, not baby-cute.',
+        key: 'swiss', usesScene: false, zone: 'left',
+        bg: 'SWISS GRID POSTER BACKGROUND: plain off-white paper. ONE solid colour rectangle in the UPPER-RIGHT area (about a third of the width), thin black hairline rules along the top edge, and ONE small black-and-white cutout photo of a simple non-human object in the LOWER-RIGHT corner. The whole LEFT two thirds below the top rule stays plain empty paper because black text is printed there. NO text, NO numbers.',
+        palettes: [
+          { name: 'red block', bg: 'a solid red block', ink: '#111111', sub: '#111111', accent: '#E0301E' },
+          { name: 'cobalt block', bg: 'a solid cobalt blue block', ink: '#111111', sub: '#111111', accent: '#1D3FD6' },
+          { name: 'orange block', bg: 'a solid orange block', ink: '#111111', sub: '#111111', accent: '#FF6A13' },
+        ],
       },
       {
-        usesScene: false,
-        palettes: ['black and white scraps with one red scrap', 'black and white scraps with one yellow scrap'],
-        recipe: 'RANSOM-NOTE COLLAGE. BACKGROUND: crumpled white paper with creases — NO photo, NO scene. LETTERFORM: every word (or syllable) is cut out from a DIFFERENT printed source and pasted on: mismatched typefaces side by side — a serif, a heavy sans, an outline letter, a newspaper headline letter — each on its own torn paper scrap, slightly tilted. LAYOUT: lines read top to bottom but the scraps are uneven and jostled, like a ransom note. ELEMENTS: visible tape or glue edges, paper shadows.',
+        key: 'riso', usesScene: true, zone: 'upper',
+        bg: 'RISO PRINT BACKGROUND: off-white recycled paper; the scene subject printed as a coarse HALFTONE image in ONE ink colour only, slightly misregistered, with visible riso grain, filling only the LOWER half of the frame. The UPPER half is plain empty paper because text in a second ink is printed there. Only that one ink colour plus the paper.',
+        palettes: [
+          { name: 'blue ink image, pink text', bg: 'a blue riso ink', ink: '#FF4FA0', sub: '#2B5BD7', accent: '#FF4FA0' },
+          { name: 'teal ink image, orange text', bg: 'a teal riso ink', ink: '#FF6B2C', sub: '#127A78', accent: '#FF6B2C' },
+          { name: 'purple ink image, yellow text', bg: 'a purple riso ink', ink: '#FFC800', sub: '#6B3FA0', accent: '#FFC800' },
+        ],
       },
       {
-        usesScene: false,
-        palettes: ['black type on off-white with one solid red block', 'black type on off-white with one solid cobalt block', 'black type on off-white with one solid orange block'],
-        recipe: 'SWISS GRID POSTER. BACKGROUND: plain off-white paper. LETTERFORM: heavy, tight, neo-grotesque sans-serif (Helvetica-like weight) in black. LAYOUT: strict ASYMMETRIC grid, everything LEFT-ALIGNED to one strong left margin; the hero phrase large, the other lines smaller on the same grid; one solid rectangular colour block occupies one area of the grid. ELEMENTS: thin black rules and tiny index numbers or marks in the corners (no words), a small black-and-white cutout of ONE simple non-human object in one grid cell. Clean, precise, designed — not grungy.',
+        key: 'serif', usesScene: true, zone: 'center',
+        bg: 'MOODY EDITORIAL BACKGROUND: a dark, low-key film photo of the scene subject with deep soft shadows and fine grain, like a film still — NO sun rays, NO glow. The whole centre of the frame is calm and dark because large light text is printed there.',
+        palettes: [
+          { name: 'deep warm brown-black', bg: 'deep warm brown and black tones', ink: '#F1E9DC', sub: '#CDBFA8', accent: '#E3B76B' },
+          { name: 'deep blue-black', bg: 'deep blue-black tones', ink: '#EEF1F4', sub: '#B9C3CF', accent: '#9FC3FF' },
+          { name: 'deep green-black', bg: 'deep green-black tones', ink: '#EFEADF', sub: '#BFC6B2', accent: '#D9C27A' },
+        ],
       },
       {
-        usesScene: true,
-        palettes: ['fluorescent pink and blue ink', 'teal and orange ink', 'purple and yellow ink'],
-        recipe: 'RISO PRINT. BACKGROUND: off-white recycled paper; the scene subject printed as a coarse HALFTONE image in one of the two inks. LETTERFORM: big rounded or outlined display letters printed in the other ink, overprinting the image so the colours mix where they overlap, with slight misregistration. LAYOUT: letters in the centre band, the halftone image partly behind them. ELEMENTS: only two ink colours in the whole image plus the paper, visible riso grain.',
-      },
-      {
-        usesScene: false,
-        palettes: ['black brush ink with one red accent on kraft paper', 'black brush ink with one blue accent on off-white paper'],
-        recipe: 'BRUSH MARKER POSTER. BACKGROUND: textured kraft or off-white paper — NO photo, NO scene. LETTERFORM: energetic HAND-PAINTED brush lettering in black ink, thick and thin strokes, uneven baseline, a few dry-brush edges and small drips; the hero phrase biggest. LAYOUT: words of clearly different sizes, slightly off-axis, like a hand-painted protest sign. ELEMENTS: one hand-drawn underline or arrow in the accent colour; nothing else.',
+        key: 'duotone', usesScene: true, zone: 'upper',
+        bg: 'DUOTONE POSTER BACKGROUND: a high-contrast DUOTONE photo of the scene subject in one bold colour plus black, coarse halftone dots and print grain, the subject placed in the LOWER half. The UPPER half is a calm, almost flat area of the bold colour because large text is printed there.',
+        palettes: [
+          { name: 'orange and black', bg: 'orange and black', ink: '#FFF4E6', sub: '#FFF4E6', accent: '#111111' },
+          { name: 'violet and black', bg: 'violet and black', ink: '#F4EDFF', sub: '#F4EDFF', accent: '#111111' },
+          { name: 'teal and black', bg: 'teal and black', ink: '#EFFFFA', sub: '#EFFFFA', accent: '#111111' },
+        ],
       },
     ];
     const t02Pick = selectedTemplate === 'T02' ? t02Styles[Math.abs(templateIndex) % t02Styles.length] : null;
-    const t02PaletteForStyle = t02Pick ? t02Pick.palettes[Math.floor(Math.abs(templateIndex) / t02Styles.length) % t02Pick.palettes.length] : '';
-    const t02Archetype = t02Pick ? `${t02Pick.recipe} COLOURS FOR THIS CARD: ${t02PaletteForStyle}. ${CAPTION_RULE} Korean only, NO English/Latin.` : '';
+    const t02PaletteForStyle = t02Pick ? t02Pick.palettes[Math.floor(Math.abs(templateIndex) / t02Styles.length) % t02Pick.palettes.length] : null;
+    const t02Archetype = t02Pick && t02PaletteForStyle ? `${t02Pick.bg} COLOURS: ${t02PaletteForStyle.bg}.` : '';
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
 
@@ -977,18 +1002,25 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const zoneWord = layoutZone === 'upper' ? 'the UPPER third' : layoutZone === 'lower' ? 'the LOWER third' : 'the vertical middle';
     const oppositeZone = layoutZone === 'upper' ? 'the lower half' : layoutZone === 'lower' ? 'the upper half' : 'the top and bottom edges';
     const clearRegion = `${layoutAlign === 'left' ? 'the left / center-left of' : 'the central column of'} ${zoneWord}`;
-    const layoutDirective = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned and sits in ${zoneWord} of the card, ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${oppositeZone}, never directly behind the main text.`;
+    const layoutDirectiveDefault = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned and sits in ${zoneWord} of the card, ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${oppositeZone}, never directly behind the main text.`;
+    const t02ZoneWords = { lower: 'the LOWER 45% of the frame', center: 'the middle band of the frame', left: 'the LEFT two thirds of the frame', upper: 'the UPPER half of the frame' } as const;
+    const layoutDirective = t02Pick
+      ? `TEXT AREA TO LEAVE: large text will be printed over ${t02ZoneWords[t02Pick.zone]}. Keep that area calm, even and low-detail so the text reads clearly; put the visual interest elsewhere, never directly behind it.`
+      : layoutDirectiveDefault;
     // 메시지 맞춤 배경 — 세련된 에디토리얼 톤, 촌스러운 AI 교회포스터 금지
     const personalizedBrief = [
+      t02Archetype
+        ? `THE STYLE FOR THIS CARD (follow it EXACTLY): ${t02Archetype} NO PEOPLE: no people, faces, figures, hands or body parts anywhere.`
+        : '',
       selectedTemplate === 'T02'
         ? 'This is a HIP, TEXTURED, design-forward worship poster — contemporary graphic-design quality, deliberately grungy, layered and print-like. Bold and characterful rather than clean and restrained.'
         : 'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
       // T02 중 장면을 쓰지 않는 스타일(글자만으로 된 포스터)에는 장면을 넣지 않는다 — 모든 카드가 산길 사진이 되던 원인.
       (t02Pick && !t02Pick.usesScene)
-        ? 'NO SCENE: this poster style has NO photo, NO landscape and NO illustrated scene. The verse is expressed by the typography itself on the ground described in THE STYLE FOR THIS CARD.'
+        ? 'NO SCENE: this poster style has NO photo, NO landscape and NO illustrated scene — only the plain ground described in THE STYLE FOR THIS CARD. Do not draw any lettering or letter-like marks either; the text is added later by code.'
         : '',
       (selectedTemplate !== 'T03' && analysis.backgroundConcept && !(t02Pick && !t02Pick.usesScene))
-        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? (selectedTemplate === 'T04'
+        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? ((selectedTemplate === 'T04' || selectedTemplate === 'T02')
           ? ` THE MOMENT THIS VERSE BELONGS TO IS: ${analysis.situation}. Do NOT photograph that moment being acted out. NO robed or costumed figures, no Jesus figure, no disciples, no period dress, no re-enactment or tableau — a staged Bible photo reads as church stock photography and this card never does that. Give the PLACE and the HOUR of that moment instead: the room, the doorway, the light at that time of day, the stillness after it. The moment should be felt, not shown.`
           : ` THE MOMENT BEING DEPICTED IS: ${analysis.situation}. Draw that moment and only that moment — no object or action from any other part of the passage, and no figure doing something this moment does not contain.`) : ''}${analysis.coreMeaning ? ` (Core meaning: ${analysis.coreMeaning}.)` : ''}${analysis.emotionalMovement ? ` Convey the emotional movement "${analysis.emotionalMovement}".` : ''} A person who reads the verse should immediately feel the image FITS it — the background is NOT decoration, it is the visual of this specific message. Derive the imagery ONLY from this concept; do NOT invent an unrelated pretty scene, and do NOT fall back to a generic default (random flowers, meadow, mountains, sunset, forest, ocean, sky, clouds) unless the concept names it.${Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length ? ` Avoid these too-literal objects: ${analysis.literalObjectsToAvoid.join(', ')}.` : ''} Translate the emotion/movement into this template's visual language rather than a single literal noun.`
         : '',
@@ -1015,7 +1047,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     ].filter(Boolean).join('\n');
     // ── 글자 렌더링: T01/T02/T03은 AI가 직접 한 장의 포스터처럼 그림. 나머지는 폰트 오버레이 ──
     // T02는 완전 AI(글자까지). T03은 하이브리드(AI 그레인 그라데이션 배경 + 코드 세리프 오버레이). T04도 오버레이.
-    const aiText = body.aiText !== false && (selectedTemplate === 'T01' || selectedTemplate === 'T02');
+    // T02 는 2026-11-11 부터 배경만 AI, 글자는 브라우저가 진짜 폰트로 구워 넣는다.
+    const aiText = body.aiText !== false && selectedTemplate === 'T01';
     // 성경 출처 줄은 본문/히어로에서 제외 (하단 작은 캡션으로만)
     const refLine = safeLines.find((l) => isRefLine(l.text) || (l.scale || 1) <= 0.55);
     const heroCandidates = safeLines.filter((l) => l !== refLine);
@@ -1185,6 +1218,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       useBrush: !!analysis.useBrush,
       mood: analysis.mood,
       backgroundConcept: analysis.backgroundConcept,
+      // T02: 브라우저가 글자를 구울 때 쓰는 스타일·색·자리(배경과 짝을 맞춘다)
+      t02: t02Pick && t02PaletteForStyle ? { key: t02Pick.key, zone: t02Pick.zone, ink: t02PaletteForStyle.ink, sub: t02PaletteForStyle.sub, accent: t02PaletteForStyle.accent, seed: Math.abs(templateIndex) } : undefined,
       // previousSubjects 반복 방지용: 선택된 템플릿 concept의 핵심 소재를 기록
       sceneSubject: analysis.backgroundConcept,
       visualMotifs: analysis.visualMotifs,

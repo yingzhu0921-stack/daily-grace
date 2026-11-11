@@ -2,6 +2,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Gaegu&family=Gamja+Flower&family=Hi+Melody&family=Nanum+Pen+Script&family=Dongle&family=Poor+Story&family=Yeon+Sung&family=Kirang+Haerang&family=Single+Day&family=Jua&family=Gowun+Dodum&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Hahmlet:wght@400;500;600&family=Song+Myung&family=Nanum+Myeongjo:wght@400;700;800&family=Noto+Serif+KR:wght@400;500;600&display=swap');
 
+@import url('https://fonts.googleapis.com/css2?family=Hahmlet:wght@900&family=Noto+Serif+KR:wght@600;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,6 +11,11 @@
 @font-face { font-family: 'GangwonTunTun'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduPowerExtraBoldA.woff') format('woff'); }
 @font-face { font-family: 'PaperBlack'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-9Black.woff2') format('woff2'); }
 @font-face { font-family: 'PaperLight'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/2408-3@1.0/Paperlogy-3Light.woff2') format('woff2'); }
+/* T02 강렬한 포스터용(2026-11-11 사용자 선택). Pretendard·G마켓 산스는 OFL — 웹·앱 임베딩 허용.
+   에스코어 드림은 앱 임베딩 허용이 확인되지 않아 넣지 않았다. */
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2') format('woff2'); font-weight: 600; }
+@font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Black.woff2') format('woff2'); font-weight: 900; }
+@font-face { font-family: 'GmarketSans'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: 700; }
 @font-face { font-family: 'Taenada'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-2@1.0/Tenada.woff2') format('woff2'); }
 /* 말씀카드 T03 본문용 고딕. 넷 다 웹사이트·임베딩 허용을 확인했다(2026-10-25).
    금지 사항은 모두 "폰트 파일 자체의 판매·재배포" 뿐이고, 이 앱은 CDN 에서 불러 쓴다. */

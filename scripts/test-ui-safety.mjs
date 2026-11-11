@@ -519,3 +519,55 @@ test('tester accounts get their own larger AI limit but still count toward the s
   assert.equal(counted, TESTER_LIMIT.perDay + 20);
   assert.ok(counted <= GLOBAL_IMAGES_PER_DAY);
 });
+
+// ── T02 진짜 폰트 굽기 (2026-11-11) ──
+function fakeTextCtx() {
+  // 글자 하나의 폭 = 글꼴 크기(한글 전각 근사). 띄어쓰기는 절반.
+  return {
+    font: '400 10px sans-serif',
+    measureText(t) {
+      const px = Number((/(\d+(?:\.\d+)?)px/.exec(this.font) || [])[1] || 10);
+      let w = 0;
+      for (const ch of Array.from(t)) w += ch === ' ' ? px * 0.5 : px;
+      return { width: w };
+    },
+  };
+}
+const norm = (t) => t.replace(/\s+/g, '');
+
+test('T02 splits intro, hero and reference without dropping any words', () => {
+  const { splitT02Lines } = load('src/utils/t02Poster.ts');
+  const lines = [
+    { text: '강하고 담대하라', scale: 0.8 },
+    { text: '네가 어디로 가든지', scale: 1.5 },
+    { text: '너와 함께 하느니라', scale: 1.5 },
+    { text: '수1:9', scale: 0.5 },
+  ];
+  const p = splitT02Lines(lines);
+  assert.deepEqual(JSON.parse(JSON.stringify(p)), { intro: ['강하고 담대하라'], hero: ['네가 어디로 가든지', '너와 함께 하느니라'], ref: '수1:9' });
+  // 강조 줄이 없으면 본문 전체가 큰 글씨, 주소는 글자 모양으로도 알아본다.
+  const q = splitT02Lines([{ text: '주님은 나의 반석이시요', scale: 1 }, { text: '시 18:2', scale: 1 }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(q)), { intro: [], hero: ['주님은 나의 반석이시요'], ref: '시 18:2' });
+});
+
+test('T02 layout keeps every character and fits long text inside the card', () => {
+  const { layoutT02, splitT02Lines } = load('src/utils/t02Poster.ts');
+  const W = 1000, H = 1250;
+  const info = { key: 'field', zone: 'center', ink: '#fff', sub: '#eee', accent: '#000', seed: 0 };
+  const box = { x: 80, y: 200, w: 840, h: 850 };
+  const cases = [
+    [{ text: '네가 어디로 가든지', scale: 1.5 }, { text: '네 하나님 여호와가 너와 함께 하느니라', scale: 1.5 }, { text: '수1:9', scale: 0.5 }],
+    [{ text: '말씀 '.repeat(400).trim(), scale: 1 }],                     // 아주 긴 문구
+    [{ text: '가'.repeat(300), scale: 1 }],                                // 띄어쓰기 없는 아주 긴 한 어절
+  ];
+  for (const lines of cases) {
+    const parts = splitT02Lines(lines);
+    const ctx = fakeTextCtx();
+    const out = layoutT02(ctx, parts, info, box, W, H);
+    const drawn = out.rows.map((r) => r.text).join('');
+    const input = [...parts.intro, ...parts.hero, parts.ref].join('');
+    assert.equal(norm(drawn), norm(input), '글자가 빠지거나 겹치면 안 된다');
+    assert.ok(out.height <= H * 0.92 + 1, `카드 안에 들어가야 한다 (height ${Math.round(out.height)})`);
+    for (const r of out.rows) { ctx.font = r.font; assert.ok(ctx.measureText(r.text).width <= out.box.w + 0.5, '폭을 넘는 줄이 없어야 한다'); }
+  }
+});
