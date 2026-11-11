@@ -78,18 +78,14 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     tinyFigures: true,
     figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
   },
-  // 2026-11-11 사용자: 옛 일회용 카메라 느낌은 "필름이 너무 과함" → 자연 필름 톤(레퍼런스 3장)은 엽서 같은 스톡 사진이 됐다
-  // → "구도문제인가" + 레퍼런스 3장(나무 사이로 본 호숫가 벤치·자전거, 커튼을 젖히는 손 너머 들판, 창틀 위 펼친 책 너머 밀밭).
-  // 핵심은 '액자 속 풍경': 어두운 앞쪽 너머로 빛나는 바깥, 차분한 올리브·초록 필름 톤, 무심하게 놓인 일상 사물.
-  // 이어서 "주황빛이 강해" → 해 질 녘 금빛 대신 늦은 오후 자연광, 초록 위주. 예시로 적은 벤치가 매번 나와 사물 예시를 뺐다.
-  // "계속 강·나무·책상만?" 다양성 시험: 장면은 입력대로 바뀌지만 창문·커튼 액자와 어두운 톤이 반복 → 액자는 절반 정도만, 노출은 자연스럽게.
-  // 그랬더니 "색감이 떨어졌어"(회색빛) → 밝기는 두고 초록을 진하게, 그림자에 깊이.
-  // "왜케 ai 스럽지" → 툭 찍은 스냅(생활 흔적·약간 기운 구도). 이어서 "밝아졌어" → 다시 살짝 어둡게, 풍경도 사람 눈높이·평범한 앞쪽·치우친 주제.
-  // 그 뒤 레퍼런스 2장(나무 사이 풀밭, 숲 앞 오두막)과 "다시 이 색감을" → 한낮 여름 햇빛, 생생한 초록, 희뿌연 하늘, 또렷한 나무 그림자.
+  // 2026-11-11 빈티지 필름은 10번 넘게 문장을 덧붙이다 지시끼리 부딪혀 결과가 들쭉날쭉해졌다("왜 점점 이상해지지").
+  // 그래서 사용자가 준 레퍼런스(공원 호수·바닷가 언덕·청록 호수 / 나무 사이 풀밭·숲 앞 오두막)와 피드백
+  // (필름 효과 과하지 않게, 주황빛 금지, 색감은 생생하게, AI 같은 엽서 금지, 창문·방안만 반복 금지)의 핵심만으로 새로 썼다.
   '빈티지 필름': {
-    technique: 'Quiet, intimate 35mm film photograph of an everyday moment. Vary the framing from picture to picture: about half the time it is a FRAME WITHIN A FRAME — looking out from a shaded place (through a window, between curtains, a doorway, between dark tree trunks) toward a sunlit view, with the foreground frame in soft shadow and slightly out of focus; the rest of the time it is a direct, calm view of the scene itself with no window, curtain or trunks around it, perhaps with a little soft foreground blur. Do not default to a window with curtains. Bright summer daylight, late morning to mid-afternoon — never a sunset, golden hour or dusk: strong sunlight that makes the greens vivid and fresh (sunlit yellow-green next to deep forest green), with deep, crisp shadows of trees falling across grass and ground, so lit patches and shaded patches are clearly separated. The sky, when visible, is pale and hazy white rather than bright blue. Rich, lush, saturated natural colour — never orange, amber, grey, washed-out, gloomy or pastel. Sometimes an ordinary object rests casually in the scene when it fits the description — choose one that suits this particular scene rather than a default, and often none at all. Visible fine film grain, soft highlights with gentle halation, a calm, nostalgic, lived-in feeling. It must look like a real candid snapshot someone took in passing, NOT an AI-perfect image: an ordinary real place with small signs of everyday life and slight mess, worn and uneven surfaces, uneven natural light, a slightly tilted or casually cropped frame, focus that is not perfect everywhere. Nothing staged, idealised, symmetrical or too pretty. Even a grand landscape is seen at ordinary eye level from where a person would actually stand — a roadside, a path, a parking spot, a field edge — with something ordinary partly in the foreground (a fence, a post, a wall, roadside grass, a car roof edge) and the main subject placed off-centre or only partly in view, never a perfect postcard view of the summit. NOT a postcard or stock landscape, NOT a centred path or symmetrical view, NOT HDR, NOT over-saturated, NOT glossy digital, NO light leaks, NO date stamp or text. No faces: at most a hand or forearm at the edge of the frame, otherwise no people.',
+    technique: 'A natural 35mm film photograph, like a casual snapshot on Kodak Portra film. Colour: bright summer daylight; vivid, fresh greens (sunlit yellow-green beside deep shaded green); a pale, hazy sky; crisp, dark tree shadows across the ground; fine, subtle film grain. If the scene description names weather or a time of day (rain, snow, night, morning), that wins over the summer daylight while keeping the same natural film look. Composition: an ordinary eye-level view from where a person would actually stand, the subject slightly off-centre, sometimes with leaves or branches softly framing the edge. It should feel real and unposed, never a perfect postcard. Avoid: orange or sunset casts, light leaks, faded or grey colour, HDR or glossy digital look, date stamps or text, people.',
     medium: 'photo',
   },
+
 
 
 };
