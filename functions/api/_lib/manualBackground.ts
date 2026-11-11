@@ -78,10 +78,15 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     tinyFigures: true,
     figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
   },
+  // 2026-11-11 사용자: 옛 일회용 카메라 느낌은 "필름이 너무 과함" → 자연 필름 톤(레퍼런스 3장)은 엽서 같은 스톡 사진이 됐다
+  // → "구도문제인가" + 레퍼런스 3장(나무 사이로 본 호숫가 벤치·자전거, 커튼을 젖히는 손 너머 들판, 창틀 위 펼친 책 너머 밀밭).
+  // 핵심은 '액자 속 풍경': 어두운 앞쪽 너머로 빛나는 바깥, 낮게 깔린 금빛 역광, 차분한 올리브·황금 필름 톤, 무심하게 놓인 일상 사물.
   '빈티지 필름': {
-    technique: 'Unmistakably old analog film photography, like a 1990s point-and-shoot or disposable camera on expired 35mm film: heavy visible film grain, warm yellow-orange or slightly green colour cast, faded blacks and soft muddy contrast, a red-orange light leak glowing at one edge, slight softness and imperfect focus, mild vignetting. Nostalgic, warm and a little rough, like a memory found in an old photo album — never clean, crisp or digital-looking. No date stamp or text. No people.',
+    technique: 'Quiet, intimate 35mm film photograph of an everyday moment, seen as a FRAME WITHIN A FRAME: looking out from a shaded place — through a window, between curtains, a doorway, or between dark tree trunks and branches — toward a sunlit view beyond. The foreground frame is in deep, soft shadow and slightly out of focus; the view beyond glows. Low golden-hour or early-morning backlight, warm and gentle, slightly underexposed overall, with a muted film palette of olive green, golden yellow, warm cream and deep shadow — little or no bright blue sky. An ordinary object may rest casually in the foreground (an open book on a windowsill, a cup, a bench, a bicycle). Visible fine film grain, soft highlights with gentle halation, a calm, nostalgic, lived-in feeling. NOT a postcard or stock landscape, NOT a centred path or symmetrical view, NOT HDR, NOT over-saturated, NOT glossy digital, NO light leaks, NO date stamp or text. No faces: at most a hand or forearm at the edge of the frame, otherwise no people.',
     medium: 'photo',
   },
+
+
 };
 
 /**
