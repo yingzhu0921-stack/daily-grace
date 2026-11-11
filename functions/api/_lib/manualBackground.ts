@@ -17,9 +17,14 @@ interface BackgroundStyle {
   /**
    * 사람을 넣어도 되는 그림체면, 그 그림체로 사람을 그리는 법. 없으면 사람을 넣지 않는다.
    * 2026-11-10 사용자 결정: 수채화·플랫 일러스트·심플 낙서는 사람이 나와도 된다.
-   * 미니멀 감성과 사진 두 종은 그대로 사람 없이 둔다.
+   * 사진 두 종은 그대로 사람 없이 둔다. 미니멀 감성은 2026-11-11 부터 '멀리 아주 작게'만 허용(tinyFigures).
    */
   figures?: string;
+  /**
+   * 사람을 '멀리 아주 작게, 한 명까지'만 허용하는 그림체(2026-11-11 미니멀 감성).
+   * 이때는 성경 인물을 '주인공 크기로' 그리라는 공통 규칙을 쓰지 않고, 작게 두되 누구인지 알아볼 특징만 남긴다.
+   */
+  tinyFigures?: boolean;
 }
 
 export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
@@ -62,9 +67,14 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     medium: 'illustration',
     figures: 'A person, when present, is drawn large with very few strokes: usually from the chest or waist up, big in the frame, about a dozen quick lines in total. The figure may be cut off by the bottom edge, but the head and hands stay well inside the frame. The face is always visible (never a back view or a face hidden behind a hand), and it is quirky and off-kilter, NOT a neat, symmetrical, pleasant storybook face: usually a side or three-quarter view, a big messy scribbled mass of hair (and beard, if any) that takes up most of the head, with only a small patch of face showing; one or two tiny solid black dot eyes; a pointy nose that sticks out as a single hooked line; a tiny curved line for a mouth. No blush, no eyelashes, no eyebrows, no realistic proportions. The body and robe are just two to five long open strokes for the shoulders, arms and sides, with no folds, seams or texture. Hands are a simple open outline with a few long fingers. Arms keep natural length and bend normally: never stretched, extra-long or twisted. A person who is not named in the description is an ordinary, clean-shaven person with short simple hair and a plain top: no beard, no long hair, no long robe, so that they never look like Jesus or another Bible figure. The mood is simple, warm and a little goofy; in a solemn or sorrowful moment keep the face quiet and sincere.',
   },
+  // 2026-11-11 사용자 레퍼런스 3장(초록 풀밭 위 흰 새 떼, 연못가 흰 붓꽃, 숲 아래 호수의 작은 배): 수채화가 아니라
+  // 짙은 색면에 고운 알갱이 질감을 입힌 과슈·그레인 일러스트. 전에는 한 줄짜리 지시라 특징이 없었다.
+  // 사용자 결정: 사람은 '멀리 아주 작게' 허용(배 위 사람처럼).
   '미니멀 감성': {
-    technique: 'Minimal editorial illustration, subtle paper grain, restrained palette and clean shapes with generous breathing room.',
+    technique: 'Calm, minimal gouache-style illustration with a fine grainy, stippled noise texture over every colour area, like a risograph or a textured digital gouache print. The picture is built from a few LARGE, simple areas of rich, saturated colour — deep and fresh greens, deep blue or navy water, with soft tonal shading made of grain rather than gradients — with almost no outlines. Seen from a calm distance or from above, very little detail, wide quiet areas of colour. ONE small bright point of interest (a few white birds, a cluster of white flowers, a tiny boat) placed against the large colour areas. Natural and poetic, not cute, not cartoonish, not watercolor, not a photograph. No hearts, sparkles or floating decorations unless the scene description asks for them.',
     medium: 'illustration',
+    tinyFigures: true,
+    figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
   },
   '빈티지 필름': {
     technique: 'Analog 35mm photography, subtle film grain, gently faded colors, soft contrast and vintage lens rendering.',
@@ -126,6 +136,17 @@ const BIBLE_FIGURES_RULE = `1-1-2. 그 순간이 성경 속 사건이고 그 자
 - 인물은 멀리 찍힌 점이 아니라 장면의 주인공입니다. 화면에서 한눈에 보이는 크기로 두세요.
 - 현대 옷이나 현대 아이·청년의 모습으로 바꾸지 마세요. 이야기에 없는 인물이나 사건을 더하지 마세요.`;
 
+/** 사람을 '멀리 아주 작게'만 허용하는 그림체(미니멀 감성)용 규칙 3. */
+const TINY_PEOPLE_RULE = `3. 지정하지 않은 동물, 꽃, 책, 컵, 종교 상징, 장소를 임의로 추가하지 마세요. 자연스럽게 필요한 최소한의 주변 표현만 허용합니다.
+3-1. 사람은 예외입니다. 입력의 핵심이 사람의 행동이나 함께 있음이면 사람을 넣되, 멀리 아주 작게 한 명만 두세요(화면의 몇 퍼센트 크기, 얼굴 없이 실루엣과 옷 색 한 점). 풍경만으로 뜻이 충분하면 넣지 마세요. 사람은 주인공이 아니고, 넓은 색면이 그림의 중심입니다.`;
+
+/** 미니멀 감성용 1-1-2. 성경 인물도 작게 두되, 누구인지 알아볼 특징만 남긴다. */
+const TINY_BIBLE_FIGURES_RULE = `1-1-2. 그 순간이 성경 속 사건이고 그 자리에 인물이 있었다면, 그 인물을 멀리 작게 한 명만 두되 누구인지 알아볼 특징을 쓰세요.
+- 누구인지 이름을 밝히고 무엇을 하고 있는지 쓰세요.
+- 예수님이면 흰 겉옷과 어깨까지 오는 머리, 노인이면 흰 머리와 흰 수염, 지팡이처럼 작게 보여도 알아볼 특징만 쓰세요. 예수님이 아닌 인물이 예수님처럼 보이면 안 됩니다. 입력에 예수님이 없으면 예수님을 그리지 마세요.
+- 이 그림체에서는 인물을 크게 키우지 마세요. 넓고 고요한 색면 안의 작은 점 같은 존재로 둡니다.
+- 현대 옷으로 바꾸지 말고, 이야기에 없는 인물이나 사건을 더하지 마세요.`;
+
 /** 규칙 4. 사람을 넣어도 되는 그림체만 "장면이 부르지 않으면"이라는 조건을 단다. 나머지는 원래 문장 그대로. */
 const KEEP_SCENE_RULE = '4. 비 오는 밤을 햇살 드는 아침으로 바꾸지 마세요. 스타일은 표현 기법이지 장면을 교체하는 지시가 아닙니다. 낙서도 사용자가 지정한 창밖이나 풍경을 선으로 표현하며 캐릭터를 강제로 추가하지 않습니다.';
 const KEEP_SCENE_RULE_PEOPLE = '4. 비 오는 밤을 햇살 드는 아침으로 바꾸지 마세요. 스타일은 표현 기법이지 장면을 교체하는 지시가 아닙니다. 낙서도 사용자가 지정한 창밖이나 풍경을 선으로 표현하며, 입력의 핵심이 사람이 아니면 캐릭터를 강제로 추가하지 않습니다.';
@@ -133,9 +154,9 @@ const KEEP_SCENE_RULE_PEOPLE = '4. 비 오는 밤을 햇살 드는 아침으로 
 export function backgroundExpansionInstructions(style?: string): string {
   const resolved = resolveStyle(style);
   const { rule, moment, example } = EXPANSION_BY_MEDIUM[resolved?.medium || FALLBACK_MEDIUM];
-  const additionsRule = resolved?.figures ? PEOPLE_ALLOWED_RULE : NO_ADDITIONS_RULE;
+  const additionsRule = resolved?.tinyFigures ? TINY_PEOPLE_RULE : resolved?.figures ? PEOPLE_ALLOWED_RULE : NO_ADDITIONS_RULE;
   const keepSceneRule = resolved?.figures ? KEEP_SCENE_RULE_PEOPLE : KEEP_SCENE_RULE;
-  const bibleFiguresRule = resolved?.figures ? `\n${BIBLE_FIGURES_RULE}` : '';
+  const bibleFiguresRule = resolved?.tinyFigures ? `\n${TINY_BIBLE_FIGURES_RULE}` : resolved?.figures ? `\n${BIBLE_FIGURES_RULE}` : '';
   return `당신은 직접 편집용 카드의 배경 설명을 보완하는 이미지 디렉터입니다.
 사용자는 글씨나 기록 없이 원하는 장면만 입력해도 됩니다. 배경과 카드 글씨는 독립적입니다.
 
@@ -185,7 +206,11 @@ export function buildManualBackgroundPrompt(scene: string, style?: string, cropN
   const resolved = resolveStyle(style);
   const technique = resolved?.technique || FALLBACK_IMAGE_TECHNIQUE;
   // 사람을 넣어도 되는 그림체에서는, 장면 설명에 사람이 있으면 그 그림체로 그리게 한다.
-  const figures = resolved?.figures
+  const figures = resolved?.tinyFigures
+    ? `\nPEOPLE: ${resolved.figures} Draw a person only if the scene description includes one.
+BIBLE SCENES (this style keeps people tiny): when the description names a person from a Bible story, show that one person small and far away, recognisable only by simple traits — Jesus by a white robe and shoulder-length hair, an old patriarch by white hair and beard and a staff — in ancient dress, never in modern clothes. Anyone who is not Jesus must NOT look like him, and never draw Jesus unless the description names him. Do not enlarge them; the wide calm colour areas stay the picture.
+Everyone else is generic and non-identifiable — never a recognizable likeness of a real present-day person such as a celebrity.`
+    : resolved?.figures
     ? `\nPEOPLE: ${resolved.figures} Draw a person only if the scene description includes one.
 BIBLE SCENES: when the description names a person from a Bible story, that person is the clear subject of the picture — large enough to read at a glance, never a distant speck — in ancient Near-Eastern dress (long robes, head cloth, sandals), with the age and look the description gives them; Jesus appears in his traditional, recognisable form (shoulder-length hair, beard, robe). Anyone who is not Jesus must NOT look like Jesus: draw Abraham, Moses or any other figure with the traits the description gives (for an old patriarch: white hair, a long white beard, a head cloth, a staff), and never draw Jesus unless the description names him. This overrides any "small" or "face turned away" above, but keep drawing them in the rendering technique above. Never put a Bible figure in modern clothes.
 Everyone else is generic and non-identifiable — never a recognizable likeness of a real present-day person such as a celebrity.`

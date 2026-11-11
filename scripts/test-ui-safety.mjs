@@ -179,9 +179,17 @@ test('all manual styles preserve scene constraints and generate backgrounds only
       assert.match(expansion, /직접 그려도 됩니다/);
     }
 
-    // 사람은 수채화·플랫 일러스트·심플 낙서에서만 허용한다(2026-11-10 사용자 결정). 미니멀·사진은 사람 없이.
+    // 사람은 수채화·플랫 일러스트·심플 낙서에서 허용한다(2026-11-10 사용자 결정). 사진은 사람 없이.
+    // 미니멀 감성은 2026-11-11 부터 '멀리 아주 작게'만 허용 — 성경 인물도 주인공 크기로 키우지 않는다.
     const peopleAllowed = ['맑은 수채화', '플랫 일러스트', '심플 낙서'].includes(style ?? '');
-    if (peopleAllowed) {
+    if (style === '미니멀 감성') {
+      assert.match(expansion, /멀리 아주 작게 한 명만/);
+      assert.match(expansion, /1-1-2\. 그 순간이 성경 속 사건이고/);
+      assert.doesNotMatch(expansion, /화면에서 한눈에 보이는 크기로/);
+      assert.match(prompt, /PEOPLE:.*TINY/);
+      assert.match(prompt, /BIBLE SCENES \(this style keeps people tiny\)/);
+      assert.doesNotMatch(prompt, /never a distant speck/);
+    } else if (peopleAllowed) {
       assert.match(expansion, /3-1\. 사람은 예외/);
       assert.match(prompt, /PEOPLE:/);
       // 성경 장면의 인물은 실제 모습대로, 주인공 크기로(2026-11-10 사용자 결정: 너무 간접적이었다).
