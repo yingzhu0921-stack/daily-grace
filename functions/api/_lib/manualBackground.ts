@@ -55,11 +55,12 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
   // 2026-11-11 사용자: 사진 두 종이 "구분이 됨?" → 둘 다 한 줄짜리라 같은 장면이면 거의 같게 나왔다.
   // 감성 사진은 '밝고 산뜻한 요즘 사진', 빈티지 필름은 '확실한 옛 필름 느낌'으로 갈라 둔다.
   '감성 사진': {
-    // 2026-11-11: "너무 밝다" → 부드러운 창가 빛으로 새로 → "딱 인테리어 느낌, 자연스럽게" → 꾸민 쇼룸 대신 실제 생활 사진으로 새로 썼다.
-    // 빈티지 필름(강한 햇빛·깊은 그림자·거리의 순간)과는 부드러운 빛·가까운 생활 장면으로 갈라 둔다.
-    technique: 'An unstaged, everyday photograph of real life at home or close by, taken casually by someone who lives there, in soft natural light from a window or a cloudy sky. Nothing is arranged for the photo: things are where they were left — a half-finished cup, a crumpled blanket or linen, a book left face-down, a few crumbs or a stray pen, mismatched ordinary objects, worn surfaces. Shot close and a little off-centre, slightly tilted or loosely cropped, with a shallow depth of field and soft, natural shadows. Calm, muted, true-to-life colour with natural exposure, and a gentle softness like a film or phone snapshot rather than a crisp digital image. NOT an interior-design, catalogue or showroom photo: no styled vignettes, no perfectly placed plant-blanket-cushion sets, no symmetry, no spotless surfaces. Avoid: overexposed white haze, harsh sun with deep black shadows, orange cast, HDR, text, people.',
+    // 2026-11-11 흐름: "너무 밝다" → 창가 빛 → "인테리어 느낌" → 생활 스냅 → "너무 지저분" + "완전 자동 T04 정도 질감이면 괜찮다".
+    // 그래서 자동완성 T04(감성 심플)의 필름 사진 문구를 바탕으로 새로 썼다. 빈티지 필름(강한 햇빛·깊은 그림자·거리)과는 부드러운 빛·차분한 필름 일기로 갈린다.
+    technique: 'A quiet 35mm film photograph, aesthetic, analog and intimate, like a film-diary snapshot: visible fine film grain, slightly faded, muted colour and soft contrast (Kodak Portra / Fuji tones), very subtle halation only, soft natural light. A calm everyday moment — a cafe window, a desk with a book, a windowsill, a quiet corner of a room, a cup on a table, light through leaves, a path or calm water. Tidy and natural: things simply as they are, neither styled like an interior catalogue nor messy or cluttered. Avoid: strong light leaks or orange/amber glow, an epic landscape or calendar-wallpaper vista, a dramatic sunset, overexposed white haze, crisp HDR digital look, text, people.',
     medium: 'photo',
   },
+
 
 
   // 2026-11-10 사용자 레퍼런스 세 차례를 거쳐 정했다.
