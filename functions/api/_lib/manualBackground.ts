@@ -55,9 +55,12 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
   // 2026-11-11 사용자: 사진 두 종이 "구분이 됨?" → 둘 다 한 줄짜리라 같은 장면이면 거의 같게 나왔다.
   // 감성 사진은 '밝고 산뜻한 요즘 사진', 빈티지 필름은 '확실한 옛 필름 느낌'으로 갈라 둔다.
   '감성 사진': {
-    technique: 'Bright, airy, clean modern lifestyle photography: soft natural daylight flooding the scene, high-key exposure, gentle pastel and light neutral tones (cream, white, pale beige, soft sky blue, light sage), very low contrast, crisp and clean with no grain, a shallow depth of field with soft background blur, and a lot of calm, empty, light space. Fresh, peaceful and minimal, like a sunlit Pinterest or Instagram photo — never dark, moody, gritty or vintage. No people.',
+    // 2026-11-11: 밝고 산뜻하게 바꿨더니 "와 이건 너무 밝다"(하얗게 날아간 스톡 사진). 빈티지 필름의 교훈대로 덧붙이지 않고 새로 썼다.
+    // 빈티지 필름(강한 햇빛·깊은 그림자·거리의 순간)과 겹치지 않게, 부드러운 창가 빛의 조용하고 가까운 사진으로 둔다.
+    technique: 'A calm, intimate photograph in soft, diffused natural light — window light or a lightly overcast day — taken close with a shallow depth of field: one quiet subject in focus (a corner of a room, a cup, a plant, an open book, flowers, a chair, a doorway, a bit of garden) and the rest falling into soft blur. Gentle, even light with soft shadows and proper, natural exposure — bright but never blown-out, hazy or white-washed; whites stay creamy with texture. Muted, natural colours with real depth: warm cream, linen beige, soft wood brown, sage and olive green, dusty blue. Simple, uncluttered and real-looking, not a styled showroom or a stock photo. Avoid: overexposed white haze, pastel glow, harsh sun and deep black shadows, orange cast, HDR, text, people.',
     medium: 'photo',
   },
+
   // 2026-11-10 사용자 레퍼런스 세 차례를 거쳐 정했다.
   //  1) 굵은 붓펜 낙서(곰·예수님) — 가는 선, 여기저기 색, 어두운 장면을 통째로 칠하던 것을 고쳤다.
   //  2) "너무 착하게 귀엽다" — 익살을 더했다.
