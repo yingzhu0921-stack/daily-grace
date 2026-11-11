@@ -25,6 +25,11 @@ interface BackgroundStyle {
    * 이때는 성경 인물을 '주인공 크기로' 그리라는 공통 규칙을 쓰지 않고, 작게 두되 누구인지 알아볼 특징만 남긴다.
    */
   tinyFigures?: boolean;
+  /**
+   * 사진 그림체에서 평범한 요즘 사람의 일상 순간을 허용(2026-11-11 빈티지 필름, 거리 사진 레퍼런스 4장).
+   * 성경 인물 분장·연출은 여전히 막는다(사진 규칙). 그림체용 PEOPLE/BIBLE 규칙은 쓰지 않는다.
+   */
+  candidPeople?: boolean;
 }
 
 export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
@@ -78,13 +83,15 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     tinyFigures: true,
     figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
   },
-  // 2026-11-11 빈티지 필름은 10번 넘게 문장을 덧붙이다 지시끼리 부딪혀 결과가 들쭉날쭉해졌다("왜 점점 이상해지지").
-  // 그래서 사용자가 준 레퍼런스(공원 호수·바닷가 언덕·청록 호수 / 나무 사이 풀밭·숲 앞 오두막)와 피드백
-  // (필름 효과 과하지 않게, 주황빛 금지, 색감은 생생하게, AI 같은 엽서 금지, 창문·방안만 반복 금지)의 핵심만으로 새로 썼다.
+  // 2026-11-11 빈티지 필름을 처음부터 다시 → 마지막 레퍼런스 4장(카페 앞 신문 읽는 노인, 공원 벤치에서 책 읽는 사람,
+  // 위에서 본 풀밭 벤치, 나무 그늘 길을 자전거로 가는 노인): 강한 햇빛과 깊은 그림자의 거리 사진, 평범한 사람의 일상 순간.
   '빈티지 필름': {
-    technique: 'A natural 35mm film photograph, like a casual snapshot on Kodak Portra film. Colour: bright summer daylight; vivid, fresh greens (sunlit yellow-green beside deep shaded green); a pale, hazy sky; crisp, dark tree shadows across the ground; fine, subtle film grain. If the scene description names weather or a time of day (rain, snow, night, morning), that wins over the summer daylight while keeping the same natural film look. Composition: an ordinary eye-level view from where a person would actually stand, the subject slightly off-centre, sometimes with leaves or branches softly framing the edge. It should feel real and unposed, never a perfect postcard. Avoid: orange or sunset casts, light leaks, faded or grey colour, HDR or glossy digital look, date stamps or text, people.',
+    technique: 'Candid street and park photography on 35mm film, like Kodak Portra: an everyday moment caught quietly from a little distance with a longer lens, background softly out of focus. Strong, low, warm sunlight with deep, dark shadows — hard light and real contrast, sunlit patches glowing warm while shaded areas fall almost to black; light often comes through leaves as dappled patches on the ground, a wall or a path. Deep, rich greens, warm skin and wood tones, natural film colour with a little fine grain. It looks like a real photograph someone took in passing, not posed, not a postcard. Avoid: a flat evenly lit scene, a bright blue sky, orange sunset cast, grey or washed-out colour, HDR, text or watermarks.',
     medium: 'photo',
+    candidPeople: true,
   },
+
+
 
 
 
@@ -146,6 +153,10 @@ const BIBLE_FIGURES_RULE = `1-1-2. 그 순간이 성경 속 사건이고 그 자
 - 인물은 멀리 찍힌 점이 아니라 장면의 주인공입니다. 화면에서 한눈에 보이는 크기로 두세요.
 - 현대 옷이나 현대 아이·청년의 모습으로 바꾸지 마세요. 이야기에 없는 인물이나 사건을 더하지 마세요.`;
 
+/** 거리 사진처럼 평범한 사람의 일상 순간을 허용하는 사진 그림체(빈티지 필름)용 규칙 3. */
+const CANDID_PEOPLE_RULE = `3. 지정하지 않은 동물, 꽃, 컵, 종교 상징, 장소를 임의로 추가하지 마세요.
+3-1. 사람은 예외입니다. 장면에 어울리면 평범한 요즘 사람 한 명(많아야 두 명)이 일상적인 일을 하는 순간을 넣어도 됩니다 — 벤치에서 책을 읽거나, 길을 걷거나, 자전거를 타거나, 창가에 앉아 있는 모습. 카메라를 보지 않고, 옆이나 뒤에서 조금 떨어져 몰래 찍은 듯이 두세요. 장면만으로 충분하면 넣지 마세요. 성경 인물의 분장이나 연출 장면은 절대 만들지 마세요.`;
+
 /** 사람을 '멀리 아주 작게'만 허용하는 그림체(미니멀 감성)용 규칙 3. */
 const TINY_PEOPLE_RULE = `3. 지정하지 않은 동물, 꽃, 책, 컵, 종교 상징, 장소를 임의로 추가하지 마세요. 자연스럽게 필요한 최소한의 주변 표현만 허용합니다.
 3-1. 사람은 예외입니다. 입력의 핵심이 사람의 행동이나 함께 있음이면 사람을 넣되, 멀리 아주 작게 한 명만 두세요(화면의 몇 퍼센트 크기, 얼굴 없이 실루엣과 옷 색 한 점). 풍경만으로 뜻이 충분하면 넣지 마세요. 사람은 주인공이 아니고, 넓은 색면이 그림의 중심입니다.`;
@@ -164,7 +175,7 @@ const KEEP_SCENE_RULE_PEOPLE = '4. 비 오는 밤을 햇살 드는 아침으로 
 export function backgroundExpansionInstructions(style?: string): string {
   const resolved = resolveStyle(style);
   const { rule, moment, example } = EXPANSION_BY_MEDIUM[resolved?.medium || FALLBACK_MEDIUM];
-  const additionsRule = resolved?.tinyFigures ? TINY_PEOPLE_RULE : resolved?.figures ? PEOPLE_ALLOWED_RULE : NO_ADDITIONS_RULE;
+  const additionsRule = resolved?.candidPeople ? CANDID_PEOPLE_RULE : resolved?.tinyFigures ? TINY_PEOPLE_RULE : resolved?.figures ? PEOPLE_ALLOWED_RULE : NO_ADDITIONS_RULE;
   const keepSceneRule = resolved?.figures ? KEEP_SCENE_RULE_PEOPLE : KEEP_SCENE_RULE;
   const bibleFiguresRule = resolved?.tinyFigures ? `\n${TINY_BIBLE_FIGURES_RULE}` : resolved?.figures ? `\n${BIBLE_FIGURES_RULE}` : '';
   return `당신은 직접 편집용 카드의 배경 설명을 보완하는 이미지 디렉터입니다.
