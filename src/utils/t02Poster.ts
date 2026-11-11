@@ -24,7 +24,7 @@ export interface T02Info {
 
 export interface T02Line { text: string; scale?: number }
 
-interface FontChoice { family: string; weight: number }
+export interface FontChoice { family: string; weight: number }
 
 const PRETENDARD: FontChoice = { family: "'Pretendard', sans-serif", weight: 900 };
 const PRETENDARD_SUB: FontChoice = { family: "'Pretendard', sans-serif", weight: 600 };
@@ -37,17 +37,19 @@ const HAHMLET: FontChoice = { family: "'Hahmlet', serif", weight: 900 };
 const NOTO_SERIF: FontChoice = { family: "'Noto Serif KR', serif", weight: 900 };
 const NOTO_SERIF_SUB: FontChoice = { family: "'Noto Serif KR', serif", weight: 600 };
 const SONG_MYUNG: FontChoice = { family: "'Song Myung', serif", weight: 400 };
+const MARUBURI: FontChoice = { family: "'MaruBuri', serif", weight: 400 };
+const PRETENDARD_500: FontChoice = { family: "'Pretendard', sans-serif", weight: 500 };
 
 /** 스타일마다 어울리는 큰 글씨 폰트 후보. 카드마다 seed 로 하나를 고른다. */
-const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
+export const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
   film: [BLACK_HAN, PRETENDARD, DO_HYEON],
   field: [GMARKET, BLACK_HAN, PAPERLOGY],
   swiss: [PRETENDARD, PAPERLOGY],
   riso: [DO_HYEON, TAENADA, GMARKET],
   serif: [HAHMLET, SONG_MYUNG, NOTO_SERIF],
   duotone: [PAPERLOGY, TAENADA, BLACK_HAN],
-  // 2026-11-11 T02 = 미니멀 감성. 차분한 색면 위라 굵은 포스터 글씨 대신 단정한 명조·고딕.
-  minimal: [NOTO_SERIF_SUB, SONG_MYUNG, PRETENDARD_SUB],
+  // 2026-11-11 T02 = 미니멀 감성. 사용자 선택: 마루부리·Pretendard 를 번갈아, 작게, 그림자 없이.
+  minimal: [MARUBURI, PRETENDARD_500],
 };
 
 const ALIGN: Record<T02StyleKey, 'left' | 'center'> = {
@@ -55,14 +57,15 @@ const ALIGN: Record<T02StyleKey, 'left' | 'center'> = {
 };
 
 /** 큰 글씨 최대 크기(카드 폭 대비). 색면 스타일은 글씨가 주인공이라 가장 크게 허용한다. */
-const MAX_HERO: Record<T02StyleKey, number> = {
-  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.085,
+export const MAX_HERO: Record<T02StyleKey, number> = {
+  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.045,
 };
 
 export function t02FontsFor(info: Pick<T02Info, 'key' | 'seed'>): { hero: FontChoice; sub: FontChoice } {
   const list = HERO_FONTS[info.key] || HERO_FONTS.field;
-  const hero = list[Math.abs(Math.floor(info.seed / 6)) % list.length];
-  const sub = (info.key === 'serif' || info.key === 'minimal') ? (hero === SONG_MYUNG ? SONG_MYUNG : hero === PRETENDARD_SUB ? PRETENDARD_SUB : NOTO_SERIF_SUB) : PRETENDARD_SUB;
+  const hero = list[Math.abs(info.key === 'minimal' ? info.seed : Math.floor(info.seed / 6)) % list.length];
+  if (info.key === 'minimal') return { hero, sub: hero };
+  const sub = info.key === 'serif' ? (hero === SONG_MYUNG ? SONG_MYUNG : NOTO_SERIF_SUB) : PRETENDARD_SUB;
   return { hero, sub };
 }
 
@@ -157,8 +160,9 @@ interface Laid { text: string; font: string; size: number; color: string; gapBef
 function buildRows(ctx: CanvasRenderingContext2D, parts: T02Parts, info: T02Info, w: number, W: number, size: number) {
   const { hero, sub } = t02FontsFor(info);
   // 작은 줄도 큰 글씨가 아주 작아지면 같이 줄인다(긴 문구가 카드 밖으로 넘치지 않게).
-  const subSize = Math.max(Math.min(W * 0.034, size * 0.7), size * 0.28);
-  const refSize = Math.max(Math.min(W * 0.03, size * 0.6), subSize * 0.85);
+  // 미니멀은 글씨 전체가 작아서, 작은 줄을 큰 글씨의 비율로만 정한다(최소 크기에 걸려 큰 글씨와 같아지지 않게).
+  const subSize = info.key === 'minimal' ? size * 0.68 : Math.max(Math.min(W * 0.034, size * 0.7), size * 0.28);
+  const refSize = info.key === 'minimal' ? size * 0.6 : Math.max(Math.min(W * 0.03, size * 0.6), subSize * 0.85);
   const rows: Laid[] = [];
   ctx.font = fontCss(sub, subSize);
   for (const t of parts.intro) {
@@ -298,7 +302,7 @@ export async function renderT02Poster(background: string, lines: T02Line[], info
   lc.textBaseline = 'top';
   lc.textAlign = align;
   // 사진 위에 얹는 스타일은 옅은 그림자로 글자를 띄운다(사진 밝기가 고르지 않다).
-  if (info.key === 'film' || info.key === 'serif' || info.key === 'duotone' || info.key === 'minimal') {
+  if (info.key === 'film' || info.key === 'serif' || info.key === 'duotone') {
     lc.shadowColor = 'rgba(0,0,0,0.35)';
     lc.shadowBlur = W * 0.012;
     lc.shadowOffsetY = W * 0.002;
