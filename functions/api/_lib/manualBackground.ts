@@ -23,10 +23,12 @@ interface BackgroundStyle {
 }
 
 export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
+  // 2026-11-11 사용자: "지금 너무 진지해서, 좀 귀엽게". 맑은 번짐은 살리고 그림책풍의 귀여운 수채 일러스트로.
+  // 플랫(선 없는 단색 면)·심플 낙서(검은 마커)와 겹치지 않게 연필 밑선과 물 번짐을 이 스타일의 표지로 둔다.
   '맑은 수채화': {
-    technique: 'Transparent watercolor washes, soft brush edges, delicate pigment on paper, restrained pastel accents.',
+    technique: 'Cute, cosy watercolor illustration like a gentle picture-book page: transparent pastel washes with soft blooms, water stains and colour bleeding at the edges, over a light, loose pencil underdrawing that stays visible. Simple rounded shapes, warm light pastel palette (peach, butter yellow, mint, sky blue, soft pink), lots of white paper left around the scene. A small, simple scene rather than a full landscape: one or two hints of the place (a soft hill, a few grass strokes, a little tree) and nothing busy, with at most three figures in total — never a crowd. Sweet and friendly, never solemn, dramatic, dark or realistic. No hearts, sparkles or floating decorations unless the scene description asks for them.',
     medium: 'illustration',
-    figures: 'A person, when present, is small in the scene and painted in the same loose watercolor washes — a soft simple silhouette with gentle colour, the face kept to a few light touches or turned away. Never a realistic portrait or a detailed face.',
+    figures: 'A person, when present, is a cute, chubby little character about two to three heads tall with a round face, tiny dot eyes, a small smile and a soft rosy blush, drawn with the light pencil line and filled with pastel watercolor washes. Simple rounded hands and short limbs in natural proportion (never stretched or twisted). Big enough to read clearly in the scene, but sweet and simple — never a realistic portrait or a detailed face. In a solemn or sorrowful moment keep the face calm and sincere, still in the same gentle style.',
   },
   // 자동완성 T01 과 같은 그림체를 쓴다(2026-11-04 사용자 지정). 카드 구도는 가져오지 않는다 —
   // 편집 화면은 사용자가 글씨를 아무 데나 놓으므로 '상단 절반 비움' 같은 지시가 방해가 된다.
