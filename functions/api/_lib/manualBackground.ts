@@ -47,8 +47,10 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     // 사람 그리는 법은 위 기법 문구(T01_FIGURE_LOOK)에 이미 들어 있다. 예수님 문구는 T01 카드의 JESUS RULE 과 같은 뜻.
     figures: 'A person, when present, follows the character description above — small, flat and outline-free. Jesus, when the scene names him, is the main subject in his traditional recognisable form (shoulder-length dark hair, a short beard, a light robe) drawn in the same flat style with dot eyes, never recast as a generic figure; anyone else must not look like him.',
   },
+  // 2026-11-11 사용자: 사진 두 종이 "구분이 됨?" → 둘 다 한 줄짜리라 같은 장면이면 거의 같게 나왔다.
+  // 감성 사진은 '밝고 산뜻한 요즘 사진', 빈티지 필름은 '확실한 옛 필름 느낌'으로 갈라 둔다.
   '감성 사진': {
-    technique: 'Editorial photography, believable lighting, natural depth of field, subtle cinematic color grading.',
+    technique: 'Bright, airy, clean modern lifestyle photography: soft natural daylight flooding the scene, high-key exposure, gentle pastel and light neutral tones (cream, white, pale beige, soft sky blue, light sage), very low contrast, crisp and clean with no grain, a shallow depth of field with soft background blur, and a lot of calm, empty, light space. Fresh, peaceful and minimal, like a sunlit Pinterest or Instagram photo — never dark, moody, gritty or vintage. No people.',
     medium: 'photo',
   },
   // 2026-11-10 사용자 레퍼런스 세 차례를 거쳐 정했다.
@@ -77,7 +79,7 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
     figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
   },
   '빈티지 필름': {
-    technique: 'Analog 35mm photography, subtle film grain, gently faded colors, soft contrast and vintage lens rendering.',
+    technique: 'Unmistakably old analog film photography, like a 1990s point-and-shoot or disposable camera on expired 35mm film: heavy visible film grain, warm yellow-orange or slightly green colour cast, faded blacks and soft muddy contrast, a red-orange light leak glowing at one edge, slight softness and imperfect focus, mild vignetting. Nostalgic, warm and a little rough, like a memory found in an old photo album — never clean, crisp or digital-looking. No date stamp or text. No people.',
     medium: 'photo',
   },
 };
