@@ -11,7 +11,7 @@
  */
 
 export type T02Zone = 'lower' | 'center' | 'left' | 'upper';
-export type T02StyleKey = 'film' | 'field' | 'swiss' | 'riso' | 'serif' | 'duotone';
+export type T02StyleKey = 'film' | 'field' | 'swiss' | 'riso' | 'serif' | 'duotone' | 'minimal';
 
 export interface T02Info {
   key: T02StyleKey;
@@ -46,21 +46,23 @@ const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
   riso: [DO_HYEON, TAENADA, GMARKET],
   serif: [HAHMLET, SONG_MYUNG, NOTO_SERIF],
   duotone: [PAPERLOGY, TAENADA, BLACK_HAN],
+  // 2026-11-11 T02 = 미니멀 감성. 차분한 색면 위라 굵은 포스터 글씨 대신 단정한 명조·고딕.
+  minimal: [NOTO_SERIF_SUB, SONG_MYUNG, PRETENDARD_SUB],
 };
 
 const ALIGN: Record<T02StyleKey, 'left' | 'center'> = {
-  film: 'left', field: 'left', swiss: 'left', riso: 'center', serif: 'center', duotone: 'center',
+  film: 'left', field: 'left', swiss: 'left', riso: 'center', serif: 'center', duotone: 'center', minimal: 'center',
 };
 
 /** 큰 글씨 최대 크기(카드 폭 대비). 색면 스타일은 글씨가 주인공이라 가장 크게 허용한다. */
 const MAX_HERO: Record<T02StyleKey, number> = {
-  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16,
+  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.085,
 };
 
 export function t02FontsFor(info: Pick<T02Info, 'key' | 'seed'>): { hero: FontChoice; sub: FontChoice } {
   const list = HERO_FONTS[info.key] || HERO_FONTS.field;
   const hero = list[Math.abs(Math.floor(info.seed / 6)) % list.length];
-  const sub = info.key === 'serif' ? (hero === SONG_MYUNG ? SONG_MYUNG : NOTO_SERIF_SUB) : PRETENDARD_SUB;
+  const sub = (info.key === 'serif' || info.key === 'minimal') ? (hero === SONG_MYUNG ? SONG_MYUNG : hero === PRETENDARD_SUB ? PRETENDARD_SUB : NOTO_SERIF_SUB) : PRETENDARD_SUB;
   return { hero, sub };
 }
 
@@ -229,6 +231,16 @@ function printWear(layer: CanvasRenderingContext2D, W: number, H: number, seed: 
   layer.restore();
 }
 
+/** 상자 영역의 평균 밝기(0~1). 성기게 표본을 떠서 빠르게 본다. */
+function averageLuma(ctx: CanvasRenderingContext2D, box: Box): number {
+  const x = Math.max(0, Math.floor(box.x)), y = Math.max(0, Math.floor(box.y));
+  const w = Math.max(1, Math.floor(box.w)), h = Math.max(1, Math.floor(box.h));
+  const data = ctx.getImageData(x, y, w, h).data;
+  let sum = 0, n = 0;
+  for (let i = 0; i < data.length; i += 4 * 37) { sum += (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]) / 255; n++; }
+  return n ? sum / n : 0.5;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -253,7 +265,8 @@ export async function preloadT02Fonts(info: T02Info, text: string): Promise<void
 }
 
 /** 배경 위에 글자를 구운 PNG data URL 을 돌려준다. */
-export async function renderT02Poster(background: string, lines: T02Line[], info: T02Info): Promise<string> {
+export async function renderT02Poster(background: string, lines: T02Line[], infoIn: T02Info): Promise<string> {
+  let info = infoIn;
   const img = await loadImage(background);
   const W = img.naturalWidth;
   const H = img.naturalHeight;
@@ -265,6 +278,12 @@ export async function renderT02Poster(background: string, lines: T02Line[], info
 
   const parts = splitT02Lines(lines);
   await preloadT02Fonts(info, lines.map((l) => l.text).join(' '));
+  // 글씨 색을 서버가 'auto' 로 넘기면(미니멀 감성), 글씨가 놓일 자리의 밝기를 보고 정한다.
+  if (info.ink === 'auto' || info.sub === 'auto') {
+    const zb = zoneBox(info.zone, W, H);
+    const light = averageLuma(ctx, zb) > 0.6;
+    info = { ...info, ink: light ? '#24302A' : '#F7F2E8', sub: light ? '#3B463F' : '#EDE6D8', accent: light ? '#24302A' : '#F7F2E8' };
+  }
 
   const layer = document.createElement('canvas');
   layer.width = W; layer.height = H;
@@ -279,7 +298,7 @@ export async function renderT02Poster(background: string, lines: T02Line[], info
   lc.textBaseline = 'top';
   lc.textAlign = align;
   // 사진 위에 얹는 스타일은 옅은 그림자로 글자를 띄운다(사진 밝기가 고르지 않다).
-  if (info.key === 'film' || info.key === 'serif' || info.key === 'duotone') {
+  if (info.key === 'film' || info.key === 'serif' || info.key === 'duotone' || info.key === 'minimal') {
     lc.shadowColor = 'rgba(0,0,0,0.35)';
     lc.shadowBlur = W * 0.012;
     lc.shadowOffsetY = W * 0.002;

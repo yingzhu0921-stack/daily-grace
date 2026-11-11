@@ -1,6 +1,6 @@
 import { getSessionUser } from './_lib/session';
 import type { Env } from './_lib/db';
-import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote } from './_lib/manualBackground';
+import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote, manualBackgroundStyles } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { checkAiLimits, aiLimitMessage, isAiTester } from './_lib/aiLimits';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
@@ -350,11 +350,11 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
         styleLock: `T01 = FLAT INDIE STICKER (선 없는 단순 플랫 그림): ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
         fonts: { primary: 'Cafe24SuperMagic', secondary: 'MaruBuri' },
       },
-      // T02 — 스트릿 워십 포스터 (힙한 Gen-Z 굿즈 감성, AI가 글자까지 그림. 세부 스타일은 아키타입이 결정)
+      // T02 — 미니멀 감성 (2026-11-11. 배경만 AI, 글자는 브라우저가 진짜 폰트로 굽는다)
       'T02': {
         // 배경만 만든다. 글자는 브라우저가 진짜 폰트로 얹는다(2026-11-11).
-        backgroundPrompt: 'The BACKGROUND ARTWORK for a bold, design-forward modern Christian worship poster. Large Korean typography will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage. The exact background style is given below as THE STYLE FOR THIS CARD; follow it exactly and do not blend in other poster styles.',
-        styleLock: 'T02 = 강렬한 포스터 배경: one specific poster background style per card, given below, leaving clear room for large text. Mature and cool — not pastel candy, no hearts, no flowers, no smiley faces. NO text of any kind.',
+        backgroundPrompt: 'The BACKGROUND ARTWORK for a calm, minimal Christian verse card. Korean text will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage. The exact style is given below as THE STYLE FOR THIS CARD; follow it exactly.',
+        styleLock: 'T02 = 미니멀 감성 배경: a calm gouache-style scene of large, rich colour areas with fine grain and one small point of interest, leaving a plain upper area for text. NO text of any kind.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       // T03 — 감성 타이포 (감성 사진 + 초대형 히어로 타이포 / 에디토리얼)
@@ -653,7 +653,8 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     // 템플릿마다 같은 메시지를 다른 시각 언어로 표현하게 함.
     const conceptByTemplate: Record<string, string | undefined> = {
       T01: analysis.t01SceneConcept,
-      T02: analysis.t02GraphicConcept,
+      // T02 는 2026-11-11 부터 '미니멀 감성'(색면 풍경 + 작은 포인트). 자연 장면 개념이 맞아서 T03 용 자연 개념을 쓴다.
+      T02: analysis.t03NatureConcept || analysis.t02GraphicConcept,
       T03: analysis.t03NatureConcept,
       T04: analysis.t04NatureConcept,
     };
@@ -924,65 +925,17 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // (4) 모든 아키타입에 '쌓은 줄로 65~85% 채우기' 배치, (5) 아키타입과 따로 도는 글자꼴·팔레트가 겹쳐서
     // 결국 '굵은 고딕 쌓기 + 산길 그런지 사진' 하나로 평균이 났다. 이제 스타일 하나가 배경·글자꼴·색·배치를 전부 정하고,
     // 장면 사진은 그 스타일이 쓰는 경우(usesScene)에만 넣는다.
-    // 2026-11-11 사용자: "폰트가 촌스럽게 보이게 하는 거 같아" → T02 는 AI 가 글자를 그리지 않는다.
-    // AI 는 아래 스타일의 '배경만' 만들고, 글자는 브라우저가 사용자가 고른 진짜 폰트로 구워 넣는다(src/utils/t02Poster.ts).
-    // 글자 자리(zone)와 잉크 색은 여기서 정해 응답으로 넘기고, 배경은 그 자리를 비워 두게 한다.
+    // 2026-11-11 사용자: "폰트가 촌스럽게" → T02 는 AI 가 글자를 그리지 않고 브라우저가 진짜 폰트로 굽는다(src/utils/t02Poster.ts).
+    // 이어서 "T02 대신 할 스타일" → 편집 화면의 '미니멀 감성'(짙은 색면 + 알갱이 질감 + 작은 포인트)으로 바꿨다.
+    // 그림체 문구는 편집 화면과 같은 것을 그대로 읽어서, 한쪽만 고쳐 갈라지지 않게 한다.
     type T02Palette = { name: string; bg: string; ink: string; sub: string; accent: string };
+    const MINIMAL_TECHNIQUE = manualBackgroundStyles['미니멀 감성']?.technique || '';
     const t02Styles: { key: string; usesScene: boolean; zone: 'lower' | 'center' | 'left' | 'upper'; bg: string; palettes: T02Palette[] }[] = [
       {
-        key: 'film', usesScene: true, zone: 'lower',
-        bg: 'FILM PHOTO POSTER BACKGROUND: one full-bleed, muted, grainy vintage 35mm film photo of the scene subject, faded colour like an old print, dust and soft light leaks — overcast and flat, NO sun rays, NO golden glow, NO dramatic sky. The LOWER 45% of the frame is calm, darker and fairly plain (ground, shadow, water or wall) because large text is printed there.',
-        palettes: [
-          { name: 'muted teal and ochre photo', bg: 'muted teal and ochre tones', ink: '#F3EBDD', sub: '#E9DFCB', accent: '#E8C547' },
-          { name: 'faded cream and grey photo, darkened at the bottom', bg: 'faded cream and grey tones, darker at the bottom', ink: '#F4EEE3', sub: '#EDE3D2', accent: '#D9573B' },
-          { name: 'dark navy dusk photo', bg: 'dark navy and slate tones', ink: '#F1D36B', sub: '#EDE6D6', accent: '#F1D36B' },
-        ],
-      },
-      {
-        key: 'field', usesScene: false, zone: 'center',
-        bg: 'COLOUR FIELD BACKGROUND: one solid flat colour from edge to edge, with fine paper grain and a faint uneven screen-print texture — NO photo, NO scene, NO objects, NO shapes. Nothing else.',
-        palettes: [
-          { name: 'cobalt blue', bg: 'solid cobalt blue', ink: '#F4EFE6', sub: '#F4EFE6', accent: '#FFD23F' },
-          { name: 'tomato red', bg: 'solid tomato red', ink: '#FFE3EA', sub: '#FFE3EA', accent: '#111111' },
-          { name: 'acid green', bg: 'solid acid lime green', ink: '#111111', sub: '#111111', accent: '#111111' },
-          { name: 'near black', bg: 'solid near-black', ink: '#F2F2F2', sub: '#BDBDBD', accent: '#FF5A1F' },
-        ],
-      },
-      {
-        key: 'swiss', usesScene: false, zone: 'left',
-        bg: 'SWISS GRID POSTER BACKGROUND: plain off-white paper. ONE solid colour rectangle in the UPPER-RIGHT area (about a third of the width), thin black hairline rules along the top edge, and ONE small black-and-white cutout photo of a simple non-human object in the LOWER-RIGHT corner. The whole LEFT two thirds below the top rule stays plain empty paper because black text is printed there. NO text, NO numbers.',
-        palettes: [
-          { name: 'red block', bg: 'a solid red block', ink: '#111111', sub: '#111111', accent: '#E0301E' },
-          { name: 'cobalt block', bg: 'a solid cobalt blue block', ink: '#111111', sub: '#111111', accent: '#1D3FD6' },
-          { name: 'orange block', bg: 'a solid orange block', ink: '#111111', sub: '#111111', accent: '#FF6A13' },
-        ],
-      },
-      {
-        key: 'riso', usesScene: true, zone: 'upper',
-        bg: 'RISO PRINT BACKGROUND: off-white recycled paper; the scene subject printed as a coarse HALFTONE image in ONE ink colour only, slightly misregistered, with visible riso grain, filling only the LOWER half of the frame. The UPPER half is plain empty paper because text in a second ink is printed there. Only that one ink colour plus the paper.',
-        palettes: [
-          { name: 'blue ink image, pink text', bg: 'a blue riso ink', ink: '#FF4FA0', sub: '#2B5BD7', accent: '#FF4FA0' },
-          { name: 'teal ink image, orange text', bg: 'a teal riso ink', ink: '#FF6B2C', sub: '#127A78', accent: '#FF6B2C' },
-          { name: 'purple ink image, yellow text', bg: 'a purple riso ink', ink: '#FFC800', sub: '#6B3FA0', accent: '#FFC800' },
-        ],
-      },
-      {
-        key: 'serif', usesScene: true, zone: 'center',
-        bg: 'MOODY EDITORIAL BACKGROUND: a dark, low-key film photo of the scene subject with deep soft shadows and fine grain, like a film still — NO sun rays, NO glow. The whole centre of the frame is calm and dark because large light text is printed there.',
-        palettes: [
-          { name: 'deep warm brown-black', bg: 'deep warm brown and black tones', ink: '#F1E9DC', sub: '#CDBFA8', accent: '#E3B76B' },
-          { name: 'deep blue-black', bg: 'deep blue-black tones', ink: '#EEF1F4', sub: '#B9C3CF', accent: '#9FC3FF' },
-          { name: 'deep green-black', bg: 'deep green-black tones', ink: '#EFEADF', sub: '#BFC6B2', accent: '#D9C27A' },
-        ],
-      },
-      {
-        key: 'duotone', usesScene: true, zone: 'upper',
-        bg: 'DUOTONE POSTER BACKGROUND: a high-contrast DUOTONE photo of the scene subject in one bold colour plus black, coarse halftone dots and print grain, the subject placed in the LOWER half. The UPPER half is a calm, almost flat area of the bold colour because large text is printed there.',
-        palettes: [
-          { name: 'orange and black', bg: 'orange and black', ink: '#FFF4E6', sub: '#FFF4E6', accent: '#111111' },
-          { name: 'violet and black', bg: 'violet and black', ink: '#F4EDFF', sub: '#F4EDFF', accent: '#111111' },
-          { name: 'teal and black', bg: 'teal and black', ink: '#EFFFFA', sub: '#EFFFFA', accent: '#111111' },
-        ],
+        key: 'minimal', usesScene: true, zone: 'upper',
+        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, grass or a field) with only the fine grain — no objects, birds or detail there — because the card text is printed on it.`,
+        // 글씨 색은 브라우저가 배경 밝기를 보고 정한다(ink 'auto').
+        palettes: [{ name: 'auto', bg: 'rich natural colour as the scene needs', ink: 'auto', sub: 'auto', accent: 'auto' }],
       },
     ];
     const t02Pick = selectedTemplate === 'T02' ? t02Styles[Math.abs(templateIndex) % t02Styles.length] : null;
@@ -1013,7 +966,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ? `THE STYLE FOR THIS CARD (follow it EXACTLY): ${t02Archetype} NO PEOPLE: no people, faces, figures, hands or body parts anywhere.`
         : '',
       selectedTemplate === 'T02'
-        ? 'This is a HIP, TEXTURED, design-forward worship poster — contemporary graphic-design quality, deliberately grungy, layered and print-like. Bold and characterful rather than clean and restrained.'
+        ? 'This is a CALM, MINIMAL, design-forward card background — a few large areas of rich colour, very little detail, quiet and poetic.'
         : 'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
       // T02 중 장면을 쓰지 않는 스타일(글자만으로 된 포스터)에는 장면을 넣지 않는다 — 모든 카드가 산길 사진이 되던 원인.
       (t02Pick && !t02Pick.usesScene)
@@ -1042,7 +995,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ? 'T04 SPECIFIC: the STYLE is a calm aesthetic 35mm FILM scene — the SPECIFIC subject MUST be derived from THIS verse\'s own imagery and emotional movement (the scene concept above), NOT a generic pretty landscape. It is NOT limited to nature — choose whatever best expresses the verse: an everyday film-diary moment (a cafe window, a desk with an open book, a quiet corner of a room, a windowsill with warm light, a city street or window at dusk, hands, a small still-life of meaningful objects) OR a natural scene (a valley/path for a journey, a stream/spring for living water, a sheltering rock/shade for refuge, first light for hope, clearing sky after rain for peace, a harvest field for provision, a shoreline for being led). STRONGLY vary the subject, setting, time of day and mood — do NOT default to the same misty mountains / calm lake / peach sunset. Keep a calm low-contrast area so simple centered text stays perfectly legible; the PHOTO is the hero and the text is a small quiet whisper (never a big headline). LOOK: analog, aesthetic and INTIMATE (visible film grain, faded/muted Portra-Fuji tones, soft light, only a very subtle halation). The frame EDGES stay clean and evenly exposed — NO strong light leak, no bright orange/amber glow bleeding in from a corner or border. STRONGLY AVOID the grand majestic-landscape / calendar-wallpaper look (no sweeping panoramas, no dramatic sea sunsets, no postcard vistas) — it reads as old-fashioned. Young, film-diary emotional mood.'
         : '',
       selectedTemplate === 'T02'
-        ? 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos. Heavy print grain and grunge texture ARE wanted here — they are the style, not a flaw. The typography stays the hero.'
+        ? 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO golden sunrise light rays, NO glowing gold-on-black, NO epic landscapes. Keep it minimal: large calm colour areas with fine grain, no grunge, no collage, no busy detail.'
         : 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture, NO over-saturation. Keep it modern, refined and design-led; the typography stays the hero.',
     ].filter(Boolean).join('\n');
     // ── 글자 렌더링: T01/T02/T03은 AI가 직접 한 장의 포스터처럼 그림. 나머지는 폰트 오버레이 ──

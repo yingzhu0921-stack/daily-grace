@@ -1720,7 +1720,7 @@ export default function Designer() {
   // Auto Template 선택 화면
   // 설명·배지는 실제 생성 경로에 맞춘다.
   //  T01      = AI 가 글자까지 그린다(aiText) → 오탈자 확인이 필요하고 시간이 걸린다
-  //  T02      = AI 배경 + 코드가 진짜 폰트로 글자를 굽는다(2026-11-11) → 글자는 정확하다
+  //  T02      = 미니멀 감성(2026-11-11): AI 배경 + 코드가 진짜 폰트로 글자를 굽는다 → 글자는 정확하다
   //  T03      = 코드 렌더, AI 호출 0 → 바로 나오고 철자가 정확하다
   //  T04      = AI 사진 + 코드 글자 → 사진은 시간이 걸리지만 글자는 정확하다
   // (요청서의 T02 배지 '바로 생성 · 철자 정확' 은 코드와 반대라 고쳤다)
@@ -1729,7 +1729,7 @@ export default function Designer() {
     tone: 'ai' | 'instant'; thumb: string | null;
   }[] = [
     { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: null },
-    { id: 'T02', name: '강렬한 포스터', desc: '큰 글씨가 꽉 차는 포스터예요',                 badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: null },
+    { id: 'T02', name: '미니멀 감성',   desc: '깊은 색면 풍경 위에 차분한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: null },
     { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: null },
     { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: null },
   ];
