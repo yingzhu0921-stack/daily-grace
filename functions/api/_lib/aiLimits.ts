@@ -22,6 +22,19 @@ export const AI_LIMITS: Record<string, { perHour: number; perDay: number; makesI
   'photo-text': { perHour: 10, perDay: 20, makesImage: true },
 };
 
+/**
+ * 테스트 계정 한도(2026-11-11 사용자 결정: 하루 200장). 그림체 맞추기처럼 시험 생성을 반복할 때 일반 한도(30)로는 모자랐다.
+ * 어떤 action 이든 이 값을 쓴다. 서비스 전체 하루 합계에는 그대로 들어가므로 전체 비용 상한은 바뀌지 않는다.
+ */
+export const TESTER_LIMIT = { perHour: 60, perDay: 200 };
+
+/** 로그인한 계정의 이메일이 테스트 계정 목록(쉼표 구분)에 있는지. 대소문자·공백은 무시한다. */
+export function isAiTester(email: string | undefined, testerEmails: string | undefined): boolean {
+  const mine = (email || '').trim().toLowerCase();
+  if (!mine || !testerEmails) return false;
+  return testerEmails.split(',').some(e => e.trim().toLowerCase() === mine);
+}
+
 /** 그림을 만드는 호출(배경 생성·자동완성·사진 글씨)의 서비스 전체 하루 합계 */
 export const GLOBAL_IMAGES_PER_DAY = 500;
 
@@ -33,9 +46,10 @@ export type AiLimitResult =
  * 시간당 → 하루 → 서비스 전체 순서로 센다. 앞 단계에서 막히면 뒤 단계는 세지 않는다.
  * 목록에 없는 action 은 여기서 막지 않는다(호출하는 쪽이 알 수 없는 action 을 따로 거절한다).
  */
-export async function checkAiLimits(db: D1Database, userId: string, action: string): Promise<AiLimitResult> {
-  const limit = AI_LIMITS[action];
-  if (!limit) return { allowed: true };
+export async function checkAiLimits(db: D1Database, userId: string, action: string, isTester = false): Promise<AiLimitResult> {
+  const base = AI_LIMITS[action];
+  if (!base) return { allowed: true };
+  const limit = isTester ? { ...base, ...TESTER_LIMIT } : base;
 
   const hourly = await consumeRateLimit(db, `generate-image:${action}`, userId, limit.perHour, HOUR);
   if (!hourly.allowed) return { allowed: false, scope: 'hour', retryAfterSeconds: hourly.retryAfterSeconds };

@@ -487,3 +487,35 @@ test('card saves also stop at the daily limit, which resets at Korean midnight',
   time.set(Date.UTC(2026, 10, 10, 15, 30, 0));
   assert.equal((await save({ bg: '#FFFFFF' })).status, 200);
 });
+
+test('tester accounts get their own larger AI limit but still count toward the service-wide cap', async () => {
+  const time = clock(Date.UTC(2026, 10, 11, 1, 0, 0));
+  const { checkAiLimits, isAiTester, TESTER_LIMIT, GLOBAL_IMAGES_PER_DAY } = load('functions/api/_lib/aiLimits.ts', { crypto, Date: time.Date });
+  // 목록 비교는 대소문자·공백을 무시하고, 목록이 없거나 이메일이 없으면 테스터가 아니다.
+  assert.equal(isAiTester('Tester@Example.com', ' other@x.com , tester@example.com'), true);
+  assert.equal(isAiTester('someone@example.com', 'tester@example.com'), false);
+  assert.equal(isAiTester('tester@example.com', undefined), false);
+  assert.equal(isAiTester('', 'tester@example.com'), false);
+  assert.equal(isAiTester('tester@example.com', ''), false);
+
+  const db = fakeRateDb();
+  let allowed = 0;
+  let lastScope = '';
+  for (let hour = 0; hour < 5; hour++) {
+    time.set(Date.UTC(2026, 10, 11, 1 + hour, 0, 0));
+    for (let i = 0; i < TESTER_LIMIT.perHour; i++) {
+      const r = await checkAiLimits(db, 'tester', 'generate-image', true);
+      if (r.allowed) allowed++; else lastScope = r.scope;
+    }
+  }
+  assert.equal(allowed, TESTER_LIMIT.perDay);
+  assert.equal(lastScope, 'day');
+  // 같은 날 일반 계정은 여전히 30장에서 막힌다.
+  let normal = 0;
+  for (let i = 0; i < 40; i++) if ((await checkAiLimits(db, 'normal', 'generate-image')).allowed) normal++;
+  assert.equal(normal, 20, '시간당 20장에서 먼저 막힌다(일반 한도 그대로)');
+  // 테스터 사용분도 서비스 전체 합계에 들어간다: 테스터 200 + 일반 20 = 220장이 이미 쌓였다.
+  const counted = [...db.rows].filter(([id]) => id.startsWith('ai-day:images|service|')).reduce((n, [, c]) => n + c, 0);
+  assert.equal(counted, TESTER_LIMIT.perDay + 20);
+  assert.ok(counted <= GLOBAL_IMAGES_PER_DAY);
+});

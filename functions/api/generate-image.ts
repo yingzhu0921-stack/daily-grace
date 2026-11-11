@@ -2,11 +2,13 @@ import { getSessionUser } from './_lib/session';
 import type { Env } from './_lib/db';
 import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
-import { checkAiLimits, aiLimitMessage } from './_lib/aiLimits';
+import { checkAiLimits, aiLimitMessage, isAiTester } from './_lib/aiLimits';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
 
 interface ExtendedEnv extends Env {
   OPENAI_API_KEY: string;
+  /** 테스트 계정 이메일(쉼표 구분). Cloudflare 비밀값으로만 둔다 — 코드·저장소에 이메일을 넣지 않는다. */
+  AI_TESTER_EMAILS?: string;
 }
 
 // 자동 카드 및 배경 생성에 사용하는 모델.
@@ -236,7 +238,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
    * AI 없이 끝나는 요청(짧은 문구 추천 등)도 한도를 깎았다(Codex 검토). 막히면 429 응답을, 통과하면 null.
    */
   const spendAiQuota = async (): Promise<Response | null> => {
-    const limitCheck = await checkAiLimits(env.DB, user.id, action);
+    const limitCheck = await checkAiLimits(env.DB, user.id, action, isAiTester(user.email, env.AI_TESTER_EMAILS));
     if (!('scope' in limitCheck)) return null;
     return Response.json({ error: aiLimitMessage(limitCheck.scope) }, {
       status: 429,
