@@ -352,8 +352,8 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
       },
       // T02 — 스트릿 워십 포스터 (힙한 Gen-Z 굿즈 감성, AI가 글자까지 그림. 세부 스타일은 아키타입이 결정)
       'T02': {
-        backgroundPrompt: 'A HIP modern Christian worship / streetwear POSTER where BOLD Korean TYPOGRAPHY is the HERO and DOMINATES the whole frame (huge, filling most of the card), integrated into the design — often layered with a cursive script or hand-drawn accent word, over a grungy textured surface (a duotone / B&W photo cutout, a newspaper collage, torn paper, riso print, or concrete/paper grunge). Strong film/print grain and halftone. High-contrast 2-color schemes with a bold palette that VARIES per card. Small accents like sparkles, a rounded reference pill/tag, oval scribbles or connector dashes. Editorial, designed, mature and cool — like modern church worship-night / merch graphics. The exact style is specified separately below; follow it. Korean text only, spelled accurately.',
-        styleLock: 'T02 = HIP WORSHIP POSTER (힙한 감성): BOLD Korean display typography as the DOMINANT hero filling the frame, integrated with grungy print/collage/duotone-photo texture, a bold palette that VARIES per card (blue/teal/red/orange/mustard/lilac/cream/black — not always orange), often with a cursive/hand accent word and sparkle/pill/scribble details. Modern worship-design / streetwear aesthetic — editorial, textured, cool and MATURE. NOT cute, NOT pastel, NOT baby-bubble, NOT slanted-italic propaganda. Korean text only, accurate spelling.',
+        backgroundPrompt: 'A bold, design-forward modern Christian worship poster where the Korean TYPOGRAPHY is the hero. The exact style — background, letterform, colours and layout — is given separately below as THE STYLE FOR THIS CARD; follow it exactly and do not blend in other poster styles. Korean text only, spelled accurately.',
+        styleLock: 'T02 = 강렬한 포스터: one specific poster style per card, given below. Typography is the hero. Mature and cool — not pastel candy, no hearts, no flowers, no smiley faces. Korean text only, accurate spelling.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       // T03 — 감성 타이포 (감성 사진 + 초대형 히어로 타이포 / 에디토리얼)
@@ -918,61 +918,51 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       'MIDNIGHT INDIGO (deep dark blue-purple, moody)',
     ];
     const t03Family = t03Families[Math.abs(templateIndex) % t03Families.length];
-    // 8개 아키타입 = 사용자가 준 힙한 워십 포스터 레퍼런스 8종. 공통: 한글 타이포가 화면을 '지배'(꽉 채움)한다.
-    const T02_TYPE_DOMINATES = 'THE KOREAN TYPOGRAPHY IS THE HERO AND DOMINATES THE WHOLE COMPOSITION — huge, bold, filling roughly 65–85% of the card, arranged in stacked lines with strong size contrast. NEVER a small caption floating on a photo; the type IS the poster and any photo/texture wraps around and behind it.';
-    const t02Archetypes = [
-      // 1 — 빈티지 필름 + 레드 콘덴스드 + 스크립트 (ref: THE BEST IS YET TO COME)
-      `STYLE 1 — VINTAGE FILM POSTER. A muted, grainy vintage FILM photo (subject from the verse) sits behind the type. ${T02_TYPE_DOMINATES} TYPE: HUGE bold Korean caps filling the frame in a single strong ink color that VARIES per card (deep red, cream, teal, navy, mustard — not always red); optionally ONE thin cursive accent line, but not required. Heavy film grain and dust, retro worship-poster feel. Invent an original composition — do not copy any known poster. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 2 — 클린 컷아웃 + 일렉트릭 블루 (ref: THE LORD IS MY SHEPHERD)
-      `STYLE 2 — CLEAN CUTOUT POSTER on an off-white ground. ${T02_TYPE_DOMINATES} TYPE: HUGE electric COBALT-BLUE bold Korean caps stacked large, with ONE cursive SCRIPT accent word in the same blue; a high-contrast BLACK-AND-WHITE duotone NON-HUMAN object CUTOUT from the verse (a mountain, a door, a branch, waves, light rays, a flame — NO people/hands/faces) overlaps and interlocks with the letters; a small bright YELLOW rounded reference PILL. Crisp, graphic, modern. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 3 — 멀티컬러 콘덴스드 + 스크리블 (ref: THE GRACE DIFFERENCE)
-      `STYLE 3 — GRAINY EVENT POSTER on off-white textured paper. ${T02_TYPE_DOMINATES} TYPE: HUGE stacked bold CONDENSED Korean caps in warm multi-tone (orange→gold→amber) plus black, with ONE looping cursive SCRIBBLE word over them; a small black-and-white hand/object photo in the middle; sparkle marks (✦) and thin hand-drawn OVAL-circled small tags. Punchy, designed, cool. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 4 — 버블 크림 온 블랙 + 낙서 악센트 (ref: I AM A CHILD OF GOD)
-      `STYLE 4 — BUBBLE LETTERING ON BLACK. Solid black ground. ${T02_TYPE_DOMINATES} TYPE: chunky ROUNDED BUBBLY cream Korean lettering filling the frame, with playful hand-drawn ORANGE accents around it (a little crown, a cross, small sparks/scribbles). Youthful streetwear-merch energy — bold and cool, NOT baby-cute, NOT pastel. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 5 — 신문 콜라주 (ref: GOD IS MORE THAN ABLE)
-      `STYLE 5 — NEWSPAPER COLLAGE POSTER. Background is a torn NEWSPAPER / print collage with one bold color (orange or red) diagonal paint-swash. ${T02_TYPE_DOMINATES} TYPE: HUGE BLACK & WHITE bold Korean caps knocking out crisply over the busy collage, mixed sizes; small justified small-caps run along the top/bottom edges. Raw, editorial, high-impact. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 6 — 찢은 종이 랜섬노트 (ref: FAITH THROUGH)
-      `STYLE 6 — TORN-PAPER RANSOM-NOTE POSTER, high-contrast BLACK and WHITE. ${T02_TYPE_DOMINATES} TYPE: HUGE bold Korean caps that look CUT / TORN from crumpled paper scraps and pasted, heavy grunge and creases; one small torn paper scrap holds a tiny supporting line if given. Loud, raw, unfiltered, monochrome. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 7 — 브루탈리즘 에디토리얼 (ref: BRUTALISM)
-      `STYLE 7 — BRUTALIST EDITORIAL POSTER. Palette: off-white + black + one RED block. Concrete/paper grunge texture, asymmetric grid. ${T02_TYPE_DOMINATES} TYPE: HUGE HEAVY CONDENSED Korean caps stacked tight and large, extreme size contrast; tiny mono small-caps labels, thin rules, a small barcode-like mark and index number in corners. Raw, bold, unapologetic. ${CAPTION_RULE} Korean only, NO English/Latin.`,
-      // 8 — 그리드 + 컷아웃 + 라일락 팝 (ref: TRUST IN THE LORD FOREVER)
-      `STYLE 8 — GRID POSTER on near-black. ${T02_TYPE_DOMINATES} TYPE: HUGE bright LILAC (or acid-green / hot-pink) bold Korean caps arranged in a tight GRID that fills the whole frame; a duotone photo CUTOUT block (subject from the verse) sits behind part of the type; a row of SPARKLES (✦ ✧ ✦) across the top and bottom, and the reference set in a rounded OUTLINE PILL in a corner. Streetwear-graphic, punchy. ${CAPTION_RULE} Korean only, NO English/Latin.`,
+    // T02 스타일 — 2026-11-11 사용자: "글씨체, 배경 다 비슷하게 나옴". 전에는 8개 아키타입 위에
+    // (1) 모든 카드에 '굵은 콘덴스드 + 필기체 한 단어' 레터링 고정, (2) 'NO bubble' 공통 금지, (3) 모든 카드에 말씀 장면 배경 강제,
+    // (4) 모든 아키타입에 '쌓은 줄로 65~85% 채우기' 배치, (5) 아키타입과 따로 도는 글자꼴·팔레트가 겹쳐서
+    // 결국 '굵은 고딕 쌓기 + 산길 그런지 사진' 하나로 평균이 났다. 이제 스타일 하나가 배경·글자꼴·색·배치를 전부 정하고,
+    // 장면 사진은 그 스타일이 쓰는 경우(usesScene)에만 넣는다.
+    const t02Styles: { recipe: string; usesScene: boolean; palettes: string[] }[] = [
+      {
+        usesScene: true,
+        palettes: ['cream lettering over a muted teal-and-ochre photo', 'deep red lettering over a faded cream-and-grey photo', 'mustard yellow lettering over a dark navy photo'],
+        recipe: 'FILM PHOTO POSTER. BACKGROUND: one full-bleed, muted, grainy vintage 35mm film photo of the scene subject, with dust and light leaks — flat, overcast, faded colour like an old print; NO sun rays, NO golden glow, NO dramatic sky. LETTERFORM: tall, narrow, condensed sans-serif capitals in one flat ink colour, tightly stacked; the hero phrase is set LARGE (much bigger than the other lines), the other lines small. LAYOUT: the whole text block sits in the LOWER part of the card, left-aligned, over a calmer part of the photo; the upper two thirds belong to the photo. ELEMENTS: nothing else — no stickers, no sparkles.',
+      },
+      {
+        usesScene: false,
+        palettes: ['cream lettering on a solid cobalt blue field', 'hot pink lettering on a solid red field', 'black lettering on a solid acid-green field', 'white lettering on a solid black field'],
+        recipe: 'GIANT TYPE ON ONE COLOUR. BACKGROUND: one solid flat colour from edge to edge with fine paper grain — NO photo, NO scene, NO objects. LETTERFORM: the hero phrase in an ULTRA-HEAVY, WIDE grotesque, broken into short chunks of two to four syllables per line and set ENORMOUS — the hero alone covers at least 60% of the card height, letters as tall as a fifth of the card; every other line is tiny, in a thin plain sans, tucked at the top or bottom edge. LAYOUT: extreme size contrast — one gigantic phrase, everything else very small. ELEMENTS: nothing else.',
+      },
+      {
+        usesScene: false,
+        palettes: ['cream letters with orange scribbles on black', 'white letters with hot-pink scribbles on black', 'pale yellow letters with electric-blue scribbles on black'],
+        recipe: 'BUBBLE LETTERING ON BLACK. BACKGROUND: solid black — NO photo, NO scene. LETTERFORM: chunky, puffy, rounded BUBBLE letters with soft bouncy shapes, words slightly tilted at different angles like streetwear graffiti stickers. LAYOUT: centred, words stacked with playful size changes. ELEMENTS: a few quick hand-drawn scribbles in the accent colour around the words (a small crown, a small cross, little sparks). Bold and cool, not baby-cute.',
+      },
+      {
+        usesScene: false,
+        palettes: ['black and white scraps with one red scrap', 'black and white scraps with one yellow scrap'],
+        recipe: 'RANSOM-NOTE COLLAGE. BACKGROUND: crumpled white paper with creases — NO photo, NO scene. LETTERFORM: every word (or syllable) is cut out from a DIFFERENT printed source and pasted on: mismatched typefaces side by side — a serif, a heavy sans, an outline letter, a newspaper headline letter — each on its own torn paper scrap, slightly tilted. LAYOUT: lines read top to bottom but the scraps are uneven and jostled, like a ransom note. ELEMENTS: visible tape or glue edges, paper shadows.',
+      },
+      {
+        usesScene: false,
+        palettes: ['black type on off-white with one solid red block', 'black type on off-white with one solid cobalt block', 'black type on off-white with one solid orange block'],
+        recipe: 'SWISS GRID POSTER. BACKGROUND: plain off-white paper. LETTERFORM: heavy, tight, neo-grotesque sans-serif (Helvetica-like weight) in black. LAYOUT: strict ASYMMETRIC grid, everything LEFT-ALIGNED to one strong left margin; the hero phrase large, the other lines smaller on the same grid; one solid rectangular colour block occupies one area of the grid. ELEMENTS: thin black rules and tiny index numbers or marks in the corners (no words), a small black-and-white cutout of ONE simple non-human object in one grid cell. Clean, precise, designed — not grungy.',
+      },
+      {
+        usesScene: true,
+        palettes: ['fluorescent pink and blue ink', 'teal and orange ink', 'purple and yellow ink'],
+        recipe: 'RISO PRINT. BACKGROUND: off-white recycled paper; the scene subject printed as a coarse HALFTONE image in one of the two inks. LETTERFORM: big rounded or outlined display letters printed in the other ink, overprinting the image so the colours mix where they overlap, with slight misregistration. LAYOUT: letters in the centre band, the halftone image partly behind them. ELEMENTS: only two ink colours in the whole image plus the paper, visible riso grain.',
+      },
+      {
+        usesScene: false,
+        palettes: ['black brush ink with one red accent on kraft paper', 'black brush ink with one blue accent on off-white paper'],
+        recipe: 'BRUSH MARKER POSTER. BACKGROUND: textured kraft or off-white paper — NO photo, NO scene. LETTERFORM: energetic HAND-PAINTED brush lettering in black ink, thick and thin strokes, uneven baseline, a few dry-brush edges and small drips; the hero phrase biggest. LAYOUT: words of clearly different sizes, slightly off-axis, like a hand-painted protest sign. ELEMENTS: one hand-drawn underline or arrow in the accent colour; nothing else.',
+      },
     ];
-    const t02Archetype = selectedTemplate === 'T02'
-      ? t02Archetypes[Math.abs(templateIndex) % t02Archetypes.length]
-      : '';
-    // 글자꼴을 매 생성마다 강하게 다르게 (AI 한글 렌더가 한 스타일로 수렴하는 걸 방지) — 아키타입과 다른 주기로 회전
-    const t02Letterforms = [
-      'TALL NARROW CONDENSED heavy caps (compressed, vertical)',
-      'WIDE EXTENDED heavy grotesque caps (broad, filling the width)',
-      'CHUNKY ROUNDED soft-cornered heavy caps',
-      'rough HAND-PAINTED BRUSH / marker lettering (energetic, slightly wonky)',
-      'BLOCKY SLAB-SERIF heavy caps (rectangular, with slab feet)',
-      'INDUSTRIAL STENCIL caps (cut, mechanical)',
-      'ULTRA-BLACK GOTHIC caps with very tight spacing',
-      'slightly WARPED / stretched / liquified custom display caps',
-    ];
-    const t02Letterform = selectedTemplate === 'T02'
-      ? t02Letterforms[Math.abs(templateIndex * 3 + 2) % t02Letterforms.length]
-      : '';
-    // T02 색 팔레트 — 카드마다 강제 로테이션(레드/흑백 돌려막기 방지, 색 다양화). 아키타입과 다른 주기.
-    const t02Palettes = [
-      'COBALT BLUE + cream + black',
-      'CRIMSON RED + warm cream',
-      'MONOCHROME black + white with ONE red accent',
-      'DEEP TEAL + cream + coral accent',
-      'MUSTARD YELLOW + charcoal black',
-      'LILAC / PURPLE + black + cream',
-      'FOREST GREEN + cream + gold accent',
-      'ELECTRIC BLUE + white + acid-yellow accent',
-      'BURNT ORANGE + brown + cream',
-      'HOT PINK + black + cream',
-      'NAVY + cream + orange accent',
-      'PLUM PURPLE + blush + black',
-    ];
-    const t02Palette = selectedTemplate === 'T02'
-      ? t02Palettes[Math.abs(templateIndex * 7 + 3) % t02Palettes.length]
-      : '';
+    const t02Pick = selectedTemplate === 'T02' ? t02Styles[Math.abs(templateIndex) % t02Styles.length] : null;
+    const t02PaletteForStyle = t02Pick ? t02Pick.palettes[Math.floor(Math.abs(templateIndex) / t02Styles.length) % t02Pick.palettes.length] : '';
+    const t02Archetype = t02Pick ? `${t02Pick.recipe} COLOURS FOR THIS CARD: ${t02PaletteForStyle}. ${CAPTION_RULE} Korean only, NO English/Latin.` : '';
     const moodHint = analysis.mood ? `Mood cue: ${analysis.mood}.` : '';
     const ratioPrompt = ratioGuidance[requestedRatio] || ratioGuidance['4:5'];
 
@@ -993,7 +983,11 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       selectedTemplate === 'T02'
         ? 'This is a HIP, TEXTURED, design-forward worship poster — contemporary graphic-design quality, deliberately grungy, layered and print-like. Bold and characterful rather than clean and restrained.'
         : 'This is a CLEAN, MODERN, design-forward poster — premium editorial / contemporary graphic-design quality (Pinterest design posters), tasteful and restrained.',
-      (selectedTemplate !== 'T03' && analysis.backgroundConcept)
+      // T02 중 장면을 쓰지 않는 스타일(글자만으로 된 포스터)에는 장면을 넣지 않는다 — 모든 카드가 산길 사진이 되던 원인.
+      (t02Pick && !t02Pick.usesScene)
+        ? 'NO SCENE: this poster style has NO photo, NO landscape and NO illustrated scene. The verse is expressed by the typography itself on the ground described in THE STYLE FOR THIS CARD.'
+        : '',
+      (selectedTemplate !== 'T03' && analysis.backgroundConcept && !(t02Pick && !t02Pick.usesScene))
         ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? (selectedTemplate === 'T04'
           ? ` THE MOMENT THIS VERSE BELONGS TO IS: ${analysis.situation}. Do NOT photograph that moment being acted out. NO robed or costumed figures, no Jesus figure, no disciples, no period dress, no re-enactment or tableau — a staged Bible photo reads as church stock photography and this card never does that. Give the PLACE and the HOUR of that moment instead: the room, the doorway, the light at that time of day, the stillness after it. The moment should be felt, not shown.`
           : ` THE MOMENT BEING DEPICTED IS: ${analysis.situation}. Draw that moment and only that moment — no object or action from any other part of the passage, and no figure doing something this moment does not contain.`) : ''}${analysis.coreMeaning ? ` (Core meaning: ${analysis.coreMeaning}.)` : ''}${analysis.emotionalMovement ? ` Convey the emotional movement "${analysis.emotionalMovement}".` : ''} A person who reads the verse should immediately feel the image FITS it — the background is NOT decoration, it is the visual of this specific message. Derive the imagery ONLY from this concept; do NOT invent an unrelated pretty scene, and do NOT fall back to a generic default (random flowers, meadow, mountains, sunset, forest, ocean, sky, clouds) unless the concept names it.${Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length ? ` Avoid these too-literal objects: ${analysis.literalObjectsToAvoid.join(', ')}.` : ''} Translate the emotion/movement into this template's visual language rather than a single literal noun.`
@@ -1033,7 +1027,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 템플릿마다 고정된 레터링 스타일 (한 템플릿 = 한 스타일, 일관성 유지)
     const letteringByTemplate: Record<string, string> = {
       T01: `cute Korean hand-lettering: ${t01TypographyStyle || 'small friendly handwritten note style'}, follow this exact font variant and do not default to the same rounded marker font, never brush calligraphy`,
-      T02: 'hip worship poster lettering: HEAVY BOLD CONDENSED Korean display caps (tight, narrow, upright — never rounded, never bubble, never slanted italic), layered with ONE contrasting cursive script or hand-drawn brush accent word taken from the given text, plus thin justified small-caps treatment for the given smaller lines with small dash/connector lines, all over grungy print/collage/duotone grain — editorial, textured, mature and cool',
+      T02: 'exactly the LETTERFORM named in THE STYLE FOR THIS CARD above — each T02 style has its own letter shape, so do NOT fall back to heavy condensed gothic caps or add a cursive script word unless that style asks for it',
       T03: `emotional editorial magazine typography: ${t03FontStyle || 'a cohesive refined serif family'} with a bold oversized hero phrase and small elegant supporting lines, strong intentional size contrast, tasteful accent color when useful`,
       T04: 'clean minimal sans lettering, calm and simple with generous space',
     };
@@ -1058,17 +1052,19 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ? selectedTemplate === 'T03'
           ? `HERO PHRASE (make it BIG and dominant): "${heroLine.text}". In T03 the TYPOGRAPHY is the star — set the hero large and expressive so it clearly commands the card, with the supporting lines much smaller around it. Elegant but bold; strong size contrast.`
           : selectedTemplate === 'T02'
-            ? `T02 SIZING: build a strong SIZE CONTRAST like a magazine cover — set the hero phrase "${heroLine.text}" as big bold condensed caps and the supporting lines clearly smaller around it (but the hero still keeps clear side margins — never let it reach the left/right edges). Any short speaker-intro/attribution phrase (e.g. "…불러 이르시되") stays smallest. Never a flat wall of same-size text.`
+            ? `T02 SIZING: build a strong SIZE CONTRAST like a magazine cover — set the hero phrase "${heroLine.text}" biggest, in the style's own letterform, and the supporting lines clearly smaller (but the hero still keeps clear side margins — never let it reach the left/right edges). Any short speaker-intro/attribution phrase (e.g. "…불러 이르시되") stays smallest. Never a flat wall of same-size text.`
             : `Dominant headline (largest): "${heroLine.text}".`
         : '',
       selectedTemplate === 'T03'
         ? 'For T03, use STRONG editorial hierarchy: the hero phrase is much larger than the small supporting lines and clearly dominates. Think a bold designed magazine cover where the TYPOGRAPHY leads and the photo is only mood behind it — expressive and characterful, not timid.'
         : selectedTemplate === 'T02'
-        ? 'For T02, emphasis comes from SIZE CONTRAST plus the script/hand-drawn word layered over the condensed caps — not from doodle stickers or decorative accents.'
+        ? 'For T02, emphasis comes from SIZE CONTRAST in the style\'s own letterform — not from an added script word or decorative stickers.'
         : 'The dominant headline above was selected by semantic meaning, not by line position. Do not make the last line biggest unless it is truly the core message.',
       `Size hierarchy by line: ${hierarchyHint}.`,
       selectedTemplate === 'T03'
         ? `Follow the T03 typography variant EXACTLY, including placement and alignment. Ignore the earlier analysis textAlign if it conflicts. Lettering style for this generation: ${letteringStyle}. The letterform must look noticeably different from other T03 generations.`
+        : selectedTemplate === 'T02'
+        ? `Text alignment and placement: exactly as THE STYLE FOR THIS CARD says (ignore any other alignment hint). Lettering style for this template: ${letteringStyle}.`
         : `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
       selectedTemplate === 'T01'
         ? [
@@ -1103,14 +1099,12 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       selectedTemplate === 'T02'
         ? [
             'T02 HIP WORSHIP MODE: a trendy modern Christian worship / streetwear-merch poster (think church worship-night graphics). EDGY, editorial, bold, MATURE and cool. It must feel DESIGNED and grungy/print-textured — never a clean sterile flat poster. Avoid childish/pastel/candy sweetness, hearts, flowers, or smiley faces (bold rounded lettering is fine when the style calls for it).',
-            `STYLE FAMILY FOR THIS GENERATION (inspiration, NOT a template to copy) — ${t02Archetype}`,
-            `ORIGINALITY (IMPORTANT): use the style above only as a genre/technique reference. Create an ORIGINAL composition — invent your own layout, exact colors, cropping and details. Do NOT reproduce, trace, or closely replicate any specific existing poster or its exact wording/logos. The result must be clearly your own design.`,
-            `LETTERFORM FOR THIS CARD (must look clearly different from other T02 cards): render the Korean caps as ${t02Letterform}. Commit to this specific letter shape/weight/width — do NOT default to the same heavy rounded sans every time.`,
-            `PALETTE FOR THIS CARD (CRITICAL — use THIS exact color scheme, overriding any default colors in the style, unless the style is intentionally monochrome): ${t02Palette}. Commit to this palette so cards vary in color — do NOT default to an orange grunge worship poster.`,
+            `THE STYLE FOR THIS CARD (follow it EXACTLY — it decides the background, the letterform, the colours and where the text sits; it overrides every other style hint): ${t02Archetype}`,
+            `ORIGINALITY: invent your own exact composition and details within that style; do NOT reproduce any specific existing poster or its wording/logos.`,
             'NO PEOPLE: absolutely NO people, NO faces, NO human figures, NO eyes, NO hands or body parts anywhere in the image. Use only non-human subjects (landscape, light, doors, paths, waves, rays, abstract shapes, texture).',
             'EMPHASIS: use SIZE CONTRAST for emphasis (one key phrase large, others smaller), not by circling a random word. Any speaker-intro phrase stays small.',
             refLine?.text
-              ? `REFERENCE STYLE: place the small reference "${refLine.text}" CENTERED just BELOW the last text line (close to it, small gap — not floating far at the very bottom), clean bold small-caps in a matching color, simple and understated.`
+              ? `REFERENCE STYLE: set the small reference "${refLine.text}" once, small, just below the last text line, aligned the same way as the text and in the style's own small type — simple and understated.`
               : '',
             `VARIATION SEED: ${templateIndex}.`,
             'FIT RULE (ABSOLUTE — most common failure): find the WIDEST line first, then size the WHOLE block so that widest line still leaves at least 10% empty space on BOTH the left and right. The final character of EVERY line (especially the last line) must be fully inside the frame with clear margin — a single cropped or edge-touching letter is a FAILURE. When in doubt, make the display text SMALLER. Every Korean character spelled correctly and fully visible.',
@@ -1129,7 +1123,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
     const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, a small lived-in scene under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
-    const T02_GLOBAL_WITH_TEXT = '\n\nHip modern Christian worship poster (worship-night / merch graphic aesthetic), grungy, layered and print-textured — follow the specific STYLE archetype described above for letterform, color, texture and layering — including its OWN typography approach (varies by style; do not force the same bold-condensed + cursive-script formula on every card). A bold palette that VARIES per card (blue/teal/orange/red/mustard/cream/black — not always orange), and thin justified small-caps styling applied ONLY to the user\'s own smaller lines — no invented captions, no invented Bible reference. Mature, editorial and cool — ABSOLUTELY NOT cute: NO rounded bubble letters, NO pastel candy colors, NO hearts, NO flowers, NO smiley faces, NO doodle stickers. Also NO 3D/beveled letters, NO cheesy propaganda/sports look, NO slanted italic. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
+    const T02_GLOBAL_WITH_TEXT = '\n\nBold modern Christian worship poster. Follow THE STYLE FOR THIS CARD above for the background, letterform, colours and layout — do not drift toward a generic grungy stacked-gothic poster over a landscape photo. Use only the user\'s own lines — no invented captions, no invented Bible reference. Mature and cool: NO pastel candy colours, NO hearts, NO flowers, NO smiley faces, NO 3D/beveled letters, NO cheesy propaganda/sports look. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
     // 크롭될 좌우 폭을 계산해 "안전지대" 안에만 그리라고 지시 (첫째 원인 근본 해결).
