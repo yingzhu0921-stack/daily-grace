@@ -7,39 +7,37 @@
  * 여기 있는 것은 **기법과 인물**뿐이다. 카드 구도(주인공을 프레임 아래쪽에, 상단 절반은 비움)와
  * 카드별로 돌아가는 바탕색은 글씨를 얹는 T01 카드에만 해당하므로 generate-image.ts 에 남겨 둔다.
  * 편집 화면은 사용자가 글씨를 아무 데나 놓기 때문에 그 구도를 강제하면 안 된다.
+ *
+ * 2026-11-12 새로 씀. 하루 동안 피드백마다 문장을 덧붙여 서로 부딪히기 시작해서(사용자: "덮어쓰다 이상해지는 건 아니겠지"),
+ * 사용자 레퍼런스(소파의 곰, 옷장의 곰, 색 덩어리 사이의 하얀 강아지, 인디 그림책 포스터) 핵심만으로 다시 정리했다.
+ * 그날 받은 피드백: 학습지·주보 삽화 같은 아이 그림은 촌스럽다 / 아기 같다 / 남자만 나온다 / 할아버지 X(성경 인물은 O) /
+ * 사물에 눈·입 X / 원색 그대로는 너무 쨍하다 / 갈색 톤 X / 자잘한 소품이 많으면 유치하다.
  */
 
-/** 매체와 형태. 외곽선 없는 색면이라는 것이 이 그림체의 핵심이다. */
-export const T01_FLAT_MEDIUM = 'FLAT, MINIMAL illustration in the style of a modern Korean/Japanese indie sticker or zine artist. '
-  + 'SOLID FLAT COLOR FILLS with NO OUTLINES AT ALL — shapes are defined by color alone, never by a drawn line. '
-  + 'NO shading, NO gradients, NO highlights. Simple BLOBBY, slightly LOPSIDED shapes with soft hand-drawn edges — '
-  + 'charmingly wonky, never geometric or polished. ';
+/** 매체와 형태. */
+export const T01_FLAT_MEDIUM = 'A flat indie picture-book illustration, like a print by a contemporary Korean illustrator. '
+  + 'Shapes are made of colour only — NO outlines, NO shading, NO gradients, NO highlights — simple, soft and slightly wonky, never geometric or polished. ';
 
-/**
- * 인물 생김새. 머리카락과 팔다리가 없으면 사람이 아니라 달걀로 그려진다.
- * 2026-11-12 사용자(인디 그림책 레퍼런스): "사람 생김새가 더 개성 있고 귀엽게" → 큰 머리·짧은 몸·작은 점 눈·사람마다 특징 하나.
- */
-export const T01_FIGURE_LOOK = 'Characters are small, chunky and charming, like characters from an indie picture book or zine: '
-  + 'an OVERSIZED soft round head (a third of the body height or more), a short stubby body, tiny mitten hands and short legs. '
-  + 'The face is tiny and simple: two small dot eyes set a little wide apart, sometimes a small round dark nose dot, and a tiny short line for a mouth — '
-  + 'a slightly sleepy, deadpan, quietly funny look. Give each character ONE personal quirk so they feel like an individual '
-  + '(a cowlick, a bobble hat, round glasses, a messy fringe, a striped top, two flat round cheek patches). '
-  + 'A character always has CLEARLY DRAWN HAIR (or a hat) with a real shape and simple limbs — never a bald featureless egg. '
-  + 'No realistic proportions, no detailed cartoon face, no big sparkly eyes. ';
+/** 인물. 나이·옷 규칙은 이름 없는 보통 사람에게만 적용하고, 성경 인물은 알아볼 특징을 지킨다. */
+// 귀여움은 둥글고 통통한 몸·점 눈·무심한 표정에서 나온다(레퍼런스의 곰). 아기처럼 보이는 건 거대한 머리와 아기 얼굴이라 그것만 뺀다.
+export const T01_FIGURE_LOOK = 'A person looks like a cute indie mascot character (think a chubby little bear-like figure, but human), not a children\'s-book kid: '
+  + 'a soft, ROUND, CHUBBY body with a slightly big round head (about a third of the height), short soft arms and legs, no fingers. '
+  + 'The face is only two tiny dot eyes and a tiny mouth, sometimes two small soft round cheek patches — a plain, slightly deadpan, oddly charming look. '
+  + 'Cute, but not a baby: a teenager or young adult in feel (a child only when the scene is about a child; never a baby, toddler or elderly person), with no baby face, no huge head. '
+  + 'Hair is one simple soft shape (or a simple hat); clothes are one flat colour. Never a bald featureless egg. '
+  + 'A Bible figure the scene names (Jesus, Moses, Abraham, David, Mary, a disciple, a shepherd) is drawn in this same simple way but keeps what identifies them: '
+  + 'a long robe, a head cloth or sandals of their time, a staff, and grey hair and a beard for older figures such as Abraham or Moses. ';
 
-/** 악센트 색. 뒤에 붙는 바탕 설명이 카드와 편집 화면에서 다르므로 색만 떼어 둔다.
- * (2026-11-12 진한 흙빛 색면을 시험했으나 글씨와 합치면 촌스럽다고 해서 원래 색으로 되돌렸다. 질감만 남김.) */
-export const T01_ACCENT_COLOURS = 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) ';
+/** 색. 원색 그대로가 아니라 인쇄된 과슈처럼 살짝 누그러진 선명한 색. */
+export const T01_ACCENT_COLOURS = 'Two or three soft, clear MID-TONE colours in the picture '
+  + '(soft coral, warm mustard, cornflower blue, sage green, peach, cream white) — gentle and fresh, never primary, neon, pastel-washed or brownish, ';
 
-/** 표면 질감. 2026-11-12 사용자 레퍼런스: 매끈한 벡터가 아니라 리소그래프·실크스크린 인쇄 느낌. */
-// 이어서 "전체적으로 갈색 톤, 좀 쨍해야 함" → 알갱이가 그림을 누렇게·빈티지로 물들이지 않게 막는다.
-export const T01_SURFACE = 'A printed indie-zine surface: a fine risograph / screen-print GRAIN over the colour areas and slightly rough hand-cut edges on the shapes. '
-  + 'The grain is neutral and fine — it never tints, yellows, browns or darkens the picture. Colours stay CLEAN, BRIGHT and vivid, like fresh ink on white paper: '
-  + 'NO brown, sepia, beige, vintage or faded cast over the whole image. Never glossy, never smooth digital vector. ';
+/** 표면. 매끈한 벡터가 아니라 보송한 붓 질감. */
+export const T01_SURFACE = 'A soft painted texture: every colour shape has a slightly furry, dry-brush edge and a fine grainy fill, like gouache on paper. '
+  + 'The texture never tints the picture brown or grey. ';
 
-/** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
-// 2026-11-12 사용자: 사람이 아닌 것(구름·해·씨앗 등)에 눈·입이 그려지지 않게.
-export const T01_NOT = 'Only people have faces: clouds, suns, moons, stars, plants, seeds, hearts and objects have NO eyes and NO mouth. Do NOT add any animal (no dog, puppy, cat or bird) unless the scene names one. '
-  + 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
-  + 'NO crayon, NO pencil or colored-pencil, NO pastel texture, NO watercolor, NO marker bleed, NO halftone dots, '
-  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted, NOT gloomy, NOT photo-realistic, NOT a church poster.';
+/** 피할 것. */
+export const T01_NOT = 'Only people and animals have faces — clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
+  + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
+  + 'NOT outlined, NOT a doodle cartoon, NOT a children\'s workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
+  + 'No crayon scribbles, pencil, watercolour, halftone dots, sparkles, floating hearts or rainbows, and no words or letters inside the picture itself.';

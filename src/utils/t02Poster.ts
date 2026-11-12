@@ -11,7 +11,7 @@
  */
 
 export type T02Zone = 'lower' | 'center' | 'left' | 'upper';
-export type T02StyleKey = 'film' | 'field' | 'swiss' | 'riso' | 'serif' | 'duotone' | 'minimal';
+export type T02StyleKey = 'film' | 'field' | 'swiss' | 'riso' | 'serif' | 'duotone' | 'minimal' | 'flat';
 
 export interface T02Info {
   key: T02StyleKey;
@@ -39,6 +39,10 @@ const NOTO_SERIF_SUB: FontChoice = { family: "'Noto Serif KR', serif", weight: 6
 const SONG_MYUNG: FontChoice = { family: "'Song Myung', serif", weight: 400 };
 const MARUBURI: FontChoice = { family: "'MaruBuri', serif", weight: 400 };
 const PRETENDARD_500: FontChoice = { family: "'Pretendard', sans-serif", weight: 500 };
+// T01(귀여운 그림) 손글씨. 구글 폰트(OFL)와 카페24 슈퍼매직(번들 허용) — 앱 임베딩 가능한 것만.
+const GAEGU: FontChoice = { family: "'Gaegu', cursive", weight: 700 };
+const GOWUN_DODUM: FontChoice = { family: "'Gowun Dodum', sans-serif", weight: 400 };
+const SUPERMAGIC: FontChoice = { family: "'Cafe24SuperMagic', sans-serif", weight: 400 };
 
 /** 스타일마다 어울리는 큰 글씨 폰트 후보. 카드마다 seed 로 하나를 고른다. */
 export const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
@@ -50,21 +54,25 @@ export const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
   duotone: [PAPERLOGY, TAENADA, BLACK_HAN],
   // 2026-11-11 T02 = 미니멀 감성. 사용자 선택: 마루부리·Pretendard 를 번갈아, 작게, 그림자 없이.
   minimal: [MARUBURI, PRETENDARD_500],
+  // 2026-11-12 T01 = 귀여운 그림. AI 손글씨가 학습지처럼 촌스러워서 진짜 손글씨 폰트로 작게 굽는다.
+  // 하이멜로디는 가늘어서 색면 위에서 약해 보여 뺐다.
+  flat: [GAEGU, GOWUN_DODUM, SUPERMAGIC],
 };
 
 const ALIGN: Record<T02StyleKey, 'left' | 'center'> = {
-  film: 'left', field: 'left', swiss: 'left', riso: 'center', serif: 'center', duotone: 'center', minimal: 'center',
+  film: 'left', field: 'left', swiss: 'left', riso: 'center', serif: 'center', duotone: 'center', minimal: 'center', flat: 'center',
 };
 
 /** 큰 글씨 최대 크기(카드 폭 대비). 색면 스타일은 글씨가 주인공이라 가장 크게 허용한다. */
 export const MAX_HERO: Record<T02StyleKey, number> = {
-  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.045,
+  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.045, flat: 0.07,
 };
 
 export function t02FontsFor(info: Pick<T02Info, 'key' | 'seed'>): { hero: FontChoice; sub: FontChoice } {
   const list = HERO_FONTS[info.key] || HERO_FONTS.field;
-  const hero = list[Math.abs(info.key === 'minimal' ? info.seed : Math.floor(info.seed / 6)) % list.length];
-  if (info.key === 'minimal') return { hero, sub: hero };
+  const quiet = info.key === 'minimal' || info.key === 'flat';
+  const hero = list[Math.abs(quiet ? info.seed : Math.floor(info.seed / 6)) % list.length];
+  if (quiet) return { hero, sub: hero };
   const sub = info.key === 'serif' ? (hero === SONG_MYUNG ? SONG_MYUNG : NOTO_SERIF_SUB) : PRETENDARD_SUB;
   return { hero, sub };
 }
@@ -161,8 +169,9 @@ function buildRows(ctx: CanvasRenderingContext2D, parts: T02Parts, info: T02Info
   const { hero, sub } = t02FontsFor(info);
   // 작은 줄도 큰 글씨가 아주 작아지면 같이 줄인다(긴 문구가 카드 밖으로 넘치지 않게).
   // 미니멀은 글씨 전체가 작아서, 작은 줄을 큰 글씨의 비율로만 정한다(최소 크기에 걸려 큰 글씨와 같아지지 않게).
-  const subSize = info.key === 'minimal' ? size * 0.68 : Math.max(Math.min(W * 0.034, size * 0.7), size * 0.28);
-  const refSize = info.key === 'minimal' ? size * 0.6 : Math.max(Math.min(W * 0.03, size * 0.6), subSize * 0.85);
+  const quiet = info.key === 'minimal' || info.key === 'flat';
+  const subSize = quiet ? size * 0.72 : Math.max(Math.min(W * 0.034, size * 0.7), size * 0.28);
+  const refSize = quiet ? size * 0.6 : Math.max(Math.min(W * 0.03, size * 0.6), subSize * 0.85);
   const rows: Laid[] = [];
   ctx.font = fontCss(sub, subSize);
   for (const t of parts.intro) {

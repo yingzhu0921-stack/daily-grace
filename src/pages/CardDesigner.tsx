@@ -2210,7 +2210,8 @@ export default function Designer() {
 
     // T02: AI 는 배경만 만들었다. 사용자가 쓴 줄을 진짜 폰트로 구워 넣는다(src/utils/t02Poster.ts).
     // 구운 뒤에는 글자가 이미지에 들어 있으므로 aiText 처럼 오버레이 없이 그대로 보여 준다.
-    if (template === 'T02' && data?.t02 && image && Array.isArray(data?.lines)) {
+    // 2026-11-12 부터 T01(귀여운 그림)도 같은 방식으로 굽는다(사용자: AI 손글씨가 촌스럽다).
+    if ((template === 'T02' || template === 'T01') && data?.t02 && image && Array.isArray(data?.lines)) {
       try {
         const baked = await renderT02Poster(image, data.lines, data.t02);
         return { ...data, image: baked, t02Background: image, aiText: true, ratio: resultRatio };
@@ -2253,7 +2254,7 @@ export default function Designer() {
   const canEditTextInPlace = !!autoResult && (
     (!autoResult.aiText && autoResult.template === 'T04') ||
     autoResult.template === 'T03' ||
-    (autoResult.template === 'T02' && !!autoResult.t02 && !!autoResult.t02Background)
+    ((autoResult.template === 'T02' || autoResult.template === 'T01') && !!autoResult.t02 && !!autoResult.t02Background)
   );
 
   const openTextEdit = () => {
@@ -2297,7 +2298,7 @@ export default function Designer() {
       return;
     }
     // T02 미니멀: 글자 없는 배경에 새 문구를 다시 굽는다(AI 호출 0). 고치기 전과 같은 줄은 원래 크기 비율을 유지한다.
-    if (autoResult.template === 'T02' && autoResult.t02 && autoResult.t02Background) {
+    if ((autoResult.template === 'T02' || autoResult.template === 'T01') && autoResult.t02 && autoResult.t02Background) {
       const oldScale = new Map((autoResult.lines || []).map((l) => [l.text.trim(), l.scale ?? 1]));
       const newLines = [
         ...clauses.map((t) => ({ text: t, scale: oldScale.get(t) ?? 1 })),

@@ -34,21 +34,23 @@ const IMAGE_QUALITY = 'medium';
  * 2026-11-10 사용자 변경: "요소는 아주 적게"만 뒤집었다. 주인공 하나만 덩그러니 있어
  * 너무 단순하다는 것. 그림체는 그대로 두고 장면만 채운다 — 아래 T01_SCENE_DENSITY.
  */
-const T01_SCENE_DENSITY = 'A SMALL SCENE, NOT A LONE OBJECT — the main subject together with TWO TO FOUR supporting things that belong to the same place '
-  + '(what it stands on, what sits beside it, something behind it), on a simple ground or setting shape, so the drawing reads as a little world rather than one sticker floating in space. '
-  + 'The scene sits in the LOWER HALF of the card and may run from edge to edge there; the UPPER area stays a plain empty area of the ground colour for the lettering. '
-  + 'Richness comes from MORE THINGS, never from more detail on each thing: every shape stays flat, blobby and outline-free. '
-  + 'No more than about six separate elements, and nothing that does not belong to the scene. When the lettering is long, the scene gives way — shrink the scene, never the legibility of the text.';
+// 2026-11-12 사용자 레퍼런스(소파의 곰, 옷장, 색 덩어리 사이의 하얀 강아지): 자잘한 소품이 많으면 학습지처럼 유치해진다.
+// 큰 물건 한두 개와 넓은 빈 바탕으로 간다.
+const T01_SCENE_DENSITY = 'FEW, BIG, SIMPLE THINGS: the character (when there is one) plus ONE or TWO larger simple objects or shapes that carry the idea, and nothing else. '
+  + 'Lots of empty ground colour around them. NO scattered small props: no grass tufts, bushes, little flowers, clouds, suns, stars, sparkles, hearts, rainbows, books or mugs unless the scene itself is about them. '
+  + 'The picture sits in the LOWER HALF of the card; the UPPER area stays plain empty ground colour for the lettering. '
+  + 'Every shape stays flat, simple and outline-free.';
+
+/** 예수님 그리는 규칙(T01). 글씨 블록과 배경 전용 경로가 같이 쓴다. */
+const T01_JESUS_RULE = 'JESUS RULE: when THE SCENE or THE MOMENT names Jesus, draw him as the main subject in his traditional recognisable form — shoulder-length dark hair, a short beard and a light robe — in the same flat, outline-free style with dot eyes; never recast him as a child, a woman or a generic figure, and never replace him with a sun, light rays or a landscape. Anyone else in the scene must not look like him.';
 
 const T01_ART = T01_FLAT_MEDIUM
   + T01_FIGURE_LOOK
-  + 'When the figure note for this card does not say who the person is, do NOT fall back to a long-haired girlish figure or to a girl with a puffy mop of brown curls — '
-  + 'that default is what made every card look like the same girl. Vary it. '
   + T01_ACCENT_COLOURS
-  + 'over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
+  + 'set on one plain flat ground colour that fills the whole card (the ground colour is given separately for each card). '
   + T01_SURFACE
   + T01_SCENE_DENSITY
-  + ' The main subject is taken from the verse\'s own words or from the moment it describes. Warm, lived-in and a little offbeat.';
+  + ' What is drawn comes from the verse\'s own words or from the moment it describes.';
 
 const NO_TEXT = 'IMPORTANT: NO text, letters, words, or writing of any kind in the image.';
 const NO_FACES = 'NO human faces, portraits, or close-up characters.';
@@ -316,12 +318,13 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // T01 바탕색 로테이션 — 전에는 늘 크림이라 카드가 전부 같아 보였다.
     // 글씨가 바로 올라앉는 면이라 전부 '밝고 연한' 색만 둔다.
     // (2026-11-12 진한 색면을 시험했으나 사용자: "폰트가 들어가니까 촌스럽다, 원래대로 하고 질감만" → 되돌림.)
+    // 2026-11-12 사용자 레퍼런스: 진한 단색 바탕(빨강·노랑·파랑). 글씨는 브라우저가 밝기를 보고 크림/짙은 색으로 고른다.
+    // 갈색·흙빛은 넣지 않는다("전체적으로 갈색 톤" 지적).
+    // 2026-11-12 색 정리: 연한 파스텔은 흐리고, 흙빛은 갈색 톤이고, 원색은 너무 쨍했다 → 그 가운데의 부드럽고 맑은 중간 톤.
     const t01Grounds = [
-      // 이어서 "원래보다는 찐하게" → 연한 파스텔에서 한 단계 진한 중간 밝기. 짙은 글씨는 그대로 읽혀야 한다.
-      'warm cream', 'butter yellow', 'clear powder blue', 'sage green',
-      // 이어서 "갈색 톤" → 모래·돌·오트밀 같은 갈색 계열을 산뜻한 색으로 바꿨다.
-      'coral pink', 'rosy pink', 'soft lilac', 'mint green',
-      'apricot', 'bright aqua', 'sky blue', 'lemon yellow',
+      'soft coral', 'warm mustard', 'soft cornflower blue', 'fresh sage green',
+      'peach', 'powder sky blue', 'rose pink', 'butter yellow',
+      'soft teal', 'warm cream', 'mint', 'lilac',
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
@@ -336,14 +339,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the fine print grain — a medium-light tone a step deeper than a pale pastel, clearly coloured and never washed out, yet light enough for dark letters — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a gentle, clear MID-TONE: more colourful than a pale pastel, much softer than a primary colour, never brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
       // T01 — 귀여운 손글씨 (파스텔 + doodle)
       'T01': {
-        backgroundPrompt: `A ${T01_ART} The Korean hand-lettering goes in that open upper area. ${T01_NOT}`,
-        styleLock: `T01 = FLAT INDIE STICKER (선 없는 단순 플랫 그림): ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
+        backgroundPrompt: `The BACKGROUND ARTWORK for a cute verse card: ${T01_ART} The Korean hand-lettering goes in the open upper area. ${T01_NOT}`,
+        styleLock: `T01 = FLAT INDIE PICTURE-BOOK ILLUSTRATION (선 없는 플랫 그림): ${T01_ART} Playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
         fonts: { primary: 'Cafe24SuperMagic', secondary: 'MaruBuri' },
       },
       // T02 — 미니멀 감성 (2026-11-11. 배경만 AI, 글자는 브라우저가 진짜 폰트로 굽는다)
@@ -495,21 +498,11 @@ T03 EMOTIONAL SERIF ART DIRECTION:
 - T03 must NOT use decorative divider lines, horizontal rules, stars, leaf ornaments, floral separators, quote marks, frames, or faux logo marks around the text. Those make the image feel like an AI template. Let the poster feel designed through typography, photo, color, and spacing only.
 - Avoid generic flower/meadow/sky fallback unless it is specifically connected to the verse. The image should feel personally chosen for the words.
 
-T01 FLAT INDIE-STICKER ART DIRECTION:
-- T01 is not brush calligraphy and not a doodle cartoon. It is a FLAT, OUTLINE-FREE illustration in the style of a modern Korean/Japanese indie sticker or zine artist, with playful Korean hand-lettering.
-- NO OUTLINES AT ALL. Shapes are made of SOLID FLAT COLOR only, never defined by a drawn line. NO gradient, NO airbrush/soft shading, NO painterly texture, NO crayon, NO pencil, NO watercolor, NO halftone dots. A fine risograph / screen-print grain over the colour areas is the only texture.
-- Shapes are BLOBBY and slightly LOPSIDED with soft hand-drawn edges — charmingly wonky, never geometric or polished.
-- BOLD SATURATED accent colors — cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown — over a plain flat LIGHT ground. The ground colour CHANGES from card to card (cream, pale butter, powder blue, sage, sand, blush, lilac, mint, apricot, warm grey); it is given per card, so do not assume cream. Not pastel, not muted.
-- A SMALL SCENE IN THE LOWER HALF: one main subject the reader can trace back to THE VERSE'S OWN WORDS, plus two to four supporting things from the same place, so it is a little world and not one lone sticker. The whole UPPER area stays plain empty ground colour for the text. Never a crowded full-card scene. A cute animal that the verse never mentions is NOT an acceptable subject.
-- Do NOT put faces (eyes/nose/mouth) on anything but people — no smiling clouds, suns, plants, seeds or objects.
-- A character is small and chunky with an OVERSIZED round head, stubby limbs, TINY DOT EYES set a little wide apart and a tiny deadpan mouth, plus one personal quirk (a cowlick, a bobble hat, round glasses) — faces are dots and short lines only, never a detailed cartoon face.
-- CRITICAL — the character MUST have CLEARLY DRAWN HAIR with a real shape (a bob, a ponytail, short cropped hair, a bun) and simple limbs. NEVER draw a bald, hairless, featureless egg/bean figure — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person instead of a blob. When in doubt, draw an object or a plant instead of a character.
-- CRITICAL — NO BORDER/FRAME: the ground colour runs full-bleed to the edges. Do NOT draw any border, frame, edge line, vine, leaf-vine, floral garland, or corner decoration.
-- NO rainbows, NO floating hearts, NO sparkles. Keep the palette clean and intentional. Flat over detailed, quiet over corny.
-- Lettering should feel like a handmade note and MUST vary across generations by SHAPE and WEIGHT: thick rounded marker, chunky uneven hand, sticker-like block letters, bubbly doodle letters, felt-tip poster letters, a loose brush shape, or mixed cute lettering. The letters themselves are always FLAT solid colour with clean edges — no crayon wax, no watercolour bleed, no pencil grain. Avoid making every font thin. Never use powerful ink strokes.
-- Vary the design heavily across generations, but ONLY along these axes: the flat ground colour, the accent colour pair, the composition (empty / ground band / horizon / big colour block / off-centre), whether a person appears and who that person is, and the hand-lettering shape. What is DRAWN always comes from the verse itself. Never a border, never tape or paper scraps, never crayon or pastel texture.
-- Keep text modest and friendly, not huge. Lots of empty space is part of the style.
-- A cute accent may be used ONLY on the single key word (a soft highlight or underline), sparingly and intentionally — never on ordinary words, never on every line, no smiley faces. For verses about paths/ways/turning, a small path, signpost, or road motif may fit.
+T01 INDIE PICTURE-BOOK CARD (for t01SceneConcept only):
+- A flat, outline-free indie picture-book illustration with playful Korean hand-lettering in the open upper area.
+- FEW, BIG, SIMPLE THINGS low in the frame: a simple cute character (or none) plus one or two larger objects that carry the idea. No scattered small props.
+- What is drawn must be traceable to THE VERSE'S OWN WORDS or to the moment it describes. A cute animal the verse never mentions is NOT an acceptable subject.
+- Only people and animals have faces; no smiling clouds, suns, plants or objects.
 
 - mood: one of 담대함/선포/믿음/승리/소망/회복/빛/예배/평안/은혜/쉼/QT/감사/일상/묵상/기도/고요함
 - templates: exactly 3 IDs from T01,T02,T03,T04 best matching the message:
@@ -660,11 +653,11 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
-        ? 'a flat, outline-free indie-sticker illustration: a SMALL SCENE low in the frame — one main subject plus two to four supporting things from the same place — with small chunky people allowed.'
+        ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one very simple mascot-like character (or none) plus ONE or TWO large simple objects, low in the frame, lots of empty space — no scattered small props.'
         : 'a calm, minimal gouache card: a few large areas of rich colour, the scene and one small point of interest in the LOWER part, the upper part plain. NO people, faces, figures, hands or body parts.';
       const register = isT01 ? t01SubjectDomain : t02SceneRegister;
       const outputShape = isT01
-        ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two to four supporting things>"`
+        ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <one or two large simple objects>"`
         : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`;
       try {
         const askScene = async (extra: string) => parseDeepScene(await gpt(env.OPENAI_API_KEY, [
@@ -849,35 +842,35 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
       : '';
     // T01 아키타입 = "표현 방식(레이아웃/두들 밀도/질감)"만. 무엇을 그릴지(피사체)는 위 THE SCENE이 결정.
     // 배치만 다르게 한다. 종이 질감·테이프·연필 점 같은 소품은 참고 스타일에서 금지다.
+    // 2026-11-12 새로 씀: 형광펜 띠·색 블록 강조(사용자 "밑줄이 촌스럽다")와 자잘한 소품 배치를 뺐다.
     const t01DesignArchetypes = [
-      'T01 LAYOUT A — poem card: small centred handwriting in a wide calm upper area, the little scene of THE SCENE centred low in the frame.',
-      'T01 LAYOUT B — ground band: a single flat band of colour across the BOTTOM THIRD (earth, grass, water, a floor or a tabletop — whichever suits THE SCENE), the subject and its supporting things resting on it, handwriting floating in the open ground colour above.',
-      'T01 LAYOUT C — upper card: handwriting in the calm upper area, the little scene of THE SCENE sitting low and slightly off-centre.',
-      'T01 LAYOUT D — accent note: playful handwriting with a flat solid colour HIGHLIGHT BAND behind ONE key word only (no underline, no circle), the little scene of THE SCENE low in the frame.',
-      'T01 LAYOUT E — big shape card: one large flat solid colour blob low and to one side acting as the setting, the things of THE SCENE placed on and around it, handwriting above or beside it.',
-      'T01 LAYOUT F — corner cluster: the subject of THE SCENE and its supporting things gathered low in one corner, casual handwriting.',
-      'T01 LAYOUT G — horizon card: a simple flat horizon line low in the frame (a far ridge, a shoreline, a rooftop line, a field edge — whichever suits THE SCENE) with the subject and its supporting things against it, handwriting above.',
-      'T01 LAYOUT H — chunky word card: thick rounded hand-lettered key words, a flat solid colour block behind ONE key word, the little scene of THE SCENE low in the frame.',
-      'T01 LAYOUT I — sticker row: three or four simple flat sticker-like shapes from THE SCENE arranged in a loose row low in the frame, playful hand lettering above.',
-      'T01 LAYOUT J — corner scene card: a small flat vignette of THE SCENE tucked into a bottom corner, handwritten note text, calm and offbeat.',
+      'T01 LAYOUT A — small centred handwriting in a wide calm upper area; the picture centred low.',
+      'T01 LAYOUT B — one flat band of colour across the bottom (a floor, grass or water, whichever suits THE SCENE) with the picture resting on it; handwriting above.',
+      'T01 LAYOUT C — handwriting in the upper area; the picture low and slightly off-centre, with a wide empty side.',
+      'T01 LAYOUT D — one large soft shape from THE SCENE cropped by the bottom edge, the character beside or on it; handwriting above.',
+      'T01 LAYOUT E — the picture small and low in one bottom corner, lots of empty ground; quiet handwriting.',
+      'T01 LAYOUT F — a simple low horizon line with the picture against it; handwriting in the open space above.',
+      'T01 LAYOUT G — the picture centred low and symmetric like a small emblem; handwriting centred above.',
+      'T01 LAYOUT H — the picture filling the lower third edge to edge with two or three big simple shapes; handwriting above.',
     ];
     // 2026-11-12 사용자: 이름 없는 보통 사람으로 할아버지가 나오면 안 된다(사용자층이 아님). 성경 인물은 괜찮다 → 노인 두 칸을 젊은 사람으로.
+    // 이어서 "남자만 나온다" → 12칸 중 여자 5·남자 3·성별 없음 4로 맞췄다.
     // T01 인물 로테이션 — 지시가 "머리 모양이 있을 것"까지만이라 모델이 매번 같은
     // 갈색 단발 여자아이로 수렴했다. 절반 가까이는 아예 사람을 빼서 소재도 넓힌다.
     // "사람을 빼라"는 항목에도 캐스팅을 적어 둔다. 장면이 사람을 요구하면 어차피 그려지는데,
     // 그때 지시가 없으면 모델 기본값(갈색 뽀글머리 여자아이)이 나왔다. 곱슬머리 항목은 뺐다.
     const t01Figures = [
-      'PEOPLE: prefer NO person — show THE SCENE through its setting, object or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a MAN with short straight black hair.',
-      'PEOPLE: prefer NO person — show THE SCENE through its place, water, weather or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a SMALL BOY with a straight black bowl cut.',
+      'PEOPLE: prefer NO person — show THE SCENE through its setting, object or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a WOMAN with short straight black hair.',
+      'PEOPLE: prefer NO person — show THE SCENE through its place, water, weather or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a TEENAGE BOY with straight black hair.',
       'PEOPLE: prefer NO person — show THE SCENE through the single object at its centre instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a YOUNG WOMAN in her twenties with a short straight bob tucked behind her ears.',
-      'PEOPLE: prefer NO person — show THE SCENE through its growing or living things instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a MAN with a short beard and cropped dark hair.',
-      'PEOPLE: if THE SCENE calls for a person, draw a SMALL BOY with short straight black hair.',
-      'PEOPLE: if THE SCENE calls for a person, draw a YOUNG MAN in his twenties with short messy dark hair and round glasses.',
+      'PEOPLE: prefer NO person — show THE SCENE through its growing or living things instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a YOUNG WOMAN with long dark hair in a low ponytail.',
+      'PEOPLE: if THE SCENE calls for a person, draw a YOUNG WOMAN with shoulder-length straight brown hair.',
+      'PEOPLE: if THE SCENE calls for a person, draw a YOUNG MAN in his twenties with short messy dark hair.',
       'PEOPLE: if THE SCENE calls for a person, draw a MAN with short cropped dark hair.',
       'PEOPLE: if THE SCENE calls for a person, draw a WOMAN with straight dark hair tied back in a low ponytail or a bun.',
       'PEOPLE: if THE SCENE calls for a person, draw the figure SEEN FROM BEHIND so no face shows, with short straight dark hair.',
-      'PEOPLE: if THE SCENE calls for a person, draw TWO small figures together — one taller, one shorter, with different hair (one short and straight, one tied back).',
-      'PEOPLE: if THE SCENE calls for a person, draw a GIRL with straight black hair cut in a neat bob with a fringe.',
+      'PEOPLE: if THE SCENE calls for a person, draw TWO grown-up figures together — one taller, one shorter, with different hair (one short and straight, one tied back).',
+      'PEOPLE: if THE SCENE calls for a person, draw a YOUNG WOMAN with straight black hair cut in a neat bob with a fringe.',
       'PEOPLE: if THE SCENE calls for a person, draw a person wearing a cap or a beanie, with a little straight hair showing beneath it.',
     ];
     // 이 로테이션은 THE SCENE/THE MOMENT 뒤에 붙는다. 더 구체적이라 모델이 이쪽을 따르기 쉬워서,
@@ -885,7 +878,7 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
     // 그래서 '누구인지 정해지지 않은 보통 사람'일 때만 쓰도록 못을 박는다.
     const t01Figure = selectedTemplate === 'T01'
       ? `${t01Figures[Math.abs(templateIndex * 5 + 2) % t01Figures.length]}
-THIS CASTING NOTE APPLIES ONLY TO AN UNSPECIFIED, GENERIC EVERYDAY PERSON. Such a person is always a child, a teenager or a young adult — NEVER an elderly person, a grandparent, grey or white hair, or a grey beard (2026-11-12 user: the people using this app are not grandparents). If THE SCENE or THE MOMENT above names who is there — anyone the passage itself identifies — draw THAT person as the moment requires and IGNORE this note completely. Never recast a named figure as a child, an older person, a woman, a man or two figures because this note says so.
+THIS CASTING NOTE APPLIES ONLY TO AN UNSPECIFIED, GENERIC EVERYDAY PERSON. Such a person is a teenager or a young adult (a child only when THE SCENE is about a child) — NEVER a baby or toddler, and NEVER an elderly person, a grandparent, grey or white hair, or a grey beard (2026-11-12 user: the people using this app are not grandparents). If THE SCENE or THE MOMENT above names who is there — anyone the passage itself identifies — draw THAT person as the moment requires and IGNORE this note completely. Never recast a named figure as a child, an older person, a woman, a man or two figures because this note says so.
 WHEN THE SCENE IS PEOPLE WITH EACH OTHER: if THE SCENE is about people doing something to or with one another, draw them all — any "prefer NO person" wording above does not apply to such a scene. Figures the passage itself names are drawn as that moment requires and take NO casting from this note. Only for unspecified, generic participants: let the casting above describe one of them (or both, when it already asks for two), and give every other generic figure a clearly different age, hair and clothing colour.
 HAIR SHAPE (generic everyday figures only, never a figure the passage names): unless the note above names something else, hair is ONE small flat shape that sits close to the head — straight, cropped, parted or tied. NOT a puffy cloud of curls, NOT a fluffy perm, NOT a big wavy mop. A curly brown mop on a girl in a bright top has become the default on every card; it must not appear.`
       : '';
@@ -897,12 +890,12 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const t01TypographyStyles = [
       'FONT A: thick rounded Korean marker lettering, friendly and bold, medium-large strokes; not thin',
       'FONT B: chunky childlike lettering with uneven lopsided strokes; thick and playful, drawn in one solid colour',
-      'FONT C: bold sticker-like Korean block handwriting, rounded corners, wide letter spacing, colourful key words',
+      'FONT C: bold sticker-like Korean block handwriting, rounded corners, wide letter spacing',
       'FONT D: small diary pen handwriting, narrow and compact, used only for quiet memo-style cards',
       'FONT E: big bubbly doodle lettering for key words, smaller handwritten supporting text; intentionally uneven and cute',
       'FONT F: loose brush-shaped handwriting with thicker and thinner strokes, gentle and organic, but still flat solid colour with crisp edges',
-      'FONT G: felt-tip pen note lettering, dark brown or cobalt, casual but weighty, like a handwritten classroom poster',
-      'FONT H: lettering with a flat solid colour block highlight behind one key word, thick hand-drawn strokes',
+      'FONT G: felt-tip pen note lettering, casual but weighty, slightly uneven',
+      'FONT H: soft rounded handwriting with even medium strokes, neat and gentle, like a tidy note',
       'FONT I: thin wiry handwriting with slightly heavy strokes, imperfect but readable, not pale or too thin',
       'FONT J: mixed cute lettering: one chunky word, one small note line, and one coloured accent line (all taken from the given text only)',
     ];
@@ -913,11 +906,12 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       : '';
     // T01 배경 팔레트만 로테이션 (씬은 말씀 의미가 주도하도록 종이색/질감만 지정)
     // 바탕은 늘 크림이다(참고 스타일). 바뀌는 건 그 위에 올리는 쨍한 색 조합이다.
+    // 2026-11-12 원색 조합(코발트·해바라기 노랑·빨강 주황)이 너무 쨍해서 부드러운 중간 톤 조합으로.
     const t01Palettes = [
-      'cobalt blue + sunny yellow', 'red-orange + grass green', 'grass green + sunny yellow',
-      'cobalt blue + red-orange', 'red-orange + peach', 'dark brown + grass green',
-      'sunny yellow + dark brown', 'peach + cobalt blue', 'grass green + peach',
-      'red-orange + sunny yellow',
+      'soft cornflower blue + butter yellow', 'soft coral + sage green', 'sage green + warm mustard',
+      'dusty navy + peach', 'soft coral + cream white', 'deep green + warm mustard',
+      'warm mustard + soft cornflower blue', 'peach + soft teal', 'sage green + rose pink',
+      'soft coral + butter yellow',
     ];
     const t01Palette = selectedTemplate === 'T01'
       ? t01Palettes[Math.abs(templateIndex) % t01Palettes.length]
@@ -1002,8 +996,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const clearRegion = `${layoutAlign === 'left' ? 'the left / center-left of' : 'the central column of'} ${zoneWord}`;
     const layoutDirectiveDefault = `TYPOGRAPHY LAYOUT TO ACCOMMODATE (background must adapt to it): the text is ${layoutAlign}-aligned and sits in ${zoneWord} of the card, ${layoutHeavy ? 'large and dominant, occupying roughly 50–70% of the card' : 'clearly readable, occupying roughly 40–55% of the card'}. Keep ${clearRegion} calm, clean and low-contrast so the typography stays perfectly legible; place focal visual interest toward ${oppositeZone}, never directly behind the main text.`;
     const t02ZoneWords = { lower: 'the LOWER 45% of the frame', center: 'the middle band of the frame', left: 'the LEFT two thirds of the frame', upper: 'the UPPER half of the frame' } as const;
-    const layoutDirective = t02Pick
-      ? `TEXT AREA TO LEAVE: large text will be printed over ${t02ZoneWords[t02Pick.zone]}. Keep that area calm, even and low-detail so the text reads clearly; put the visual interest elsewhere, never directly behind it.`
+    const layoutDirective = (t02Pick || selectedTemplate === 'T01')
+      ? `TEXT AREA TO LEAVE: text will be printed over ${t02ZoneWords[t02Pick?.zone || 'upper']}. Keep that area calm, even and low-detail so the text reads clearly; put the visual interest elsewhere, never directly behind it.`
       : layoutDirectiveDefault;
     // 메시지 맞춤 배경 — 세련된 에디토리얼 톤, 촌스러운 AI 교회포스터 금지
     const personalizedBrief = [
@@ -1046,6 +1040,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // ── 글자 렌더링: T01/T02/T03은 AI가 직접 한 장의 포스터처럼 그림. 나머지는 폰트 오버레이 ──
     // T02는 완전 AI(글자까지). T03은 하이브리드(AI 그레인 그라데이션 배경 + 코드 세리프 오버레이). T04도 오버레이.
     // T02 는 2026-11-11 부터 배경만 AI, 글자는 브라우저가 진짜 폰트로 구워 넣는다.
+    // 2026-11-12 T01 글씨를 코드 폰트로 구워 봤으나 사용자: "텍스트가 붕 뜬다, AI 생성이 낫다" → T01 은 다시 AI 가 글씨까지 그린다(형광펜 띠는 뺐다).
     const aiText = body.aiText !== false && selectedTemplate === 'T01';
     // 성경 출처 줄은 본문/히어로에서 제외 (하단 작은 캡션으로만)
     const refLine = safeLines.find((l) => isRefLine(l.text) || (l.scale || 1) <= 0.55);
@@ -1099,24 +1094,21 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         : `Text alignment: ${layoutAlign}. Lettering style for this template: ${letteringStyle}. Make the typography beautiful and characterful, not a default font.`,
       selectedTemplate === 'T01'
         ? [
-            `T01 FLAT INDIE STICKER MODE: ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
+            // 2026-11-12 새로 씀(덧붙여 쌓인 문장이 서로 부딪혀서). 그림 규칙은 T01_ART·T01_NOT 한 곳에 있다.
+            `T01 INDIE PICTURE-BOOK CARD: ${T01_ART} Playful Korean hand-lettering sits in the open upper area. ${T01_NOT}`,
             T01_GROUND,
-            `ACCENT COLOUR PAIR for the subject (use these over the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST (CRITICAL): the ground is a medium-light ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — near-black, deep cobalt, deep green, deep red-orange or dark brown; do not letter every card in brown. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
+            `ACCENT COLOURS for the picture (use these against the ground colour): ${t01Palette}.`,
+            `LETTER CONTRAST: the ground is a mid-tone ${t01Ground}, so letter in a DARK, saturated colour that reads clearly on it — near-black, deep navy, deep green, deep red or dark brown (vary it; not always brown). Never a pale or light letter colour.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal
-              ? `ANIMAL BAN FOR THIS CARD (ABSOLUTE — overrides THE SCENE): the verse never speaks of a ${t01BannedAnimal}, so do NOT draw a ${t01BannedAnimal} anywhere in this image. Draw ONLY an animal the verse itself names; if it names none, use an object, a plant, water, light, a landscape element or a person instead. Keep everything else about THE SCENE.`
+              ? `ANIMAL BAN FOR THIS CARD (ABSOLUTE — overrides THE SCENE): the verse never speaks of a ${t01BannedAnimal}, so do NOT draw a ${t01BannedAnimal} anywhere in this image.`
               : '',
-            `T01 FONT VARIANT (render the lettering in EXACTLY this handwriting style): ${t01TypographyStyle}. ${T01_LETTER_RULE}`,
-            'CRITICAL FONT RULE: you have a strong habit of defaulting to ONE rounded medium marker cute handwriting — DO NOT. Commit fully to the variant above so the letterform is CLEARLY different from other T01 cards. A thin diary pen, a chunky bubble hand, a wide block sticker hand, a loose brush shape and a felt-tip note are all VERY different shapes and weights — make that difference obvious through SHAPE and WEIGHT, never through texture. The handwriting is what should vary most between cards.',
-            `VARIATION SEED: ${templateIndex}. Also vary the ground colour, the subject, the figure (or no figure) and the composition from other T01 generations — two cards from the same verse must not look like the same drawing.`,
-            'SCENE-FROM-VERSE RULE (CRITICAL): the illustrated scene — its main subject and every supporting thing in it — must come from THE SCENE above, which was derived either from the verse\'s OWN words or from the moment the verse describes (THE MOMENT above, when one is given — then the subject may be something the sentence never names, such as the cross). A reader should be able to point at the drawing and say which part of the verse — or which part of the moment it describes — it came from. Do NOT swap in a cute animal (a snail, a turtle, a rabbit, a cat, a puppy, a songbird) or random flowers and clouds for cuteness — if the verse never mentions that creature, drawing it is a FAILURE. Draw the verse\'s own motif, flat and outline-free, low in the frame.',
-            heroLine?.text
-              ? `EMPHASIS RULE: at most, put ONE soft color HIGHLIGHT band behind the single most important phrase "${heroLine.text}" (like a marker highlight). NO underlines, NO circles. Do NOT mark ordinary/connective words; most lines have NO decoration. Emphasis lands on meaning, not random words.`
-              : 'EMPHASIS RULE: no underlines or circles; at most one soft highlight band on one key phrase.',
-            'JESUS RULE: when THE SCENE or THE MOMENT names Jesus, draw him as the main subject in his traditional recognisable form — shoulder-length dark hair, a short beard and a light robe — in the same flat, outline-free style with dot eyes; never recast him as a child, a woman or a generic figure, and never replace him with a sun, light rays or a landscape. Anyone else in the scene must not look like him. ILLUSTRATION RULE: draw A SMALL SCENE that CONNECTS TO THE VERSE MEANING — one main subject (a verse-fitting object, a plant, an ordinary animal, or chunky little people) with two to four supporting things from the same place. Do NOT drop in a random unrelated thing just for cuteness. Do NOT put faces on inanimate objects. A person is a chunky blob body with a round face, tiny dot eyes and a small deadpan mouth — keep the face to dots and short lines, never a detailed cartoon face. CRITICAL: that person must have CLEARLY DRAWN HAIR with a real shape and simple limbs. NEVER draw a bald, hairless, featureless egg/bean blob — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person rather than a blob. CAST VARIETY (IMPORTANT): you have a strong habit of drawing the SAME girl on every card — a brown bob or a puffy mop of brown curls, in a blue, orange or yellow top — do NOT. Follow the PEOPLE line above exactly for who appears, and vary age, hair and clothing colour between cards. FULL-BLEED ground colour — NO border, frame, vine, floral garland, or corner decoration. NO rainbows, NO floating hearts, NO sparkles, NO underlines. Keep the whole UPPER HALF a plain empty area of the ground colour so the Korean text sits on it directly, with no banner behind it.',
-            `Outline-free flat look: solid flat colours with NO outlines, very simple blobby shapes. ABSOLUTELY NO painterly texture, no gradient or soft airbrush shading, no glossy pretty kawaii, no detailed rendering, no brush calligraphy, no gloomy or dramatic lighting, no realistic photo. ${T01_NOT}`,
+            T01_JESUS_RULE,
+            `T01 FONT VARIANT (render the lettering in EXACTLY this handwriting style): ${t01TypographyStyle}. ${T01_LETTER_RULE} Do not default to the same rounded marker hand on every card.`,
+            'EMPHASIS (CRITICAL): show the key phrase only by making it a little larger or bolder. NO highlight bands, NO marker blocks or colour boxes behind words, NO underlines, NO circles.',
+            `VARIATION SEED: ${templateIndex}. Vary the ground colour, the picture, the figure (or no figure) and the composition from other T01 cards.`,
+            'SCENE-FROM-VERSE RULE: everything drawn comes from THE SCENE above (the verse\'s own words or the moment it describes). Do NOT swap in a random cute animal, flowers or clouds for cuteness.',
           ].filter(Boolean).join(' ')
         : '',
       selectedTemplate === 'T03'
@@ -1153,7 +1145,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         : 'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
-    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card by an indie sticker artist: flat, outline-free, a small lived-in scene under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
+    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card in an indie picture-book style: flat, outline-free, a few big simple things under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
     const T02_GLOBAL_WITH_TEXT = '\n\nBold modern Christian worship poster. Follow THE STYLE FOR THIS CARD above for the background, letterform, colours and layout — do not drift toward a generic grungy stacked-gothic poster over a landscape photo. Use only the user\'s own lines — no invented captions, no invented Bible reference. Mature and cool: NO pastel candy colours, NO hearts, NO flowers, NO smiley faces, NO 3D/beveled letters, NO cheesy propaganda/sports look. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
@@ -1178,6 +1170,17 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       t04Register,
       moodHint,
       aiText ? aiTextBlock : layoutDirective,
+      // T01 은 배경만 그리므로, 글씨 그리던 블록 안에 있던 그림 규칙(인물·색·동물·예수님)을 여기서 따로 넣는다.
+      (!aiText && selectedTemplate === 'T01')
+        ? [
+            `ACCENT COLOURS for the picture (use these against the ground colour): ${t01Palette}.`,
+            t01Figure,
+            t01BannedAnimal
+              ? `ANIMAL BAN FOR THIS CARD (ABSOLUTE — overrides THE SCENE): the verse never speaks of a ${t01BannedAnimal}, so do NOT draw a ${t01BannedAnimal} anywhere in this image.`
+              : '',
+            T01_JESUS_RULE,
+          ].filter(Boolean).join('\n')
+        : '',
       cropSafeNote,
       ratioPrompt,
       aiText
@@ -1186,7 +1189,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             : selectedTemplate === 'T02'
               ? T02_GLOBAL_WITH_TEXT
               : GLOBAL_WITH_TEXT)
-        : (selectedTemplate === 'T02' ? GLOBAL_BG_PROMPT_T02 : selectedTemplate === 'T03' ? GLOBAL_BG_PROMPT_T03 : GLOBAL_BG_PROMPT),
+        : (selectedTemplate === 'T02' ? GLOBAL_BG_PROMPT_T02 : selectedTemplate === 'T03' ? GLOBAL_BG_PROMPT_T03 : selectedTemplate === 'T01' ? GLOBAL_BG_PROMPT_T01 : GLOBAL_BG_PROMPT),
     ].filter(Boolean).join('\n\n');
 
     const approvedTypography = aiText ? `\n\nFINAL APPROVED TEXT LAYOUT — overrides ALL earlier headline, emphasis and variation suggestions. The semantic editor has already decided the meaning; do not reinterpret it. Render these lines in order, without merging adjacent clauses or moving words between lines: ${JSON.stringify(safeLines)}. Scale 1 means normal, scale 1.5 means emphasized; all emphasized lines belong to ONE passage and must receive EQUAL emphasis. ${emphasizedLines.length ? `The full emphasized passage is "${heroLine.text}". Never emphasize only its first line.` : 'There is NO hero passage: use equal text sizes for all body lines. Do not invent a headline or highlight a keyword.'} Shrink the entire block to fit the safe area before considering any extra wrapping. Additional wrapping must stay within each approved line and preserve its scale. The scale numbers and these instructions are NOT image text.` : '';
@@ -1311,11 +1314,11 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               classify: true,
               flat: isFlat,
               cardBrief: isFlat
-                ? 'a flat, outline-free indie-sticker illustration: a SMALL SCENE — one main subject plus two to four supporting things from the same place — with small chunky people allowed.'
+                ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one very simple mascot-like character (or none) plus ONE or TWO large simple objects, lots of empty space — no scattered small props.'
                 : 'a calm, minimal gouache picture: a few large areas of rich colour, very little detail, one small point of interest. At most one person, far away and tiny, and only when the message is about what a person does.',
               register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
               outputShape: isFlat
-                ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two to four supporting things>"`
+                ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <one or two large simple objects>"`
                 : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`,
             }),
           },
