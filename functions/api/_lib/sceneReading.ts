@@ -56,11 +56,13 @@ export interface DeepSceneOptions {
  * 2026-11-12 사용자: "안 예쁘고 안 귀엽다". '평범한 오늘의 순간'을 찾게 했더니 모든 카드가
  * 식탁·책상 앞 사람 + 머그컵·화분·창문·성경책이 됐다. 스티커 그림은 일상 재현이 아니라 엉뚱한 상상이 맞다.
  */
-const FLAT_IDEA_STEP = `4. lifeMoment — a PLAYFUL PICTURE-BOOK IDEA that shows the action, the way a witty indie sticker artist would draw it: a small character doing the action almost literally, a gentle exaggeration of scale, a little visual pun, or a tiny story with a before and after. Charming, warm and a little offbeat. It may happen anywhere — outdoors, in the sky, on the water, in a made-up little world — but NOT a realistic everyday indoor moment.
-5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery in the same playful way. Otherwise draw the idea from step 4, seen through the REGISTER below.`;
+// 이어서 "엉뚱하게 나옴"(살전5:16-18 → 서커스 천막 앞 외발자전거 저글링): 장면 발상 자체가 개그가 되면 말씀의 뜻이 사라진다.
+// 장면은 뜻이 느껴지는 진심 어린 순간, 귀여움·익살은 캐릭터의 표정과 자세에서만.
+const FLAT_IDEA_STEP = `4. lifeMoment — a SINCERE little moment that SHOWS what the message asks or promises, so the reader feels the verse: someone actually doing it (praying, giving thanks, resting, handing over, being carried, waiting) in a simple, heartfelt way. It may be a gentle picture-book image, but its meaning must be obvious and sincere — NOT a gag, a trick, a performance or a visual pun. The charm and humour come only from the character's expression and pose, never from turning the verse into a joke.
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise draw the moment from step 4, seen through the REGISTER below.`;
 
 /** 플랫 결과가 몰렸던 실내 일상 장면. */
-const FLAT_STOCK = 'a person sitting at a table, desk or kitchen counter, a group around a table, a Bible study, a mug or cup of coffee, a potted plant on a windowsill or table, a window with sunlight, an open Bible on a table, a laptop, washing dishes, a church window with a cross';
+const FLAT_STOCK = 'a circus or circus tent, juggling, a unicycle, magic tricks, a stage performance, a trampoline, a person sitting at a table, desk or kitchen counter, a group around a table, a Bible study, a mug or cup of coffee, a potted plant on a windowsill or table, a window with sunlight, an open Bible on a table, a laptop, washing dishes, a church window with a cross';
 
 export function deepScenePrompt(o: DeepSceneOptions): string {
   const fields = o.classify

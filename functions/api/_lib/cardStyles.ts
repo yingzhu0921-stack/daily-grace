@@ -40,7 +40,7 @@ export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATU
   + 'EYEBROWS: usually none; add two tiny dashes only for a strong moment (surprise, effort). '
   + 'NEVER a U-shaped smile or a curved grin, NO nose, NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
   + 'BODY: soft and chunky with slightly odd proportions, simple arms with mitten hands and two short legs with little feet clearly visible. '
-  + 'The character shows feeling with HAND GESTURES too — thumbs up, arms crossed, hands on cheeks, a little wave, hugging something. The humour comes from what the character does — struggling with something comically big, flopping over, peeking out, overreacting. '
+  + 'The character shows feeling with HAND GESTURES too — thumbs up, arms crossed, hands on cheeks, a little wave, hugging something. The charm comes from the character\'s expression and pose while doing the scene\'s sincere action — never from turning the scene into a gag. '
   + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person); clothes are one flat colour. Never a bald featureless egg. '
   + 'A Bible figure the scene names (Jesus, Moses, Abraham, David, Mary, a disciple, a shepherd) is drawn in this same simple way but keeps what identifies them: '
   + 'a long robe, a head cloth or sandals of their time, a staff, and grey hair and a beard for older figures such as Abraham or Moses. ';
