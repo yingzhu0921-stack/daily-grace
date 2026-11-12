@@ -27,15 +27,19 @@ export const T01_FLAT_MEDIUM = 'A cute, offbeat hand-drawn illustration like a K
 // 귀여움은 둥글고 통통한 몸·점 눈·무심한 표정에서 나온다(레퍼런스의 곰). 아기처럼 보이는 건 거대한 머리와 아기 얼굴이라 그것만 뺀다.
 // 2026-11-12 사용자: "너무 착해, 전형적인 웃음은 개성이 없다. 누구나 GPT 로 만들 수 있으면 안 되고 내 앱에서만 나오는 스타일".
 // 둥근 얼굴·볼터치·코 점·U자 웃음은 AI 의 기본 '귀여운 사람'이라 뺐다. 대신 하루은혜 고유 얼굴 규칙:
-// 입은 한글 자모 모양(ㅅ ㅁ ㅇ ㅡ ㅂ), 멀리 떨어진 세로 점 눈, 표정을 만드는 짧은 대시 눈썹, 넓적한 콩 얼굴.
+// 입은 한글 자모 모양(ㅅ ㅂ ㅇ), 얼굴 아래쪽에 모인 점 눈, 넓적한 콩 얼굴.
 export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATURE CHARACTER — follow these face rules exactly, they are what make the style recognisable: '
-  + 'HEAD: a slightly wide BEAN-shaped head (not a perfect circle), hair as one chunky shape with a single stray tuft sticking up. '
-  + 'EYES: two small VERTICAL oval dots set FAR APART toward the sides of the face; for a contented or sleepy moment, two short horizontal dashes instead. '
-  + 'EYEBROWS: two short dashes that do the acting — raised high for surprise, slanted for determination, drooping for worry. '
-  + 'MOUTH: always shaped like a tiny Korean letter — ㅅ normally, ㅁ or ㅇ when surprised, ㅡ when deadpan, ㅂ when excited — placed small and low on the face. '
+  // 이어서 "머리가 사과 같다" → 삐친 한 가닥(사과 꼭지처럼 보임)을 뺐다.
+  + 'HEAD: a slightly wide BEAN-shaped head (not a perfect circle). Hair is one soft chunky shape that frames the face — a bob, a short messy cut, a low ponytail, a cap or beanie — with NO single tuft or sprout sticking up from the top. '
+  // 이어서 "개성은 있는데 안 귀엽다": 세로 눈·처진 눈썹·큰 ㅅ 이 멍하고 찡그린 얼굴이 됐다 → 동그란 점 눈, 이목구비를 얼굴 아래쪽에 모으고, 눈썹은 필요할 때만.
+  + 'FACE FEATURES sit LOW on the face, close together, leaving a big forehead and hair above — this is what makes it cute. '
+  // 이어서 사용자 참고(스티커 캐릭터 세트)의 일반 기법만: 흰자위 있는 동그란 눈을 붙여 두고 눈동자 방향으로 표정. 그 캐릭터의 모양은 따라 하지 않는다.
+  + 'EYES: two round WHITE eyes with black pupils, set close together and touching or nearly touching; the pupils look sideways, up or at each other to show the mood; for a blissful moment, two closed curved lines instead. '
+  + 'MOUTH: a TINY mouth shaped like a Korean letter — a very small cat-like ㅅ most of the time, a small ㅂ when excited or happy, a small ㅇ when surprised. '
+  + 'EYEBROWS: usually none; add two tiny dashes only for a strong moment (surprise, effort). '
   + 'NEVER a U-shaped smile or a curved grin, NO nose, NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
   + 'BODY: soft and chunky with slightly odd proportions, simple arms with mitten hands and two short legs with little feet clearly visible. '
-  + 'The humour comes from what the character does — struggling with something comically big, flopping over, peeking out, overreacting. '
+  + 'The character shows feeling with HAND GESTURES too — thumbs up, arms crossed, hands on cheeks, a little wave, hugging something. The humour comes from what the character does — struggling with something comically big, flopping over, peeking out, overreacting. '
   + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person); clothes are one flat colour. Never a bald featureless egg. '
   + 'A Bible figure the scene names (Jesus, Moses, Abraham, David, Mary, a disciple, a shepherd) is drawn in this same simple way but keeps what identifies them: '
   + 'a long robe, a head cloth or sandals of their time, a staff, and grey hair and a beard for older figures such as Abraham or Moses. ';
@@ -50,5 +54,5 @@ export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine wool
 /** 피할 것. */
 export const T01_NOT = 'Only people and animals have faces — clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
   + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
-  + 'NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
+  + 'NOT a storybook scene: no landscape scenery behind the characters. NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
   + 'No crayon scribbles, pencil, watercolour, halftone dots, sparkles, floating hearts or rainbows, and no English words in the picture; the only word allowed inside the picture is one short Korean label copied exactly from the verse when the scene asks for it (e.g. a bag labelled 염려).';

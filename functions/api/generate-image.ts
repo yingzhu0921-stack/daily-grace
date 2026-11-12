@@ -37,11 +37,12 @@ const IMAGE_QUALITY = 'medium';
 // 2026-11-12 사용자 레퍼런스(소파의 곰, 옷장, 색 덩어리 사이의 하얀 강아지): 자잘한 소품이 많으면 학습지처럼 유치해진다.
 // 큰 물건 한두 개와 넓은 빈 바탕으로 간다.
 // 이어서 "요소가 너무 단순해졌다, 조금 더 들어가도 된다" → 주인공 + 같은 자리의 큼직한 것 두세 개. 자잘한 장식은 여전히 뺀다.
-const T01_SCENE_DENSITY = 'A LITTLE WORLD MADE OF A FEW BIG, SIMPLE THINGS: the character (when there is one), the main object that carries the idea, and two or three supporting things from the same place '
-  + '(what they stand or sit on, something beside them, something behind them) — each one big, simple and readable. '
-  + 'NO scattered tiny decorations: no grass tufts, little flowers, sparkles, stars, hearts or rainbows unless the scene itself is about them. '
+// 이어서 "점점 동화책이 된다" → 원인은 언덕·강·나무·해·구름 풍경 배경. 캐릭터와 물건만 밝은 바탕 위에(스티커·캐릭터 상품처럼).
+const T01_SCENE_DENSITY = 'A GRAPHIC CHARACTER PICTURE, NOT A STORYBOOK SCENE: the character (when there is one), the main object that carries the idea, and two or three supporting objects, '
+  + 'all standing on the plain ground colour — at most one simple flat floor patch or shadow under them. '
+  + 'NO landscape scenery: no rows of hills, rivers, trees, bushes, garden paths, fountains, suns or clouds in the background unless the scene itself is about them. No scattered tiny decorations. '
   + 'The picture sits in the LOWER HALF of the card; the UPPER area stays plain empty ground colour for the lettering. '
-  + 'Every shape stays flat, simple and outline-free.';
+  + 'Every shape stays flat and simple.';
 
 /** 예수님 그리는 규칙(T01). 글씨 블록과 배경 전용 경로가 같이 쓴다. */
 const T01_JESUS_RULE = 'JESUS RULE: when THE SCENE or THE MOMENT names Jesus, draw him as the main subject in his traditional recognisable form — shoulder-length dark hair, a short beard and a light robe — in the same flat, outline-free style with dot eyes; never recast him as a child, a woman or a generic figure, and never replace him with a sun, light rays or a landscape. Anyone else in the scene must not look like him.';
