@@ -29,7 +29,8 @@ export const MINIMAL_SCENE_REGISTERS = [
 ];
 
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
-export const SCENE_STOCK = 'climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
+// 2026-11-12 고후12:9(약한 데서 온전해지는 능력)가 매번 '비 오는 날 우산'이 됐다 → 은혜·보호를 뜻하는 흔한 그림으로 막는다.
+export const SCENE_STOCK = 'an umbrella in the rain, a person sheltering from rain, climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
 
 /** 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그린다(2026-11-11 사용자 결정, T01·플랫). */
 export const JESUS_FIRST_CHECK = `JESUS FIRST CHECK (before anything else below): if the message is about what Jesus, the Lord or God does for people — saving, interceding or praying for them, forgiving, dealing with sin, loving, carrying, welcoming, staying with them — the subject is JESUS HIMSELF doing exactly that, drawn in this card's style in his traditional recognisable form (shoulder-length dark hair, short beard, light robe), with the person or people he does it for when the message has them — a teenager or grown-up, never a baby (e.g. Jesus praying for someone, Jesus holding someone by the shoulders, Jesus at the cross). Write it as "Jesus <doing what> — from '<Korean phrase>'". Do NOT turn such a message into a sun, a river, rocks, hills, a sprout, a door or a path. This includes a message that calls God or the Lord by a role (목자 shepherd, 피난처 refuge, 반석 rock, 아버지 father, 빛 light): draw Jesus in that role, fitting the time and place of that image (e.g. Jesus as a shepherd carrying a lamb, with a young person walking beside him). Never put a baby in his arms unless the message is about a baby. Only when the message is not about what Jesus or God does, use the hint below.`;
@@ -76,7 +77,7 @@ export function deepScenePrompt(o: DeepSceneOptions): string {
 ${o.flat ? `\n${JESUS_FIRST_CHECK.replace('use the hint below', 'continue below')}\n` : ''}
 Work in this order and fill every field. Output JSON only: ${fields}
 ${classifyStep}1. speaker — who is talking to whom: God to a person, a person to God, a person to themself, or a person to others.
-2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace.
+2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace. If the message turns on a CONTRAST or PARADOX (weakness → strength, losing → gaining, the last → the first, death → life), write both halves here; the picture must then show both halves, not just a general mood.
 3. imagery — every picture, comparison or concrete word inside the message itself, as "Korean phrase = English". Write "none" if there is none.
 ${o.flat ? FLAT_IDEA_STEP : `4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
 5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below.`} Write it as ${o.outputShape}.
@@ -107,9 +108,9 @@ export function parseDeepScene(raw: string): { kind?: string; scene: string } | 
  * 말씀이 그 낱말을 직접 말하면 허용하므로, 해당 한국어 낱말이 원문에 있으면 흔한 그림으로 치지 않는다.
  */
 // 웃는 해·구름 같은 '얼굴 달린 사물'도 다시 고르게 한다(사용자: 사물에 눈·입 X).
-const STOCK_SCENE_RE = /\b(smiley|smiling (?:sun|cloud|star|moon|face|balloon)|happy face|joyful face|summit|mountain ?top|peak|sprouts?|seedlings?|watering|watering can|doves?|sunrise|sun rising|ocean|open sea|meadow|grassland|rolling hills|lone tree|river|stream|brook|lighthouse|boat|field of flowers|rays? of light|light rays|growing plant|open door|lily ?pads?|fountain|hills?)\b/i;
+const STOCK_SCENE_RE = /\b(smiley|smiling (?:sun|cloud|star|moon|face|balloon)|happy face|joyful face|umbrella|summit|mountain ?top|peak|sprouts?|seedlings?|watering|watering can|doves?|sunrise|sun rising|ocean|open sea|meadow|grassland|rolling hills|lone tree|river|stream|brook|lighthouse|boat|field of flowers|rays? of light|light rays|growing plant|open door|lily ?pads?|fountain|hills?)\b/i;
 // '심'(심다)은 '돌보심'·'하심' 같은 높임말에 걸려 시냇물까지 허용해 버려서 뺐다. 한 글자 낱말은 뒤에 조사·어미가 붙는 경우만 본다.
-const STOCK_WORDS_KO = /(산[이을에과]|싹|씨앗|심[고어으]|물[이을에가과]|비둘기|해[가를와]|바다|초원|풀[이을밭]|언덕|나무|강[이을가에]|시내|등대|배[를가]|꽃|빛|문[을이]|목자|양[을이떼])/;
+const STOCK_WORDS_KO = /(우산|산[이을에과]|싹|씨앗|심[고어으]|물[이을에가과]|비둘기|해[가를와]|바다|초원|풀[이을밭]|언덕|나무|강[이을가에]|시내|등대|배[를가]|꽃|빛|문[을이]|목자|양[을이떼])/;
 export function isStockScene(scene: string, message: string): boolean {
   return STOCK_SCENE_RE.test(scene) && !STOCK_WORDS_KO.test(message);
 }
