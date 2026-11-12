@@ -16,18 +16,22 @@
 
 /** 매체와 형태. */
 // 이어서 "너무 착해졌다, 더 익살스럽게, 약간 대충 그린 느낌" → 반듯한 그림책이 아니라 빠르게 툭툭 그린 손그림.
-// 이어서 "플랫한 걸로 돌아가야 할 듯, 점점 착한 동화책이 된다" → 보송한 질감·대시를 빼고 매끈한 색면 스티커로.
-export const T01_FLAT_MEDIUM = 'A FLAT graphic sticker illustration by a Korean indie character artist: solid flat colour shapes with slightly wonky, hand-cut edges — '
-  + 'simple, a little lopsided and offbeat, never neat vector clip art and never a painted storybook. No outlines, no shading, no gradients, no highlights. ';
+// 2026-11-12 레퍼런스(제주 피크닉 곰): 털실처럼 보송한 가장자리, 짙은 갈색 짧은 대시·점 디테일. 매끈한 플랫으로도 돌아가 봤지만
+// 사용자와 비교해 보고 질감 있는 쪽으로 정했다(미니멀은 풍경·작은 사람·코드 글씨라 겹치지 않는다).
+export const T01_FLAT_MEDIUM = 'A cute, offbeat hand-drawn illustration like a Korean or Chinese indie sticker artist\'s: chunky, wobbly, naive shapes filled with flat colour, '
+  + 'each shape with a thick FUZZY, fluffy edge like felt or a woolly brush. Small details are added with short, rough dashes and dots in dark brown or a darker tone of the colour '
+  + '(marks on a hill, dashes in the grass, dots on fruit, a few strokes for folds or fur). Clumsy and imperfect on purpose — NOT neat, polished, symmetrical, vector-clean or storybook-like. '
+  + 'No black outlines around shapes, no shading, no gradients. ';
 
 /** 인물. 나이·옷 규칙은 이름 없는 보통 사람에게만 적용하고, 성경 인물은 알아볼 특징을 지킨다. */
 // 귀여움은 둥글고 통통한 몸·점 눈·무심한 표정에서 나온다(레퍼런스의 곰). 아기처럼 보이는 건 거대한 머리와 아기 얼굴이라 그것만 뺀다.
-// 착한 동화책이 되는 원인: 웃는 얼굴·볼터치·반듯한 비율. 무표정한 점 눈과 살짝 이상한 비율로 웃기게 한다.
-export const T01_FIGURE_LOOK = 'A person is a DEADPAN indie mascot character, NOT a sweet storybook kid: '
-  + 'slightly odd proportions (a round head on a soft blob body), simple arms with mitten hands and two short legs with little feet clearly visible. '
-  + 'The face is just two tiny black dot eyes and a tiny flat line mouth (or no mouth) — expressionless and a bit absurd. NO smiles, NO grins, NO rosy cheeks, NO sparkly eyes, NO sweet expressions. '
-  + 'The humour comes from that blank face doing something slightly absurd — carrying something far too big, flopping over, standing stiffly, peeking out. '
-  + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person). Hair is one simple flat shape (or a simple hat); clothes are one flat colour. Never a bald featureless egg. '
+// 표정: 모두 상냥하게 웃으면 착한 동화책, 모두 무표정이면 귀여움이 없다(둘 다 사용자 지적) → 장면에 맞게 섞인 엉뚱한 표정.
+export const T01_FIGURE_LOOK = 'A person is a cute, slightly goofy indie mascot character, NOT a sweet storybook kid: '
+  + 'a soft round chubby body with a slightly big round head, simple arms with mitten hands and two short legs with little feet clearly visible; proportions a little odd, never neat. '
+  + 'The face is two small dark dot eyes and a small mouth whose expression FITS the moment and is a bit funny — a surprised "o", eyes closed in a contented squint, a tongue poking out, a wobbly worried line with a sweat drop, a determined pout. '
+  + 'Never everyone wearing the same polite smile; cheek patches only now and then. '
+  + 'The humour comes from what the character does — struggling with something comically big, flopping over, peeking out, overreacting. '
+  + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person). Hair is one simple shape (or a simple hat); clothes are one flat colour. Never a bald featureless egg. '
   + 'A Bible figure the scene names (Jesus, Moses, Abraham, David, Mary, a disciple, a shepherd) is drawn in this same simple way but keeps what identifies them: '
   + 'a long robe, a head cloth or sandals of their time, a staff, and grey hair and a beard for older figures such as Abraham or Moses. ';
 
@@ -36,7 +40,7 @@ export const T01_FIGURE_LOOK = 'A person is a DEADPAN indie mascot character, NO
 export const T01_ACCENT_COLOURS = 'BRIGHT, SUNNY, saturated colours inside the picture (emerald green hills, sunflower yellow, tangerine orange, tomato red, white, sky blue) — punchy but used on the objects and the ground they stand on, clean, never muddy or brownish, ';
 
 /** 표면. 매끈한 벡터가 아니라 보송한 붓 질감. */
-export const T01_SURFACE = 'Clean flat colour with at most a faint paper grain — no fuzzy, furry or brushy edges, no crayon or painted texture. ';
+export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine woolly grain inside the colour areas. The texture never makes the colours dull. ';
 
 /** 피할 것. */
 export const T01_NOT = 'Only people and animals have faces — clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '

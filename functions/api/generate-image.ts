@@ -657,7 +657,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
-        ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one deadpan mascot character (dot eyes, blank face) doing something slightly absurd, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
+        ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
         : 'a calm, minimal gouache card: a few large areas of rich colour, the scene and one small point of interest in the LOWER part, the upper part plain. NO people, faces, figures, hands or body parts.';
       const register = isT01 ? t01SubjectDomain : t02SceneRegister;
       const outputShape = isT01
@@ -1148,7 +1148,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         : 'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
-    const T01_GLOBAL_WITH_TEXT = `\n\nCUTE, deadpan and a little absurd devotional card in a flat indie sticker style: flat, outline-free, a few big simple things under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
+    const T01_GLOBAL_WITH_TEXT = `\n\nCUTE, goofy, a little funny devotional card in a fuzzy indie sticker style: outline-free, a few big simple things under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
     const T02_GLOBAL_WITH_TEXT = '\n\nBold modern Christian worship poster. Follow THE STYLE FOR THIS CARD above for the background, letterform, colours and layout — do not drift toward a generic grungy stacked-gothic poster over a landscape photo. Use only the user\'s own lines — no invented captions, no invented Bible reference. Mature and cool: NO pastel candy colours, NO hearts, NO flowers, NO smiley faces, NO 3D/beveled letters, NO cheesy propaganda/sports look. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
@@ -1317,7 +1317,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               classify: true,
               flat: isFlat,
               cardBrief: isFlat
-                ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one deadpan mascot character (dot eyes, blank face) doing something slightly absurd, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
+                ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
                 : 'a calm, minimal gouache picture: a few large areas of rich colour, very little detail, one small point of interest. At most one person, far away and tiny, and only when the message is about what a person does.',
               register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
               outputShape: isFlat
