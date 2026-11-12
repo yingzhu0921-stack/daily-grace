@@ -3,6 +3,7 @@ import type { Env } from './_lib/db';
 import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote, manualBackgroundStyles } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { checkAiLimits, aiLimitMessage, isAiTester } from './_lib/aiLimits';
+import { FLAT_SUBJECT_DOMAINS, MINIMAL_SCENE_REGISTERS, JESUS_FIRST_CHECK, pickRegister, deepScenePrompt, parseDeepScene } from './_lib/sceneReading';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
 
 interface ExtendedEnv extends Env {
@@ -326,19 +327,11 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 여덟 개로 고정돼 있어서, 추상적인 말씀은 매번 산을 오르는 사람 아니면 열린 문이 됐다.
     // 카드마다 찾아볼 곳을 바꿔 준다. 길이 7·보폭 3은 서로소라 7장이면 모든 갈래가 나온다.
     // 괄호 속 물건 예시는 두지 않는다. 예시를 적으면 그 물건들이 새 고정 목록이 된다(Codex 지적).
-    const t01SubjectDomains = [
-      'A HAND-SCALE EVERYDAY OBJECT whose real use mirrors what the message does',
-      'A PLACE AT HOME shaped by what someone has just done or is about to do',
-      'THE SKY OR THE WEATHER, where its physical movement matches the message',
-      'SOMETHING GROWING, at the stage of growth that matches the message',
-      'WATER, in a specific form or use that the message supports',
-      'A COMPACT INTERACTION BETWEEN PEOPLE — two or three small figures doing to one another what the message says',
-      'A HUMAN-MADE OUTDOOR PLACE whose function fits the message',
-    ];
-    const t01SubjectDomain = t01SubjectDomains[Math.abs(templateIndex * 3 + 1) % t01SubjectDomains.length];
+    // 목록은 _lib/sceneReading.ts (직접 편집 플랫 일러스트와 같이 쓴다).
+    const t01SubjectDomain = pickRegister(FLAT_SUBJECT_DOMAINS, templateIndex, 3, 1);
     // 2026-11-11 사용자: 완전 자동 T01 이 예수님에 관한 말씀에도 해·강·바위·새싹·문만 그렸다(소재 갈래가 하늘·물·자라는 것 쪽으로 돌기 때문).
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
-    const T01_SUBJECT_SEARCH = `JESUS FIRST CHECK (before anything else below): if the message is about what Jesus, the Lord or God does for people — saving, interceding or praying for them, forgiving, dealing with sin, loving, carrying, welcoming, staying with them — the subject is JESUS HIMSELF doing exactly that, drawn in this card's style in his traditional recognisable form (shoulder-length dark hair, short beard, light robe), with the person or people he does it for when the message has them (e.g. Jesus praying for a small person, Jesus holding someone, Jesus at the cross). Write it as "Jesus <doing what> — from '<Korean phrase>'". Do NOT turn such a message into a sun, a river, rocks, hills, a sprout, a door or a path. Only when the message is not about what Jesus or God does, use the hint below.
+    const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
     const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid light colour from edge to edge — no gradient, no frame, at most a very subtle paper grain. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
 
@@ -657,17 +650,8 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     // 이 말이 필요한 오늘의 구체적 순간) 카드마다 다른 갈래로 장면을 다시 정한다.
     // 서사 구절(situation 있음)은 그 순간이 장면을 정하므로 건드리지 않는다.
     // 갈래 설명에는 물건 예시를 적지 않는다 — 예시를 적으면 그게 새 고정 목록이 된다.
-    const t02SceneRegisters = [
-      'A WIDE LANDSCAPE whose land form, season and weather are specific to this message — not a generic meadow, grassland or sea.',
-      'ONE HUMAN-MADE THING standing in a large open space, whose real use mirrors what the message does.',
-      'A TOWN, VILLAGE OR STREET seen from a distance at one particular hour, with the light in it doing what the message does.',
-      'NIGHT — the dark and the few lights in it carrying the message.',
-      'ONE OR TWO EVERYDAY OBJECTS on a large plain field of colour, placed so that their relation tells the message.',
-      'A TRACE OF SOMEONE WHO IS NOT IN THE PICTURE — something just used, set down, left open or left lit — that shows what the message does.',
-    ];
-    // 길이 6·보폭 5는 서로소라 6장이면 모든 갈래가 한 번씩 나온다.
-    const t02SceneRegister = t02SceneRegisters[Math.abs(templateIndex * 5 + 2) % t02SceneRegisters.length];
-    const SCENE_STOCK = 'climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
+    // 갈래 목록·금지 그림은 _lib/sceneReading.ts (직접 편집과 같이 쓴다). 길이 6·보폭 5는 서로소라 6장이면 모든 갈래가 나온다.
+    const t02SceneRegister = pickRegister(MINIMAL_SCENE_REGISTERS, templateIndex, 5, 2);
     const sceneSource = (verse?.trim() || sourceText || '').slice(0, 1500);
     let t02DeepScene = '';
     if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
@@ -681,24 +665,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`;
       try {
         const deepRaw = await gpt(env.OPENAI_API_KEY, [
-          {
-            role: 'system',
-            content: `You choose the picture for ONE card made from a Korean faith message. These messages are often abstract (a promise, a prayer, a teaching, a diary line), and abstract messages keep getting the same stock pictures. Your job is to read THIS message closely enough that its picture could not belong to any other message.
-
-Work in this order and fill every field. Output JSON only: {"speaker":"","action":"","imagery":"","lifeMoment":"","scene":""}
-1. speaker — who is talking to whom: God to a person, a person to God, a person to themself, or a person to others.
-2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace.
-3. imagery — every picture, comparison or concrete word inside the message itself, as "Korean phrase = English". Write "none" if there is none.
-4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
-5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below. Write it as ${outputShape}.
-
-THIS CARD'S STYLE: ${cardBrief}
-REGISTER FOR THIS CARD: ${register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${isT01 ? `
-${T01_SUBJECT_SEARCH.split('\nWHERE TO LOOK')[0]}
-If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed.` : ''}
-STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}. Also avoid any generic journey, ascent or "new beginning" metaphor.
-The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`,
-          },
+          { role: 'system', content: deepScenePrompt({ cardBrief, register, outputShape, flat: isT01 }) },
           {
             role: 'user',
             content: sceneSource
@@ -706,9 +673,7 @@ The reader should be able to look at the picture and say which words of the mess
               + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : ''),
           },
         ], 500, 'gpt-4o');
-        const m = deepRaw.match(/\{[\s\S]*\}/);
-        const deep = JSON.parse(m ? m[0] : deepRaw);
-        const scene = typeof deep?.scene === 'string' ? deep.scene.trim() : '';
+        const scene = parseDeepScene(deepRaw)?.scene || '';
         // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
         const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
         if (scene && !reused && !(isT01 && t01AnimalMiss(scene))) {
@@ -1320,10 +1285,43 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const quotaDenied = await spendAiQuota();
     if (quotaDenied) return quotaDenied;
     const scene = prompt?.trim() || '평화로운 풍경';
+    // 2026-11-12 사용자: 편집의 미니멀 감성·플랫 일러스트도 완전 자동처럼 추상적인 말씀·기록을 깊게 읽어 장면을 다양하게.
+    // 입력이 이미 장면 묘사이거나 성경 속 사건이면(kind) 건드리지 않고 원래 규칙대로 늘린다.
+    // 편집 화면은 카드 번호가 없어 갈래를 무작위로 고른다.
+    let decidedScene = '';
+    const deepStyle = style === '플랫 일러스트' ? 'flat' : style === '미니멀 감성' ? 'minimal' : '';
+    if (deepStyle && prompt?.trim()) {
+      const isFlat = deepStyle === 'flat';
+      const seed = Math.floor(Math.random() * 1000);
+      try {
+        const deepRaw = await gpt(env.OPENAI_API_KEY, [
+          {
+            role: 'system',
+            content: deepScenePrompt({
+              classify: true,
+              flat: isFlat,
+              cardBrief: isFlat
+                ? 'a flat, outline-free indie-sticker illustration: a SMALL SCENE — one main subject plus two to four supporting things from the same place — with small chunky people allowed.'
+                : 'a calm, minimal gouache picture: a few large areas of rich colour, very little detail, one small point of interest. At most one person, far away and tiny, and only when the message is about what a person does.',
+              register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
+              outputShape: isFlat
+                ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two to four supporting things>"`
+                : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`,
+            }),
+          },
+          { role: 'user', content: scene },
+        ], 500, 'gpt-4o');
+        const deep = parseDeepScene(deepRaw);
+        if (deep?.kind === 'abstract' && deep.scene) decidedScene = deep.scene;
+      } catch { /* 실패하면 원래 규칙대로 늘린다 */ }
+    }
+    const decidedNote = decidedScene
+      ? `\n\n이번 입력은 장면이 없는 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
+      : '';
     const expanded = await gpt(env.OPENAI_API_KEY, [
       {
         role: 'system',
-        content: backgroundExpansionInstructions(style),
+        content: backgroundExpansionInstructions(style) + decidedNote,
       },
       { role: 'user', content: scene },
     // 작은 모델은 말씀 맥락을 못 읽고 영어 낱말이 섞였다('evoking합니다'). 2026-11-10 사용자 승인으로 상향.

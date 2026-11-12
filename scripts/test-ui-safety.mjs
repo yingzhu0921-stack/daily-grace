@@ -586,3 +586,21 @@ test('T02 layout keeps every character and fits long text inside the card', () =
     for (const r of out.rows) { ctx.font = r.font; assert.ok(ctx.measureText(r.text).width <= out.box.w + 0.5, '폭을 넘는 줄이 없어야 한다'); }
   }
 });
+
+test('deep scene reading bans stock pictures and only takes over abstract editor input', () => {
+  const { deepScenePrompt, parseDeepScene, pickRegister, FLAT_SUBJECT_DOMAINS, MINIMAL_SCENE_REGISTERS, SCENE_STOCK } = load('functions/api/_lib/sceneReading.ts');
+  // 사용자가 지적한 반복 그림이 금지 목록에 있어야 한다(말씀이 그 낱말을 말할 때만 허용).
+  for (const stock of ['summit', 'watering a plant', 'dove', 'open sea', 'meadow']) assert.ok(SCENE_STOCK.includes(stock), stock);
+  const auto = deepScenePrompt({ cardBrief: 'b', register: 'r', outputShape: 's', flat: true });
+  assert.match(auto, /unless the message's own words name it/);
+  assert.match(auto, /JESUS FIRST CHECK/);
+  assert.doesNotMatch(auto, /"kind"/);
+  const editor = deepScenePrompt({ cardBrief: 'b', register: 'r', outputShape: 's', classify: true });
+  assert.match(editor, /"kind"/);
+  assert.doesNotMatch(editor, /JESUS FIRST CHECK/);
+  // 보폭과 길이가 서로소면 연속된 카드가 모든 갈래를 한 번씩 돈다.
+  assert.equal(new Set([0, 1, 2, 3, 4, 5].map((i) => pickRegister(MINIMAL_SCENE_REGISTERS, i, 5, 2))).size, 6);
+  assert.equal(new Set([0, 1, 2, 3, 4, 5, 6].map((i) => pickRegister(FLAT_SUBJECT_DOMAINS, i, 3, 1))).size, 7);
+  assert.deepEqual(JSON.parse(JSON.stringify(parseDeepScene('```json\n{"kind":"Abstract","scene":" a kettle "}\n```'))), { kind: 'abstract', scene: 'a kettle' });
+  assert.equal(parseDeepScene('not json'), null);
+});
