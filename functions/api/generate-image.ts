@@ -655,11 +655,12 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const t02SceneRegister = pickRegister(MINIMAL_SCENE_REGISTERS, templateIndex, 5, 2);
     const sceneSource = (verse?.trim() || sourceText || '').slice(0, 1500);
     let t02DeepScene = '';
-    if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
+    // 미니멀(T02)은 성경 속 사건이어도 깊게 읽는다(2026-11-12 사용자: 아브라함이 나와야 한다, 성경 장면을 미니멀하게 잘 시각화).
+    if (((selectedTemplate === 'T01' && !analysis.situation?.trim()) || selectedTemplate === 'T02') && sceneSource) {
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
         ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
-        : 'a calm, minimal gouache card seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. At most one person, tiny and faceless. NO indoor rooms, NO tabletop objects, NO close-ups.';
+        : 'a calm, minimal gouache card seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. At most one person, tiny and faceless. NO indoor rooms, NO tabletop objects, NO close-ups. When the message names a Bible person or a Bible moment, SHOW it in this minimal way: that person tiny and far away but recognisable by the clothing of their time (a long robe, a head cloth, a staff) in their known setting — e.g. Abraham small before his tents under a sky full of stars, a shepherd with a few sheep on a hillside, a small boat on a wide sea for the disciples. When the message is about what the Lord does as a shepherd, a tiny shepherd with his sheep.';
       const register = isT01 ? t01SubjectDomain : t02SceneRegister;
       const outputShape = isT01
         ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
@@ -670,6 +671,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
           {
             role: 'user',
             content: sceneSource
+              + (analysis.situation?.trim() ? `\n\nTHE MOMENT THIS MESSAGE DESCRIBES (already settled — the scene must be this moment): ${analysis.situation}` : '')
               + (analysis.coreMeaning ? `\n\n(Earlier reading of the meaning, for reference only: ${analysis.coreMeaning})` : '')
               + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : '')
               + extra,
@@ -1037,7 +1039,9 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ? 'NO SCENE: this poster style has NO photo, NO landscape and NO illustrated scene — only the plain ground described in THE STYLE FOR THIS CARD. Do not draw any lettering or letter-like marks either; the text is added later by code.'
         : '',
       (selectedTemplate !== 'T03' && analysis.backgroundConcept && !(t02Pick && !t02Pick.usesScene))
-        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? ((selectedTemplate === 'T04' || selectedTemplate === 'T02')
+        ? `THE SCENE — MANDATORY, THE BACKGROUND MUST VISIBLY EXPRESS THIS MESSAGE: ${analysis.backgroundConcept}.${analysis.situation ? (selectedTemplate === 'T02'
+          ? ` THE MOMENT THIS VERSE BELONGS TO IS: ${analysis.situation}. Show that moment minimally: its place and hour as large calm colour areas, with the people of that moment TINY and far away but recognisable by the clothing of their time (long robes, head cloths, a staff) — never close up, no faces.`
+          : selectedTemplate === 'T04'
           ? ` THE MOMENT THIS VERSE BELONGS TO IS: ${analysis.situation}. Do NOT photograph that moment being acted out. NO robed or costumed figures, no Jesus figure, no disciples, no period dress, no re-enactment or tableau — a staged Bible photo reads as church stock photography and this card never does that. Give the PLACE and the HOUR of that moment instead: the room, the doorway, the light at that time of day, the stillness after it. The moment should be felt, not shown.`
           : ` THE MOMENT BEING DEPICTED IS: ${analysis.situation}. Draw that moment and only that moment — no object or action from any other part of the passage, and no figure doing something this moment does not contain.`) : ''}${analysis.coreMeaning ? ` (Core meaning: ${analysis.coreMeaning}.)` : ''}${analysis.emotionalMovement ? ` Convey the emotional movement "${analysis.emotionalMovement}".` : ''} A person who reads the verse should immediately feel the image FITS it — the background is NOT decoration, it is the visual of this specific message. Derive the imagery ONLY from this concept; do NOT invent an unrelated pretty scene, and do NOT fall back to a generic default (random flowers, meadow, mountains, sunset, forest, ocean, sky, clouds) unless the concept names it.${Array.isArray(analysis.literalObjectsToAvoid) && analysis.literalObjectsToAvoid.length ? ` Avoid these too-literal objects: ${analysis.literalObjectsToAvoid.join(', ')}.` : ''} Translate the emotion/movement into this template's visual language rather than a single literal noun.`
         : '',
