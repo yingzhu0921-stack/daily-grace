@@ -36,8 +36,10 @@ const IMAGE_QUALITY = 'medium';
  */
 // 2026-11-12 사용자 레퍼런스(소파의 곰, 옷장, 색 덩어리 사이의 하얀 강아지): 자잘한 소품이 많으면 학습지처럼 유치해진다.
 // 큰 물건 한두 개와 넓은 빈 바탕으로 간다.
-const T01_SCENE_DENSITY = 'FEW, BIG, SIMPLE THINGS: the character (when there is one) plus ONE or TWO larger simple objects or shapes that carry the idea, and nothing else. '
-  + 'Lots of empty ground colour around them. NO scattered small props: no grass tufts, bushes, little flowers, clouds, suns, stars, sparkles, hearts, rainbows, books or mugs unless the scene itself is about them. '
+// 이어서 "요소가 너무 단순해졌다, 조금 더 들어가도 된다" → 주인공 + 같은 자리의 큼직한 것 두세 개. 자잘한 장식은 여전히 뺀다.
+const T01_SCENE_DENSITY = 'A LITTLE WORLD MADE OF A FEW BIG, SIMPLE THINGS: the character (when there is one), the main object that carries the idea, and two or three supporting things from the same place '
+  + '(what they stand or sit on, something beside them, something behind them) — each one big, simple and readable. '
+  + 'NO scattered tiny decorations: no grass tufts, little flowers, sparkles, stars, hearts or rainbows unless the scene itself is about them. '
   + 'The picture sits in the LOWER HALF of the card; the UPPER area stays plain empty ground colour for the lettering. '
   + 'Every shape stays flat, simple and outline-free.';
 
@@ -339,7 +341,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a gentle, clear MID-TONE: more colourful than a pale pastel, much softer than a primary colour, never brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a cheerful, clear colour: more colourful than a pale pastel, softer than a primary colour, never dull or brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -653,11 +655,11 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
-        ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one very simple mascot-like character (or none) plus ONE or TWO large simple objects, low in the frame, lots of empty space — no scattered small props.'
+        ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute chubby character doing something playful, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
         : 'a calm, minimal gouache card: a few large areas of rich colour, the scene and one small point of interest in the LOWER part, the upper part plain. NO people, faces, figures, hands or body parts.';
       const register = isT01 ? t01SubjectDomain : t02SceneRegister;
       const outputShape = isT01
-        ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <one or two large simple objects>"`
+        ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
         : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`;
       try {
         const askScene = async (extra: string) => parseDeepScene(await gpt(env.OPENAI_API_KEY, [
@@ -1145,7 +1147,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         : 'Typography is the focal point and must dominate; integrate it cleanly with the background. Keep Korean spelling perfect. Do NOT add any words that are not in the text.',
     ].filter(Boolean).join('\n');
     const GLOBAL_WITH_TEXT = '\n\nClean, modern, design-forward faith poster (premium editorial / contemporary graphic design). Tasteful and restrained. STRICTLY AVOID a cheesy AI church-poster look — no dramatic stormy skies, no lone tree, no sunrise light rays, no gold-on-black glow, no 3D/beveled letters, no epic landscape photos, no decorative divider lines, no stars, no ornamental separators. The Korean typography is accurate, legible, and the clear focal point.';
-    const T01_GLOBAL_WITH_TEXT = `\n\nQuiet, offbeat little devotional card in an indie picture-book style: flat, outline-free, a few big simple things under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
+    const T01_GLOBAL_WITH_TEXT = `\n\nCUTE, playful, a little funny devotional card in an indie picture-book style: flat, outline-free, a few big simple things under a calm open upper area. It should feel like a small zine page, not an editorial poster and not a busy cartoon. Korean handwriting must be accurate, legible, and visibly hand-drawn. Avoid overly thin pale text. VARIETY MATTERS: the ground colour, the drawn subject and whether a person appears all change from card to card — never the same cream card with the same brown-bob girl. The subject always comes from the verse's own words, or from the moment the verse describes, never a cute animal picked at random. ${T01_NOT}`;
     const T02_GLOBAL_WITH_TEXT = '\n\nBold modern Christian worship poster. Follow THE STYLE FOR THIS CARD above for the background, letterform, colours and layout — do not drift toward a generic grungy stacked-gothic poster over a landscape photo. Use only the user\'s own lines — no invented captions, no invented Bible reference. Mature and cool: NO pastel candy colours, NO hearts, NO flowers, NO smiley faces, NO 3D/beveled letters, NO cheesy propaganda/sports look. The Korean typography is accurate, fully visible, correctly spelled, and the clear focal point.';
 
     // OpenAI는 9:16을 지원 안 해 1024x1536(2:3)로 생성 → 화면에서 9:16으로 object-cover 하면 좌우가 크롭됨.
@@ -1314,11 +1316,11 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               classify: true,
               flat: isFlat,
               cardBrief: isFlat
-                ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one very simple mascot-like character (or none) plus ONE or TWO large simple objects, lots of empty space — no scattered small props.'
+                ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute chubby character doing something playful, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
                 : 'a calm, minimal gouache picture: a few large areas of rich colour, very little detail, one small point of interest. At most one person, far away and tiny, and only when the message is about what a person does.',
               register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
               outputShape: isFlat
-                ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <one or two large simple objects>"`
+                ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
                 : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`,
             }),
           },
