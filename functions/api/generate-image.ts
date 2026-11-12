@@ -322,11 +322,11 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // (2026-11-12 진한 색면을 시험했으나 사용자: "폰트가 들어가니까 촌스럽다, 원래대로 하고 질감만" → 되돌림.)
     // 2026-11-12 사용자 레퍼런스: 진한 단색 바탕(빨강·노랑·파랑). 글씨는 브라우저가 밝기를 보고 크림/짙은 색으로 고른다.
     // 갈색·흙빛은 넣지 않는다("전체적으로 갈색 톤" 지적).
-    // 2026-11-12 색 정리: 연한 파스텔은 흐리고, 흙빛은 갈색 톤이고, 원색은 너무 쨍했다 → 그 가운데의 부드럽고 맑은 중간 톤.
+    // 2026-11-12 색 정리: 파스텔(흐림)·흙빛(갈색 톤)·중간 톤(그냥 따뜻함)을 거쳐, 사용자 레퍼런스(제주 피크닉)처럼 맑고 쨍한 색으로.
     const t01Grounds = [
-      'soft coral', 'warm mustard', 'soft cornflower blue', 'fresh sage green',
-      'peach', 'powder sky blue', 'rose pink', 'butter yellow',
-      'soft teal', 'warm cream', 'mint', 'lilac',
+      'sky blue', 'sunflower yellow', 'emerald green', 'tangerine orange',
+      'coral pink', 'warm cream', 'bright mint', 'cornflower blue',
+      'lemon yellow', 'tomato red', 'light teal', 'lilac',
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
@@ -341,7 +341,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a cheerful, clear colour: more colourful than a pale pastel, softer than a primary colour, never dull or brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a bright, sunny, clear colour — punchy and cheerful, never dull, muddy or brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -910,10 +910,9 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 바탕은 늘 크림이다(참고 스타일). 바뀌는 건 그 위에 올리는 쨍한 색 조합이다.
     // 2026-11-12 원색 조합(코발트·해바라기 노랑·빨강 주황)이 너무 쨍해서 부드러운 중간 톤 조합으로.
     const t01Palettes = [
-      'soft cornflower blue + butter yellow', 'soft coral + sage green', 'sage green + warm mustard',
-      'dusty navy + peach', 'soft coral + cream white', 'deep green + warm mustard',
-      'warm mustard + soft cornflower blue', 'peach + soft teal', 'sage green + rose pink',
-      'soft coral + butter yellow',
+      'emerald green + sunflower yellow', 'tangerine + sky blue', 'tomato red + white', 'sky blue + sunflower yellow',
+      'emerald green + tangerine', 'cornflower blue + lemon yellow', 'coral + emerald green', 'sunflower yellow + tomato red',
+      'white + sky blue', 'tangerine + emerald green',
     ];
     const t01Palette = selectedTemplate === 'T01'
       ? t01Palettes[Math.abs(templateIndex) % t01Palettes.length]
@@ -1100,7 +1099,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             `T01 INDIE PICTURE-BOOK CARD: ${T01_ART} Playful Korean hand-lettering sits in the open upper area. ${T01_NOT}`,
             T01_GROUND,
             `ACCENT COLOURS for the picture (use these against the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST: the ground is a mid-tone ${t01Ground}, so letter in a DARK, saturated colour that reads clearly on it — near-black, deep navy, deep green, deep red or dark brown (vary it; not always brown). Never a pale or light letter colour.`,
+            `LETTER CONTRAST: the ground is ${t01Ground}, so letter in a colour that reads clearly on it — usually a DARK colour (near-black, deep navy, deep green, deep red, dark brown); on a deep ground such as emerald green, tomato red or cornflower blue, cream-white letters. Never letters close to the ground's own colour.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal
