@@ -45,7 +45,7 @@ const T01_ART = T01_FLAT_MEDIUM
   + 'When the figure note for this card does not say who the person is, do NOT fall back to a long-haired girlish figure or to a girl with a puffy mop of brown curls — '
   + 'that default is what made every card look like the same girl. Vary it. '
   + T01_ACCENT_COLOURS
-  + 'over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
+  + 'over a plain flat ground of one rich colour — the ground colour is given separately for each card and is NOT always cream. '
   + T01_SURFACE
   + T01_SCENE_DENSITY
   + ' The main subject is taken from the verse\'s own words or from the moment it describes. Warm, lived-in and a little offbeat.';
@@ -314,15 +314,26 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     if (quotaDenied) return quotaDenied;
 
     // T01 바탕색 로테이션 — 전에는 늘 크림이라 카드가 전부 같아 보였다.
-    // 글씨가 바로 올라앉는 면이라 전부 '밝고 연한' 색만 둔다.
-    const t01Grounds = [
-      'warm cream', 'pale butter yellow', 'soft powder blue', 'pale sage green',
-      'warm sand beige', 'soft blush pink', 'pale lilac', 'light mint',
-      'pale apricot', 'soft warm stone grey', 'very pale sky', 'pale oat',
+    // 2026-11-12 사용자(인디 그림책 레퍼런스): "색감을 좀 더 채도 높게" → 연한 파스텔 대신 진한 색면.
+    // 바탕마다 글씨 색이 따라간다: 진한 바탕은 크림색 글씨, 밝은 바탕은 짙은 글씨.
+    const t01Grounds: { name: string; letters: string }[] = [
+      { name: 'deep emerald green', letters: 'warm cream white' },
+      { name: 'tangerine orange', letters: 'deep chocolate brown' },
+      { name: 'mustard yellow', letters: 'deep chocolate brown' },
+      { name: 'ultramarine blue', letters: 'warm cream white' },
+      { name: 'coral pink', letters: 'deep chocolate brown' },
+      { name: 'warm cream', letters: 'deep chocolate brown or deep cobalt' },
+      { name: 'bright sky blue', letters: 'deep navy' },
+      { name: 'tomato red', letters: 'warm cream white' },
+      { name: 'fresh leaf green', letters: 'deep forest green or chocolate brown' },
+      { name: 'butter yellow', letters: 'deep chocolate brown or tomato red' },
+      { name: 'deep teal', letters: 'warm cream white' },
+      { name: 'peach orange', letters: 'deep chocolate brown' },
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
-    const t01Ground = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
+    const t01GroundPick = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
+    const t01Ground = t01GroundPick.name;
     // T01 소재 갈래. 구체적 사물이 없는 말씀일 때 쓰라고 준 목록이 "빛·길·문·창·언덕·물·식물·등불"
     // 여덟 개로 고정돼 있어서, 추상적인 말씀은 매번 산을 오르는 사람 아니면 열린 문이 됐다.
     // 카드마다 찾아볼 곳을 바꿔 준다. 길이 7·보폭 3은 서로소라 7장이면 모든 갈래가 나온다.
@@ -333,7 +344,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid light colour from edge to edge — no gradient, no frame, at most a very subtle paper grain. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid rich colour from edge to edge with the fine print grain — no gradient, no frame. Do NOT fall back to cream or a pale pastel unless that is the colour named here. The scene's shapes use colours that clearly contrast with this ground (like an orange table against a green wall).`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -494,12 +505,12 @@ T03 EMOTIONAL SERIF ART DIRECTION:
 
 T01 FLAT INDIE-STICKER ART DIRECTION:
 - T01 is not brush calligraphy and not a doodle cartoon. It is a FLAT, OUTLINE-FREE illustration in the style of a modern Korean/Japanese indie sticker or zine artist, with playful Korean hand-lettering.
-- NO OUTLINES AT ALL. Shapes are made of SOLID FLAT COLOR only, never defined by a drawn line. NO gradient, NO airbrush/soft shading, NO painterly texture, NO crayon, NO pencil, NO watercolor, NO halftone dots. A very subtle paper grain is the most texture allowed.
+- NO OUTLINES AT ALL. Shapes are made of SOLID FLAT COLOR only, never defined by a drawn line. NO gradient, NO airbrush/soft shading, NO painterly texture, NO crayon, NO pencil, NO watercolor, NO halftone dots. A fine risograph / screen-print grain over the colour areas is the only texture.
 - Shapes are BLOBBY and slightly LOPSIDED with soft hand-drawn edges — charmingly wonky, never geometric or polished.
-- BOLD SATURATED accent colors — cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown — over a plain flat LIGHT ground. The ground colour CHANGES from card to card (cream, pale butter, powder blue, sage, sand, blush, lilac, mint, apricot, warm grey); it is given per card, so do not assume cream. Not pastel, not muted.
+- RICH, HIGHLY SATURATED colours — deep emerald green, tangerine orange, ultramarine blue, lemon yellow, tomato red, warm cream, chocolate brown — in large contrasting colour areas over a plain flat ground of one rich colour. The ground colour CHANGES from card to card; it is given per card, so do not assume cream. Not pastel, not muted.
 - A SMALL SCENE IN THE LOWER HALF: one main subject the reader can trace back to THE VERSE'S OWN WORDS, plus two to four supporting things from the same place, so it is a little world and not one lone sticker. The whole UPPER area stays plain empty ground colour for the text. Never a crowded full-card scene. A cute animal that the verse never mentions is NOT an acceptable subject.
 - Do NOT put faces (eyes/nose/mouth) on inanimate objects.
-- A character is a chunky little blob body with a round face, TINY DOT EYES and a small deadpan mouth — faces are dots and short lines only, never a detailed cartoon face.
+- A character is small and chunky with an OVERSIZED round head, stubby limbs, TINY DOT EYES set a little wide apart and a tiny deadpan mouth, plus one personal quirk (a cowlick, a bobble hat, round glasses) — faces are dots and short lines only, never a detailed cartoon face.
 - CRITICAL — the character MUST have CLEARLY DRAWN HAIR with a real shape (a bob, a ponytail, short cropped hair, a bun) and simple limbs. NEVER draw a bald, hairless, featureless egg/bean figure — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person instead of a blob. When in doubt, draw an object or a plant instead of a character.
 - CRITICAL — NO BORDER/FRAME: the ground colour runs full-bleed to the edges. Do NOT draw any border, frame, edge line, vine, leaf-vine, floral garland, or corner decoration.
 - NO rainbows, NO floating hearts, NO sparkles. Keep the palette clean and intentional. Flat over detailed, quiet over corny.
@@ -1092,7 +1103,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             `T01 FLAT INDIE STICKER MODE: ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
             T01_GROUND,
             `ACCENT COLOUR PAIR for the subject (use these over the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST (CRITICAL): the ground is a pale ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — dark brown, near-black, deep cobalt, deep green or deep red-orange. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
+            `LETTER CONTRAST (CRITICAL): the ground is ${t01Ground}, so the Korean hand-lettering is ${t01GroundPick.letters} — a colour that reads strongly against this ground. NEVER letter in a colour close to the ground's own colour or lightness. If a style note below suggests colourful key words or a highlight band, keep the contrast just as strong; colour may vary between words, contrast may not.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal
@@ -1106,7 +1117,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               ? `EMPHASIS RULE: at most, put ONE soft color HIGHLIGHT band behind the single most important phrase "${heroLine.text}" (like a marker highlight). NO underlines, NO circles. Do NOT mark ordinary/connective words; most lines have NO decoration. Emphasis lands on meaning, not random words.`
               : 'EMPHASIS RULE: no underlines or circles; at most one soft highlight band on one key phrase.',
             'JESUS RULE: when THE SCENE or THE MOMENT names Jesus, draw him as the main subject in his traditional recognisable form — shoulder-length dark hair, a short beard and a light robe — in the same flat, outline-free style with dot eyes; never recast him as a child, a woman or a generic figure, and never replace him with a sun, light rays or a landscape. Anyone else in the scene must not look like him. ILLUSTRATION RULE: draw A SMALL SCENE that CONNECTS TO THE VERSE MEANING — one main subject (a verse-fitting object, a plant, an ordinary animal, or chunky little people) with two to four supporting things from the same place. Do NOT drop in a random unrelated thing just for cuteness. Do NOT put faces on inanimate objects. A person is a chunky blob body with a round face, tiny dot eyes and a small deadpan mouth — keep the face to dots and short lines, never a detailed cartoon face. CRITICAL: that person must have CLEARLY DRAWN HAIR with a real shape and simple limbs. NEVER draw a bald, hairless, featureless egg/bean blob — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person rather than a blob. CAST VARIETY (IMPORTANT): you have a strong habit of drawing the SAME girl on every card — a brown bob or a puffy mop of brown curls, in a blue, orange or yellow top — do NOT. Follow the PEOPLE line above exactly for who appears, and vary age, hair and clothing colour between cards. FULL-BLEED ground colour — NO border, frame, vine, floral garland, or corner decoration. NO rainbows, NO floating hearts, NO sparkles, NO underlines. Keep the whole UPPER HALF a plain empty area of the ground colour so the Korean text sits on it directly, with no banner behind it.',
-            `Outline-free flat look: solid flat colours with NO outlines, very simple blobby shapes. ABSOLUTELY NO painterly texture, no gradient or soft airbrush shading, no glossy pretty kawaii, no detailed rendering, no brush calligraphy, no dark/dramatic background, no realistic photo. ${T01_NOT}`,
+            `Outline-free flat look: solid flat colours with NO outlines, very simple blobby shapes. ABSOLUTELY NO painterly texture, no gradient or soft airbrush shading, no glossy pretty kawaii, no detailed rendering, no brush calligraphy, no gloomy or dramatic lighting, no realistic photo. ${T01_NOT}`,
           ].filter(Boolean).join(' ')
         : '',
       selectedTemplate === 'T03'

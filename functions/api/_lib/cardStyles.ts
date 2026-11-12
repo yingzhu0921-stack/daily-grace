@@ -15,18 +15,30 @@ export const T01_FLAT_MEDIUM = 'FLAT, MINIMAL illustration in the style of a mod
   + 'NO shading, NO gradients, NO highlights. Simple BLOBBY, slightly LOPSIDED shapes with soft hand-drawn edges — '
   + 'charmingly wonky, never geometric or polished. ';
 
-/** 인물 생김새. 머리카락과 팔다리가 없으면 사람이 아니라 달걀로 그려진다. */
-export const T01_FIGURE_LOOK = 'Any character is a chunky little blob body with a round face, '
-  + 'TINY DOT EYES and a small deadpan flat mouth, drawn with tiny dots and short thin lines only. A character always has CLEARLY DRAWN HAIR with a real shape and simple limbs — never a bald featureless egg. No eyebrows, '
-  + 'no blush, no smile lines, no expressive cartoon faces. ';
+/**
+ * 인물 생김새. 머리카락과 팔다리가 없으면 사람이 아니라 달걀로 그려진다.
+ * 2026-11-12 사용자(인디 그림책 레퍼런스): "사람 생김새가 더 개성 있고 귀엽게" → 큰 머리·짧은 몸·작은 점 눈·사람마다 특징 하나.
+ */
+export const T01_FIGURE_LOOK = 'Characters are small, chunky and charming, like characters from an indie picture book or zine: '
+  + 'an OVERSIZED soft round head (a third of the body height or more), a short stubby body, tiny mitten hands and short legs. '
+  + 'The face is tiny and simple: two small dot eyes set a little wide apart, sometimes a small round dark nose dot, and a tiny short line for a mouth — '
+  + 'a slightly sleepy, deadpan, quietly funny look. Give each character ONE personal quirk so they feel like an individual '
+  + '(a cowlick, a bobble hat, round glasses, a messy fringe, a striped top, two flat round cheek patches). '
+  + 'A character always has CLEARLY DRAWN HAIR (or a hat) with a real shape and simple limbs — never a bald featureless egg. '
+  + 'No realistic proportions, no detailed cartoon face, no big sparkly eyes. ';
 
-/** 악센트 색. 뒤에 붙는 바탕 설명이 카드와 편집 화면에서 다르므로 색만 떼어 둔다. */
-export const T01_ACCENT_COLOURS = 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) ';
+/**
+ * 색. 뒤에 붙는 바탕 설명이 카드와 편집 화면에서 다르므로 색만 떼어 둔다.
+ * 2026-11-12 사용자: "채도 높게, 이런 질감·색감" → 큰 색면끼리 부딪히는 진한 색.
+ */
+export const T01_ACCENT_COLOURS = 'RICH, HIGHLY SATURATED colours with bold contrast between large colour areas '
+  + '(deep emerald green, tangerine orange, ultramarine and cobalt blue, lemon yellow, tomato red, warm cream white, chocolate brown) ';
 
-/** 표면 질감. */
-export const T01_SURFACE = 'Clean smooth surface with at most a very subtle paper grain. ';
+/** 표면 질감. 2026-11-12 사용자 레퍼런스: 매끈한 벡터가 아니라 리소그래프·실크스크린 인쇄 느낌. */
+export const T01_SURFACE = 'A printed indie-zine surface: a fine, clearly visible risograph / screen-print GRAIN over every colour area, '
+  + 'and slightly dry, rough, hand-cut edges on the shapes, like gouache printed on matte paper. Never glossy, never smooth digital vector. ';
 
 /** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
 export const T01_NOT = 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
   + 'NO crayon, NO pencil or colored-pencil, NO pastel texture, NO watercolor, NO marker bleed, NO halftone dots, '
-  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted, NOT dark, NOT photo-realistic, NOT a church poster.';
+  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted or pastel, NOT gloomy, NOT photo-realistic, NOT a church poster.';
