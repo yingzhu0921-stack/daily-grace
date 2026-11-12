@@ -1,6 +1,6 @@
 import { getSessionUser } from './_lib/session';
 import type { Env } from './_lib/db';
-import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote, manualBackgroundStyles } from './_lib/manualBackground';
+import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote, manualBackgroundStyles, MINIMAL_COLOUR_MOODS } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { checkAiLimits, aiLimitMessage, isAiTester } from './_lib/aiLimits';
 import { FLAT_SUBJECT_DOMAINS, MINIMAL_SCENE_REGISTERS, JESUS_FIRST_CHECK, pickRegister, deepScenePrompt, parseDeepScene, isStockScene } from './_lib/sceneReading';
@@ -992,16 +992,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         // 2026-11-12 사용자: 편집 미니멀처럼, 내용에 맞게. 위쪽 빈 자리가 늘 파란 하늘이 돼 카드가 다 비슷했다 → 색 분위기를 카드마다 돌린다.
         bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky) with only the fine grain — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away.`,
         // 글씨 색은 브라우저가 배경 밝기를 보고 정한다(ink 'auto').
-        palettes: [
-          'deep forest green land under a dusky violet sky',
-          'deep navy night with a few warm golden lights',
-          'misty sage green and soft pale grey fog',
-          'warm ochre and rust autumn fields under a cream sky',
-          'deep teal water under a peach dawn sky',
-          'snowy white land under a cool blue-grey sky',
-          'olive green hills under a soft rose evening sky',
-          'deep blue sea under a pale lemon sky',
-        ].map((bgc) => ({ name: 'auto', bg: bgc, ink: 'auto', sub: 'auto', accent: 'auto' })),
+        palettes: MINIMAL_COLOUR_MOODS.map((bgc) => ({ name: 'auto', bg: bgc, ink: 'auto', sub: 'auto', accent: 'auto' })),
       },
     ];
     const t02Pick = selectedTemplate === 'T02' ? t02Styles[Math.abs(templateIndex) % t02Styles.length] : null;
@@ -1346,7 +1337,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               flat: isFlat,
               cardBrief: isFlat
                 ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
-                : 'a calm, minimal gouache picture: a few large areas of rich colour, very little detail, one small point of interest. At most one person, far away and tiny, and only when the message is about what a person does.',
+                : 'a calm, minimal gouache picture seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. NO indoor rooms, NO tabletop objects, NO close-ups. When the message names a Bible person or a Bible moment, SHOW it in this minimal way: the people of that moment tiny and far away but recognisable by the clothing of their time (a long robe, a head cloth, a staff) in their known setting — e.g. Abraham small before his tents under a sky full of stars, a shepherd with a few sheep on a hillside. When the message is about what the Lord does as a shepherd, a tiny shepherd with his sheep.',
               register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
               outputShape: isFlat
                 ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
@@ -1356,11 +1347,12 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
           { role: 'user', content: scene },
         ], 500, 'gpt-4o');
         const deep = parseDeepScene(deepRaw);
-        if (deep?.kind === 'abstract' && deep.scene) decidedScene = deep.scene;
+        // 미니멀은 성경 사건(moment)도 깊게 읽은 장면을 쓴다(완전 자동 T02 와 같게: 장막 앞 아브라함, 양 떼와 목자).
+        if (deep?.scene && (deep.kind === 'abstract' || (!isFlat && deep.kind === 'moment'))) decidedScene = deep.scene;
       } catch { /* 실패하면 원래 규칙대로 늘린다 */ }
     }
     const decidedNote = decidedScene
-      ? `\n\n이번 입력은 장면이 없는 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
+      ? `\n\n이번 입력은 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
       : '';
     const expanded = await gpt(env.OPENAI_API_KEY, [
       {
