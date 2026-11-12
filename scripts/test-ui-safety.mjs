@@ -559,10 +559,13 @@ test('T02 splits intro, hero and reference without dropping any words', () => {
     { text: '수1:9', scale: 0.5 },
   ];
   const p = splitT02Lines(lines);
-  assert.deepEqual(JSON.parse(JSON.stringify(p)), { intro: ['강하고 담대하라'], hero: ['네가 어디로 가든지', '너와 함께 하느니라'], ref: '수1:9' });
+  assert.deepEqual(JSON.parse(JSON.stringify(p)), { intro: ['강하고 담대하라'], hero: ['네가 어디로 가든지', '너와 함께 하느니라'], ref: '수1:9', body: [{ text: '강하고 담대하라', big: false }, { text: '네가 어디로 가든지', big: true }, { text: '너와 함께 하느니라', big: true }] });
+  // 미니멀은 가운데 줄 하나만 강조할 수도 있다(줄 순서는 그대로).
+  const mid = splitT02Lines([{ text: '가', scale: 1 }, { text: '나', scale: 1.5 }, { text: '다', scale: 1 }]);
+  assert.deepEqual(JSON.parse(JSON.stringify(mid.body)), [{ text: '가', big: false }, { text: '나', big: true }, { text: '다', big: false }]);
   // 강조 줄이 없으면 본문 전체가 큰 글씨, 주소는 글자 모양으로도 알아본다.
   const q = splitT02Lines([{ text: '주님은 나의 반석이시요', scale: 1 }, { text: '시 18:2', scale: 1 }]);
-  assert.deepEqual(JSON.parse(JSON.stringify(q)), { intro: [], hero: ['주님은 나의 반석이시요'], ref: '시 18:2' });
+  assert.deepEqual(JSON.parse(JSON.stringify(q)), { intro: [], hero: ['주님은 나의 반석이시요'], ref: '시 18:2', body: [{ text: '주님은 나의 반석이시요', big: true }] });
 });
 
 test('T02 layout keeps every character and fits long text inside the card', () => {

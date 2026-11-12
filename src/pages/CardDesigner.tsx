@@ -592,6 +592,8 @@ export default function Designer() {
   // T04 제자리 문구 수정: null이면 편집 안 함, 문자열이면 편집 중(본문 초안)
   const [textEditDraft, setTextEditDraft] = useState<string | null>(null);
   // 강조 고르기 패널. null 이면 안 열림. from 은 첫 번째로 탭한 어절(아직 끝을 안 고름).
+  // T02(미니멀)는 줄 단위로 강조를 고른다. 열려 있으면 true.
+  const [lineEmphasisOpen, setLineEmphasisOpen] = useState(false);
   const [emphasisPick, setEmphasisPick] = useState<{ from: number | null; applied: { from: number; to: number } | null } | null>(null);
   // 고른 뒤 카드를 다시 그리는 동안. 연타로 순서가 엉키는 걸 막는다.
   const [emphasisBusy, setEmphasisBusy] = useState(false);
@@ -2783,6 +2785,22 @@ export default function Designer() {
     const emphasisBody = autoResult?.genBodyText || autoResult?.simpleLines?.[0] || verseInput.trim();
     const emphasisCanPick = autoResult?.template === 'T03' && canEmphasize(emphasisBody);
     const emphasisWordList = emphasisCanPick ? emphasisWords(emphasisBody) : [];
+    // 2026-11-12 사용자: "텍스트 강조 부분 수정을 못 하네" — 미니멀(T02)은 줄을 눌러 크게/작게 바꾼다. 배경 그대로 다시 굽는다(AI 호출 0).
+    const lineEmphasisCanPick = autoResult?.template === 'T02' && !!autoResult?.t02 && !!autoResult?.t02Background;
+    const emphasisLineList = lineEmphasisCanPick
+      ? (autoResult?.lines || []).map((l, i) => ({ ...l, i })).filter((l) => !isAutoCaptionLine(l.text, l.scale))
+      : [];
+    const setLineScales = (nextScale: (l: { text: string; scale?: number }, i: number) => number) => {
+      if (!autoResult?.t02 || !autoResult.t02Background || emphasisBusy) return;
+      const base = autoResult;
+      const newLines = (base.lines || []).map((l, i) => (isAutoCaptionLine(l.text, l.scale) ? l : { ...l, scale: nextScale(l, i) }));
+      setEmphasisBusy(true);
+      renderT02Poster(base.t02Background!, newLines, base.t02!)
+        .then((image) => setAutoResult({ ...base, image, lines: newLines }))
+        .catch(() => toast.error('강조를 바꾸지 못했어요. 다시 시도해 주세요.'))
+        .finally(() => setEmphasisBusy(false));
+    };
+    const toggleLineEmphasis = (index: number) => setLineScales((l, i) => (i === index ? ((l.scale ?? 1) >= 1.2 ? 1 : 1.5) : (l.scale ?? 1)));
 
     const applyEmphasis = async (next: EmphasisChoice | undefined) => {
       if (!autoResult || autoResult.template !== 'T03') return;
@@ -2832,6 +2850,7 @@ export default function Designer() {
 
     const handleRegenerate = async () => {
       setTextEditDraft(null);
+      setLineEmphasisOpen(false);
       // T03 그레인: 새 시드로 즉시 재생성 (AI 호출 없음, 토큰 0)
       if (autoResult?.template === 'T03') {
         setIsGenerating(true);
@@ -3145,7 +3164,36 @@ export default function Designer() {
             코드로 그려서 철자가 정확해요. 다시 생성과 문구 수정 모두 바로 반영돼요.
           </div>
         )}
-        {emphasisPick !== null ? (
+        {lineEmphasisOpen && lineEmphasisCanPick ? (
+          <div className="shrink-0 px-4 py-3 bg-white border-t">
+            <p className="mb-2 text-xs text-[#7E7C78]">{emphasisBusy ? '카드를 다시 그리는 중…' : '크게 쓸 줄을 눌러요. 다시 누르면 작아져요.'}</p>
+            <div className={`max-h-48 overflow-y-auto rounded-xl border border-[#E3E2E0] p-2 flex flex-col gap-1.5 ${emphasisBusy ? 'opacity-50' : ''}`}>
+              {emphasisLineList.map((l) => {
+                const big = (l.scale ?? 1) >= 1.2;
+                return (
+                  <button
+                    key={l.i}
+                    type="button"
+                    disabled={emphasisBusy}
+                    onClick={() => toggleLineEmphasis(l.i)}
+                    className={`min-h-11 rounded-lg px-3 py-2 text-left text-base transition-colors ${big ? 'bg-[#1F1F1F] text-white font-medium' : 'bg-[#F7F6F5] text-[#4A4845] active:bg-[#EDEBE9]'}`}
+                  >{l.text}</button>
+                );
+              })}
+            </div>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <button
+                disabled={emphasisBusy}
+                onClick={() => setLineScales(() => 1)}
+                className="px-4 py-2 min-h-11 border border-[#D8D6D2] text-[#1F1F1F] rounded-xl font-medium"
+              >강조 없음</button>
+              <button
+                onClick={() => setLineEmphasisOpen(false)}
+                className="px-4 py-2 min-h-11 bg-[#1F1F1F] text-white rounded-xl font-medium"
+              >완료</button>
+            </div>
+          </div>
+        ) : emphasisPick !== null ? (
           <div className="shrink-0 px-4 py-3 bg-white border-t">
             <div className="mb-2 flex items-center justify-between gap-2">
               <p className="text-xs text-[#7E7C78]">
@@ -3216,13 +3264,13 @@ export default function Designer() {
             >문구 수정</button>
             <button
               disabled={isGenerating || isSaving}
-              onClick={() => { setTextEditDraft(null); setFlowStep('auto-template'); }}
+              onClick={() => { setTextEditDraft(null); setLineEmphasisOpen(false); setFlowStep('auto-template'); }}
               className="flex-1 rounded-[9px] py-2.5 text-[13px] text-[#4A4845] transition-colors hover:bg-white/70 disabled:opacity-40"
             >스타일 변경</button>
-            {emphasisCanPick && (
+            {(emphasisCanPick || lineEmphasisCanPick) && (
               <button
                 disabled={isGenerating || isSaving}
-                onClick={openEmphasisPicker}
+                onClick={() => { if (lineEmphasisCanPick) { setTextEditDraft(null); setLineEmphasisOpen(true); } else openEmphasisPicker(); }}
                 className="flex-1 rounded-[9px] py-2.5 text-[13px] text-[#4A4845] transition-colors hover:bg-white/70 disabled:opacity-40"
               >강조 고르기</button>
             )}

@@ -19,13 +19,14 @@ export const FLAT_SUBJECT_DOMAINS = [
 ];
 
 /** 미니멀 감성(T02·편집) 장면 갈래. 길이 6. */
+// 2026-11-12 다시 씀: 책상 위 물건·실내 갈래가 시계·침대 옆 성경 같은 장면을 불렀다. 미니멀은 멀리서 본 넓은 색면 + 작은 포인트.
 export const MINIMAL_SCENE_REGISTERS = [
-  'A WIDE LANDSCAPE whose land form, season and weather are specific to this message — not a generic meadow, grassland or sea.',
-  'ONE HUMAN-MADE THING standing in a large open space, whose real use mirrors what the message does.',
-  'A TOWN, VILLAGE OR STREET seen from a distance at one particular hour, with the light in it doing what the message does.',
-  'NIGHT — the dark and the few lights in it carrying the message.',
-  'ONE OR TWO EVERYDAY OBJECTS on a large plain field of colour, placed so that their relation tells the message.',
-  'A TRACE OF SOMEONE WHO IS NOT IN THE PICTURE — something just used, set down, left open or left lit — that shows what the message does.',
+  'LAND SEEN FROM HIGH ABOVE — fields, paths or a winding road as large colour shapes, with the small point of interest on it.',
+  'WATER SEEN FROM ABOVE OR FAR AWAY — a lake, sea or river as one large colour field, with the small point of interest on or beside it.',
+  'A SINGLE SMALL THING IN A VAST SPACE — one tree, one small house, one tiny person — whose situation tells the message.',
+  'A PARTICULAR HOUR OR WEATHER — dawn, dusk, night, snow, fog or rain over a simple landscape, with the small point of interest.',
+  'A FEW HOUSES FAR AWAY in a large landscape, with one small detail that tells the message (a single lit window, smoke from a chimney, a light on a path).',
+  'A TINY PERSON DOING THE MESSAGE\'S ACTION in a wide simple landscape — small, but clearly doing it.',
 ];
 
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
@@ -60,7 +61,7 @@ export interface DeepSceneOptions {
 // 이어서 "엉뚱하게 나옴"(살전5:16-18 → 서커스 천막 앞 외발자전거 저글링): 장면 발상 자체가 개그가 되면 말씀의 뜻이 사라진다.
 // 장면은 뜻이 느껴지는 진심 어린 순간, 귀여움·익살은 캐릭터의 표정과 자세에서만.
 const FLAT_IDEA_STEP = `4. lifeMoment — a SINCERE little moment that SHOWS what the message asks or promises, so the reader feels the verse: someone actually doing it (praying, giving thanks, resting, handing over, being carried, waiting) in a simple, heartfelt way. When the message is about what God, the Lord or Jesus does or is (a shepherd, a refuge, the one who cares or gives grace), Jesus is in the picture doing it. It may be a gentle picture-book image, but its meaning must be obvious and sincere — NOT a gag, a trick, a performance or a visual pun. The charm and humour come only from the character's expression and pose, never from turning the verse into a joke.
-5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise draw the moment from step 4, seen through the REGISTER below.`;
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery — the imagery decides the scene and the REGISTER below is ignored. Otherwise draw the moment from step 4, seen through the REGISTER below.`;
 
 /** 플랫 결과가 몰렸던 실내 일상 장면. */
 const FLAT_STOCK = 'a circus or circus tent, juggling, a unicycle, magic tricks, a stage performance, a trampoline, a person sitting at a table, desk or kitchen counter, a group around a table, a Bible study, a mug or cup of coffee, a potted plant on a windowsill or table, a window with sunlight, an open Bible on a table, a laptop, washing dishes, a church window with a cross';
@@ -80,7 +81,7 @@ ${classifyStep}1. speaker — who is talking to whom: God to a person, a person 
 2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace. If the message turns on a CONTRAST or PARADOX (weakness → strength, losing → gaining, the last → the first, death → life), write both halves here; the picture must then show both halves, not just a general mood.
 3. imagery — every picture, comparison or concrete word inside the message itself, as "Korean phrase = English". Write "none" if there is none.
 ${o.flat ? FLAT_IDEA_STEP : `4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
-5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below.`} Write it as ${o.outputShape}.
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery — the imagery decides the scene and the REGISTER below is ignored (목자 means a shepherd with sheep, not a fisherman). Otherwise build it from action and lifeMoment, seen through the REGISTER below.`} Write it as ${o.outputShape}.
 
 THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `

@@ -87,18 +87,26 @@ export function isT02RefLine(l: T02Line): boolean {
     || /^[가-힣]{1,6}\s?\d{1,3}편$/.test(t);
 }
 
-export interface T02Parts { intro: string[]; hero: string[]; ref: string }
+export interface T02Parts {
+  intro: string[];
+  hero: string[];
+  ref: string;
+  /** 원래 순서의 본문 줄과 강조 여부. 미니멀처럼 줄마다 강조를 고르는 스타일이 쓴다(강조 줄이 없으면 전부 big). */
+  body: { text: string; big: boolean }[];
+}
 
 /** 줄을 '작은 도입부 / 큰 글씨 / 출처'로 나눈다. 강조 줄이 없으면 본문 전체가 큰 글씨다. */
 export function splitT02Lines(lines: T02Line[]): T02Parts {
   const refLine = lines.find(isT02RefLine);
   const body = lines.filter((l) => l !== refLine && l.text.trim());
   const firstHero = body.findIndex((l) => (l.scale ?? 1) >= 1.2);
-  if (firstHero < 0) return { intro: [], hero: body.map((l) => l.text.trim()), ref: refLine?.text.trim() || '' };
+  const bodyLines = body.map((l) => ({ text: l.text.trim(), big: firstHero < 0 || (l.scale ?? 1) >= 1.2 }));
+  if (firstHero < 0) return { intro: [], hero: body.map((l) => l.text.trim()), ref: refLine?.text.trim() || '', body: bodyLines };
   return {
     intro: body.slice(0, firstHero).map((l) => l.text.trim()),
     hero: body.slice(firstHero).map((l) => l.text.trim()),
     ref: refLine?.text.trim() || '',
+    body: bodyLines,
   };
 }
 
@@ -173,6 +181,28 @@ function buildRows(ctx: CanvasRenderingContext2D, parts: T02Parts, info: T02Info
   const subSize = quiet ? size * 0.72 : Math.max(Math.min(W * 0.034, size * 0.7), size * 0.28);
   const refSize = quiet ? size * 0.6 : Math.max(Math.min(W * 0.03, size * 0.6), subSize * 0.85);
   const rows: Laid[] = [];
+  // 미니멀·플랫: 줄마다 강조를 따로 고를 수 있다(2026-11-12 사용자: "텍스트 강조 부분 수정을 못 하네").
+  // 강조 줄은 큰 글씨, 나머지는 작은 글씨로, 원래 줄 순서를 그대로 지킨다.
+  if (quiet && parts.body?.length) {
+    let prevBig: boolean | null = null;
+    for (const line of parts.body) {
+      const sz = line.big ? size : subSize;
+      ctx.font = fontCss(line.big ? hero : sub, sz);
+      const wrapped = line.big ? wrapBalanced(ctx, line.text, w) : wrapWords(ctx, line.text, w);
+      wrapped.forEach((r, i) => {
+        const gap = !rows.length ? 0 : i > 0 ? sz * 0.08 : prevBig === line.big ? sz * 0.12 : sz * 0.35;
+        rows.push({ text: r, font: ctx.font, size: sz, color: line.big ? info.ink : info.sub, gapBefore: gap });
+      });
+      prevBig = line.big;
+    }
+    if (parts.ref) {
+      ctx.font = fontCss(sub, refSize);
+      rows.push({ text: parts.ref, font: ctx.font, size: refSize, color: info.sub, gapBefore: Math.max(size * 0.45, refSize * 0.6) });
+    }
+    const height = rows.reduce((h, r) => h + r.gapBefore + r.size * 1.05, 0);
+    const widest = rows.length ? Math.max(...rows.map((r) => { ctx.font = r.font; return ctx.measureText(r.text).width; })) : 0;
+    return { rows, height, widest };
+  }
   ctx.font = fontCss(sub, subSize);
   for (const t of parts.intro) {
     for (const r of wrapWords(ctx, t, w)) rows.push({ text: r, font: ctx.font, size: subSize, color: info.sub, gapBefore: rows.length ? subSize * 0.3 : 0 });

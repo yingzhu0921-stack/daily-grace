@@ -659,7 +659,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
         ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
-        : 'a calm, minimal gouache card: a few large areas of rich colour, the scene and one small point of interest in the LOWER part, the upper part plain. NO people, faces, figures, hands or body parts.';
+        : 'a calm, minimal gouache card seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. At most one person, tiny and faceless. NO indoor rooms, NO tabletop objects, NO close-ups.';
       const register = isT01 ? t01SubjectDomain : t02SceneRegister;
       const outputShape = isT01
         ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
@@ -677,7 +677,8 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         ], 500, 'gpt-4o'))?.scene || '';
         let scene = await askScene('');
         // 금지 목록을 어기고 흔한 그림을 고르면 최대 두 번 다시 고르게 한다. 그래도 흔하면 마지막 것을 쓴다.
-        if (scene && isStockScene(scene, sceneSource)) {
+        // 흔한 그림 다시 고르기는 T01 만. 미니멀은 풍경(언덕·물·배)이 그림체 자체라 막으면 계속 다시 고른다.
+        if (isT01 && scene && isStockScene(scene, sceneSource)) {
           const tried = [scene];
           for (let i = 0; i < 2 && scene && isStockScene(scene, sceneSource); i++) {
             const next = await askScene(`\n\nYour earlier ideas were ${tried.map((t) => `"${t}"`).join(' and ')} — those are STOCK PICTURES. Choose a genuinely different picture that is not on that list (no streams, sprouts, sunrises, hills or lily pads).`).catch(() => '');
@@ -687,7 +688,7 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
           }
         }
         // 그래도 흔한 그림이면, 위 분석이 이미 고른 장면이 흔하지 않을 때 그쪽을 쓴다(새 장면을 버린다).
-        if (scene && isStockScene(scene, sceneSource)) {
+        if (isT01 && scene && isStockScene(scene, sceneSource)) {
           const earlier = isT01 ? analysis.t01SceneConcept : analysis.t03NatureConcept;
           if (earlier && !isStockScene(earlier, sceneSource)) scene = '';
         }
@@ -986,9 +987,19 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const t02Styles: { key: string; usesScene: boolean; zone: 'lower' | 'center' | 'left' | 'upper'; bg: string; palettes: T02Palette[] }[] = [
       {
         key: 'minimal', usesScene: true, zone: 'upper',
-        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, grass or a field) with only the fine grain — no objects, birds or detail there — because the card text is printed on it.`,
+        // 2026-11-12 사용자: 편집 미니멀처럼, 내용에 맞게. 위쪽 빈 자리가 늘 파란 하늘이 돼 카드가 다 비슷했다 → 색 분위기를 카드마다 돌린다.
+        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky) with only the fine grain — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away.`,
         // 글씨 색은 브라우저가 배경 밝기를 보고 정한다(ink 'auto').
-        palettes: [{ name: 'auto', bg: 'rich natural colour as the scene needs', ink: 'auto', sub: 'auto', accent: 'auto' }],
+        palettes: [
+          'deep forest green land under a dusky violet sky',
+          'deep navy night with a few warm golden lights',
+          'misty sage green and soft pale grey fog',
+          'warm ochre and rust autumn fields under a cream sky',
+          'deep teal water under a peach dawn sky',
+          'snowy white land under a cool blue-grey sky',
+          'olive green hills under a soft rose evening sky',
+          'deep blue sea under a pale lemon sky',
+        ].map((bgc) => ({ name: 'auto', bg: bgc, ink: 'auto', sub: 'auto', accent: 'auto' })),
       },
     ];
     const t02Pick = selectedTemplate === 'T02' ? t02Styles[Math.abs(templateIndex) % t02Styles.length] : null;
@@ -1016,7 +1027,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 메시지 맞춤 배경 — 세련된 에디토리얼 톤, 촌스러운 AI 교회포스터 금지
     const personalizedBrief = [
       t02Archetype
-        ? `THE STYLE FOR THIS CARD (follow it EXACTLY): ${t02Archetype} NO PEOPLE: no people, faces, figures, hands or body parts anywhere.`
+        ? `THE STYLE FOR THIS CARD (follow it EXACTLY): ${t02Archetype} PEOPLE: at most one tiny, faceless figure far away; no faces, hands or close-up people.`
         : '',
       selectedTemplate === 'T02'
         ? 'This is a CALM, MINIMAL, design-forward card background — a few large areas of rich colour, very little detail, quiet and poetic.'
