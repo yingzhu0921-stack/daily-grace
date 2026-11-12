@@ -1121,6 +1121,8 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             T01_JESUS_RULE,
             `T01 FONT VARIANT (render the lettering in EXACTLY this handwriting style): ${t01TypographyStyle}. ${T01_LETTER_RULE} Do not default to the same rounded marker hand on every card.`,
             'EMPHASIS (CRITICAL): show the key phrase only by making it a little larger or bolder. NO highlight bands, NO marker blocks or colour boxes behind words, NO underlines, NO circles.',
+            // 2026-11-12 시험에서 6장 중 2장이 주소를 맨 아래에 한 번 더 그렸다.
+            'REFERENCE ONCE: if there is a Bible reference line, draw it exactly ONCE, small, right under the text block — never repeat it anywhere else (not at the bottom of the card).',
             `VARIATION SEED: ${templateIndex}. Vary the ground colour, the picture, the figure (or no figure) and the composition from other T01 cards.`,
             'SCENE-FROM-VERSE RULE: everything drawn comes from THE SCENE above (the verse\'s own words or the moment it describes). Do NOT swap in a random cute animal, flowers or clouds for cuteness.',
           ].filter(Boolean).join(' ')
