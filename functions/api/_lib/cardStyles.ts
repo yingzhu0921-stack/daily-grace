@@ -25,13 +25,18 @@ export const T01_FLAT_MEDIUM = 'A cute, offbeat hand-drawn illustration like a K
 
 /** 인물. 나이·옷 규칙은 이름 없는 보통 사람에게만 적용하고, 성경 인물은 알아볼 특징을 지킨다. */
 // 귀여움은 둥글고 통통한 몸·점 눈·무심한 표정에서 나온다(레퍼런스의 곰). 아기처럼 보이는 건 거대한 머리와 아기 얼굴이라 그것만 뺀다.
-// 표정: 모두 상냥하게 웃으면 착한 동화책, 모두 무표정이면 귀여움이 없다(둘 다 사용자 지적) → 장면에 맞게 섞인 엉뚱한 표정.
-export const T01_FIGURE_LOOK = 'A person is a cute, slightly goofy indie mascot character, NOT a sweet storybook kid: '
-  + 'a soft round chubby body with a slightly big round head, simple arms with mitten hands and two short legs with little feet clearly visible; proportions a little odd, never neat. '
-  + 'The face is two small dark dot eyes and a small mouth whose expression FITS the moment and is a bit funny — a surprised "o", eyes closed in a contented squint, a tongue poking out, a wobbly worried line with a sweat drop, a determined pout. '
-  + 'Never everyone wearing the same polite smile; cheek patches only now and then. '
+// 2026-11-12 사용자: "너무 착해, 전형적인 웃음은 개성이 없다. 누구나 GPT 로 만들 수 있으면 안 되고 내 앱에서만 나오는 스타일".
+// 둥근 얼굴·볼터치·코 점·U자 웃음은 AI 의 기본 '귀여운 사람'이라 뺐다. 대신 하루은혜 고유 얼굴 규칙:
+// 입은 한글 자모 모양(ㅅ ㅁ ㅇ ㅡ ㅂ), 멀리 떨어진 세로 점 눈, 표정을 만드는 짧은 대시 눈썹, 넓적한 콩 얼굴.
+export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATURE CHARACTER — follow these face rules exactly, they are what make the style recognisable: '
+  + 'HEAD: a slightly wide BEAN-shaped head (not a perfect circle), hair as one chunky shape with a single stray tuft sticking up. '
+  + 'EYES: two small VERTICAL oval dots set FAR APART toward the sides of the face; for a contented or sleepy moment, two short horizontal dashes instead. '
+  + 'EYEBROWS: two short dashes that do the acting — raised high for surprise, slanted for determination, drooping for worry. '
+  + 'MOUTH: always shaped like a tiny Korean letter — ㅅ normally, ㅁ or ㅇ when surprised, ㅡ when deadpan, ㅂ when excited — placed small and low on the face. '
+  + 'NEVER a U-shaped smile or a curved grin, NO nose, NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
+  + 'BODY: soft and chunky with slightly odd proportions, simple arms with mitten hands and two short legs with little feet clearly visible. '
   + 'The humour comes from what the character does — struggling with something comically big, flopping over, peeking out, overreacting. '
-  + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person). Hair is one simple shape (or a simple hat); clothes are one flat colour. Never a bald featureless egg. '
+  + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person); clothes are one flat colour. Never a bald featureless egg. '
   + 'A Bible figure the scene names (Jesus, Moses, Abraham, David, Mary, a disciple, a shepherd) is drawn in this same simple way but keeps what identifies them: '
   + 'a long robe, a head cloth or sandals of their time, a staff, and grey hair and a beard for older figures such as Abraham or Moses. ';
 
