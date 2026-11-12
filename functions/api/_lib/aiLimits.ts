@@ -26,7 +26,8 @@ export const AI_LIMITS: Record<string, { perHour: number; perDay: number; makesI
  * 테스트 계정 한도(2026-11-11 사용자 결정: 하루 200장). 그림체 맞추기처럼 시험 생성을 반복할 때 일반 한도(30)로는 모자랐다.
  * 어떤 action 이든 이 값을 쓴다. 서비스 전체 하루 합계에는 그대로 들어가므로 전체 비용 상한은 바뀌지 않는다.
  */
-export const TESTER_LIMIT = { perHour: 60, perDay: 200 };
+// 2026-11-12 사용자: 그림체 시험 중 시간당 60장에 걸려 "한도 늘려서 생성해" → 시간당 200·하루 400. 서비스 전체 하루 상한(500)은 그대로.
+export const TESTER_LIMIT = { perHour: 200, perDay: 400 };
 
 /** 로그인한 계정의 이메일이 테스트 계정 목록(쉼표 구분)에 있는지. 대소문자·공백은 무시한다. */
 export function isAiTester(email: string | undefined, testerEmails: string | undefined): boolean {
