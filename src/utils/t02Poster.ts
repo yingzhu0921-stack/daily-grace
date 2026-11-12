@@ -39,6 +39,7 @@ const NOTO_SERIF_SUB: FontChoice = { family: "'Noto Serif KR', serif", weight: 6
 const SONG_MYUNG: FontChoice = { family: "'Song Myung', serif", weight: 400 };
 const MARUBURI: FontChoice = { family: "'MaruBuri', serif", weight: 400 };
 const PRETENDARD_500: FontChoice = { family: "'Pretendard', sans-serif", weight: 500 };
+const HAHMLET_400: FontChoice = { family: "'Hahmlet', serif", weight: 400 };
 // T01(귀여운 그림) 손글씨. 구글 폰트(OFL)와 카페24 슈퍼매직(번들 허용) — 앱 임베딩 가능한 것만.
 const GAEGU: FontChoice = { family: "'Gaegu', cursive", weight: 700 };
 const GOWUN_DODUM: FontChoice = { family: "'Gowun Dodum', sans-serif", weight: 400 };
@@ -53,7 +54,8 @@ export const HERO_FONTS: Record<T02StyleKey, FontChoice[]> = {
   serif: [HAHMLET, SONG_MYUNG, NOTO_SERIF],
   duotone: [PAPERLOGY, TAENADA, BLACK_HAN],
   // 2026-11-11 T02 = 미니멀 감성. 사용자 선택: 마루부리·Pretendard 를 번갈아, 작게, 그림자 없이.
-  minimal: [MARUBURI, PRETENDARD_500],
+  // 2026-11-12 사용자 선택(견본 12종 중): 마루부리 + 함렛. 둘 다 OFL(웹·앱 임베딩 가능).
+  minimal: [MARUBURI, HAHMLET_400],
   // 2026-11-12 T01 = 귀여운 그림. AI 손글씨가 학습지처럼 촌스러워서 진짜 손글씨 폰트로 작게 굽는다.
   // 하이멜로디는 가늘어서 색면 위에서 약해 보여 뺐다.
   flat: [GAEGU, GOWUN_DODUM, SUPERMAGIC],
