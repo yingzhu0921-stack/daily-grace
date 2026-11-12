@@ -84,7 +84,7 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
   // 짙은 색면에 고운 알갱이 질감을 입힌 과슈·그레인 일러스트. 전에는 한 줄짜리 지시라 특징이 없었다.
   // 사용자 결정: 사람은 '멀리 아주 작게' 허용(배 위 사람처럼).
   '미니멀 감성': {
-    technique: 'Calm, minimal gouache-style illustration with a fine grainy, stippled noise texture over every colour area, like a risograph or a textured digital gouache print. The picture is built from a few LARGE, simple areas of rich colour in ONE colour mood (given separately; never the same green land and blue water every time), with soft tonal shading made of grain rather than gradients — with almost no outlines. Seen from a calm distance or from above, very little detail, wide quiet areas of colour. ONE small bright point of interest (a tiny person, a small boat, a lit window, a few white birds, a single tree) placed against the large colour areas. No indoor rooms or tabletop close-ups unless the description asks for them. Natural and poetic, not cute, not cartoonish, not watercolor, not a photograph. No hearts, sparkles or floating decorations unless the scene description asks for them.',
+    technique: 'Calm, minimal gouache-style illustration with a fine grainy, stippled noise texture over every colour area, like a risograph or a textured digital gouache print. The picture is built from a few LARGE, simple areas of rich colour in ONE colour mood (given separately; never the same green land and blue water every time), with soft tonal shading made of grain rather than gradients — with almost no outlines. Seen from a calm distance or from above, very little detail, wide quiet areas of colour. ONE small bright point of interest (a tiny person, a small boat, a lit window, a few white birds, a single tree) placed against the large colour areas. No indoor rooms or tabletop close-ups unless the description asks for them. CLEAR, CRISP AIR: the colour areas are clean, saturated and well separated — no haze, mist, fog, washed-out greys or faded distance unless the description asks for them. Natural and poetic, not cute, not cartoonish, not watercolor, not a photograph. No hearts, sparkles or floating decorations unless the scene description asks for them.',
     medium: 'illustration',
     tinyFigures: true,
     figures: 'A person, when present, is TINY and far away — at most one person, a few percent of the frame, shown only by a simple silhouette and a spot of colour (for example a white shirt in a small boat), with no facial features. The person never becomes the main subject; the large calm colour areas stay the picture.',
@@ -234,14 +234,15 @@ export function cropSafeNote(generatedSize: string, displayRatio?: string): stri
 /**
  * 미니멀 감성 색 분위기. 완전 자동 T02 와 편집 화면이 같이 쓴다(2026-11-12 사용자: 편집에서도 동일하게).
  * 그림체 문구에 '짙은 초록·남색 물'이 박혀 있어 늘 같은 색이 나왔다.
+ * 이어서 "자꾸 안개 낀 것처럼 나온다" → 안개·회청 분위기를 맑은 색으로 바꾸고 그림체에 '맑은 공기'를 넣었다.
  */
 export const MINIMAL_COLOUR_MOODS = [
   'deep forest green land under a dusky violet sky',
   'deep navy night with a few warm golden lights',
-  'misty sage green and soft pale grey fog',
+  'fresh sage green hills under a clear pale mint sky',
   'warm ochre and rust autumn fields under a cream sky',
   'deep teal water under a peach dawn sky',
-  'snowy white land under a cool blue-grey sky',
+  'bright snowy white land under a clear cobalt sky',
   'olive green hills under a soft rose evening sky',
   'deep blue sea under a pale lemon sky',
 ];
