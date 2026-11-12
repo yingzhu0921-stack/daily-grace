@@ -82,7 +82,8 @@ ${o.flat ? FLAT_IDEA_STEP : `4. lifeMoment — ONE specific ordinary moment toda
 THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `
 ${JESUS_FIRST_CHECK}
-If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed.` : ''}
+If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed. A person the message does not name is a child, a teenager or a young adult — never an elderly person or a grandparent (Bible figures the message names are drawn as they are).` : ''}
+NO WRITTEN WORDS IN THE PICTURE: no English words, no letters spelled out by clouds, stars or objects. At most ONE short Korean word copied exactly from the message may appear as a small label on an object.
 STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.
 The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`;
 }

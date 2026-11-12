@@ -45,7 +45,7 @@ const T01_ART = T01_FLAT_MEDIUM
   + 'When the figure note for this card does not say who the person is, do NOT fall back to a long-haired girlish figure or to a girl with a puffy mop of brown curls — '
   + 'that default is what made every card look like the same girl. Vary it. '
   + T01_ACCENT_COLOURS
-  + 'over a plain flat ground of one rich colour — the ground colour is given separately for each card and is NOT always cream. '
+  + 'over a plain flat LIGHT ground — the ground colour is given separately for each card and is NOT always cream. '
   + T01_SURFACE
   + T01_SCENE_DENSITY
   + ' The main subject is taken from the verse\'s own words or from the moment it describes. Warm, lived-in and a little offbeat.';
@@ -314,26 +314,17 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     if (quotaDenied) return quotaDenied;
 
     // T01 바탕색 로테이션 — 전에는 늘 크림이라 카드가 전부 같아 보였다.
-    // 2026-11-12 사용자(인디 그림책 레퍼런스): "색감을 좀 더 채도 높게" → 연한 파스텔 대신 진한 색면.
-    // 바탕마다 글씨 색이 따라간다: 진한 바탕은 크림색 글씨, 밝은 바탕은 짙은 글씨.
-    const t01Grounds: { name: string; letters: string }[] = [
-      { name: 'deep emerald green', letters: 'warm cream white' },
-      { name: 'tangerine orange', letters: 'deep chocolate brown' },
-      { name: 'mustard yellow', letters: 'deep chocolate brown' },
-      { name: 'ultramarine blue', letters: 'warm cream white' },
-      { name: 'coral pink', letters: 'deep chocolate brown' },
-      { name: 'warm cream', letters: 'deep chocolate brown or deep cobalt' },
-      { name: 'bright sky blue', letters: 'deep navy' },
-      { name: 'tomato red', letters: 'warm cream white' },
-      { name: 'fresh leaf green', letters: 'deep forest green or chocolate brown' },
-      { name: 'butter yellow', letters: 'deep chocolate brown or tomato red' },
-      { name: 'deep teal', letters: 'warm cream white' },
-      { name: 'peach orange', letters: 'deep chocolate brown' },
+    // 글씨가 바로 올라앉는 면이라 전부 '밝고 연한' 색만 둔다.
+    // (2026-11-12 진한 색면을 시험했으나 사용자: "폰트가 들어가니까 촌스럽다, 원래대로 하고 질감만" → 되돌림.)
+    const t01Grounds = [
+      // 이어서 "원래보다는 찐하게" → 연한 파스텔에서 한 단계 진한 중간 밝기. 짙은 글씨는 그대로 읽혀야 한다.
+      'warm cream', 'butter yellow', 'clear powder blue', 'sage green',
+      'warm sand', 'rosy pink', 'soft lilac', 'mint green',
+      'apricot', 'warm stone', 'sky blue', 'oatmeal',
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
-    const t01GroundPick = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
-    const t01Ground = t01GroundPick.name;
+    const t01Ground = t01Grounds[Math.abs(templateIndex * 7 + 1) % t01Grounds.length];
     // T01 소재 갈래. 구체적 사물이 없는 말씀일 때 쓰라고 준 목록이 "빛·길·문·창·언덕·물·식물·등불"
     // 여덟 개로 고정돼 있어서, 추상적인 말씀은 매번 산을 오르는 사람 아니면 열린 문이 됐다.
     // 카드마다 찾아볼 곳을 바꿔 준다. 길이 7·보폭 3은 서로소라 7장이면 모든 갈래가 나온다.
@@ -344,7 +335,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid rich colour from edge to edge with the fine print grain — no gradient, no frame. Do NOT fall back to cream or a pale pastel unless that is the colour named here. The scene's shapes use colours that clearly contrast with this ground (like an orange table against a green wall).`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the fine print grain — a medium-light tone a step deeper than a pale pastel, clearly coloured and never washed out, yet light enough for dark letters — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here. The lettering sits directly on this ground, so keep it light enough to read dark letters on.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -507,7 +498,7 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
 - T01 is not brush calligraphy and not a doodle cartoon. It is a FLAT, OUTLINE-FREE illustration in the style of a modern Korean/Japanese indie sticker or zine artist, with playful Korean hand-lettering.
 - NO OUTLINES AT ALL. Shapes are made of SOLID FLAT COLOR only, never defined by a drawn line. NO gradient, NO airbrush/soft shading, NO painterly texture, NO crayon, NO pencil, NO watercolor, NO halftone dots. A fine risograph / screen-print grain over the colour areas is the only texture.
 - Shapes are BLOBBY and slightly LOPSIDED with soft hand-drawn edges — charmingly wonky, never geometric or polished.
-- RICH, HIGHLY SATURATED colours — deep emerald green, tangerine orange, ultramarine blue, lemon yellow, tomato red, warm cream, chocolate brown — in large contrasting colour areas over a plain flat ground of one rich colour. The ground colour CHANGES from card to card; it is given per card, so do not assume cream. Not pastel, not muted.
+- BOLD SATURATED accent colors — cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown — over a plain flat LIGHT ground. The ground colour CHANGES from card to card (cream, pale butter, powder blue, sage, sand, blush, lilac, mint, apricot, warm grey); it is given per card, so do not assume cream. Not pastel, not muted.
 - A SMALL SCENE IN THE LOWER HALF: one main subject the reader can trace back to THE VERSE'S OWN WORDS, plus two to four supporting things from the same place, so it is a little world and not one lone sticker. The whole UPPER area stays plain empty ground colour for the text. Never a crowded full-card scene. A cute animal that the verse never mentions is NOT an acceptable subject.
 - Do NOT put faces (eyes/nose/mouth) on inanimate objects.
 - A character is small and chunky with an OVERSIZED round head, stubby limbs, TINY DOT EYES set a little wide apart and a tiny deadpan mouth, plus one personal quirk (a cowlick, a bobble hat, round glasses) — faces are dots and short lines only, never a detailed cartoon face.
@@ -863,6 +854,7 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
       'T01 LAYOUT I — sticker row: three or four simple flat sticker-like shapes from THE SCENE arranged in a loose row low in the frame, playful hand lettering above.',
       'T01 LAYOUT J — corner scene card: a small flat vignette of THE SCENE tucked into a bottom corner, handwritten note text, calm and offbeat.',
     ];
+    // 2026-11-12 사용자: 이름 없는 보통 사람으로 할아버지가 나오면 안 된다(사용자층이 아님). 성경 인물은 괜찮다 → 노인 두 칸을 젊은 사람으로.
     // T01 인물 로테이션 — 지시가 "머리 모양이 있을 것"까지만이라 모델이 매번 같은
     // 갈색 단발 여자아이로 수렴했다. 절반 가까이는 아예 사람을 빼서 소재도 넓힌다.
     // "사람을 빼라"는 항목에도 캐스팅을 적어 둔다. 장면이 사람을 요구하면 어차피 그려지는데,
@@ -870,10 +862,10 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
     const t01Figures = [
       'PEOPLE: prefer NO person — show THE SCENE through its setting, object or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a MAN with short straight black hair.',
       'PEOPLE: prefer NO person — show THE SCENE through its place, water, weather or light instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a SMALL BOY with a straight black bowl cut.',
-      'PEOPLE: prefer NO person — show THE SCENE through the single object at its centre instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw an OLDER WOMAN with grey hair in a low bun.',
+      'PEOPLE: prefer NO person — show THE SCENE through the single object at its centre instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a YOUNG WOMAN in her twenties with a short straight bob tucked behind her ears.',
       'PEOPLE: prefer NO person — show THE SCENE through its growing or living things instead of through a figure. Only draw a person if THE SCENE is unmistakably ABOUT a person; never invent a substitute object that THE SCENE does not contain. If a person is needed after all, draw a MAN with a short beard and cropped dark hair.',
       'PEOPLE: if THE SCENE calls for a person, draw a SMALL BOY with short straight black hair.',
-      'PEOPLE: if THE SCENE calls for a person, draw an OLDER MAN with thin grey hair and a short grey beard.',
+      'PEOPLE: if THE SCENE calls for a person, draw a YOUNG MAN in his twenties with short messy dark hair and round glasses.',
       'PEOPLE: if THE SCENE calls for a person, draw a MAN with short cropped dark hair.',
       'PEOPLE: if THE SCENE calls for a person, draw a WOMAN with straight dark hair tied back in a low ponytail or a bun.',
       'PEOPLE: if THE SCENE calls for a person, draw the figure SEEN FROM BEHIND so no face shows, with short straight dark hair.',
@@ -886,7 +878,7 @@ THE REGISTER YIELDS TO THE VERSE — it chooses HOW to translate the meaning, ne
     // 그래서 '누구인지 정해지지 않은 보통 사람'일 때만 쓰도록 못을 박는다.
     const t01Figure = selectedTemplate === 'T01'
       ? `${t01Figures[Math.abs(templateIndex * 5 + 2) % t01Figures.length]}
-THIS CASTING NOTE APPLIES ONLY TO AN UNSPECIFIED, GENERIC EVERYDAY PERSON. If THE SCENE or THE MOMENT above names who is there — anyone the passage itself identifies — draw THAT person as the moment requires and IGNORE this note completely. Never recast a named figure as a child, an older person, a woman, a man or two figures because this note says so.
+THIS CASTING NOTE APPLIES ONLY TO AN UNSPECIFIED, GENERIC EVERYDAY PERSON. Such a person is always a child, a teenager or a young adult — NEVER an elderly person, a grandparent, grey or white hair, or a grey beard (2026-11-12 user: the people using this app are not grandparents). If THE SCENE or THE MOMENT above names who is there — anyone the passage itself identifies — draw THAT person as the moment requires and IGNORE this note completely. Never recast a named figure as a child, an older person, a woman, a man or two figures because this note says so.
 WHEN THE SCENE IS PEOPLE WITH EACH OTHER: if THE SCENE is about people doing something to or with one another, draw them all — any "prefer NO person" wording above does not apply to such a scene. Figures the passage itself names are drawn as that moment requires and take NO casting from this note. Only for unspecified, generic participants: let the casting above describe one of them (or both, when it already asks for two), and give every other generic figure a clearly different age, hair and clothing colour.
 HAIR SHAPE (generic everyday figures only, never a figure the passage names): unless the note above names something else, hair is ONE small flat shape that sits close to the head — straight, cropped, parted or tied. NOT a puffy cloud of curls, NOT a fluffy perm, NOT a big wavy mop. A curly brown mop on a girl in a bright top has become the default on every card; it must not appear.`
       : '';
@@ -1103,7 +1095,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             `T01 FLAT INDIE STICKER MODE: ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
             T01_GROUND,
             `ACCENT COLOUR PAIR for the subject (use these over the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST (CRITICAL): the ground is ${t01Ground}, so the Korean hand-lettering is ${t01GroundPick.letters} — a colour that reads strongly against this ground. NEVER letter in a colour close to the ground's own colour or lightness. If a style note below suggests colourful key words or a highlight band, keep the contrast just as strong; colour may vary between words, contrast may not.`,
+            `LETTER CONTRAST (CRITICAL): the ground is a medium-light ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — dark brown, near-black, deep cobalt, deep green or deep red-orange. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal

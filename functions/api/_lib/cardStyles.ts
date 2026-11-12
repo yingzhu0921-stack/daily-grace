@@ -27,12 +27,9 @@ export const T01_FIGURE_LOOK = 'Characters are small, chunky and charming, like 
   + 'A character always has CLEARLY DRAWN HAIR (or a hat) with a real shape and simple limbs — never a bald featureless egg. '
   + 'No realistic proportions, no detailed cartoon face, no big sparkly eyes. ';
 
-/**
- * 색. 뒤에 붙는 바탕 설명이 카드와 편집 화면에서 다르므로 색만 떼어 둔다.
- * 2026-11-12 사용자: "채도 높게, 이런 질감·색감" → 큰 색면끼리 부딪히는 진한 색.
- */
-export const T01_ACCENT_COLOURS = 'RICH, HIGHLY SATURATED colours with bold contrast between large colour areas '
-  + '(deep emerald green, tangerine orange, ultramarine and cobalt blue, lemon yellow, tomato red, warm cream white, chocolate brown) ';
+/** 악센트 색. 뒤에 붙는 바탕 설명이 카드와 편집 화면에서 다르므로 색만 떼어 둔다.
+ * (2026-11-12 진한 흙빛 색면을 시험했으나 글씨와 합치면 촌스럽다고 해서 원래 색으로 되돌렸다. 질감만 남김.) */
+export const T01_ACCENT_COLOURS = 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) ';
 
 /** 표면 질감. 2026-11-12 사용자 레퍼런스: 매끈한 벡터가 아니라 리소그래프·실크스크린 인쇄 느낌. */
 export const T01_SURFACE = 'A printed indie-zine surface: a fine, clearly visible risograph / screen-print GRAIN over every colour area, '
@@ -41,4 +38,4 @@ export const T01_SURFACE = 'A printed indie-zine surface: a fine, clearly visibl
 /** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
 export const T01_NOT = 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
   + 'NO crayon, NO pencil or colored-pencil, NO pastel texture, NO watercolor, NO marker bleed, NO halftone dots, '
-  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted or pastel, NOT gloomy, NOT photo-realistic, NOT a church poster.';
+  + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted, NOT gloomy, NOT photo-realistic, NOT a church poster.';
