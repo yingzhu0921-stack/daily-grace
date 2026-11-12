@@ -83,6 +83,7 @@ THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `
 ${JESUS_FIRST_CHECK}
 If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed. A person the message does not name is a child, a teenager or a young adult — never an elderly person or a grandparent (Bible figures the message names are drawn as they are).` : ''}
+Only people have faces: never a smiling cloud, sun, seed, plant, heart or object. Do not add a pet or any animal the message does not name.
 NO WRITTEN WORDS IN THE PICTURE: no English words, no letters spelled out by clouds, stars or objects. At most ONE short Korean word copied exactly from the message may appear as a small label on an object.
 STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.
 The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`;
@@ -98,4 +99,14 @@ export function parseDeepScene(raw: string): { kind?: string; scene: string } | 
   } catch {
     return null;
   }
+}
+
+/**
+ * 장면이 흔한 그림인지. 금지 목록을 줘도 시냇물·등대·새싹이 6장 중 3장에 나왔다(2026-11-12 시험).
+ * 말씀이 그 낱말을 직접 말하면 허용하므로, 해당 한국어 낱말이 원문에 있으면 흔한 그림으로 치지 않는다.
+ */
+const STOCK_SCENE_RE = /\b(summit|mountain ?top|peak|sprouts?|seedlings?|watering|watering can|doves?|sunrise|sun rising|ocean|open sea|meadow|grassland|rolling hills|lone tree|river|stream|brook|lighthouse|boat|field of flowers|rays? of light|light rays|growing plant|open door)\b/i;
+const STOCK_WORDS_KO = /(산|싹|씨앗|심|물|비둘기|해|바다|초원|풀|언덕|나무|강|시내|등대|배를|배가|꽃|빛|문)/;
+export function isStockScene(scene: string, message: string): boolean {
+  return STOCK_SCENE_RE.test(scene) && !STOCK_WORDS_KO.test(message);
 }

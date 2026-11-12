@@ -3,7 +3,7 @@ import type { Env } from './_lib/db';
 import { backgroundExpansionInstructions, buildManualBackgroundPrompt, cropSafeNote, manualBackgroundStyles } from './_lib/manualBackground';
 import { T01_FLAT_MEDIUM, T01_FIGURE_LOOK, T01_ACCENT_COLOURS, T01_SURFACE, T01_NOT } from './_lib/cardStyles';
 import { checkAiLimits, aiLimitMessage, isAiTester } from './_lib/aiLimits';
-import { FLAT_SUBJECT_DOMAINS, MINIMAL_SCENE_REGISTERS, JESUS_FIRST_CHECK, pickRegister, deepScenePrompt, parseDeepScene } from './_lib/sceneReading';
+import { FLAT_SUBJECT_DOMAINS, MINIMAL_SCENE_REGISTERS, JESUS_FIRST_CHECK, pickRegister, deepScenePrompt, parseDeepScene, isStockScene } from './_lib/sceneReading';
 import { badRequest, readJsonObject, validOptionalString } from './_lib/requestValidation';
 
 interface ExtendedEnv extends Env {
@@ -319,8 +319,9 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     const t01Grounds = [
       // 이어서 "원래보다는 찐하게" → 연한 파스텔에서 한 단계 진한 중간 밝기. 짙은 글씨는 그대로 읽혀야 한다.
       'warm cream', 'butter yellow', 'clear powder blue', 'sage green',
-      'warm sand', 'rosy pink', 'soft lilac', 'mint green',
-      'apricot', 'warm stone', 'sky blue', 'oatmeal',
+      // 이어서 "갈색 톤" → 모래·돌·오트밀 같은 갈색 계열을 산뜻한 색으로 바꿨다.
+      'coral pink', 'rosy pink', 'soft lilac', 'mint green',
+      'apricot', 'bright aqua', 'sky blue', 'lemon yellow',
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
@@ -500,7 +501,7 @@ T01 FLAT INDIE-STICKER ART DIRECTION:
 - Shapes are BLOBBY and slightly LOPSIDED with soft hand-drawn edges — charmingly wonky, never geometric or polished.
 - BOLD SATURATED accent colors — cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown — over a plain flat LIGHT ground. The ground colour CHANGES from card to card (cream, pale butter, powder blue, sage, sand, blush, lilac, mint, apricot, warm grey); it is given per card, so do not assume cream. Not pastel, not muted.
 - A SMALL SCENE IN THE LOWER HALF: one main subject the reader can trace back to THE VERSE'S OWN WORDS, plus two to four supporting things from the same place, so it is a little world and not one lone sticker. The whole UPPER area stays plain empty ground colour for the text. Never a crowded full-card scene. A cute animal that the verse never mentions is NOT an acceptable subject.
-- Do NOT put faces (eyes/nose/mouth) on inanimate objects.
+- Do NOT put faces (eyes/nose/mouth) on anything but people — no smiling clouds, suns, plants, seeds or objects.
 - A character is small and chunky with an OVERSIZED round head, stubby limbs, TINY DOT EYES set a little wide apart and a tiny deadpan mouth, plus one personal quirk (a cowlick, a bobble hat, round glasses) — faces are dots and short lines only, never a detailed cartoon face.
 - CRITICAL — the character MUST have CLEARLY DRAWN HAIR with a real shape (a bob, a ponytail, short cropped hair, a bun) and simple limbs. NEVER draw a bald, hairless, featureless egg/bean figure — a smooth round head with only two dots and nothing else is BANNED. Hair and limbs are what make it a person instead of a blob. When in doubt, draw an object or a plant instead of a character.
 - CRITICAL — NO BORDER/FRAME: the ground colour runs full-bleed to the edges. Do NOT draw any border, frame, edge line, vine, leaf-vine, floral garland, or corner decoration.
@@ -666,16 +667,22 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two to four supporting things>"`
         : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`;
       try {
-        const deepRaw = await gpt(env.OPENAI_API_KEY, [
+        const askScene = async (extra: string) => parseDeepScene(await gpt(env.OPENAI_API_KEY, [
           { role: 'system', content: deepScenePrompt({ cardBrief, register, outputShape, flat: isT01 }) },
           {
             role: 'user',
             content: sceneSource
               + (analysis.coreMeaning ? `\n\n(Earlier reading of the meaning, for reference only: ${analysis.coreMeaning})` : '')
-              + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : ''),
+              + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : '')
+              + extra,
           },
-        ], 500, 'gpt-4o');
-        const scene = parseDeepScene(deepRaw)?.scene || '';
+        ], 500, 'gpt-4o'))?.scene || '';
+        let scene = await askScene('');
+        // 금지 목록을 어기고 흔한 그림을 고르면 한 번만 다시 고르게 한다. 두 번째도 흔하면 그대로 쓴다.
+        if (scene && isStockScene(scene, sceneSource)) {
+          const second = await askScene(`\n\nYour first idea was "${scene}" — that is one of the STOCK PICTURES. Choose a genuinely different picture that is not on that list.`).catch(() => '');
+          if (second) scene = second;
+        }
         // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
         const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
         if (scene && !reused && !(isT01 && t01AnimalMiss(scene))) {
@@ -1095,7 +1102,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             `T01 FLAT INDIE STICKER MODE: ${T01_ART} Plus playful Korean hand-lettering in the open upper area. ${T01_NOT}`,
             T01_GROUND,
             `ACCENT COLOUR PAIR for the subject (use these over the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST (CRITICAL): the ground is a medium-light ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — dark brown, near-black, deep cobalt, deep green or deep red-orange. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
+            `LETTER CONTRAST (CRITICAL): the ground is a medium-light ${t01Ground}, so the Korean hand-lettering must be a DARK, strongly saturated colour — near-black, deep cobalt, deep green, deep red-orange or dark brown; do not letter every card in brown. NEVER letter in yellow, peach, cream, white or any pale tint on this ground. If a style note below suggests colourful key words, keep those words dark and saturated too; colour may vary between words, lightness may not.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal

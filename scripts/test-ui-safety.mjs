@@ -607,4 +607,10 @@ test('deep scene reading bans stock pictures and only takes over abstract editor
   assert.equal(new Set([0, 1, 2, 3, 4, 5, 6].map((i) => pickRegister(FLAT_SUBJECT_DOMAINS, i, 3, 1))).size, 7);
   assert.deepEqual(JSON.parse(JSON.stringify(parseDeepScene('```json\n{"kind":"Abstract","scene":" a kettle "}\n```'))), { kind: 'abstract', scene: 'a kettle' });
   assert.equal(parseDeepScene('not json'), null);
+  const { isStockScene } = load('functions/api/_lib/sceneReading.ts');
+  assert.equal(isStockScene('a small lighthouse — from \'소망\'', '오늘 하루도 소망을 품고'), true);
+  assert.equal(isStockScene('a gentle stream flowing', '은혜가 충분합니다'), true);
+  // 말씀이 직접 말하면 허용한다.
+  assert.equal(isStockScene('a river at dawn', '생수의 강이 흘러나리라'), false);
+  assert.equal(isStockScene('a kite caught in a tree', '은혜가 충분합니다'), false);
 });

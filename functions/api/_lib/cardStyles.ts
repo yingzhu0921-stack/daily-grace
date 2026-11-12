@@ -32,10 +32,14 @@ export const T01_FIGURE_LOOK = 'Characters are small, chunky and charming, like 
 export const T01_ACCENT_COLOURS = 'BOLD SATURATED accent colours (cobalt blue, red-orange, grass green, sunny yellow, peach, dark brown) ';
 
 /** 표면 질감. 2026-11-12 사용자 레퍼런스: 매끈한 벡터가 아니라 리소그래프·실크스크린 인쇄 느낌. */
-export const T01_SURFACE = 'A printed indie-zine surface: a fine, clearly visible risograph / screen-print GRAIN over every colour area, '
-  + 'and slightly dry, rough, hand-cut edges on the shapes, like gouache printed on matte paper. Never glossy, never smooth digital vector. ';
+// 이어서 "전체적으로 갈색 톤, 좀 쨍해야 함" → 알갱이가 그림을 누렇게·빈티지로 물들이지 않게 막는다.
+export const T01_SURFACE = 'A printed indie-zine surface: a fine risograph / screen-print GRAIN over the colour areas and slightly rough hand-cut edges on the shapes. '
+  + 'The grain is neutral and fine — it never tints, yellows, browns or darkens the picture. Colours stay CLEAN, BRIGHT and vivid, like fresh ink on white paper: '
+  + 'NO brown, sepia, beige, vintage or faded cast over the whole image. Never glossy, never smooth digital vector. ';
 
 /** T01 에서 반드시 피해야 하는 것. 예전 그림체(두꺼운 검정 외곽선·크레용 질감)로 돌아가지 않게 막는다. */
-export const T01_NOT = 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
+// 2026-11-12 사용자: 사람이 아닌 것(구름·해·씨앗 등)에 눈·입이 그려지지 않게.
+export const T01_NOT = 'Only people have faces: clouds, suns, moons, stars, plants, seeds, hearts and objects have NO eyes and NO mouth. Do NOT add any animal (no dog, puppy, cat or bird) unless the scene names one. '
+  + 'NOT outlined (no black ink outlines at all), NOT a doodle cartoon, '
   + 'NO crayon, NO pencil or colored-pencil, NO pastel texture, NO watercolor, NO marker bleed, NO halftone dots, '
   + 'NOT painterly, NOT soft AI-kawaii, NOT detailed, NOT busy, NOT muted, NOT gloomy, NOT photo-realistic, NOT a church poster.';
