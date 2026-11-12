@@ -649,12 +649,82 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const selectedTemplate = templateId || templates[templateIndex % templates.length];
     const config = TEMPLATE_CONFIGS[selectedTemplate] || TEMPLATE_CONFIGS['T01'];
 
+    // ── 장면 깊게 고르기 (T01·T02) ──
+    // 2026-11-12 사용자: 추상적인 말씀이면 T02 는 초원·비둘기·바다, T01 은 산 정상·풀에 물 주기만 나온다.
+    // 원인: (1) 위 분석은 한 번에 네 템플릿 장면을 다 정해서 각 장면을 깊게 보지 않는다.
+    //       (2) T02 는 자기 칸이 없어 T03 용 '자연 장면' 칸(들판·바다·하늘·물결 예시)을 빌려 썼다.
+    // 그래서 고른 템플릿 하나만 놓고 말씀을 단계별로 읽힌 뒤(누가 누구에게, 무엇을 하는지, 말씀 속 그림,
+    // 이 말이 필요한 오늘의 구체적 순간) 카드마다 다른 갈래로 장면을 다시 정한다.
+    // 서사 구절(situation 있음)은 그 순간이 장면을 정하므로 건드리지 않는다.
+    // 갈래 설명에는 물건 예시를 적지 않는다 — 예시를 적으면 그게 새 고정 목록이 된다.
+    const t02SceneRegisters = [
+      'A WIDE LANDSCAPE whose land form, season and weather are specific to this message — not a generic meadow, grassland or sea.',
+      'ONE HUMAN-MADE THING standing in a large open space, whose real use mirrors what the message does.',
+      'A TOWN, VILLAGE OR STREET seen from a distance at one particular hour, with the light in it doing what the message does.',
+      'NIGHT — the dark and the few lights in it carrying the message.',
+      'ONE OR TWO EVERYDAY OBJECTS on a large plain field of colour, placed so that their relation tells the message.',
+      'A TRACE OF SOMEONE WHO IS NOT IN THE PICTURE — something just used, set down, left open or left lit — that shows what the message does.',
+    ];
+    // 길이 6·보폭 5는 서로소라 6장이면 모든 갈래가 한 번씩 나온다.
+    const t02SceneRegister = t02SceneRegisters[Math.abs(templateIndex * 5 + 2) % t02SceneRegisters.length];
+    const SCENE_STOCK = 'climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
+    const sceneSource = (verse?.trim() || sourceText || '').slice(0, 1500);
+    let t02DeepScene = '';
+    if ((selectedTemplate === 'T01' || selectedTemplate === 'T02') && !analysis.situation?.trim() && sceneSource) {
+      const isT01 = selectedTemplate === 'T01';
+      const cardBrief = isT01
+        ? 'a flat, outline-free indie-sticker illustration: a SMALL SCENE low in the frame — one main subject plus two to four supporting things from the same place — with small chunky people allowed.'
+        : 'a calm, minimal gouache card: a few large areas of rich colour, the scene and one small point of interest in the LOWER part, the upper part plain. NO people, faces, figures, hands or body parts.';
+      const register = isT01 ? t01SubjectDomain : t02SceneRegister;
+      const outputShape = isT01
+        ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two to four supporting things>"`
+        : `"<the scene in English, with its one small point of interest> — from '<the Korean word or phrase it comes from>'"`;
+      try {
+        const deepRaw = await gpt(env.OPENAI_API_KEY, [
+          {
+            role: 'system',
+            content: `You choose the picture for ONE card made from a Korean faith message. These messages are often abstract (a promise, a prayer, a teaching, a diary line), and abstract messages keep getting the same stock pictures. Your job is to read THIS message closely enough that its picture could not belong to any other message.
+
+Work in this order and fill every field. Output JSON only: {"speaker":"","action":"","imagery":"","lifeMoment":"","scene":""}
+1. speaker — who is talking to whom: God to a person, a person to God, a person to themself, or a person to others.
+2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace.
+3. imagery — every picture, comparison or concrete word inside the message itself, as "Korean phrase = English". Write "none" if there is none.
+4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below. Write it as ${outputShape}.
+
+THIS CARD'S STYLE: ${cardBrief}
+REGISTER FOR THIS CARD: ${register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${isT01 ? `
+${T01_SUBJECT_SEARCH.split('\nWHERE TO LOOK')[0]}
+If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed.` : ''}
+STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}. Also avoid any generic journey, ascent or "new beginning" metaphor.
+The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`,
+          },
+          {
+            role: 'user',
+            content: sceneSource
+              + (analysis.coreMeaning ? `\n\n(Earlier reading of the meaning, for reference only: ${analysis.coreMeaning})` : '')
+              + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : ''),
+          },
+        ], 500, 'gpt-4o');
+        const m = deepRaw.match(/\{[\s\S]*\}/);
+        const deep = JSON.parse(m ? m[0] : deepRaw);
+        const scene = typeof deep?.scene === 'string' ? deep.scene.trim() : '';
+        // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
+        const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
+        if (scene && !reused && !(isT01 && t01AnimalMiss(scene))) {
+          if (isT01) analysis.t01SceneConcept = scene;
+          else t02DeepScene = scene;
+        }
+      } catch { /* 실패하면 위 분석의 장면을 그대로 쓴다 */ }
+    }
+
     // 배경 개념은 "선택된 템플릿의 시각 번역 결과"를 사용 (없으면 공통 backgroundConcept 폴백).
     // 템플릿마다 같은 메시지를 다른 시각 언어로 표현하게 함.
     const conceptByTemplate: Record<string, string | undefined> = {
       T01: analysis.t01SceneConcept,
       // T02 는 2026-11-11 부터 '미니멀 감성'(색면 풍경 + 작은 포인트). 자연 장면 개념이 맞아서 T03 용 자연 개념을 쓴다.
-      T02: analysis.t03NatureConcept || analysis.t02GraphicConcept,
+      // 위 '장면 깊게 고르기'가 정한 장면이 먼저다. 실패했을 때만 예전처럼 자연 장면 개념을 쓴다.
+      T02: t02DeepScene || analysis.t03NatureConcept || analysis.t02GraphicConcept,
       T03: analysis.t03NatureConcept,
       T04: analysis.t04NatureConcept,
     };
