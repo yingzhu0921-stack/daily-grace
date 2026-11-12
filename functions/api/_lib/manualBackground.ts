@@ -47,10 +47,11 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
   '플랫 일러스트': {
     // 2026-11-11 사용자: '편집에서 플랫도 완전 자동(T01) 프롬프트대로'. 같은 그림체인데도 편집 쪽은 나무·천막·언덕·군중이 꽉 찬
     // 그림책 장면이 나왔다. T01 카드처럼 '민 바탕 위 작은 장면 하나, 소품 2~4개, 인물 3명까지'로 맞춘다.
-    technique: `${T01_FLAT_MEDIUM}${T01_FIGURE_LOOK}${T01_ACCENT_COLOURS}over one plain flat BOLD background colour that runs edge to edge. ${T01_SURFACE}A LITTLE WORLD OF A FEW BIG, SIMPLE THINGS: a cute character (or none), the main object and two or three big supporting things from the same place, with empty ground colour around them — no scattered tiny decorations (grass tufts, little flowers, sparkles, stars, hearts). Never a crowded, fully painted storybook scene: no rows of trees, tents, villages or hills filling the background unless the scene description is about them, and at most three figures. No border or frame, no rainbows, floating hearts or sparkles. Flat over detailed, quiet over corny. ${T01_NOT}`,
+    // 2026-11-12 완전 자동 T01 과 같이 맞춤: 밝고 맑은 바탕(쨍한 색은 그림 속에만), 풍경 배경 없는 캐릭터 그림.
+    technique: `${T01_FLAT_MEDIUM}${T01_FIGURE_LOOK}${T01_ACCENT_COLOURS}set on one plain, clear, LIGHT background colour (like a sunny sky or fresh paper) that runs edge to edge — the punchy colours go only into the character and objects. ${T01_SURFACE}A GRAPHIC CHARACTER PICTURE, NOT A STORYBOOK SCENE: a cute character (or none), the main object and two or three supporting objects, standing on the plain ground with at most one simple floor patch. No landscape scenery (rows of hills, rivers, trees, villages, suns, clouds) unless the scene description is about them, no scattered tiny decorations, at most three figures, no border or frame. ${T01_NOT}`,
     medium: 'illustration',
     // 사람 그리는 법은 위 기법 문구(T01_FIGURE_LOOK)에 이미 들어 있다. 예수님 문구는 T01 카드의 JESUS RULE 과 같은 뜻.
-    figures: 'A person, when present, follows the character description above — small, flat and outline-free. Jesus, when the scene names him, is the main subject in his traditional recognisable form (shoulder-length dark hair, a short beard, a light robe) drawn in the same flat style with dot eyes, never recast as a generic figure; anyone else must not look like him.',
+    figures: 'A person, when present, follows the character description above exactly (white eyes looking the same way, tiny round mouth, two clear legs). Jesus, when the scene names him, is the main subject in his traditional recognisable form (shoulder-length dark hair, a short beard, a light robe) drawn in the same style, never recast as a generic figure; anyone else must not look like him.',
   },
   // 2026-11-11 사용자: 사진 두 종이 "구분이 됨?" → 둘 다 한 줄짜리라 같은 장면이면 거의 같게 나왔다.
   // 감성 사진은 '밝고 산뜻한 요즘 사진', 빈티지 필름은 '확실한 옛 필름 느낌'으로 갈라 둔다.
