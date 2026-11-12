@@ -595,6 +595,10 @@ test('deep scene reading bans stock pictures and only takes over abstract editor
   assert.match(auto, /unless the message's own words name it/);
   assert.match(auto, /JESUS FIRST CHECK/);
   assert.doesNotMatch(auto, /"kind"/);
+  // 플랫은 일상 실내 장면이 아니라 엉뚱한 그림책 상상으로 고른다.
+  assert.match(auto, /PLAYFUL PICTURE-BOOK IDEA/);
+  assert.match(auto, /sitting at a table, desk/);
+  assert.doesNotMatch(deepScenePrompt({ cardBrief: 'b', register: 'r', outputShape: 's' }), /PLAYFUL PICTURE-BOOK IDEA/);
   const editor = deepScenePrompt({ cardBrief: 'b', register: 'r', outputShape: 's', classify: true });
   assert.match(editor, /"kind"/);
   assert.doesNotMatch(editor, /JESUS FIRST CHECK/);

@@ -9,7 +9,8 @@
 /** 귀여운 손글씨(T01)·플랫 일러스트 소재 갈래. 길이 7. */
 export const FLAT_SUBJECT_DOMAINS = [
   'A HAND-SCALE EVERYDAY OBJECT whose real use mirrors what the message does',
-  'A PLACE AT HOME shaped by what someone has just done or is about to do',
+  // 2026-11-12 '집 안' 갈래는 식탁·책상 장면만 불러서 바꿨다.
+  'A SMALL IMAGINARY PLACE where what the message says is literally, visibly true',
   'THE SKY OR THE WEATHER, where its physical movement matches the message',
   'SOMETHING GROWING, at the stage of growth that matches the message',
   'WATER, in a specific form or use that the message supports',
@@ -50,6 +51,17 @@ export interface DeepSceneOptions {
   classify?: boolean;
 }
 
+/**
+ * 플랫(귀여운 손글씨·플랫 일러스트)용 4·5단계.
+ * 2026-11-12 사용자: "안 예쁘고 안 귀엽다". '평범한 오늘의 순간'을 찾게 했더니 모든 카드가
+ * 식탁·책상 앞 사람 + 머그컵·화분·창문·성경책이 됐다. 스티커 그림은 일상 재현이 아니라 엉뚱한 상상이 맞다.
+ */
+const FLAT_IDEA_STEP = `4. lifeMoment — a PLAYFUL PICTURE-BOOK IDEA that shows the action, the way a witty indie sticker artist would draw it: a small character doing the action almost literally, a gentle exaggeration of scale, a little visual pun, or a tiny story with a before and after. Charming, warm and a little offbeat. It may happen anywhere — outdoors, in the sky, on the water, in a made-up little world — but NOT a realistic everyday indoor moment.
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery in the same playful way. Otherwise draw the idea from step 4, seen through the REGISTER below.`;
+
+/** 플랫 결과가 몰렸던 실내 일상 장면. */
+const FLAT_STOCK = 'a person sitting at a table, desk or kitchen counter, a group around a table, a Bible study, a mug or cup of coffee, a potted plant on a windowsill or table, a window with sunlight, an open Bible on a table, a laptop, washing dishes, a church window with a cross';
+
 export function deepScenePrompt(o: DeepSceneOptions): string {
   const fields = o.classify
     ? '{"kind":"","speaker":"","action":"","imagery":"","lifeMoment":"","scene":""}'
@@ -64,14 +76,14 @@ Work in this order and fill every field. Output JSON only: ${fields}
 ${classifyStep}1. speaker — who is talking to whom: God to a person, a person to God, a person to themself, or a person to others.
 2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace.
 3. imagery — every picture, comparison or concrete word inside the message itself, as "Korean phrase = English". Write "none" if there is none.
-4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
-5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below. Write it as ${o.outputShape}.
+${o.flat ? FLAT_IDEA_STEP : `4. lifeMoment — ONE specific ordinary moment today in which someone would need, pray or live these exact words: a particular kind of person, a particular place, what has just happened, the time of day. Concrete and unglamorous. Never "someone struggling", never a symbolic landscape.
+5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise build it from action and lifeMoment, seen through the REGISTER below.`} Write it as ${o.outputShape}.
 
 THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `
 ${JESUS_FIRST_CHECK}
 If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed.` : ''}
-STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}. Also avoid any generic journey, ascent or "new beginning" metaphor.
+STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.
 The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`;
 }
 
