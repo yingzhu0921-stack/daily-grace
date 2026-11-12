@@ -58,7 +58,7 @@ export interface DeepSceneOptions {
  */
 // 이어서 "엉뚱하게 나옴"(살전5:16-18 → 서커스 천막 앞 외발자전거 저글링): 장면 발상 자체가 개그가 되면 말씀의 뜻이 사라진다.
 // 장면은 뜻이 느껴지는 진심 어린 순간, 귀여움·익살은 캐릭터의 표정과 자세에서만.
-const FLAT_IDEA_STEP = `4. lifeMoment — a SINCERE little moment that SHOWS what the message asks or promises, so the reader feels the verse: someone actually doing it (praying, giving thanks, resting, handing over, being carried, waiting) in a simple, heartfelt way. It may be a gentle picture-book image, but its meaning must be obvious and sincere — NOT a gag, a trick, a performance or a visual pun. The charm and humour come only from the character's expression and pose, never from turning the verse into a joke.
+const FLAT_IDEA_STEP = `4. lifeMoment — a SINCERE little moment that SHOWS what the message asks or promises, so the reader feels the verse: someone actually doing it (praying, giving thanks, resting, handing over, being carried, waiting) in a simple, heartfelt way. When the message is about what God, the Lord or Jesus does or is (a shepherd, a refuge, the one who cares or gives grace), Jesus is in the picture doing it. It may be a gentle picture-book image, but its meaning must be obvious and sincere — NOT a gag, a trick, a performance or a visual pun. The charm and humour come only from the character's expression and pose, never from turning the verse into a joke.
 5. scene — the picture for this card. If imagery is not "none", build the scene from that imagery. Otherwise draw the moment from step 4, seen through the REGISTER below.`;
 
 /** 플랫 결과가 몰렸던 실내 일상 장면. */
@@ -73,7 +73,7 @@ export function deepScenePrompt(o: DeepSceneOptions): string {
 `
     : '';
   return `You choose the picture for ONE card made from a Korean faith message. These messages are often abstract (a promise, a prayer, a teaching, a diary line), and abstract messages keep getting the same stock pictures. Your job is to read THIS message closely enough that its picture could not belong to any other message.
-
+${o.flat ? `\n${JESUS_FIRST_CHECK.replace('use the hint below', 'continue below')}\n` : ''}
 Work in this order and fill every field. Output JSON only: ${fields}
 ${classifyStep}1. speaker — who is talking to whom: God to a person, a person to God, a person to themself, or a person to others.
 2. action — the exact thing being done, asked, promised or declared, in plain words (the main verb and its object). NOT a theme word such as hope, faith, grace or peace.
@@ -83,7 +83,6 @@ ${o.flat ? FLAT_IDEA_STEP : `4. lifeMoment — ONE specific ordinary moment toda
 
 THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `
-${JESUS_FIRST_CHECK}
 If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed. A person the message does not name is a teenager or a young adult (a child only when the message is about a child) — never a baby, a toddler, an elderly person or a grandparent — and about half the time a woman. Bible figures the message names or the moment contains are welcome and drawn as they are. Animals the message names or uses as a direct biblical image (sheep with a shepherd, a lamb, a dove for the Spirit, an eagle, a lion) are welcome too.` : ''}
 Only people and animals have faces: never a smiling cloud, sun, balloon, seed, plant, heart or object. Do not add a pet or any animal the message does not name.
 WORDS IN THE PICTURE: no English words and no letters spelled out by clouds or stars. When an invisible thing from the message (worry, grace, sin, hope) is shown as an object, it is nice to put ONE short Korean word copied exactly from the message on it as a small label (e.g. a bag labelled 염려) — at most one such label.

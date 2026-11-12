@@ -27,7 +27,7 @@ export const T01_FLAT_MEDIUM = 'A cute, offbeat hand-drawn illustration like a K
 // 귀여움은 둥글고 통통한 몸·점 눈·무심한 표정에서 나온다(레퍼런스의 곰). 아기처럼 보이는 건 거대한 머리와 아기 얼굴이라 그것만 뺀다.
 // 2026-11-12 사용자: "너무 착해, 전형적인 웃음은 개성이 없다. 누구나 GPT 로 만들 수 있으면 안 되고 내 앱에서만 나오는 스타일".
 // 둥근 얼굴·볼터치·코 점·U자 웃음은 AI 의 기본 '귀여운 사람'이라 뺐다. 대신 하루은혜 고유 얼굴 규칙:
-// 입은 한글 자모 모양(ㅅ ㅂ ㅇ), 얼굴 아래쪽에 모인 점 눈, 넓적한 콩 얼굴.
+// (입은 처음에 한글 자모 모양으로 정했다가 V 자로 나와서 작고 동그란 입으로 바꿨다. 눈은 흰자위 있는 붙은 눈.)
 export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATURE CHARACTER — follow these face rules exactly, they are what make the style recognisable: '
   // 이어서 "머리가 사과 같다" → 삐친 한 가닥(사과 꼭지처럼 보임)을 뺐다.
   + 'HEAD: a slightly wide BEAN-shaped head (not a perfect circle). Hair is one soft chunky shape that frames the face — a bob, a short messy cut, a low ponytail, a cap or beanie — with NO single tuft or sprout sticking up from the top. '
@@ -36,7 +36,8 @@ export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATU
   + 'FACE FEATURES sit around the MIDDLE of the face with normal, balanced proportions; the hair comes down naturally over the forehead (a fringe or hairline close to the eyes) — never a huge bare forehead. '
   // 이어서 사용자 참고(스티커 캐릭터 세트)의 일반 기법만: 흰자위 있는 동그란 눈을 붙여 두고 눈동자 방향으로 표정. 그 캐릭터의 모양은 따라 하지 않는다.
   + 'EYES: two round WHITE eyes with black pupils, set close together and touching or nearly touching; the pupils look sideways, up or at each other to show the mood; for a blissful moment, two closed curved lines instead. '
-  + 'MOUTH: a TINY mouth shaped like a Korean letter — a very small cat-like ㅅ most of the time, a small ㅂ when excited or happy, a small ㅇ when surprised. '
+  // 이어서 "입이 아래로 뾰족한 건 별로" → ㅅ 입이 V 자로 그려졌다. 한글 자모 입을 빼고, 사용자가 좋아한 아브라함처럼 작고 동그란 입.
+  + 'MOUTH: TINY and soft — a small round "o", a tiny short line, or a small open mouth when excited. NEVER a pointed V or ^ shape, never a big U smile. '
   + 'EYEBROWS: usually none; add two tiny dashes only for a strong moment (surprise, effort). '
   + 'NEVER a U-shaped smile or a curved grin, NO nose, NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
   + 'BODY: soft and chunky with slightly odd proportions, simple arms with mitten hands and two short legs with little feet clearly visible. '
@@ -56,4 +57,5 @@ export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine wool
 export const T01_NOT = 'Only people and animals have faces — clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
   + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
   + 'NOT a storybook scene: no landscape scenery behind the characters. NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
+  + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises or rolling hills. '
   + 'No crayon scribbles, pencil, watercolour, halftone dots, sparkles, floating hearts or rainbows, and no English words in the picture; the only word allowed inside the picture is one short Korean label copied exactly from the verse when the scene asks for it (e.g. a bag labelled 염려).';

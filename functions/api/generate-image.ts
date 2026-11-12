@@ -686,6 +686,11 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
             tried.push(next);
           }
         }
+        // 그래도 흔한 그림이면, 위 분석이 이미 고른 장면이 흔하지 않을 때 그쪽을 쓴다(새 장면을 버린다).
+        if (scene && isStockScene(scene, sceneSource)) {
+          const earlier = isT01 ? analysis.t01SceneConcept : analysis.t03NatureConcept;
+          if (earlier && !isStockScene(earlier, sceneSource)) scene = '';
+        }
         // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
         const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
         if (scene && !reused && !(isT01 && t01AnimalMiss(scene))) {
