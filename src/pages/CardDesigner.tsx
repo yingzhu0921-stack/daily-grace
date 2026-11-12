@@ -2248,9 +2248,12 @@ export default function Designer() {
   };
 
   // 제자리 문구 수정 가능 여부: 오버레이(T04) + 코드 렌더(T03 그레인) — 토큰 없이 수정
+  // T02(미니멀 감성)도 글자를 코드가 굽고 글자 없는 배경(t02Background)을 들고 있어서, 배경 그대로 다시 굽는다(2026-11-12 사용자:
+  // "글자 코드로 하는 거 아니었어? 문구 수정하니까 다시 생성되던데").
   const canEditTextInPlace = !!autoResult && (
     (!autoResult.aiText && autoResult.template === 'T04') ||
-    autoResult.template === 'T03'
+    autoResult.template === 'T03' ||
+    (autoResult.template === 'T02' && !!autoResult.t02 && !!autoResult.t02Background)
   );
 
   const openTextEdit = () => {
@@ -2288,6 +2291,25 @@ export default function Designer() {
         });
       }
       setAutoResult(build(raw, autoResult.ratio || meta.ratio, autoResult.genSeed, keepEmphasis));
+      setVerseInput(raw);
+      setT(current => ({ ...current, content: raw }));
+      setTextEditDraft(null);
+      return;
+    }
+    // T02 미니멀: 글자 없는 배경에 새 문구를 다시 굽는다(AI 호출 0). 고치기 전과 같은 줄은 원래 크기 비율을 유지한다.
+    if (autoResult.template === 'T02' && autoResult.t02 && autoResult.t02Background) {
+      const oldScale = new Map((autoResult.lines || []).map((l) => [l.text.trim(), l.scale ?? 1]));
+      const newLines = [
+        ...clauses.map((t) => ({ text: t, scale: oldScale.get(t) ?? 1 })),
+        ...(reference ? [{ text: reference, scale: 0.5 }] : []),
+      ];
+      const raw = reference ? `${clauses.join('\n')}\n${reference}` : clauses.join('\n');
+      const bg = autoResult.t02Background;
+      const info = autoResult.t02;
+      const base = autoResult;
+      renderT02Poster(bg, newLines, info)
+        .then((image) => setAutoResult({ ...base, image, lines: newLines }))
+        .catch(() => toast.error('문구를 다시 그리지 못했어요. 다시 시도해 주세요.'));
       setVerseInput(raw);
       setT(current => ({ ...current, content: raw }));
       setTextEditDraft(null);
