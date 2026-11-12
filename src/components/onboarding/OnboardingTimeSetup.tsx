@@ -26,10 +26,11 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
     onNext();
   };
 
+  // 색은 홈·기록 메뉴의 기본 카테고리 색과 같게 둔다(Index.tsx·Records.tsx·CategoryManager.tsx).
   const categories = [
-    { icon: BookOpen, color: '#4F8A5B', name: 'Q.T', desc: '오늘의 말씀을 나눠보세요', time: qtTime, setTime: setQtTime },
-    { icon: Heart, color: '#7A6BB8', name: '기도', desc: '하루의 기도를 적어보세요', time: prayerTime, setTime: setPrayerTime },
-    { icon: Star, color: '#C89B3C', name: '감사', desc: '감사했던 순간을 떠올려보세요', time: gratitudeTime, setTime: setGratitudeTime },
+    { icon: BookOpen, color: '#7DB87D', name: 'Q.T', desc: '오늘의 말씀을 나눠보세요', time: qtTime, setTime: setQtTime },
+    { icon: Heart, color: '#A57DB8', name: '기도', desc: '하루의 기도를 적어보세요', time: prayerTime, setTime: setPrayerTime },
+    { icon: Star, color: '#E8C87D', name: '감사', desc: '감사했던 순간을 떠올려보세요', time: gratitudeTime, setTime: setGratitudeTime },
   ];
 
   return (
