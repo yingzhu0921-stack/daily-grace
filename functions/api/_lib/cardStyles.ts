@@ -36,7 +36,7 @@ export const T01_FIGURE_LOOK = 'A person looks like a cute indie mascot characte
 
 /** 색. 이어서 "컬러도 좀 더 쨍하게" → 레퍼런스처럼 맑고 쨍한 색(탁하거나 갈색 끼 없이). */
 // 이어서 "그냥 따뜻한 느낌이 됐다, 귀여워야 한다" → 중간 톤에서 한 단계 명랑하게(원색까지는 아님).
-export const T01_ACCENT_COLOURS = 'BRIGHT, SUNNY, saturated colours (sky blue, emerald green, sunflower yellow, tangerine orange, tomato red, white) — cheerful and punchy, clean, never muddy or brownish, ';
+export const T01_ACCENT_COLOURS = 'BRIGHT, SUNNY, saturated colours inside the picture (emerald green hills, sunflower yellow, tangerine orange, tomato red, white, sky blue) — punchy but used on the objects and the ground they stand on, clean, never muddy or brownish, ';
 
 /** 표면. 매끈한 벡터가 아니라 보송한 붓 질감. */
 export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine woolly grain inside the colour areas. The texture never makes the colours dull. ';

@@ -323,10 +323,12 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 2026-11-12 사용자 레퍼런스: 진한 단색 바탕(빨강·노랑·파랑). 글씨는 브라우저가 밝기를 보고 크림/짙은 색으로 고른다.
     // 갈색·흙빛은 넣지 않는다("전체적으로 갈색 톤" 지적).
     // 2026-11-12 색 정리: 파스텔(흐림)·흙빛(갈색 톤)·중간 톤(그냥 따뜻함)을 거쳐, 사용자 레퍼런스(제주 피크닉)처럼 맑고 쨍한 색으로.
+    // 이어서 "색깔이 왜 이렇게 촌스럽지" → 카드 전체 바탕을 원색으로 칠하면 전단지처럼 싸 보인다.
+    // 레퍼런스처럼 넓은 면은 맑고 밝은 자연스러운 색, 쨍한 색은 그림 속 물건·땅에만.
     const t01Grounds = [
-      'sky blue', 'sunflower yellow', 'emerald green', 'tangerine orange',
-      'coral pink', 'warm cream', 'bright mint', 'cornflower blue',
-      'lemon yellow', 'tomato red', 'light teal', 'lilac',
+      'clear sky blue', 'warm cream', 'butter yellow', 'fresh mint',
+      'light sky blue', 'soft pink', 'light lilac', 'pale lemon',
+      'clear aqua', 'cream white', 'light peach', 'soft sage',
     ];
     // 보폭 7은 길이 12와 서로소라 12번 돌면 12색이 모두 한 번씩 나온다.
     // (보폭 3이면 최대공약수가 3이라 4색만 돌고 크림은 아예 안 나왔다.)
@@ -341,7 +343,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     // 직접 편집 스타일과 같이, 예수님·하나님이 하시는 일을 말하는 문장이면 예수님을 직접 그리게 갈래보다 먼저 확인시킨다.
     const T01_SUBJECT_SEARCH = `${JESUS_FIRST_CHECK}
 WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says where to look when the message names no concrete thing — it yields to the message. If the message names a concrete thing, draw that; if this domain truly cannot carry the message, take the nearest thing that can and never force it. FIRST CHECK: if the message is about what people do to or for one another (encouraging, forgiving, comforting, serving, loving, praying for someone), the subject is two small figures doing exactly that to each other — never one lone figure on a journey. Invent the specific subject from the message itself; this instruction contains no menu to pick from. For an abstract message, do NOT fall back to the stock landscape kit (a sun over water, a river, rocks, rolling hills, a lone sprout) unless the message names those things, and do NOT fall back to a generic journey, ascent, threshold or navigation metaphor — those became the answer to almost every card. Use such a metaphor only when the quoted source phrase directly supports it.`;
-    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a bright, sunny, clear colour — punchy and cheerful, never dull, muddy or brownish — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
+    const T01_GROUND = `GROUND COLOUR FOR THIS CARD (follow exactly): the whole background is a plain flat ${t01Ground}, one solid colour from edge to edge with the soft grainy texture — a clear, bright, LIGHT colour like a sunny sky or fresh paper — calm enough to be the big empty area, never a strong primary, never dull or brownish. The punchy, saturated colours go only into the picture's objects and ground (hills, grass, clothes, fruit), not into this background — no gradient, no frame. Do NOT fall back to cream unless cream is the colour named here.`;
 
     // ── 4개 고정 스타일 (템플릿 = 스타일 1개, 다양성은 색상만) ──
     const TEMPLATE_CONFIGS: Record<string, { backgroundPrompt: string; styleLock: string; fonts: { primary: string; secondary: string } }> = {
@@ -1099,7 +1101,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
             `T01 INDIE PICTURE-BOOK CARD: ${T01_ART} Playful Korean hand-lettering sits in the open upper area. ${T01_NOT}`,
             T01_GROUND,
             `ACCENT COLOURS for the picture (use these against the ground colour): ${t01Palette}.`,
-            `LETTER CONTRAST: the ground is ${t01Ground}, so letter in a colour that reads clearly on it — usually a DARK colour (near-black, deep navy, deep green, deep red, dark brown); on a deep ground such as emerald green, tomato red or cornflower blue, cream-white letters. Never letters close to the ground's own colour.`,
+            `LETTER CONTRAST: the ground is ${t01Ground}, so letter in a colour that reads clearly on it — usually a DARK colour (near-black, deep navy, deep green, deep red, dark brown); Never letters close to the ground's own colour.`,
             t01Layout,
             t01Figure,
             t01BannedAnimal
