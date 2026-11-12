@@ -32,7 +32,8 @@ export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATU
   // 이어서 "머리가 사과 같다" → 삐친 한 가닥(사과 꼭지처럼 보임)을 뺐다.
   + 'HEAD: a slightly wide BEAN-shaped head (not a perfect circle). Hair is one soft chunky shape that frames the face — a bob, a short messy cut, a low ponytail, a cap or beanie — with NO single tuft or sprout sticking up from the top. '
   // 이어서 "개성은 있는데 안 귀엽다": 세로 눈·처진 눈썹·큰 ㅅ 이 멍하고 찡그린 얼굴이 됐다 → 동그란 점 눈, 이목구비를 얼굴 아래쪽에 모으고, 눈썹은 필요할 때만.
-  + 'FACE FEATURES sit LOW on the face, close together, leaving a big forehead and hair above — this is what makes it cute. '
+  // 이어서 "이마가 너무 넓어 징그럽다" → 이목구비를 얼굴 가운데 높이에, 머리가 이마를 자연스럽게 덮게.
+  + 'FACE FEATURES sit around the MIDDLE of the face with normal, balanced proportions; the hair comes down naturally over the forehead (a fringe or hairline close to the eyes) — never a huge bare forehead. '
   // 이어서 사용자 참고(스티커 캐릭터 세트)의 일반 기법만: 흰자위 있는 동그란 눈을 붙여 두고 눈동자 방향으로 표정. 그 캐릭터의 모양은 따라 하지 않는다.
   + 'EYES: two round WHITE eyes with black pupils, set close together and touching or nearly touching; the pupils look sideways, up or at each other to show the mood; for a blissful moment, two closed curved lines instead. '
   + 'MOUTH: a TINY mouth shaped like a Korean letter — a very small cat-like ㅅ most of the time, a small ㅂ when excited or happy, a small ㅇ when surprised. '

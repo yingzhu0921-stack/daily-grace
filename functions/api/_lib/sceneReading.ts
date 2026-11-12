@@ -106,8 +106,9 @@ export function parseDeepScene(raw: string): { kind?: string; scene: string } | 
  * 말씀이 그 낱말을 직접 말하면 허용하므로, 해당 한국어 낱말이 원문에 있으면 흔한 그림으로 치지 않는다.
  */
 // 웃는 해·구름 같은 '얼굴 달린 사물'도 다시 고르게 한다(사용자: 사물에 눈·입 X).
-const STOCK_SCENE_RE = /\b(smiley|smiling (?:sun|cloud|star|moon|face|balloon)|happy face|joyful face|summit|mountain ?top|peak|sprouts?|seedlings?|watering|watering can|doves?|sunrise|sun rising|ocean|open sea|meadow|grassland|rolling hills|lone tree|river|stream|brook|lighthouse|boat|field of flowers|rays? of light|light rays|growing plant|open door)\b/i;
-const STOCK_WORDS_KO = /(산|싹|씨앗|심|물|비둘기|해|바다|초원|풀|언덕|나무|강|시내|등대|배를|배가|꽃|빛|문)/;
+const STOCK_SCENE_RE = /\b(smiley|smiling (?:sun|cloud|star|moon|face|balloon)|happy face|joyful face|summit|mountain ?top|peak|sprouts?|seedlings?|watering|watering can|doves?|sunrise|sun rising|ocean|open sea|meadow|grassland|rolling hills|lone tree|river|stream|brook|lighthouse|boat|field of flowers|rays? of light|light rays|growing plant|open door|lily ?pads?|fountain|hills?)\b/i;
+// '심'(심다)은 '돌보심'·'하심' 같은 높임말에 걸려 시냇물까지 허용해 버려서 뺐다. 한 글자 낱말은 뒤에 조사·어미가 붙는 경우만 본다.
+const STOCK_WORDS_KO = /(산[이을에과]|싹|씨앗|심[고어으]|물[이을에가과]|비둘기|해[가를와]|바다|초원|풀[이을밭]|언덕|나무|강[이을가에]|시내|등대|배[를가]|꽃|빛|문[을이]|목자|양[을이떼])/;
 export function isStockScene(scene: string, message: string): boolean {
   return STOCK_SCENE_RE.test(scene) && !STOCK_WORDS_KO.test(message);
 }

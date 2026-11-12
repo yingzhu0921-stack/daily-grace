@@ -676,10 +676,15 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
           },
         ], 500, 'gpt-4o'))?.scene || '';
         let scene = await askScene('');
-        // 금지 목록을 어기고 흔한 그림을 고르면 한 번만 다시 고르게 한다. 두 번째도 흔하면 그대로 쓴다.
+        // 금지 목록을 어기고 흔한 그림을 고르면 최대 두 번 다시 고르게 한다. 그래도 흔하면 마지막 것을 쓴다.
         if (scene && isStockScene(scene, sceneSource)) {
-          const second = await askScene(`\n\nYour first idea was "${scene}" — that is one of the STOCK PICTURES. Choose a genuinely different picture that is not on that list.`).catch(() => '');
-          if (second) scene = second;
+          const tried = [scene];
+          for (let i = 0; i < 2 && scene && isStockScene(scene, sceneSource); i++) {
+            const next = await askScene(`\n\nYour earlier ideas were ${tried.map((t) => `"${t}"`).join(' and ')} — those are STOCK PICTURES. Choose a genuinely different picture that is not on that list (no streams, sprouts, sunrises, hills or lily pads).`).catch(() => '');
+            if (!next) break;
+            scene = next;
+            tried.push(next);
+          }
         }
         // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
         const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
