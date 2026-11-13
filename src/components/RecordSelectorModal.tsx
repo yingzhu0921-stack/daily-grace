@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, Heart, Sparkles, Edit3, ChevronLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 type RecordType = 'meditation' | 'prayer' | 'gratitude' | 'diary';
 
@@ -25,6 +25,8 @@ interface RecordSelectorModalProps {
   onConfirm: (record: Record, selectedText: string) => void;
   onRefetch?: () => void; // 새로고침 콜백 추가
   purpose?: 'text' | 'background';
+  /** 열자마자 이 기록을 고른 상태(문구 고르기 단계)로 연다. 기록 화면의 '이 기록으로 카드 만들기'에서 쓴다. */
+  initialRecordId?: string;
 }
 
 const getCategoryInfo = (type: RecordType | string, record?: Record) => {
@@ -81,7 +83,7 @@ const getRecommendSource = (record: Record) => {
   return base;
 };
 
-export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch, purpose = 'text' }: RecordSelectorModalProps) {
+export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch, purpose = 'text', initialRecordId }: RecordSelectorModalProps) {
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [confirmedText, setConfirmedText] = useState('');
   const [step, setStep] = useState<'select' | 'confirm'>('select');
@@ -200,6 +202,19 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     setRecommendCount(0);
     setStep('confirm');
   };
+
+  // 2026-11-13 사용자: Q.T 화면에서 '카드 만들기'를 누르면 본문("히 7장")만 바로 들어갔다.
+  // 그 기록을 고른 상태로 열어 본문·묵상·AI 추천 중에서 고르게 한다. 열릴 때 한 번만.
+  const appliedInitialRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!open) { appliedInitialRef.current = null; return; }
+    if (!initialRecordId || appliedInitialRef.current === initialRecordId) return;
+    const record = records.find((r) => r.id === initialRecordId);
+    if (!record) return; // 기록 목록이 아직 안 왔으면 오면 다시 본다
+    appliedInitialRef.current = initialRecordId;
+    handleSelectRecord(record);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialRecordId, records]);
 
   const handleConfirm = () => {
     const text = confirmedText.trim();

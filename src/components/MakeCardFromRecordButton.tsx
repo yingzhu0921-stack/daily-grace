@@ -9,7 +9,7 @@ import { routes } from '@/config/routes';
  * 카드 만들기 탭으로 가서 '내 기록에서 가져오기'로 같은 기록을 다시 찾아야 했다.
  * 문구를 sessionStorage 로 넘기면 카드 만들기가 '카드 내용 입력' 단계에 미리 채워 둔다.
  */
-export function MakeCardFromRecordButton({ text }: { text: string }) {
+export function MakeCardFromRecordButton({ text, recordId }: { text: string; recordId?: string }) {
   const navigate = useNavigate();
   const phrase = text.trim();
   if (!phrase) return null;
@@ -20,6 +20,9 @@ export function MakeCardFromRecordButton({ text }: { text: string }) {
         sessionStorage.removeItem('edit_card_state');
         sessionStorage.removeItem('edit_card_id');
         sessionStorage.setItem('card_prefill_text', phrase);
+        // 기록 id 를 함께 넘기면 카드 만들기가 '카드에 담을 문구' 창을 이 기록으로 연다(본문·묵상·AI 추천 중 고르기).
+        if (recordId) sessionStorage.setItem('card_prefill_record', recordId);
+        else sessionStorage.removeItem('card_prefill_record');
         navigate(routes.cardDesigner);
       }}
       className="w-full mt-6 py-3 rounded-xl text-[15px] font-semibold text-white bg-[#1F1F1F] hover:bg-[#333333] transition-colors flex items-center justify-center gap-2"

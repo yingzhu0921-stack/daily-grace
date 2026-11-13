@@ -557,6 +557,8 @@ export default function Designer() {
   const [cooldownRemaining, setCooldownRemaining] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [recordSelectorOpen, setRecordSelectorOpen] = useState(false);
+  // 기록 화면에서 넘어온 기록 id. 문구 고르기 창을 이 기록으로 연다(닫으면 지운다).
+  const [prefillRecordId, setPrefillRecordId] = useState<string | undefined>(undefined);
   const [availableRecords, setAvailableRecords] = useState<any[]>([]);
   const [saveSuccessOpen, setSaveSuccessOpen] = useState(false);
   const [savedCardData, setSavedCardData] = useState<{ imageDataUrl: string; text: string } | null>(null);
@@ -1000,11 +1002,20 @@ export default function Designer() {
     // 기존 카드를 편집하러 들어온 경우가 먼저다. 둘이 같이 있으면 미리 채우기는 버린다.
     if (sessionStorage.getItem('edit_card_state')) return;
     const phrase = stripVerseNumbers(prefill).trim();
+    const recordId = sessionStorage.getItem('card_prefill_record');
+    sessionStorage.removeItem('card_prefill_record');
     if (!phrase) return;
     setActiveTrack('auto');
     setVerseInput(phrase);
     setT(s => ({ ...s, content: phrase }));
     setFlowStep('record');
+    // Q.T 처럼 본문·묵상이 나뉜 기록은 본문("히 7장")만 들어가면 안 된다(2026-11-13 사용자).
+    // '카드에 담을 문구' 창을 그 기록으로 열어 고르게 한다.
+    if (recordId) {
+      setPrefillRecordId(recordId);
+      void openRecordSelector('auto');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // 하단 패널 스와이프 제스처
@@ -1340,6 +1351,7 @@ export default function Designer() {
     const phrase = selectedText.trim();
     if (!phrase) return;
     setRecordSelectorOpen(false);
+    setPrefillRecordId(undefined);
     if (recordPickerTarget === 'photo') {
       setPhotoText(phrase);
     } else if (recordPickerTarget === 'manual-bg') {
@@ -3474,7 +3486,8 @@ export default function Designer() {
         {renderSaveSuccessModal()}
         <RecordSelectorModal
           open={recordSelectorOpen}
-          onClose={() => setRecordSelectorOpen(false)}
+          onClose={() => { setRecordSelectorOpen(false); setPrefillRecordId(undefined); }}
+          initialRecordId={prefillRecordId}
           records={availableRecords}
           onConfirm={useSelectedRecordText}
           purpose={recordPickerTarget === 'manual-bg' ? 'background' : 'text'}

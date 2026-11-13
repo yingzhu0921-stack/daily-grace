@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -18,6 +18,21 @@ export function PrayerResponseModal({
   prayerTitle,
 }: PrayerResponseModalProps) {
   const [response, setResponse] = useState(initialResponse);
+  // 키보드가 올라오면 줄어드는 '보이는 화면'. 창을 그 안에 둔다.
+  const [viewport, setViewport] = useState<{ top: number; height: number } | null>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => setViewport({ top: vv.offsetTop, height: vv.height });
+    update();
+    vv.addEventListener('resize', update);
+    vv.addEventListener('scroll', update);
+    return () => {
+      vv.removeEventListener('resize', update);
+      vv.removeEventListener('scroll', update);
+    };
+  }, [isOpen]);
 
   const handleSave = () => {
     onSave(response.trim());
@@ -37,12 +52,20 @@ export function PrayerResponseModal({
             className="fixed inset-0 bg-black/50 z-50"
           />
 
-          {/* Modal */}
+          {/* Modal
+              2026-11-13 사용자(아이폰): 창이 화면 아래로 처져 있고 키보드가 올라오면 입력칸이 가려졌다.
+              움직임 효과(scale·y)가 transform 을 덮어써서 '-translate-y-1/2' 가운데 맞춤이 사라졌기 때문.
+              위치는 움직이지 않는 바깥 틀이 맡고, 키보드를 뺀 '보이는 화면'(visualViewport) 안에서 가운데에 둔다. */}
+          <div
+            className="fixed inset-x-0 z-50 flex items-center justify-center px-4 pointer-events-none"
+            style={viewport ? { top: viewport.top, height: viewport.height } : { top: 0, bottom: 0 }}
+          >
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 bg-white rounded-3xl shadow-2xl z-50 max-w-md mx-auto"
+            className="pointer-events-auto w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-y-auto overscroll-contain"
+            style={{ maxHeight: viewport ? viewport.height - 24 : '90vh' }}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-[#F0EFED]">
@@ -96,6 +119,7 @@ export function PrayerResponseModal({
               </button>
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

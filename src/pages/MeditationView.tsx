@@ -141,7 +141,7 @@ const MeditationView = () => {
         <MeditationViewContent note={note} onCheckChange={handleCheckChange} />
 
         {/* Q.T 는 말씀 카드를 만드는 경우가 많아 본문(말씀)을 먼저 넘긴다. 본문이 없으면 묵상 내용. */}
-        <MakeCardFromRecordButton text={note.passage?.trim() || note.content || ''} />
+        <MakeCardFromRecordButton text={note.passage?.trim() || note.content || ''} recordId={note.id} />
 
         {/* 버튼 영역 */}
         <div className="flex gap-2 pt-6 mt-6 border-t border-[#EDEDED]">
