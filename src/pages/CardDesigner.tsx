@@ -1300,6 +1300,7 @@ export default function Designer() {
 
   const expandPrompt = async (generateAfter = false) => {
     if (isExpandingPrompt || isGenerating) return;
+    if (!selectedStyle) { toast.error('스타일을 먼저 골라 주세요'); return; }
 
     // 쿨다운 체크
     const now = Date.now();
@@ -1362,6 +1363,7 @@ export default function Designer() {
   };
 
   const generateBackground = async (preparedPrompt?: string) => {
+    if (!selectedStyle) { toast.error('스타일을 먼저 골라 주세요'); return; }
     // 쿨다운 체크
     const now = Date.now();
     const timeSinceLastGenerate = now - lastGenerateTime;
@@ -4323,12 +4325,15 @@ export default function Designer() {
                       </button>
                     ))}
                   </div>
-                  {selectedStyle && (
+                  {selectedStyle ? (
                     <div className="mt-2 flex items-center gap-2 text-[12px] text-[#1F1F1F]">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1F1F1F]" />
                       선택됨: {selectedStyle}
                     </div>
-                   )}
+                  ) : (
+                    // 2026-11-13 사용자: 스타일 없이 만들면 흔한 무료 사진 같은 기본 그림이 나와서, 스타일을 꼭 고르게 했다.
+                    <p className="mt-2 text-[12px] text-[#B4564A]">스타일을 골라야 배경을 만들 수 있어요.</p>
+                  )}
                  </section>
 
                  {/* 2. 원하는 장면을 적어주세요 */}
@@ -4364,7 +4369,7 @@ export default function Designer() {
 
                 {!expandedPrompt && (
                   <button onClick={() => expandPrompt(false)}
-                    disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
+                    disabled={isGenerating || isExpandingPrompt || !selectedStyle}
                     className="text-sm underline disabled:opacity-40">
                     그리기 전에 배경 설명 보기·고치기
                   </button>
@@ -4443,7 +4448,7 @@ export default function Designer() {
                 <div className="fixed bottom-0 left-0 w-full p-3 bg-white border-t z-[110] flex gap-2">
                   <Button
                     onClick={() => expandedPrompt ? generateBackground() : expandPrompt(true)}
-                    disabled={isGenerating || isExpandingPrompt || (!bgPrompt.trim() && !selectedStyle)}
+                    disabled={isGenerating || isExpandingPrompt || !selectedStyle}
                     className={meta.bgImageUrl
                       ? 'flex-1 min-h-11 py-2 bg-white hover:bg-[#F5F4F2] text-[#1F1F1F] border border-[#1F1F1F] rounded-xl text-[14px] font-medium'
                       : 'w-full min-h-11 py-2 bg-[#1F1F1F] hover:bg-[#333333] text-white rounded-xl text-[14px] font-medium'}
