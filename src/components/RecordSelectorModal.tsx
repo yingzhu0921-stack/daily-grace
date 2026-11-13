@@ -69,6 +69,18 @@ const getRecordText = (record: Record) => {
   return record.content || record.passage || record.title || '';
 };
 
+/**
+ * AI 추천에 보낼 글. Q.T 는 본문을 먼저 넣지만, 본문이 "히 4장"처럼 짧으면 추천 버튼이 아예 안 떴다
+ * (2026-11-13 사용자 "ai 추천이 안떠"). 본문이 짧으면 묵상 내용으로 추천한다.
+ */
+const getRecommendSource = (record: Record) => {
+  const base = getRecordText(record);
+  if (record.type === 'meditation' && base.replace(/\s/g, '').length <= 22 && record.content?.trim()) {
+    return record.content;
+  }
+  return base;
+};
+
 export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch, purpose = 'text' }: RecordSelectorModalProps) {
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [confirmedText, setConfirmedText] = useState('');
@@ -121,7 +133,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     if (!recommendCount || !open || step !== 'confirm' || !selectedRecord || purpose === 'background') return;
     setOptions([]);
     setRecommendationError('');
-    const raw = getRecordText(selectedRecord);
+    const raw = getRecommendSource(selectedRecord);
     if (raw.replace(/\s/g, '').length <= 22) return;
     const controller = new AbortController();
     setRecommending(true);
@@ -342,7 +354,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                     <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
                   )}
                   {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
-                  {getRecordText(selectedRecord).replace(/\s/g, '').length > 22 && (
+                  {getRecommendSource(selectedRecord).replace(/\s/g, '').length > 22 && (
                     <Button
                       variant="outline"
                       disabled={recommending}
