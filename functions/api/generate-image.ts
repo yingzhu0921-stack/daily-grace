@@ -656,7 +656,10 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const sceneSource = (verse?.trim() || sourceText || '').slice(0, 1500);
     let t02DeepScene = '';
     // 미니멀(T02)은 성경 속 사건이어도 깊게 읽는다(2026-11-12 사용자: 아브라함이 나와야 한다, 성경 장면을 미니멀하게 잘 시각화).
-    if (((selectedTemplate === 'T01' && !analysis.situation?.trim()) || selectedTemplate === 'T02') && sceneSource) {
+    // 2026-11-13 사용자: 성경 장면이 정해진 구절은 '다시 생성'해도 같은 인물·구도만 나왔다(그 순간만 그리게 해서).
+    // 다시 생성일 때는 T01 도 깊게 읽고, 같은 순간을 다른 시점으로 또는 말씀 내용 자체를 그리게 한다.
+    const regenWithMoment = !!regenerate && !!analysis.situation?.trim();
+    if (((selectedTemplate === 'T01' && (!analysis.situation?.trim() || regenWithMoment)) || selectedTemplate === 'T02') && sceneSource) {
       const isT01 = selectedTemplate === 'T01';
       const cardBrief = isT01
         ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place, low in the frame — no scattered tiny decorations.'
@@ -671,7 +674,14 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
           {
             role: 'user',
             content: sceneSource
-              + (analysis.situation?.trim() ? `\n\nTHE MOMENT THIS MESSAGE DESCRIBES (already settled — the scene must be this moment): ${analysis.situation}` : '')
+              + (analysis.situation?.trim()
+                ? (regenWithMoment
+                  // 다시 생성을 번갈아: 홀수 번째는 순간의 인물·장소 없이 말씀 내용 자체, 짝수 번째는 같은 순간을 다른 시점으로.
+                  ? (prevSubjects.length % 2 === 1
+                    ? `\n\nThis is a REGENERATION. The previous pictures showed the moment "${analysis.situation}". This time do NOT draw that moment, its people or its place at all — draw what the words themselves say as a fresh scene (for example who is loved, what is given, what is received), with Jesus only if the words are about what he does.`
+                    : `\n\nThis message belongs to the moment: ${analysis.situation}. This is a REGENERATION: show that same moment from a clearly different viewpoint, distance, time detail or action, never repeating the previous composition.`)
+                  : `\n\nTHE MOMENT THIS MESSAGE DESCRIBES (already settled — the scene must be this moment): ${analysis.situation}`)
+                : '')
               + (analysis.coreMeaning ? `\n\n(Earlier reading of the meaning, for reference only: ${analysis.coreMeaning})` : '')
               + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : '')
               + extra,
@@ -697,6 +707,8 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
         // 지시를 어긴 결과는 버리고 위 분석의 장면을 쓴다(Codex 지적): 이전 소재 재사용, T01 에 말씀에 없는 동물.
         const reused = prevSubjects.some((p) => p && scene.toLowerCase().includes(String(p).toLowerCase().slice(0, 18)));
         if (scene && !reused && !(isT01 && t01AnimalMiss(scene))) {
+          // 다시 생성으로 새 장면을 골랐으면, 이미지 지시의 '그 순간만 그려라'가 새 장면과 싸우지 않게 순간 지정을 푼다.
+          if (isT01 && regenWithMoment) analysis.situation = '';
           if (isT01) analysis.t01SceneConcept = scene;
           else t02DeepScene = scene;
         }
