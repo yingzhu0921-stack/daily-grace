@@ -958,6 +958,8 @@ export default function Designer() {
     const prefill = sessionStorage.getItem('card_prefill_text');
     if (!prefill) return;
     sessionStorage.removeItem('card_prefill_text');
+    // 기존 카드를 편집하러 들어온 경우가 먼저다. 둘이 같이 있으면 미리 채우기는 버린다.
+    if (sessionStorage.getItem('edit_card_state')) return;
     const phrase = stripVerseNumbers(prefill).trim();
     if (!phrase) return;
     setActiveTrack('auto');

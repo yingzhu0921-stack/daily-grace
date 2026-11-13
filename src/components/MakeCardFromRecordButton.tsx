@@ -16,6 +16,9 @@ export function MakeCardFromRecordButton({ text }: { text: string }) {
   return (
     <button
       onClick={() => {
+        // 새 카드다. 보관함에서 '편집'으로 열다 만 카드 상태가 남아 있으면 그 카드를 덮어쓰게 되므로 지운다(Codex 지적).
+        sessionStorage.removeItem('edit_card_state');
+        sessionStorage.removeItem('edit_card_id');
         sessionStorage.setItem('card_prefill_text', phrase);
         navigate(routes.cardDesigner);
       }}
