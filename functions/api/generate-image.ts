@@ -211,6 +211,36 @@ These examples illustrate grammar, not fixed rules for other messages.` },
   return neutralLines(verse);
 }
 
+// ── condense 보조: 카드 문구 추천은 원문 문장 그대로만(2026-11-13 사용자 결정) ──
+const collapseSpaces = (s: string) => s.replace(/\s+/g, ' ').trim();
+// 사용자가 줄 앞에 붙인 '->', '-', '•' 같은 표시만 떼어 낸다(글자 자체는 바꾸지 않는다).
+const stripLeadMarks = (s: string) => s.replace(/^[\s\-–—>•·*]+/, '').trim();
+
+/** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. */
+function pickVerbatim(source: string, candidates: string[]): string[] {
+  const hay = collapseSpaces(source);
+  const out: string[] = [];
+  for (const c of candidates) {
+    const cand = stripLeadMarks(collapseSpaces(String(c).replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
+    if (cand.replace(/\s/g, '').length < 6) continue;
+    if (!hay.includes(cand)) continue; // 원문에 없는 말이 한 글자라도 섞이면 버린다
+    if (!out.includes(cand)) out.push(cand);
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
+/** AI 를 못 쓰거나 고른 게 모두 버려졌을 때: 원문 문장에서 직접 고른다. [성경 인용] 줄보다 사용자 자신의 문장을 먼저. */
+function fallbackSentences(source: string): string[] {
+  const lines = source.split('\n').map((l) => stripLeadMarks(l)).filter(Boolean);
+  const own = lines.filter((l) => !/^\[[^\]]*\]/.test(l));
+  const pool = (own.length ? own : lines)
+    .flatMap((l) => l.split(/(?<=[.!?。])\s+/))
+    .map((s) => s.trim())
+    .filter((s) => { const n = s.replace(/\s/g, '').length; return n >= 8 && n <= 70; });
+  return [...new Set(pool)].slice(0, 3);
+}
+
 async function gpt(apiKey: string, messages: any[], maxTokens = 500, model = 'gpt-4o-mini'): Promise<string> {
   const res = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
@@ -252,8 +282,10 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     });
   };
 
-  // ── condense: 긴 기록(사용자 본인 글)을 카드용 짧은 핵심 문구로 압축 ──
-  // 성경 구절을 지어내지 않고, 사용자 글의 핵심만 짧게. 결과는 사용자가 검토·수정한다.
+  // ── condense: 긴 기록(사용자 본인 글)에서 카드에 올릴 문장을 "그대로" 골라 준다 ──
+  // 2026-11-13 사용자 결정: 추천은 원문 문장 중에서만 고른다(새로 다듬은 말 X). CLAUDE.md 11장 '사용자 원문 보존'.
+  // 예전에는 AI 가 말투를 바꿔 새 문장을 지었다(2026-11-10 말투 규칙) — 그 방식은 이 결정으로 대체됐다.
+  // AI 는 어느 문장이 좋은지만 고르고, 원문에 그대로 있는지 서버가 다시 확인해서 아니면 버린다.
   if (action === 'condense') {
     const source = (text || prompt || '').trim();
     if (!source) return Response.json({ error: '내용을 입력해주세요.' }, { status: 400 });
@@ -261,46 +293,40 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     if (source.replace(/\s/g, '').length <= 22) return Response.json({ text: source, options: [source] });
     const quotaDenied = await spendAiQuota();
     if (quotaDenied) return quotaDenied;
+    const verbatim = (candidates: string[]) => pickVerbatim(source, candidates);
     try {
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `너는 Daily Grace 앱에서 사용자가 쓴 긴 묵상/기도/일기 기록을 "말씀카드에 올릴 짧은 핵심 문구"로 압축하는 도우미다. 서로 다른 관점의 후보 3개를 제안한다.
+          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 후보 3개를 고른다.
 
 규칙(엄수):
-1. 오직 사용자 글의 핵심 메시지만 뽑아 짧게 만든다. 사용자 본인의 글을 요약하는 것이다.
-2. 절대 새로운 성경 구절/성경 문장을 지어내거나 인용해서 넣지 않는다. 입력에 없는 성경 본문 추가 금지.
-3. 결과물은 성경 본문(번역 문장)을 그대로 복사·인용하면 안 된다. 사용자 글 안에 성경 구절이 인용돼 있어도, 그 구절을 그대로 가져오지 말고 핵심 의미를 "새로운 자기 표현의 짧은 문구"로 다시 쓴다. (출력은 성경 본문이 아니라 항상 창작 문구)
-4. 사용자 글에 없는 새로운 사실/교리/내용을 만들어내지 않는다. 있는 내용의 핵심만.
-5. 카드에 담길 분량으로: 두 줄 안팎, 30~60자 정도. 짧게 끊어 앙상한 한 구절보다, 사용자 글의 상황과 마음이 함께 담긴 한두 문장이 낫다. 세 줄을 넘지는 않는다.
-6. 말투가 가장 중요하다. 설교조·훈계조로 쓰지 않는다.
-   · **"~하라, ~하리라, ~살라, ~되라, ~이다, ~한다" 같은 선포형·단정형 종결은 쓰지 않는다.** 딱딱하게 읽힌다.
-   · 혼자 조용히 되뇌거나 카드에 담아 두고 싶은, 자연스러운 말투로 쓴다.
-   · "~하기", "~하는 것" 같은 할일메모체도 쓰지 않는다.
-7. 후보 3개는 **각각 다른 말투로 하나씩** 만든다. 순서도 이대로 한다.
-   · 1번 — 부드러운 해요체. 예: "일이 손에 잡히지 않아 불안한 오늘도, 주님 안에서 잠시 쉬어가요"
-   · 2번 — 고백·기도체. "~습니다" 로 맺거나, 간구라면 "~소서" 로 맺는다.
-     예: "내 힘으로 끝까지 버티려 했던 마음을 오늘은 주님 앞에 내려놓습니다" / "흔들리는 이 마음을 오늘도 주님의 평안으로 덮어 주소서"
-   · 3번 — 명사형 마무리. 서술어 없이 끝맺는다. 예: "마음이 소란한 날에도 조용히 곁에 머무는 주님의 쉼"
-8. JSON 배열만 출력한다. 예: ["욕심을 비워 낼수록 채워 주시는 은혜 안에 오늘도 머물러요","내 뜻을 앞세우던 걸음을 멈추고 그 마음으로 다시 걷겠습니다","가장 낮은 자리에서 비로소 배우게 되는 사랑"]`,
+1. 사용자 글에 있는 문장을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 줄이거나 말투를 고치거나 이어 붙이지 않는다.
+2. 후보 하나는 원문에서 연속된 한 문장 또는 이어진 두 문장이다. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
+3. 사용자가 직접 쓴 생각·고백·다짐 문장을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
+4. 카드에 담길 분량: 15~70자 정도. 마음이 잘 드러나는 문장을 고른다.
+5. 서로 다른 문장 3개를 고른다. 원문이 짧아 3개가 안 되면 있는 만큼만.
+6. JSON 문자열 배열만 출력한다.`,
         },
         { role: 'user', content: source },
-      // 작은 모델은 말투 규칙을 자주 놓치고 문장이 어색했다(2026-11-10 사용자 요청으로 상향).
       ], 700, 'gpt-4o');
-      let options: string[] = [];
+      let picked: string[] = [];
       try {
         const m = (raw || '').match(/\[[\s\S]*\]/);
         const arr = JSON.parse(m ? m[0] : raw);
-        if (Array.isArray(arr)) options = arr.map((s: any) => String(s).trim().replace(/^["'“”]+|["'“”]+$/g, '')).filter(Boolean);
+        if (Array.isArray(arr)) picked = arr.map((s: any) => String(s));
       } catch {
-        options = (raw || '').split('\n').map(s => s.trim().replace(/^[-*\d.\s"'“”]+|["'“”]+$/g, '')).filter(Boolean);
+        picked = (raw || '').split('\n');
       }
-      options = options.slice(0, 3);
+      let options = verbatim(picked);
+      // AI 가 원문에 없는 말을 섞었으면 버려진다. 하나도 안 남으면 원문 문장에서 직접 고른다.
+      if (!options.length) options = fallbackSentences(source);
       if (!options.length) options = [source];
       return Response.json({ text: options[0], options });
     } catch (e: any) {
-      // 실패 시 원문 그대로 (사용자가 편집)
-      return Response.json({ text: source, options: [source] });
+      // 실패 시 원문 문장에서 직접 고르고, 그것도 안 되면 원문 그대로 (사용자가 편집)
+      const options = fallbackSentences(source);
+      return Response.json({ text: options[0] || source, options: options.length ? options : [source] });
     }
   }
 
