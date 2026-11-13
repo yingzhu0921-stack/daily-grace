@@ -17,6 +17,12 @@ import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, 
 import { stripVerseNumbers } from '@/utils/verseNumbers';
 import { drawCardWatermark } from '@/utils/cardWatermark';
 
+/** 직접 편집 배경 스타일의 화면 이름. 서버 키(manualBackgroundStyles)는 바꾸지 않는다. */
+const STYLE_LABEL: Record<string, string> = {
+  '플랫 일러스트': '캐릭터 일러스트',
+  '미니멀 감성': '미니멀 일러스트',
+};
+
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
   .hide-ui-controls .ui-control {
@@ -1752,9 +1758,9 @@ export default function Designer() {
     id: string; name: string; desc: string; badge: string;
     tone: 'ai' | 'instant'; thumb: string | null;
   }[] = [
-    { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: '/template-previews/T01.jpg' },
-    { id: 'T02', name: '미니멀 감성',   desc: '깊은 색면 풍경 위에 차분한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T02.jpg' },
-    { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: '/template-previews/T03.jpg' },
+    { id: 'T01', name: '캐릭터 일러스트', desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: '/template-previews/T01.jpg' },
+    { id: 'T02', name: '미니멀 일러스트', desc: '깊은 색면 풍경 위에 차분한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T02.jpg' },
+    { id: 'T03', name: '소프트 그라데이션', desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: '/template-previews/T03.jpg' },
     { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T04.jpg' },
   ];
 
@@ -4335,6 +4341,8 @@ export default function Designer() {
                     2. 스타일을 선택하세요
                   </h2>
                   <div className="grid grid-cols-2 gap-1.5">
+                    {/* 2026-11-13 사용자: 이름을 '분위기 + 장르'(심플 낙서·플랫 일러스트) 톤으로. 서버는 왼쪽 이름으로 그림체를 찾으므로
+                        보내는 값은 그대로 두고 화면 이름만 바꾼다(STYLE_LABEL). */}
                     {[
                       '맑은 수채화',
                       '플랫 일러스트',
@@ -4353,14 +4361,14 @@ export default function Designer() {
                             : 'border-[#E8E7E5] bg-white hover:border-[#1F1F1F] hover:bg-[#1F1F1F]/5'
                         }`}
                       >
-                        {style}
+                        {STYLE_LABEL[style] || style}
                       </button>
                     ))}
                   </div>
                   {selectedStyle ? (
                     <div className="mt-2 flex items-center gap-2 text-[12px] text-[#1F1F1F]">
                       <div className="w-1.5 h-1.5 rounded-full bg-[#1F1F1F]" />
-                      선택됨: {selectedStyle}
+                      선택됨: {STYLE_LABEL[selectedStyle] || selectedStyle}
                     </div>
                   ) : (
                     // 2026-11-13 사용자: 스타일 없이 만들면 흔한 무료 사진 같은 기본 그림이 나와서, 스타일을 꼭 고르게 했다.
