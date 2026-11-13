@@ -57,7 +57,7 @@ export default function PrayerEdit() {
           <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
         </button>
         
-        <h1 className="text-base font-bold text-[#1E1C1A] absolute left-1/2 transform -translate-x-1/2">기도 작성</h1>
+        <h1 className="text-base font-bold text-[#1E1C1A] absolute left-1/2 transform -translate-x-1/2">기도 수정</h1>
         
         <button
           onClick={handleSave}

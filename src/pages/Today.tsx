@@ -34,7 +34,7 @@ const Today: React.FC = () => {
   const categories = [
     { type: 'meditation', label: 'Q.T', color: 'rgba(125,184,125,1)', icon: 'bookOpen', route: routes.meditationNew },
     { type: 'prayer', label: '기도', color: 'rgba(165,125,184,1)', icon: 'hands', route: routes.prayerNew },
-    { type: 'gratitude', label: '감사', color: 'rgba(232,200,125,1)', icon: 'sparkles', route: routes.gratitudeNew },
+    { type: 'gratitude', label: '감사', color: 'rgba(232,200,125,1)', icon: 'sun', route: routes.gratitudeNew },
     { type: 'diary', label: '일기', color: 'rgba(221,149,125,1)', icon: 'pencilLine', route: routes.diaryNew },
   ] as const;
 

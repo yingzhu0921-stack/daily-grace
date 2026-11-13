@@ -563,6 +563,8 @@ export default function Designer() {
   const [saveSuccessOpen, setSaveSuccessOpen] = useState(false);
   const [savedCardData, setSavedCardData] = useState<{ imageDataUrl: string; text: string } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  /** 보관함에서 '편집'으로 연 카드의 id. 저장하면 이 카드를 고친다(새 카드가 아니라). */
+  const editingCardIdRef = useRef<string | null>(null);
   const [bgTab, setBgTab] = useState<'ai' | 'photo' | 'color'>('ai');
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -962,9 +964,14 @@ export default function Designer() {
   }, [t.content]);
 
   // Load editor state if editing existing card
+  // 2026-11-13 점검: 편집을 열었다 저장 없이 나가면 sessionStorage 에 남아, 다음에 '카드 만들기'를 눌러도
+  // 그 카드가 다시 편집으로 열렸다(새 카드가 예전 카드를 덮어쓸 수 있었다). 읽자마자 지우고 id 는 이 화면에서만 들고 있는다.
   useEffect(() => {
     const editState = sessionStorage.getItem('edit_card_state');
     const editCardId = sessionStorage.getItem('edit_card_id');
+    sessionStorage.removeItem('edit_card_state');
+    sessionStorage.removeItem('edit_card_id');
+    editingCardIdRef.current = editState ? editCardId : null;
     if (editState) {
       try {
         const state = JSON.parse(editState);
@@ -985,6 +992,11 @@ export default function Designer() {
         if (editCardId) {
           setIsEditMode(true);
         }
+        // 2026-11-13 체험 배포 전 점검: 보관함 '편집'을 누르면 카드는 불러오면서 화면은 첫 화면(방식 고르기)에
+        // 머물렀다. 단계가 나뉜 뒤로 편집 단계로 넘기는 처리가 빠져 있었다. 바로 편집 화면으로 연다.
+        setActiveTrack('manual');
+        setFlowStep('edit');
+        setIsPanelCollapsed(false);
         toast.success('카드를 불러왔어요!');
       } catch (error) {
         console.error('Failed to load card state:', error);
@@ -1000,7 +1012,7 @@ export default function Designer() {
     if (!prefill) return;
     sessionStorage.removeItem('card_prefill_text');
     // 기존 카드를 편집하러 들어온 경우가 먼저다. 둘이 같이 있으면 미리 채우기는 버린다.
-    if (sessionStorage.getItem('edit_card_state')) return;
+    if (editingCardIdRef.current) return;
     const phrase = stripVerseNumbers(prefill).trim();
     const recordId = sessionStorage.getItem('card_prefill_record');
     sessionStorage.removeItem('card_prefill_record');
@@ -3445,8 +3457,7 @@ export default function Designer() {
             setBgPrompt('');
             setExpandedPrompt('');
             setSelectedStyle('');
-            sessionStorage.removeItem('edit_card_id');
-            sessionStorage.removeItem('edit_card_state');
+            editingCardIdRef.current = null;
             setIsEditMode(false);
             toast.success('새 카드를 만들 준비가 되었어요!');
           }}
@@ -3836,7 +3847,7 @@ export default function Designer() {
                   }
                   
                   // ===== STEP 5: Save to Database =====
-                  const editCardId = sessionStorage.getItem('edit_card_id');
+                  const editCardId = editingCardIdRef.current;
                   
                   if (editCardId) {
                     const existingCard = await getCardById(editCardId);
@@ -3854,8 +3865,7 @@ export default function Designer() {
                         updatedAt: new Date().toISOString(),
                       });
                     }
-                    sessionStorage.removeItem('edit_card_id');
-                    sessionStorage.removeItem('edit_card_state');
+                    editingCardIdRef.current = null;
                     setIsEditMode(false);
                   } else {
                     await saveCard({

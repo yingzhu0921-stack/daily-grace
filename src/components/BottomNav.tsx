@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { LineIcon, type LineIconName } from '@/components/ui/LineIcon';
 import { tintColor } from '@/utils/tintColor';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { routes } from '@/config/routes';
@@ -153,8 +153,8 @@ export const BottomNav: React.FC = () => {
       <Dialog open={showFabMenu} onOpenChange={setShowFabMenu}>
         <DialogContent className="max-w-[340px] rounded-3xl p-0 gap-0 bg-[#F6F3EC] border-[rgba(30,28,26,0.12)]">
           <div className="px-6 pt-6 pb-4">
-            <h2 className="text-[16px] font-bold text-[#1E1C1A] text-center mb-1">새 기록 작성</h2>
-            <p className="text-[12px] text-[#8A8278] text-center">어떤 기록을 작성하시겠어요?</p>
+            <DialogTitle className="text-[16px] font-bold text-[#1E1C1A] text-center mb-1">새 기록 작성</DialogTitle>
+            <DialogDescription className="text-[12px] text-[#8A8278] text-center">어떤 기록을 작성하시겠어요?</DialogDescription>
           </div>
           <div className="px-6 pb-6 grid grid-cols-2 gap-2">
             {allRecordTypes.map((type) => (
