@@ -88,10 +88,28 @@ const Legal: React.FC = () => {
               </p>
             </div>
           </section>
+
+          {/* 2026-11-13 대한성서공회 안내: 번역본명과 저작권자를 표시하되, 카드 이미지에 맞지 않으면 대표 페이지에 표기. 사용자 결정으로 대표 페이지에 둔다. */}
+          <section id="bible-copyright" className="bg-white rounded-2xl p-5 border border-[#EDEDED]">
+            <h3 className="text-[18px] font-semibold text-[#2E2E2E] mb-4">
+              성경 번역본 저작권 표기
+            </h3>
+            <div className="space-y-3 text-[15px] leading-7 text-[#4B4A47]">
+              <p className="rounded-xl bg-[#F7F6F4] px-4 py-3 text-[15px] font-semibold text-[#2E2E2E]">
+                성경전서 개역개정판 ⓒ (재)대한성서공회
+              </p>
+              <p>
+                하루은혜의 기록과 말씀카드에 담기는 성경 본문이 개역개정판인 경우, 그 저작권은 (재)대한성서공회에 있습니다.
+              </p>
+              <p>
+                다른 번역본을 사용하는 경우에는 해당 번역본의 저작권자와 이용 조건을 따릅니다.
+              </p>
+            </div>
+          </section>
         </div>
 
         <p className="mt-6 text-[12px] text-[#9A9894]">
-          최종 업데이트: 2026년 8월 18일
+          최종 업데이트: 2026년 11월 13일
         </p>
       </main>
     </div>

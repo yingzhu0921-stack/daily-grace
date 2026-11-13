@@ -81,7 +81,7 @@ const Settings: React.FC = () => {
     {
       icon: FileText,
       title: '약관 및 정책',
-      description: '이용약관, 개인정보 및 콘텐츠 정책',
+      description: '이용약관, 개인정보 정책, 성경 저작권 표기',
       bgColor: 'bg-[#E8C87D]/10',
       iconColor: 'text-[#E8C87D]',
       onClick: () => navigate('/legal'),
