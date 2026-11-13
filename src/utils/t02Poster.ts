@@ -67,7 +67,7 @@ const ALIGN: Record<T02StyleKey, 'left' | 'center'> = {
 
 /** 큰 글씨 최대 크기(카드 폭 대비). 색면 스타일은 글씨가 주인공이라 가장 크게 허용한다. */
 export const MAX_HERO: Record<T02StyleKey, number> = {
-  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.045, flat: 0.07,
+  film: 0.15, field: 0.24, swiss: 0.14, riso: 0.17, serif: 0.14, duotone: 0.16, minimal: 0.04, flat: 0.07,
 };
 
 export function t02FontsFor(info: Pick<T02Info, 'key' | 'seed'>): { hero: FontChoice; sub: FontChoice } {
@@ -192,7 +192,8 @@ function buildRows(ctx: CanvasRenderingContext2D, parts: T02Parts, info: T02Info
       ctx.font = fontCss(line.big ? hero : sub, sz);
       const wrapped = line.big ? wrapBalanced(ctx, line.text, w) : wrapWords(ctx, line.text, w);
       wrapped.forEach((r, i) => {
-        const gap = !rows.length ? 0 : i > 0 ? sz * 0.08 : prevBig === line.big ? sz * 0.12 : sz * 0.35;
+        // 2026-11-13 사용자: 미니멀 글씨가 조금 크고 행간이 좁다 → 최대 크기 0.045→0.04, 줄 사이를 글씨 크기의 0.1 만큼 넓혔다.
+        const gap = !rows.length ? 0 : i > 0 ? sz * 0.18 : prevBig === line.big ? sz * 0.22 : sz * 0.45;
         rows.push({ text: r, font: ctx.font, size: sz, color: line.big ? info.ink : info.sub, gapBefore: gap });
       });
       prevBig = line.big;
