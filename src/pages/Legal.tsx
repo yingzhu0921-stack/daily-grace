@@ -106,6 +106,20 @@ const Legal: React.FC = () => {
               </p>
             </div>
           </section>
+
+          <section className="bg-white rounded-2xl p-5 border border-[#EDEDED]">
+            <h3 className="text-[18px] font-semibold text-[#2E2E2E] mb-4">
+              사용한 글꼴
+            </h3>
+            <div className="space-y-3 text-[15px] leading-7 text-[#4B4A47]">
+              <p>
+                말씀카드의 앱 표시에 넥슨 배찌체를 사용합니다. 넥슨 배찌체의 지적 재산권을 포함한 모든 권리는 (주)넥슨코리아에 있습니다.
+              </p>
+              <p>
+                그 밖의 글꼴은 SIL 오픈 폰트 라이선스(OFL) 등 앱에 포함해 사용할 수 있도록 허락된 글꼴을 사용합니다.
+              </p>
+            </div>
+          </section>
         </div>
 
         <p className="mt-6 text-[12px] text-[#9A9894]">

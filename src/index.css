@@ -16,6 +16,11 @@
 @font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Medium.woff2') format('woff2'); font-weight: 500; }
 @font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-SemiBold.woff2') format('woff2'); font-weight: 600; }
 @font-face { font-family: 'Pretendard'; src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/packages/pretendard/dist/web/static/woff2/Pretendard-Black.woff2') format('woff2'); font-weight: 900; }
+/* 넥슨 배찌체 — 말씀카드 앱 표시용. 넥슨 서체 약관: 상업적 사용·임베디드 폰트 허용, 수정 금지, 출처 표기 권장(약관 페이지에 표기). */
+@font-face { font-family: 'NexonBazzi'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@2.1/Bazzi.woff') format('woff'); font-weight: normal; font-display: swap; }
+/* 강원교육새음체(강원도교육청), 그리운 팝콘체 — 2026-11-13 직접 편집 글꼴로 추가. 둘 다 임베딩 허용(사용자 확인). */
+@font-face { font-family: 'GangwonSaeum'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2201-2@1.0/GangwonEduSaeeum_OTFMediumA.woff') format('woff'); font-weight: normal; font-display: swap; }
+@font-face { font-family: 'GriunPopcorn'; src: url('https://cdn.jsdelivr.net/gh/Project-Noonnu/2609271946@griun-popcorn-rg/griun-popcorn-rg/Griun_Popcorn-Rg.woff2') format('woff2'); font-weight: 400; font-display: swap; }
 @font-face { font-family: 'GmarketSans'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: 700; }
 @font-face { font-family: 'Taenada'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2210-2@1.0/Tenada.woff2') format('woff2'); }
 /* 말씀카드 T03 본문용 고딕. 넷 다 웹사이트·임베딩 허용을 확인했다(2026-10-25).

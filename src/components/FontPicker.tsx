@@ -10,7 +10,7 @@ export type FontFamily =
   // RidiBatang·SeoulHangang 은 예전에 저장된 카드를 열기 위해 남겨 둔다. 둘 다 마루부리로 그린다.
   | 'RidiBatang' | 'SeoulHangang' | 'MaruBuri' | 'Hyunok' | 'GangwonModoo'
   | 'Keris' | 'JeonnamBarun' | 'Incheon' | 'Limelight' | 'CaveatBrush'
-  | 'Cafe24SuperMagic';
+  | 'Cafe24SuperMagic' | 'NexonBazzi' | 'GangwonSaeum' | 'GriunPopcorn';
 
 export interface FontOption {
   value: FontFamily;
@@ -25,6 +25,9 @@ export const fontOptions: FontOption[] = [
   // 개성/힙
   { value: 'Taenada', label: '태나다', family: 'Taenada' },
   { value: 'Cafe24SuperMagic', label: '카페24슈퍼매직', family: 'Cafe24SuperMagic' },
+  // 2026-11-13 사용자 추가. 셋 다 임베딩 허용(넥슨 약관·강원도교육청·그리운 배포처).
+  { value: 'NexonBazzi', label: '넥슨 배찌', family: 'NexonBazzi' },
+  { value: 'GriunPopcorn', label: '그리운 팝콘', family: 'GriunPopcorn' },
   // 깔끔한 고딕
   { value: 'PaperBlack', label: '페이퍼블랙', family: 'PaperBlack' },
   { value: 'PaperLight', label: '페이퍼라이트', family: 'PaperLight' },
@@ -32,6 +35,7 @@ export const fontOptions: FontOption[] = [
   { value: 'JeonnamBarun', label: '전남바른', family: 'JeonnamBarun' },
   // 손글씨/감성
   { value: 'Hyunok', label: '현옥샘', family: 'Hyunok' },
+  { value: 'GangwonSaeum', label: '강원새음', family: 'GangwonSaeum' },
   { value: 'Incheon', label: '인천자람', family: 'Incheon' },
   // 세리프/명조 · 교육체 개성
   // 리디바탕·서울한강은 앱 배포 라이선스가 확인되지 않아 마루부리(OFL) 하나로 합쳤다(2026-11-10).

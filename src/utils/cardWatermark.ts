@@ -3,11 +3,12 @@
  *
  * 2026-11-13 사용자 결정: 색 아이콘은 카드를 해쳐서, 글자와 같은 한 가지 색의 새싹잎 선택(수첩 모양은 작으면 뭉개짐).
  * 앱이 저작권을 주장하는 표시가 아니라 '어떤 앱으로 만들었는지'를 알리는 표시라 ⓒ 는 쓰지 않는다.
- * 글꼴은 주아(Jua, OFL — 웹·앱 임베딩 가능). 설정에서 끌 수 있다(기본 켜짐).
+ * 글꼴은 넥슨 배찌체(2026-11-13 사용자 선택). 넥슨 서체 약관이 임베디드 폰트·번들을 허용하고, 파일 수정은 금지, 출처 표기 권장
+ *   → 약관 페이지(Legal)에 출처를 적었다. 못 받으면 주아(OFL)로 그린다. 설정에서 끌 수 있다(기본 켜짐).
  */
 
 const STORAGE_KEY = 'card_watermark_enabled';
-const FONT = "'Jua', sans-serif";
+const FONT = "'NexonBazzi', 'Jua', sans-serif";
 
 export function isCardWatermarkEnabled(): boolean {
   try {
@@ -77,7 +78,7 @@ export async function drawCardWatermark(canvas: HTMLCanvasElement): Promise<void
   const base = Math.min(W, H);
   const textPx = Math.round(base * 0.026);
   try {
-    await document.fonts?.load(`${textPx}px ${FONT}`, '하루은혜');
+    await document.fonts?.load(`${textPx}px 'NexonBazzi'`, '하루은혜');
   } catch {
     /* 못 받아도 기본 글꼴로 그린다 — 표시라 철자만 맞으면 된다 */
   }
