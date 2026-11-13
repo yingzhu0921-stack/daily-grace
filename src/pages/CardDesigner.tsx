@@ -3467,12 +3467,15 @@ export default function Designer() {
           </button>
           <button
             className="h-8 sm:h-9 px-3 sm:px-4 rounded-full bg-[#1F1F1F] hover:bg-[#333333] text-white text-xs sm:text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            // 문구가 비면 저장할 수 없다. 전에는 글자 없는 카드가 그대로 저장돼
-            // 보관함에 반쯤 빈 카드로 남았다(10-31 요청 19 와 같은 뿌리).
-            disabled={isSaving || !t.content.trim()}
-            title={!t.content.trim() ? '문구를 입력하면 저장할 수 있어요' : undefined}
+            // 2026-11-13 사용자: 글씨를 안 넣으면 글씨 없이(배경만) 저장·다운로드되게.
+            // 전에는 문구가 비면 저장을 막았고(10-31 요청 19), 안내 문구('텍스트를 입력하세요.')는 빈 글씨로 치지 않아 그대로 구워졌다.
+            // 이제 배경 이미지가 있으면 글씨 없이 저장한다. 배경도 글씨도 없으면 빈 카드라 막는다.
+            disabled={isSaving || (isTextEmpty && !meta.bgImageUrl)}
+            title={isTextEmpty && !meta.bgImageUrl ? '배경을 고르거나 문구를 입력하면 저장할 수 있어요' : undefined}
             onClick={async () => {
-              if (!t.content.trim()) { toast.error('카드에 넣을 문구를 입력해주세요'); return; }
+              if (isTextEmpty && !meta.bgImageUrl) { toast.error('배경을 고르거나 문구를 입력해주세요'); return; }
+              // 안내 문구는 카드 글씨가 아니다. 비어 있으면 글씨 없이 굽는다.
+              const cardText = isTextEmpty ? '' : t.content;
               requireAuth(async () => {
                 setIsSaving(true);
                 try {
@@ -3569,7 +3572,7 @@ export default function Designer() {
                   }
                   
                   // ===== STEP 3: Draw Text =====
-                  if (t.content && t.content.trim()) {
+                  if (cardText.trim()) {
                     // Calculate text position and size
                     const textX = (width * t.x) / 100;
                     const textY = (height * t.y) / 100;
@@ -3633,7 +3636,7 @@ export default function Designer() {
                     // 저장 직전에 그 글꼴을 실제 문구 글자까지 받아 둔다. 화면에 보였어도 느린 망에선
                     // 덜 받았을 수 있고, 그러면 캔버스가 대체 글꼴로 그린다(자동완성 저장은 이미 기다린다).
                     if (document.fonts?.load) {
-                      await document.fonts.load(`${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`, t.content).catch(() => undefined);
+                      await document.fonts.load(`${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`, cardText).catch(() => undefined);
                     }
                     ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px ${fontFamily}`;
                     ctx.fillStyle = t.color;
@@ -3659,7 +3662,7 @@ export default function Designer() {
                     }
                     
                     // Advanced text wrapping: Handle newlines AND word wrapping
-                    const paragraphs = t.content.split('\n');
+                    const paragraphs = cardText.split('\n');
                     const allLines: string[] = [];
                     
                     paragraphs.forEach(paragraph => {
@@ -3749,7 +3752,7 @@ export default function Designer() {
                       await saveCard({
                         ...existingCard,
                         imageDataUrl: dataUrl,
-                        text: t.content,
+                        text: cardText,
                         ratio: meta.ratio,
                         bg: meta.bgImageUrl || meta.bgColor,
                         editorState: {
@@ -3768,7 +3771,7 @@ export default function Designer() {
                       createdAt: new Date().toISOString(),
                       ratio: meta.ratio,
                       bg: meta.bgImageUrl || meta.bgColor,
-                      text: t.content,
+                      text: cardText,
                       ref: '',
                       tags: [],
                       imageDataUrl: dataUrl,
@@ -3782,7 +3785,7 @@ export default function Designer() {
                   // ===== STEP 6: Show Success =====
                   setSavedCardData({
                     imageDataUrl: dataUrl,
-                    text: t.content,
+                    text: cardText,
                   });
                   setSaveSuccessOpen(true);
                   toast.success(isEditMode ? '카드가 업데이트되었어요!' : '카드가 저장되었어요!');
