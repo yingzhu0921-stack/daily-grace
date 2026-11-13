@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { saveCard, getCardById, type VerseCard } from '@/utils/verseCardDB';
 import { renderGenerativeCard, pickGrainSpec, preloadGrainFonts, emphasisWords, canEmphasize, remapEmphasis, type GenerativeStyle, type GenerativeSpec, type EmphasisChoice } from '@/utils/generativeCard';
 import { stripVerseNumbers } from '@/utils/verseNumbers';
+import { drawCardWatermark } from '@/utils/cardWatermark';
 
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
@@ -2748,6 +2749,7 @@ export default function Designer() {
         }
         }
 
+        await drawCardWatermark(canvas);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
 
         // 수동 편집 경로에만 있던 검사가 여기엔 없었다. 그림이 제대로 안 그려져도
@@ -3754,6 +3756,7 @@ export default function Designer() {
                   }
                   
                   // ===== STEP 4: Convert to Data URL =====
+                  await drawCardWatermark(canvas);
                   const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
                   
                   // Verify not blank

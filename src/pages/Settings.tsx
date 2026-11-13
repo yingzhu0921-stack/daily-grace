@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, Bell, User, ChevronRight, Download, FileJson, FileSpreadsheet, FileText, X } from 'lucide-react';
+import { ChevronLeft, Bell, User, ChevronRight, Download, FileJson, FileSpreadsheet, FileText, X, Sprout } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { isCardWatermarkEnabled, setCardWatermarkEnabled } from '@/utils/cardWatermark';
 import { BottomNav } from '@/components/BottomNav';
 import { downloadInFormat, getBackupStats, type ExportFormat } from '@/utils/dataExport';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +13,7 @@ const Settings: React.FC = () => {
   const { toast } = useToast();
   const [isExporting, setIsExporting] = useState(false);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [watermarkOn, setWatermarkOn] = useState(isCardWatermarkEnabled);
 
   const handleExportData = async (format: ExportFormat) => {
     if (isExporting) return;
@@ -129,6 +132,22 @@ const Settings: React.FC = () => {
               <ChevronRight className="w-5 h-5 text-[#BDBDBD] shrink-0" strokeWidth={1.5} />
             </button>
           ))}
+
+          {/* 말씀카드 앱 표시(새싹잎 + 하루은혜). 2026-11-13: 기본 켜짐, 원하지 않으면 끈다. */}
+          <label className="w-full bg-white rounded-2xl p-5 flex items-center gap-4 cursor-pointer">
+            <div className="w-12 h-12 rounded-xl bg-[#7DB87D]/10 flex items-center justify-center shrink-0">
+              <Sprout className="w-6 h-6 text-[#7DB87D]" strokeWidth={1.75} />
+            </div>
+            <div className="flex-1 text-left">
+              <h2 className="text-[16px] font-semibold text-[#2E2E2E] mb-0.5">카드에 앱 표시 넣기</h2>
+              <p className="text-[13px] text-[#7E7C78]">저장하는 말씀카드 아래에 작게 '하루은혜'를 넣어요</p>
+            </div>
+            <Switch
+              checked={watermarkOn}
+              onCheckedChange={(v) => { setWatermarkOn(v); setCardWatermarkEnabled(v); }}
+              aria-label="카드에 앱 표시 넣기"
+            />
+          </label>
         </div>
       </main>
 
