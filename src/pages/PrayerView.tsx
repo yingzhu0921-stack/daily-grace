@@ -194,7 +194,7 @@ export default function PrayerView() {
             </button>
           </div>
         </div>
-        <MakeCardFromRecordButton text={note.content?.trim() || note.title || ''} />
+        <MakeCardFromRecordButton text={note.content?.trim() || note.title || ''} recordId={note.id} />
       </div>
     </div>
 

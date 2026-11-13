@@ -109,7 +109,7 @@ export default function GratitudeView() {
             </button>
           </div>
         </div>
-        <MakeCardFromRecordButton text={note.items.filter((it) => it.trim()).join('\n')} />
+        <MakeCardFromRecordButton text={note.items.filter((it) => it.trim()).join('\n')} recordId={note.id} />
       </div>
       <DeleteRecordDialog
         open={showDeleteDialog}

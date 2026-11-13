@@ -101,7 +101,7 @@ export default function DiaryView() {
             </button>
           </div>
         </div>
-        <MakeCardFromRecordButton text={diary.content || ''} />
+        <MakeCardFromRecordButton text={diary.content || ''} recordId={diary.id} />
       </div>
       <DeleteRecordDialog
         open={showDeleteDialog}
