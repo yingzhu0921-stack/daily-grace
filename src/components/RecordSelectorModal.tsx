@@ -187,7 +187,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
           if (active) setRecommendationError('이 기록에서는 따로 골라낼 문장을 찾지 못했어요. 위에서 원문을 고르고 필요한 부분만 남겨 주세요.');
           return;
         }
-        if (active) setOptions(picks.slice(0, 3));
+        if (active) setOptions(picks.slice(0, 4));
       } catch {
         if (active) setRecommendationError('추천을 불러오지 못했어요. 잠시 후 "다시 고르기"를 눌러 주세요. 원문을 그대로 사용해도 돼요.');
       } finally {
@@ -425,7 +425,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                 {getRecommendSource(selectedRecord).replace(/\s/g, '').length > 22 && (
                   <div className="rounded-[14px] border border-dashed border-[rgba(30,28,26,0.25)] p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] font-bold text-[#1E1C1A]">AI가 골라 준 문장</span>
+                      <span className="text-[12px] font-bold text-[#1E1C1A]">AI 추천</span>
                       {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
                       <button
                         type="button"
@@ -440,8 +440,8 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                       {recommending
                         ? '원문에서 문장을 고르는 중이에요. 기다리지 않고 위에서 골라도 돼요.'
                         : recommendationError || (recommendationRequested
-                          ? '기록을 AI에 보내, 내가 쓴 기록에서 그대로 골라 왔어요.'
-                          : '누르면 이 기록이 AI에 전송돼요. 내가 쓴 문장 중에서 골라 줘요.')}
+                          ? '기록을 AI에 보냈어요. 위 두 개는 내가 쓴 문장 그대로, 아래 요약은 AI가 새로 쓴 문장이에요.'
+                          : '누르면 이 기록이 AI에 전송돼요. 이름·연락처·주소 같은 개인정보가 담긴 기록이면 보내지 말아 주세요. 내가 쓴 문장 2개와 AI 요약 2개를 추천해 줘요.')}
                     </p>
                     {options.map((option) => {
                       const on = confirmedText === option.text;
@@ -454,7 +454,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                             on ? 'border-[#1E1C1A] border-2' : 'border-[rgba(30,28,26,0.14)]'
                           }`}
                         >
-                          <span className="block text-[11.5px] font-bold text-[#6E675E]">{option.label}</span>
+                          <span className="flex items-center gap-1.5 text-[11.5px] font-bold text-[#6E675E]">{option.label}{option.label.startsWith('AI 요약') ? <span className="rounded-full bg-[#F1EDE5] px-1.5 py-[1px] text-[10px] font-semibold text-[#8A8278]">AI가 새로 쓴 문장</span> : <span className="rounded-full bg-[#EEF4E6] px-1.5 py-[1px] text-[10px] font-semibold text-[#3F6B29]">원문 그대로</span>}</span>
                           <span className="mt-0.5 block text-[13.5px] leading-5 text-[#1E1C1A]">{option.text}</span>
                         </button>
                       );

@@ -216,10 +216,12 @@ const collapseSpaces = (s: string) => s.replace(/\s+/g, ' ').trim();
 // 사용자가 줄 앞에 붙인 '->', '-', '•' 같은 표시만 떼어 낸다(글자 자체는 바꾸지 않는다).
 const stripLeadMarks = (s: string) => s.replace(/^[\s\-–—>•·*]+/, '').trim();
 
-// 추천 세 종류(2026-11-13 사용자). 말투를 바꿀 수 없으니 고르는 기준으로 나눈다. 모두 원문 그대로.
-//  · 짧은 한 줄 / 마음이 담긴 문장 / 핵심 구절(명사로 끝나는 원문 일부)
-// '이어진 두 문장'은 사용자가 별로라고 해서 '마음이 담긴 문장'으로 바꿨다. 항상 세 개를 채운다(사용자 요청).
-const CONDENSE_KINDS = ['짧은 한 줄', '마음이 담긴 문장', '핵심 구절'] as const;
+// 추천 세 종류(2026-11-13 사용자 결정):
+//  · 짧은 한 줄 / 마음이 담긴 문장 — 원문 그대로 골라 온다(사용자 원문 보존)
+//  · AI 요약 서술형 / AI 요약 명사형 — 기록의 핵심을 새 문장으로. 원문 보존 원칙의 예외로, 사용자가 직접 골랐을 때만 카드에 들어간다.
+//    "고르는 게 아니라 요약해 주는 줄 알았다"는 사용자 말에 따라 '원문 둘 + 요약 둘(서술형·명사형)'로 정했다. 화면에 'AI가 새로 쓴 문장'으로 표시한다.
+// '이어진 두 문장'·'핵심 구절(원문 일부 자르기)'은 사용자가 별로라고 해서 뺐다.
+const CONDENSE_KINDS = ['짧은 한 줄', '마음이 담긴 문장', 'AI 요약 · 서술형', 'AI 요약 · 명사형'] as const;
 type CondenseKind = typeof CONDENSE_KINDS[number];
 type Pick = { text: string; label: CondenseKind };
 
@@ -231,7 +233,7 @@ const nonSpaceLen = (s: string) => s.replace(/\s/g, '').length;
  * 종류별 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 첫 번째를 고른다.
  * 비면 원문 문장에서 직접 채워 늘 세 개가 되게 한다(원문이 너무 짧아 정말 없을 때만 모자란다).
  */
-function pickThree(source: string, groups: { short: unknown[]; heart: unknown[]; phrase: unknown[] }): Pick[] {
+function pickThree(source: string, groups: { short: unknown[]; heart: unknown[]; summary: unknown; summaryNoun: unknown }): Pick[] {
   const hay = collapseSpaces(source);
   const used: string[] = [];
   const isNew = (t: string) => !used.some((u) => u === t || u.includes(t) || t.includes(u));
@@ -256,8 +258,17 @@ function pickThree(source: string, groups: { short: unknown[]; heart: unknown[];
   // 마음이 담긴 문장: AI 후보 → 고백·다짐·바람 말끝을 가진 원문 문장 → 남은 문장
   const heartish = sentences.filter((x) => /(감사|기도|원|소망|바라|싶|하자|겠|드립니다|합니다|소서|주세요|주님)/.test(x));
   add('마음이 담긴 문장', take(groups.heart, false) || take(heartish, false) || take(sentences, false));
-  // 핵심 구절: AI 후보 → 원문 문장에서 명사구를 잘라 낸 것
-  add('핵심 구절', take(groups.phrase, true) || take(sentences.flatMap(nounPhrasesOf), true));
+  // AI 요약 두 개(서술형·명사형): 새로 쓴 문장이라 원문 글자 확인은 하지 않는다. 성경 장절 표시·지나치게 긴 것은 버린다.
+  const addSummary = (value: unknown, label: CondenseKind, nounEnding: boolean) => {
+    const t = collapseSpaces(String(value ?? '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, ''));
+    if (!t || nonSpaceLen(t) < 6 || t.length > 90 || /\d+\s*:\s*\d+/.test(t) || used.includes(t)) return;
+    // 명사형은 서술어로 끝나면 안 된다(서술형과 겹치지 않게).
+    if (nounEnding && /(다|요|죠|네|까|소서|니다)[.!?。]?$/.test(t)) return;
+    used.push(t);
+    out.push({ text: t.replace(/[.。]$/, nounEnding ? '' : '.').replace(/\.\.$/, '.'), label });
+  };
+  addSummary(groups.summary, 'AI 요약 · 서술형', false);
+  addSummary(groups.summaryNoun, 'AI 요약 · 명사형', true);
   return out;
 }
 
@@ -378,34 +389,38 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/감사/일기 기록 가운데 "말씀카드에 올리기 좋은 부분"을 골라 주는 도우미다.
+          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/감사/일기 기록으로 "말씀카드에 올릴 문구"를 추천하는 도우미다.
+네 가지를 낸다: short·heart 는 원문에서 그대로 고르고, summary·summaryNoun 은 핵심을 요약해 새로 쓴다.
 
-규칙(엄수):
+[short·heart — 원문 그대로 고르기, 엄수]
 1. 사용자 글을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 빼거나 말투를 고치거나 떨어진 부분을 이어 붙이지 않는다.
 2. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
 3. 사용자가 직접 쓴 생각·고백·다짐을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
-4. 세 종류를 고르고, 종류마다 서로 다른 후보를 3개씩 낸다(좋은 순서대로):
+4. 종류마다 서로 다른 후보를 3개씩(좋은 순서대로):
    · short 짧은 한 줄 — 원문의 한 문장, 10~35자 정도로 짧고 또렷한 것
    · heart 마음이 담긴 문장 — 고백·다짐·감사·바람이 가장 잘 드러나는 원문 한 문장(15~70자). short 와 다른 문장.
-   · phrase 핵심 구절 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 반드시 명사(또는 명사구)로 끝나야 한다.
-     "~다", "~요", "~자", "~면", "~고", "~야" 같은 서술어·연결어미나 "~을", "~에" 같은 조사로 끝나면 안 된다. 4~30자.
-     문장 끝의 "~이다/~이시다"만 떼는 것도 좋다.
-     **구절만 읽어도 뜻이 온전해야 한다.** 잘라 낸 바로 뒤에 "없다·않다·못하다·아니다"가 오면 뜻이 뒤집히니 그런 구절은 고르지 않는다.
-       나쁜 예: "…결부시키지 않으면 아무런 유익이 없다" → "…않으면 아무런 유익" (뜻이 반대가 됨)
-     예: "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
-     예: "예수님은 온전한 대제사장이시다" → "온전한 대제사장"
-5. JSON 객체 하나만 출력한다: {"short":["…","…","…"],"heart":["…","…","…"],"phrase":["…","…","…"]}`,
+
+[summary·summaryNoun — AI 요약, 새로 쓰기]
+5. 사용자 글 전체의 핵심을 요약해 두 가지로 쓴다. 둘은 같은 핵심이라도 표현을 다르게.
+   · summary 서술형 — 서술어로 끝나는 자연스러운 한두 문장(30~60자). "~해요", "~습니다", "~네요" 등.
+   · summaryNoun 명사형 — 명사(명사구)로 끝나는 한 줄(15~40자). 서술어로 끝내지 않는다.
+     예: "늦어 보여도 반드시 이루어지는 하나님의 약속"
+6. 공통: 설교조·명령조("~하라", "~하리라", "~해야 한다")로 쓰지 않는다. 혼자 되뇌거나 카드에 담아 두고 싶은 말투.
+   사용자 글에 없는 사실·교리·내용을 지어내지 않는다. 있는 내용의 핵심만.
+   성경 구절을 새로 지어내거나 성경 본문 문장을 그대로 옮기지 않는다.
+7. JSON 객체 하나만 출력한다: {"short":["…","…","…"],"heart":["…","…","…"],"summary":"…","summaryNoun":"…"}`,
         },
         { role: 'user', content: source },
       ], 900, 'gpt-4o');
-      let groups = { short: [] as unknown[], heart: [] as unknown[], phrase: [] as unknown[] };
+      let groups = { short: [] as unknown[], heart: [] as unknown[], summary: '' as unknown, summaryNoun: '' as unknown };
       try {
         const m = (raw || '').match(/\{[\s\S]*\}/);
         const obj = JSON.parse(m ? m[0] : raw);
         groups = {
           short: Array.isArray(obj?.short) ? obj.short : [],
           heart: Array.isArray(obj?.heart) ? obj.heart : [],
-          phrase: Array.isArray(obj?.phrase) ? obj.phrase : [],
+          summary: typeof obj?.summary === 'string' ? obj.summary : '',
+          summaryNoun: typeof obj?.summaryNoun === 'string' ? obj.summaryNoun : '',
         };
       } catch { /* 형식이 어긋나면 원문에서 직접 채운다 */ }
       const picks = pickThree(source, groups);
@@ -413,7 +428,7 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       return reply(picks.length ? picks : fromSource());
     } catch (e: any) {
       // AI 가 실패하면 원문 문장에서 직접 세 종류를 고르고, 그것도 안 되면 원문 그대로 (사용자가 편집)
-      const picks = pickThree(source, { short: [], heart: [], phrase: [] });
+      const picks = pickThree(source, { short: [], heart: [], summary: '', summaryNoun: '' });
       return reply(picks.length ? picks : fromSource());
     }
   }
