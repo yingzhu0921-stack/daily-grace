@@ -131,11 +131,11 @@ export default function GratitudeNew() {
       />
       
       <div className="min-h-screen bg-[#F6F3EC]">
-        <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
+        <header className="bg-[#efdaa7] flex items-center justify-between px-5 py-4 border-b border-[rgba(30,28,26,0.12)]">
           <button onClick={() => navigate(-1)} className="p-2 -ml-2">
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
-          <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">
+          <h1 className="text-base font-bold text-[#1E1C1A] absolute left-1/2 transform -translate-x-1/2">
             감사
           </h1>
           <div className="flex items-center gap-2">
@@ -151,7 +151,7 @@ export default function GratitudeNew() {
               disabled={!canSave}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 canSave 
-                  ? 'bg-[#C89B3C] text-white hover:bg-[#b88b2c]' 
+                  ? 'bg-[#1E1C1A] text-white hover:bg-[#333]' 
                   : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
               }`}
             >

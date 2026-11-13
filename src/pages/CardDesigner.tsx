@@ -1,6 +1,7 @@
 import { renderT02Poster } from '@/utils/t02Poster';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppIcon } from '@/components/ui/AppIcon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -1545,7 +1546,7 @@ export default function Designer() {
 
   // Entry 화면
   const renderEntry = () => (
-    <div className="flex-1 min-h-0 flex flex-col bg-white overflow-y-auto">
+    <div className="flex-1 min-h-0 flex flex-col bg-[#F6F3EC] overflow-y-auto">
       <div className="w-full max-w-md mx-auto px-5 pt-10 pb-6">
         <h2 className="text-[26px] font-semibold leading-tight text-[#2E2E2E]">말씀카드 만들기</h2>
         <p className="mt-2 text-[14px] leading-6 text-[#7E7C78]">원하는 방식으로 오늘의 기록을 카드로 남겨보세요.</p>
@@ -1638,7 +1639,7 @@ export default function Designer() {
     };
 
     return (
-      <div className="flex-1 min-h-0 flex flex-col px-4 pt-8 pb-8 bg-white gap-5 overflow-y-auto">
+      <div className="flex-1 min-h-0 flex flex-col px-4 pt-8 pb-8 bg-[#F6F3EC] gap-5 overflow-y-auto">
         <div>
           <h2 className="text-xl font-bold text-[#1F1F1F] mb-1">사진 + AI 텍스트</h2>
           <p className="text-sm text-[#7A7A7A]">사진을 올리고 원하는 텍스트를 입력하면 AI가 자동으로 생성해요</p>
@@ -1705,7 +1706,7 @@ export default function Designer() {
   // Record 화면
 
   const renderRecord = () => (
-    <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
+    <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-[#F6F3EC] gap-4 overflow-y-auto">
       <div>
         <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">카드 내용 입력</h2>
         <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">카드로 남기고 싶은 문구를 입력해주세요.</p>
@@ -1825,10 +1826,17 @@ export default function Designer() {
     };
 
     return (
-      <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
+      <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-[#F6F3EC] gap-4 overflow-y-auto">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">스타일 선택</h2>
+          <h2 className="text-[22px] font-bold tracking-[-0.02em] text-[#1E1C1A]">스타일 선택</h2>
           <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">분위기에 가까운 스타일을 고르면 AI가 배경과 구도를 만듭니다.</p>
+          {/* 앞 단계에서 입력한 말씀을 한 줄로 보여 준다(2026-11-13 사용자: 시안의 이 칸이 낫다). 사용자가 쓴 글자 그대로. */}
+          {verseInput.trim() && (
+            <div className="mt-3 flex items-center gap-2 rounded-[14px] border border-[rgba(30,28,26,0.12)] bg-white px-3 py-2.5">
+              <AppIcon name="card" size={17} color="#6E675E" />
+              <span className="flex-1 min-w-0 truncate text-[13px] text-[#4A453F]">{verseInput.trim().replace(/\s*\n\s*/g, ' ')}</span>
+            </div>
+          )}
         </div>
         <div>
           <h3 className="text-sm font-semibold text-[#1F1F1F] mb-2">카드 비율</h3>
@@ -1842,7 +1850,7 @@ export default function Designer() {
                   disabled={isGenerating}
                   onClick={() => setMeta(m => ({ ...m, ratio }))}
                   className={`flex min-h-[78px] flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2 transition-colors ${
-                    on ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white' : 'border-[#E3E2E0] text-[#4A4A4A] hover:border-[#1F1F1F]/40'
+                    on ? 'border-[#1F1F1F] bg-[#1F1F1F] text-white' : 'border-[rgba(30,28,26,0.12)] bg-white text-[#4A4A4A] hover:border-[#1F1F1F]/40'
                   }`}
                 >
                   {/* 비율 모양을 그대로 보여 주는 작은 틀 */}
@@ -1868,7 +1876,7 @@ export default function Designer() {
                   disabled={isGenerating}
                   onClick={() => setSelectedTemplateId(id)}
                   className={`rounded-2xl border bg-white p-2.5 text-left transition-colors ${
-                    on ? 'border-[#1F1F1F] ring-1 ring-[#1F1F1F]' : 'border-[#E3E2E0] hover:border-[#1F1F1F]/40'
+                    on ? 'border-[#1F1F1F] ring-1 ring-[#1F1F1F]' : 'border-[rgba(30,28,26,0.12)] hover:border-[#1F1F1F]/40'
                   }`}
                 >
                   {/* 샘플 이미지가 들어갈 자리. 비율은 고른 비율과 무관하게 항상 4:5 로 고정한다 —
@@ -3408,13 +3416,13 @@ export default function Designer() {
   if (flowStep !== 'edit') {
     return (
       <>
-        <div className="flex flex-col h-[100dvh] overflow-hidden bg-gray-100">
-          <header className="flex-none h-12 bg-white border-b border-[#EDEDED] z-10 flex items-center gap-2 px-4 sm:px-5">
+        <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#F6F3EC]">
+          <header className="flex-none h-12 bg-[#F6F3EC] border-b border-[rgba(30,28,26,0.12)] z-10 flex items-center gap-2 px-4 sm:px-5">
             <button onClick={goBack} className="p-1.5 sm:p-2 -ml-1.5 sm:-ml-2 flex-shrink-0">
               <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6 text-[#2E2E2E]" />
             </button>
             <div className="flex-1 flex items-center justify-center">
-              <h1 className="text-sm sm:text-base font-medium text-[#2E2E2E]">
+              <h1 className="text-sm sm:text-base font-bold text-[#1E1C1A]">
                 {flowStep === 'entry' ? '말씀카드 만들기' :
                  flowStep === 'record' ? '카드 내용 입력' :
                  flowStep === 'auto-template' ? '스타일 선택' :

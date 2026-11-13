@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Check, Download, Share2, Home, Archive } from 'lucide-react';
+import { X, Check } from 'lucide-react';
+import { LineIcon } from '@/components/ui/LineIcon';
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,7 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
 
   return (
     <Dialog open={open} onOpenChange={isOpen => { if (!isOpen) onClose(); }}>
-      <DialogContent hideCloseButton className="w-[calc(100%-32px)] max-w-md max-h-[90vh] overflow-y-auto p-0 bg-white border-none shadow-2xl rounded-3xl">
+      <DialogContent hideCloseButton className="w-[calc(100%-32px)] max-w-md max-h-[90vh] overflow-y-auto p-0 bg-[#F6F3EC] border border-[rgba(30,28,26,0.12)] shadow-2xl rounded-3xl">
         <DialogTitle className="sr-only">말씀카드 저장 완료</DialogTitle>
 
         {/* 닫기 — 편집 화면으로 돌아간다. 저장한 카드를 이어서 고치고 싶을 때를 위해 남겨 둔다. */}
@@ -52,16 +53,16 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
 
         <div className="px-5 pb-5 -mt-4">
           <div className="flex flex-col items-center text-center">
-            <div className="w-11 h-11 rounded-full bg-[#1F1F1F] flex items-center justify-center">
+            <div className="w-11 h-11 rounded-full bg-[#1E1C1A] flex items-center justify-center">
               <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
-            <h2 className="mt-3 text-[17px] font-semibold text-[#2E2E2E]">보관함에 저장했어요</h2>
-            <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">
+            <h2 className="mt-3 text-[17px] font-bold text-[#1E1C1A]">보관함에 저장했어요</h2>
+            <p className="mt-1 text-[13px] leading-5 text-[#8A8278]">
               언제든 보관함 › 말씀카드에서 다시 볼 수 있어요.
             </p>
           </div>
 
-          <div className="mt-4 rounded-2xl overflow-hidden bg-[#F4F3F1] flex items-center justify-center">
+          <div className="mt-4 rounded-2xl overflow-hidden flex items-center justify-center">
             <img
               src={cardData.imageDataUrl}
               alt="저장한 말씀카드"
@@ -73,17 +74,17 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
               onClick={() => saveCardFile(imageFile)}
-              className="h-12 rounded-xl bg-[#1F1F1F] hover:bg-[#333333] text-white text-[14px] font-medium flex items-center justify-center gap-1.5"
+              className="h-12 rounded-full bg-[#1E1C1A] hover:bg-[#333333] text-white text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
-              <Download className="w-4 h-4" />
+              <LineIcon name="download" size={17} />
               {saveImageLabel()}
             </Button>
             <Button
               onClick={() => shareCardFile(imageFile)}
               variant="outline"
-              className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
+              className="h-12 rounded-full border border-[rgba(30,28,26,0.14)] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
-              <Share2 className="w-4 h-4" />
+              <LineIcon name="share" size={17} />
               공유하기
             </Button>
           </div>
@@ -98,9 +99,9 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
                 navigate(routes.cardsVault);
               }}
               variant="outline"
-              className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
+              className="h-12 rounded-full border border-[rgba(30,28,26,0.14)] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
-              <Archive className="w-4 h-4" />
+              <LineIcon name="box" size={17} />
               보관함에서 보기
             </Button>
             <Button
@@ -109,9 +110,9 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
                 navigate(routes.home);
               }}
               variant="outline"
-              className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
+              className="h-12 rounded-full border border-[rgba(30,28,26,0.14)] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
-              <Home className="w-4 h-4" />
+              <LineIcon name="home" size={17} />
               홈으로
             </Button>
           </div>

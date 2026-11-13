@@ -130,7 +130,7 @@ const MeditationEdit = () => {
   return (
     <div className="flex min-h-screen flex-col bg-[#F6F3EC]">
       {/* 헤더 */}
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED] bg-[#F6F3EC]">
+      <header className="bg-[#a7cfa7] flex items-center justify-between px-5 py-4 border-b border-[rgba(30,28,26,0.12)]">
         <button
           onClick={handleBack}
           className="p-2 -ml-2"
@@ -138,14 +138,14 @@ const MeditationEdit = () => {
           <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
         </button>
         
-        <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">Q.T</h1>
+        <h1 className="text-base font-bold text-[#1E1C1A] absolute left-1/2 transform -translate-x-1/2">Q.T</h1>
         
         <button
           onClick={handleComplete}
           disabled={!hasContent}
           className={`h-9 px-5 rounded-full text-sm font-medium transition-colors ${
             hasContent 
-              ? 'bg-[#4F8A5B] hover:bg-[#3d7849] text-white' 
+              ? 'bg-[#1E1C1A] hover:bg-[#333] text-white' 
               : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
           }`}
         >

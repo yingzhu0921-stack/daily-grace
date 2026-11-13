@@ -70,11 +70,17 @@ const normalizeCategoryColor = (color?: string) => {
   return LEGACY_COLOR_MAP[upper] || color;
 };
 
+// 2026-11-13 UI 개편: 23개 → 넉넉하게(사용자 요청 "카테고리 추가에 아이콘들 다양하게 많이").
+// 예전 이름(bookOpen·hand 등)은 그대로 둬서 이미 저장된 카테고리도 같은 그림으로 보인다.
 const AVAILABLE_ICONS: IconName[] = [
-  'bookOpen', 'heart', 'sparkles', 'pencilLine', 'book', 'sun', 
-  'calendar', 'bell', 'image', 'palette', 'star', 'moon',
-  'cloud', 'music', 'gift', 'lightbulb', 'target', 'flag',
-  'anchor', 'award', 'coffee', 'flower', 'hand'
+  // 신앙
+  'bookOpen', 'book', 'hands', 'cross', 'church', 'candle', 'bubble', 'sprout',
+  // 마음·자연
+  'heart', 'smile', 'star', 'sparkles', 'sun', 'moon', 'cloud', 'drop', 'flower', 'leaf', 'tree', 'mountain',
+  // 생활
+  'coffee', 'bowl', 'music', 'headphones', 'camera', 'image', 'palette', 'gift', 'wallet', 'paw', 'people', 'anchor',
+  // 활동·기록
+  'pencilLine', 'note', 'bookmark', 'calendar', 'clock', 'bell', 'target', 'flag', 'award', 'dumbbell', 'foot', 'plane', 'pin', 'lightbulb',
 ] as IconName[];
 
 type Props = {
@@ -515,15 +521,15 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
                 카테고리 아이콘
               </label>
-              <div className="grid grid-cols-6 gap-2 max-h-[200px] overflow-y-auto p-1">
+              <div className="grid grid-cols-6 gap-2 max-h-[260px] overflow-y-auto p-1">
                 {AVAILABLE_ICONS.map(iconName => (
                   <button
                     key={iconName}
                     onClick={() => setNewIcon(iconName)}
                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
-                      newIcon === iconName 
-                        ? 'bg-[#2E2E2E] text-white scale-105' 
-                        : 'bg-[#F6F3EC] text-[#7E7C78] hover:bg-[#F5F5F5] hover:scale-105'
+                      newIcon === iconName
+                        ? 'bg-[#1E1C1A] text-white scale-105'
+                        : 'bg-white border border-[rgba(30,28,26,0.12)] text-[#1E1C1A] hover:scale-105'
                     }`}
                   >
                     <AppIcon name={iconName} size={20} strokeWidth={2} />

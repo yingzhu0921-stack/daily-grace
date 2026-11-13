@@ -14,6 +14,7 @@ import { MultiApplicationInput } from '@/components/MultiApplicationInput';
 import { AnsweredDetailInput } from '@/components/AnsweredDetailInput';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { saveFeedback } from '@/utils/saveFeedback';
+import { tintColor } from '@/utils/tintColor';
 
 type Category = {
   id: string;
@@ -381,15 +382,19 @@ const CustomRecordNew = () => {
       
       <div className="flex min-h-screen flex-col bg-[#F6F3EC]">
         {/* 헤더 */}
-        <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#EDEDED] bg-[#F6F3EC] px-5 py-4">
+        {/* 2026-11-13 UI 개편: 기록 쓰기 머리는 그 기록 종류 색으로 전체 채운다(사용자 결정). */}
+        <header
+          className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[rgba(30,28,26,0.12)] px-5 py-4"
+          style={{ backgroundColor: tintColor(category.color) }}
+        >
           <button
             onClick={handleBack}
             className="p-2 -ml-2"
           >
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
-          
-          <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-medium text-[#2E2E2E]">
+
+          <h1 className="absolute left-1/2 -translate-x-1/2 text-base font-bold text-[#1E1C1A]">
             {category.name}
           </h1>
           
@@ -406,10 +411,9 @@ const CustomRecordNew = () => {
               disabled={!hasContent}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
                 hasContent 
-                  ? 'text-white hover:opacity-90' 
+                  ? 'bg-[#1E1C1A] text-white hover:bg-[#333]'
                   : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
               }`}
-              style={hasContent ? { backgroundColor: category.color } : {}}
             >
               저장
             </button>

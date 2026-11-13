@@ -124,7 +124,7 @@ const CardsVault: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F6F3EC] pb-nav">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#EDEDED]">
+      <header className="sticky top-0 z-40 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[rgba(30,28,26,0.12)]">
         <div className="max-w-[480px] mx-auto px-6 h-14 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
@@ -133,7 +133,7 @@ const CardsVault: React.FC = () => {
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
 
-          <h1 className="text-base font-medium text-[#2E2E2E]">보관함</h1>
+          <h1 className="text-base font-bold text-[#1E1C1A]">보관함</h1>
 
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
@@ -164,7 +164,7 @@ const CardsVault: React.FC = () => {
             {cards.map(card => (
               <div
                 key={card.id}
-                className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white rounded-2xl overflow-hidden border border-[rgba(30,28,26,0.12)] cursor-pointer"
                 onClick={() => setSelectedCard(card)}
               >
                 {card.imageDataUrl ? (
@@ -218,7 +218,7 @@ const CardsVault: React.FC = () => {
           <Drawer.Overlay className="fixed inset-0 z-50 bg-black/40" />
           <Drawer.Content
             aria-describedby={undefined}
-            className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[94vh] max-w-[480px] flex-col rounded-t-[28px] bg-white outline-none shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
+            className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[94vh] max-w-[480px] flex-col rounded-t-[28px] bg-[#F6F3EC] outline-none shadow-[0_-8px_30px_rgba(0,0,0,0.12)]"
           >
             <span aria-hidden className="mx-auto mt-3 h-[5px] w-10 shrink-0 rounded-full bg-[#E5E4E1]" />
             <Drawer.Title className="sr-only">말씀카드</Drawer.Title>
@@ -244,14 +244,14 @@ const CardsVault: React.FC = () => {
 
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="truncate text-[17px] font-bold text-[#2E2E2E]">{cardTitle(selectedCard)}</p>
+                    <p className="truncate text-[15px] font-bold text-[#1E1C1A]">{cardTitle(selectedCard)}</p>
                     <p className="text-[12px] text-[#7E7C78]">{cardDate(selectedCard)}</p>
                   </div>
                   {/* 지우기는 되돌릴 수 없어서 주 버튼 줄에 끼우지 않고 따로 둔다(누르면 확인 창). */}
                   <button
                     onClick={() => setPendingDelete(selectedCard.id)}
                     aria-label="카드 지우기"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#F7EDE6] text-[#A9573A] transition-colors hover:bg-[#F2E2D8]"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white border border-[rgba(30,28,26,0.14)] text-[#B4502F] transition-colors hover:bg-[#FBF3EF]"
                   >
                     <Trash2 className="h-[19px] w-[19px]" />
                   </button>
@@ -260,19 +260,19 @@ const CardsVault: React.FC = () => {
                 <div className="grid grid-cols-3 gap-2">
                   <button
                     onClick={() => saveCardFile(cardFile)}
-                    className="h-[50px] rounded-full bg-[#1F1F1F] text-[14.5px] font-bold text-white transition-colors hover:bg-[#333]"
+                    className="h-[50px] rounded-full bg-[#1E1C1A] text-[14px] font-semibold text-white transition-colors hover:bg-[#333]"
                   >
                     {saveImageLabel()}
                   </button>
                   <button
                     onClick={() => shareCardFile(cardFile)}
-                    className="h-[50px] rounded-full border-[1.5px] border-[#E8E7E5] bg-white text-[14.5px] font-medium text-[#2E2E2E] transition-colors hover:bg-[#F9F8F6]"
+                    className="h-[50px] rounded-full border border-[rgba(30,28,26,0.14)] bg-white text-[14px] font-semibold text-[#1E1C1A] transition-colors hover:bg-[#F9F8F6]"
                   >
                     공유
                   </button>
                   <button
                     onClick={() => handleEdit(selectedCard)}
-                    className="h-[50px] rounded-full border-[1.5px] border-[#E8E7E5] bg-white text-[14.5px] font-medium text-[#2E2E2E] transition-colors hover:bg-[#F9F8F6]"
+                    className="h-[50px] rounded-full border border-[rgba(30,28,26,0.14)] bg-white text-[14px] font-semibold text-[#1E1C1A] transition-colors hover:bg-[#F9F8F6]"
                   >
                     편집
                   </button>

@@ -49,7 +49,7 @@ export default function PrayerEdit() {
 
   return (
     <div className="min-h-screen bg-[#F6F3EC]">
-      <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
+      <header className="bg-[#c2a7cf] flex items-center justify-between px-5 py-4 border-b border-[rgba(30,28,26,0.12)]">
         <button 
           onClick={() => navigate(-1)}
           className="p-2 -ml-2"
@@ -57,14 +57,14 @@ export default function PrayerEdit() {
           <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
         </button>
         
-        <h1 className="text-base font-medium text-[#2E2E2E] absolute left-1/2 transform -translate-x-1/2">기도 작성</h1>
+        <h1 className="text-base font-bold text-[#1E1C1A] absolute left-1/2 transform -translate-x-1/2">기도 작성</h1>
         
         <button
           onClick={handleSave}
           disabled={!canSave}
           className={`h-9 px-5 rounded-full text-sm font-medium transition-colors ${
             canSave 
-              ? 'bg-[#7A6BB8] hover:bg-[#6a5ba8] text-white' 
+              ? 'bg-[#1E1C1A] hover:bg-[#333] text-white' 
               : 'bg-[#E8E7E5] text-[#ACACAC] cursor-not-allowed'
           }`}
         >
