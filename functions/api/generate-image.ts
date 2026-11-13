@@ -55,7 +55,7 @@ const T01_ART = T01_FLAT_MEDIUM
   + T01_SCENE_DENSITY
   + ' What is drawn comes from the verse\'s own words or from the moment it describes.';
 
-const NO_TEXT = 'IMPORTANT: NO text, letters, words, or writing of any kind in the image.';
+const NO_TEXT = 'IMPORTANT: NO text, letters, words, or writing of any kind in the image — not even a single letter or character written on an object (no labels on bags, sacks, boxes, jars, signs, flags or clothing). Show the meaning through the scene, never by writing a word on something.';
 const NO_FACES = 'NO human faces, portraits, or close-up characters.';
 const CARD_BG = 'The image will be used as a card background — leave visual breathing room for text overlay. Keep the composition calm and uncluttered.';
 
@@ -487,7 +487,7 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
       // T02 — 미니멀 감성 (2026-11-11. 배경만 AI, 글자는 브라우저가 진짜 폰트로 굽는다)
       'T02': {
         // 배경만 만든다. 글자는 브라우저가 진짜 폰트로 얹는다(2026-11-11).
-        backgroundPrompt: 'The BACKGROUND ARTWORK for a calm, minimal Christian verse card. Korean text will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage. The exact style is given below as THE STYLE FOR THIS CARD; follow it exactly.',
+        backgroundPrompt: 'The BACKGROUND ARTWORK for a calm, minimal Christian verse card. Korean text will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage — not even one letter or character on an object (no labelled bags, sacks, boxes, jars, flags); show the meaning through the scene, never by writing a word. The exact style is given below as THE STYLE FOR THIS CARD; follow it exactly.',
         styleLock: 'T02 = 미니멀 감성 배경: a calm gouache-style scene of large, smooth, rich colour areas (only a faint paper texture, no heavy grain) and one small point of interest, leaving a plain upper area for text. NO text of any kind.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
@@ -1139,7 +1139,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       {
         key: 'minimal', usesScene: true, zone: 'upper',
         // 2026-11-12 사용자: 편집 미니멀처럼, 내용에 맞게. 위쪽 빈 자리가 늘 파란 하늘이 돼 카드가 다 비슷했다 → 색 분위기를 카드마다 돌린다.
-        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky), smooth with only a faint paper texture — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away.`,
+        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky), smooth with only a faint paper texture — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away. No letters or characters written on anything in the picture (no labelled bags, boxes or signs).`,
         // 글씨 색은 브라우저가 배경 밝기를 보고 정한다(ink 'auto').
         palettes: MINIMAL_COLOUR_MOODS.map((bgc) => ({ name: 'auto', bg: bgc, ink: 'auto', sub: 'auto', accent: 'auto' })),
       },
@@ -1503,15 +1503,21 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     const decidedNote = decidedScene
       ? `\n\n이번 입력은 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
       : '';
-    const expanded = await gpt(env.OPENAI_API_KEY, [
-      {
-        role: 'system',
-        content: backgroundExpansionInstructions(style) + decidedNote,
-      },
-      { role: 'user', content: scene },
-    // 작은 모델은 말씀 맥락을 못 읽고 영어 낱말이 섞였다('evoking합니다'). 2026-11-10 사용자 승인으로 상향.
-    ], 600, 'gpt-4o');
-    return Response.json({ expandedPrompt: expanded });
+    try {
+      const expanded = await gpt(env.OPENAI_API_KEY, [
+        {
+          role: 'system',
+          content: backgroundExpansionInstructions(style) + decidedNote,
+        },
+        { role: 'user', content: scene },
+      // 작은 모델은 말씀 맥락을 못 읽고 영어 낱말이 섞였다('evoking합니다'). 2026-11-10 사용자 승인으로 상향.
+      ], 600, 'gpt-4o');
+      return Response.json({ expandedPrompt: expanded });
+    } catch (e) {
+      // 전에는 여기서 던진 오류가 그대로 올라가 Cloudflare 오류 페이지(500)가 갔다.
+      console.error('[expand-prompt] failed:', e instanceof Error ? e.message : String(e));
+      return Response.json({ error: '배경 설명을 만들지 못했어요. 잠시 후 다시 시도해 주세요.', detail: e instanceof Error ? e.message.slice(0, 200) : '' }, { status: 502 });
+    }
   }
 
   // ── generate-image ──
