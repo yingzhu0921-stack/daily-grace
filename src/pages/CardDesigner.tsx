@@ -1872,7 +1872,11 @@ export default function Designer() {
                       앱이 성경 본문을 만들어 넣지 않는다는 원칙(CLAUDE.md 11장)은 그대로다: 견본은 사용자가 준 이미지 파일일 뿐이다. */}
                   <div className="relative w-full aspect-[4/5] overflow-hidden rounded-xl bg-[#F3F2F1]">
                     {thumb ? (
-                      <img src={thumb} alt="" className="h-full w-full object-cover" />
+                      <>
+                        <img src={thumb} alt="" className="h-full w-full object-cover" />
+                        {/* 견본이 내가 만들 카드로 오해되지 않게(2026-11-13 사용자) */}
+                        <span className="absolute left-1.5 top-1.5 rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-medium text-white backdrop-blur-sm">예시</span>
+                      </>
                     ) : (
                       <span className="absolute inset-0 flex items-center justify-center text-[11px] text-[#B5B3AF]">
                         미리보기 준비 중
