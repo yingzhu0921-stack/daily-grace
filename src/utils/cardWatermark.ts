@@ -109,16 +109,11 @@ export async function drawCardWatermark(canvas: HTMLCanvasElement): Promise<void
   const colour = light ? 'rgba(255,255,255,0.8)' : 'rgba(46,42,38,0.7)';
   ctx.fillStyle = colour;
   ctx.strokeStyle = colour;
-  // 그래도 복잡한 자리(그림이 꽉 찬 카드)면 아주 옅은 둥근 받침을 깐다
-  if (bestStats.variance > 0.025) {
-    ctx.save();
-    ctx.fillStyle = light ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.55)';
-    const padX = base * 0.014;
-    const r = icon * 0.7;
-    ctx.beginPath();
-    ctx.roundRect(best - padX, yc - r, total + padX * 2, r * 2, r);
-    ctx.fill();
-    ctx.restore();
+  // 복잡한 자리(그림이 꽉 찬 카드)에서는 받침 띠 대신 아주 옅은 그림자로 읽히게 한다.
+  // (2026-11-13 사용자: 둥근 받침 띠가 표시를 오히려 튀게 했다.)
+  if (bestStats.variance > 0.012) {
+    ctx.shadowColor = light ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.6)';
+    ctx.shadowBlur = base * 0.006;
   }
   drawSprout(ctx, best, yc - icon * 0.62, icon);
   ctx.textBaseline = 'middle';
