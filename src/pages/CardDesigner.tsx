@@ -25,6 +25,16 @@ const STYLE_LABEL: Record<string, string> = {
   '미니멀 감성': '미니멀 일러스트',
 };
 
+/** 직접 편집 배경 스타일 순서와 1:1 예시 그림 파일(public/manual-previews/<file>.jpg). */
+const MANUAL_STYLE_PREVIEWS: { style: string; file: string }[] = [
+  { style: '맑은 수채화', file: 'watercolor' },
+  { style: '플랫 일러스트', file: 'character' },
+  { style: '심플 낙서', file: 'doodle' },
+  { style: '감성 사진', file: 'photo' },
+  { style: '미니멀 감성', file: 'minimal' },
+  { style: '빈티지 필름', file: 'film' },
+];
+
 // Add global CSS for hiding UI controls during capture + mobile viewport fix
 const hideUIControlsStyle = `
   .hide-ui-controls .ui-control {
@@ -4407,30 +4417,43 @@ export default function Designer() {
                   <h2 className="text-[13px] font-semibold text-[#2E2E2E] mb-1.5">
                     2. 스타일을 선택하세요
                   </h2>
-                  <div className="grid grid-cols-2 gap-1.5">
+                  <div className="grid grid-cols-3 gap-2">
                     {/* 2026-11-13 사용자: 이름을 '분위기 + 장르'(심플 낙서·플랫 일러스트) 톤으로. 서버는 왼쪽 이름으로 그림체를 찾으므로
-                        보내는 값은 그대로 두고 화면 이름만 바꾼다(STYLE_LABEL). */}
-                    {[
-                      '맑은 수채화',
-                      '플랫 일러스트',
-                      '심플 낙서',
-                      '감성 사진',
-                      '미니멀 감성',
-                      '빈티지 필름'
-                    ].map((style, idx) => (
-                      <button
-                        key={idx}
-                        disabled={isGenerating || isExpandingPrompt}
-                        onClick={() => { setSelectedStyle(style); setExpandedPrompt(''); }}
-                        className={`px-3 py-2 rounded-lg border text-[#2E2E2E] text-[13px] font-medium transition-colors text-left ${
-                          selectedStyle === style
-                            ? 'border-[#1F1F1F] bg-[#1F1F1F]/10'
-                            : 'border-[#E8E7E5] bg-white hover:border-[#1F1F1F] hover:bg-[#1F1F1F]/5'
-                        }`}
-                      >
-                        {STYLE_LABEL[style] || style}
-                      </button>
-                    ))}
+                        보내는 값은 그대로 두고 화면 이름만 바꾼다(STYLE_LABEL).
+                        2026-11-14 사용자: 직접 편집에도 예시 그림을. 스타일이 많아 1:1 작은 그림으로(public/manual-previews/<파일>.jpg).
+                        그림 파일이 없으면 '예시 준비 중' 자리를 보여 준다. */}
+                    {MANUAL_STYLE_PREVIEWS.map(({ style, file }) => {
+                      const on = selectedStyle === style;
+                      return (
+                        <button
+                          key={style}
+                          disabled={isGenerating || isExpandingPrompt}
+                          onClick={() => { setSelectedStyle(style); setExpandedPrompt(''); }}
+                          className="text-left disabled:opacity-60"
+                        >
+                          <span
+                            className={`relative block aspect-square w-full overflow-hidden rounded-xl bg-[#EFEAE0] ${
+                              on ? 'ring-2 ring-[#1E1C1A]' : 'ring-1 ring-[rgba(30,28,26,0.12)]'
+                            }`}
+                          >
+                            <span className="absolute inset-0 flex items-center justify-center text-[10px] text-[#9A9288]">예시 준비 중</span>
+                            <img
+                              src={`/manual-previews/${file}.jpg?v=1`}
+                              alt=""
+                              loading="lazy"
+                              className="absolute inset-0 h-full w-full object-cover"
+                              onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                            />
+                            {on && (
+                              <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#1E1C1A] text-[11px] text-white">✓</span>
+                            )}
+                          </span>
+                          <span className={`mt-1 block truncate text-[12px] ${on ? 'font-bold text-[#1E1C1A]' : 'font-medium text-[#4A453F]'}`}>
+                            {STYLE_LABEL[style] || style}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                   {selectedStyle ? (
                     <div className="mt-2 flex items-center gap-2 text-[12px] text-[#1F1F1F]">
