@@ -3,7 +3,7 @@ import { Toaster as ShadcnToaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation, useNavigationType } from "react-router-dom";
 import { AuthProvider, useAuth } from "./hooks/useAuth";
 import { useDataSync } from "./hooks/useDataSync";
 import { LoginModal } from "@/components/LoginModal";
@@ -45,7 +45,20 @@ const RouteTracker = () => {
   return null;
 };
 
-const AppContent = () => { 
+/**
+ * 새 화면으로 갈 때는 맨 위에서 시작한다(2026-11-13 사용자: 설정에 들어가면 위가 안 보이고 '알림 관리'가 잘렸다).
+ * 앞 화면(홈)에서 내린 스크롤 위치가 그대로 남아 있었다. 뒤로 가기(POP)는 원래 위치를 유지한다.
+ */
+const ScrollToTopOnNavigate = () => {
+  const { pathname } = useLocation();
+  const navType = useNavigationType();
+  useEffect(() => {
+    if (navType !== 'POP') window.scrollTo(0, 0);
+  }, [pathname, navType]);
+  return null;
+};
+
+const AppContent = () => {
   const { loading } = useAuth();
   // 데이터 동기화 (로그인 시 자동으로 클라우드에서 로드)
   useDataSync();
@@ -65,6 +78,7 @@ const AppContent = () => {
         <ShadcnToaster />
         <Sonner />
         <RouteTracker />
+        <ScrollToTopOnNavigate />
         <AppRoutes />
         <ModalManager />
       </TooltipProvider>
