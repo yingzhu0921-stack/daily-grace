@@ -4035,27 +4035,27 @@ export default function Designer() {
                   <div className="absolute inset-0 z-40 flex items-center justify-center px-6 pointer-events-none">
                     <div className="w-full max-w-[280px] pointer-events-auto">
                       <div className="text-center text-white mb-4 bg-black/55 rounded-xl px-4 py-3">
-                        <p className="text-[17px] font-semibold">배경을 먼저 선택하세요</p>
-                        <p className="mt-1 text-[12px] leading-5 text-white/78">AI 생성, 사진 업로드, 단색 배경 중 선택할 수 있습니다.</p>
+                        <p className="text-[14.5px] font-semibold">배경을 먼저 선택하세요</p>
+                        <p className="mt-0.5 text-[11.5px] leading-[1.45] text-white/80 [word-break:keep-all]">AI 생성, 사진 업로드, 단색 배경 중 선택할 수 있습니다.</p>
                       </div>
                       <div className="grid grid-cols-3 gap-2">
                         <button
                           onClick={() => openBackgroundSheet('ai')}
-                          className="h-16 rounded-lg bg-white text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                          className="h-16 rounded-lg bg-white/30 border border-white/40 text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
                         >
                           <Wand2 className="w-4 h-4" />
                           AI
                         </button>
                         <button
                           onClick={() => openBackgroundSheet('photo')}
-                          className="h-16 rounded-lg bg-white text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                          className="h-16 rounded-lg bg-white/30 border border-white/40 text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
                         >
                           <Upload className="w-4 h-4" />
                           사진
                         </button>
                         <button
                           onClick={() => openBackgroundSheet('color')}
-                          className="h-16 rounded-lg bg-white text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
+                          className="h-16 rounded-lg bg-white/30 border border-white/40 text-[#1F1F1F] text-[12px] font-semibold flex flex-col items-center justify-center gap-1 shadow-sm"
                         >
                           <Palette className="w-4 h-4" />
                           컬러
