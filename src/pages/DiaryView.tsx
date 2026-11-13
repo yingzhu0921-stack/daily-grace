@@ -21,7 +21,7 @@ export default function DiaryView() {
 
   if (!diary) {
     return (
-      <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F6F3EC] flex items-center justify-center">
         <div className="text-[#8C8A86]">기록을 찾을 수 없어요.</div>
       </div>
     );
@@ -56,7 +56,7 @@ export default function DiaryView() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-[#F6F3EC]">
       <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button
           onClick={() => navigate("/diary")}

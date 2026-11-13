@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, Palette, Archive, Settings, Plus, BookOpen, Heart, Star, PencilLine } from 'lucide-react';
+import { LineIcon, type LineIconName } from '@/components/ui/LineIcon';
+import { tintColor } from '@/utils/tintColor';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import * as categoryStorage from '@/utils/categoryStorage';
@@ -40,17 +41,17 @@ export const BottomNav: React.FC = () => {
   const [customCategories, setCustomCategories] = useState<CustomCategory[]>([]);
 
   const tabs = [
-    { id: 'home', label: '홈', icon: Home, path: '/' },
-    { id: 'creative', label: '카드 만들기', icon: Palette, path: '/cards/designer' },
-    { id: 'records', label: '보관함', icon: Archive, path: '/records' },
-    { id: 'settings', label: '설정', icon: Settings, path: '/settings' },
+    { id: 'home', label: '홈', icon: 'home' as LineIconName, activeIcon: 'homeOn' as LineIconName, path: '/' },
+    { id: 'creative', label: '카드 만들기', icon: 'card' as LineIconName, activeIcon: 'card' as LineIconName, path: '/cards/designer' },
+    { id: 'records', label: '보관함', icon: 'box' as LineIconName, activeIcon: 'boxOn' as LineIconName, path: '/records' },
+    { id: 'settings', label: '설정', icon: 'settings' as LineIconName, activeIcon: 'settings' as LineIconName, path: '/settings' },
   ];
 
   const defaultRecordTypes = [
-    { id: 'meditation', label: 'Q.T', icon: BookOpen, color: '#7DB87D', path: '/meditation/new' },
-    { id: 'prayer', label: '기도', icon: Heart, color: '#A57DB8', path: '/prayer/new' },
-    { id: 'gratitude', label: '감사', icon: Star, color: '#E8C87D', path: '/gratitude/new' },
-    { id: 'diary', label: '일기', icon: PencilLine, color: '#DD957D', path: '/diary/new' },
+    { id: 'meditation', label: 'Q.T', icon: 'bookOpen' as IconName, color: '#7DB87D', path: '/meditation/new' },
+    { id: 'prayer', label: '기도', icon: 'hands' as IconName, color: '#A57DB8', path: '/prayer/new' },
+    { id: 'gratitude', label: '감사', icon: 'sun' as IconName, color: '#E8C87D', path: '/gratitude/new' },
+    { id: 'diary', label: '일기', icon: 'pencilLine' as IconName, color: '#DD957D', path: '/diary/new' },
   ];
 
   useEffect(() => {
@@ -103,10 +104,9 @@ export const BottomNav: React.FC = () => {
 
   return (
     <>
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-[#EDEDED] safe-area-inset-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#F6F3EC] border-t border-[rgba(30,28,26,0.12)] safe-area-inset-bottom">
         <div className="max-w-[480px] mx-auto flex items-center justify-around h-16 px-4 relative">
           {tabs.slice(0, 2).map((tab) => {
-            const Icon = tab.icon;
             const active = isActive(tab.path);
             return (
               <button
@@ -114,11 +114,8 @@ export const BottomNav: React.FC = () => {
                 onClick={() => navigate(tab.path)}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors"
               >
-                <Icon
-                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}
-                  strokeWidth={active ? 2 : 1.5}
-                />
-                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}>
+                <LineIcon name={active ? tab.activeIcon : tab.icon} size={22} color={active ? '#1E1C1A' : '#9A9288'} />
+                <span className={`text-[10px] font-semibold transition-colors ${active ? 'text-[#1E1C1A]' : 'text-[#9A9288]'}`}>
                   {tab.label}
                 </span>
               </button>
@@ -128,13 +125,13 @@ export const BottomNav: React.FC = () => {
           {/* FAB */}
           <button
             onClick={() => setShowFabMenu(true)}
-            className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full bg-[#1F1F1F] shadow-lg flex items-center justify-center transition-transform active:scale-95"
+            aria-label="새 기록 작성"
+            className="absolute left-1/2 -translate-x-1/2 -top-6 w-14 h-14 rounded-full bg-[#1E1C1A] shadow-[0_6px_16px_rgba(30,28,26,0.25)] flex items-center justify-center transition-transform active:scale-95"
           >
-            <Plus className="w-6 h-6 text-white" strokeWidth={2} />
+            <LineIcon name="plus" size={24} color="#FFFFFF" strokeWidth={2.4} />
           </button>
 
           {tabs.slice(2).map((tab) => {
-            const Icon = tab.icon;
             const active = isActive(tab.path);
             return (
               <button
@@ -142,11 +139,8 @@ export const BottomNav: React.FC = () => {
                 onClick={() => navigate(tab.path)}
                 className="flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors"
               >
-                <Icon
-                  className={`w-5 h-5 transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}
-                  strokeWidth={active ? 2 : 1.5}
-                />
-                <span className={`text-[10px] font-medium transition-colors ${active ? 'text-[#1F1F1F]' : 'text-[#6E6E6E]'}`}>
+                <LineIcon name={active ? tab.activeIcon : tab.icon} size={22} color={active ? '#1E1C1A' : '#9A9288'} />
+                <span className={`text-[10px] font-semibold transition-colors ${active ? 'text-[#1E1C1A]' : 'text-[#9A9288]'}`}>
                   {tab.label}
                 </span>
               </button>
@@ -155,39 +149,29 @@ export const BottomNav: React.FC = () => {
         </div>
       </nav>
 
-      {/* FAB Menu */}
+      {/* FAB Menu — 2026-11-13 UI 개편: 기록 종류 색은 메뉴 칸에만, 아이콘은 검정 선 */}
       <Dialog open={showFabMenu} onOpenChange={setShowFabMenu}>
-        <DialogContent className="max-w-[340px] rounded-3xl p-0 gap-0">
+        <DialogContent className="max-w-[340px] rounded-3xl p-0 gap-0 bg-[#F6F3EC] border-[rgba(30,28,26,0.12)]">
           <div className="px-6 pt-6 pb-4">
-            <h2 className="text-[17px] font-semibold text-[#1F1F1F] text-center mb-1">새 기록 작성</h2>
-            <p className="text-[12px] text-[#7A7A7A] text-center">어떤 기록을 작성하시겠어요?</p>
+            <h2 className="text-[16px] font-bold text-[#1E1C1A] text-center mb-1">새 기록 작성</h2>
+            <p className="text-[12px] text-[#8A8278] text-center">어떤 기록을 작성하시겠어요?</p>
           </div>
-          <div className="px-6 pb-6 grid grid-cols-2 gap-3">
-            {allRecordTypes.map((type) => {
-              const Icon = type.icon;
-              return (
-                <button
-                  key={type.id}
-                  onClick={() => { setShowFabMenu(false); navigate(type.path); }}
-                  className="relative aspect-square rounded-2xl p-4 flex flex-col items-center justify-center gap-2 transition-all active:scale-95 bg-white overflow-hidden"
-                  style={{ border: '1px solid #EFEFEF' }}
-                >
-                  {/* Accent line */}
-                  <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ backgroundColor: type.color, borderRadius: '16px 16px 0 0' }} />
-                  {/* 아이콘 배경 진하기·모양·선 굵기는 홈 카테고리 카드와 같게 둔다. 전에는 배경이 절반 진하기라 색이 달라 보였다. */}
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${type.color}28` }}>
-                    {typeof Icon === 'string' ? (
-                      <AppIcon name={Icon} size={20} color={type.color} strokeWidth={1.5} />
-                    ) : Icon ? (
-                      <Icon className="w-5 h-5" style={{ color: type.color }} strokeWidth={1.5} />
-                    ) : (
-                      <span style={{ color: type.color }} className="text-[16px] font-semibold">{type.label.charAt(0)}</span>
-                    )}
-                  </div>
-                  <span className="text-[13px] font-semibold text-[#1F1F1F]">{type.label}</span>
-                </button>
-              );
-            })}
+          <div className="px-6 pb-6 grid grid-cols-2 gap-2">
+            {allRecordTypes.map((type) => (
+              <button
+                key={type.id}
+                onClick={() => { setShowFabMenu(false); navigate(type.path); }}
+                className="h-16 rounded-2xl px-4 flex items-center gap-2.5 transition-all active:scale-95 text-left"
+                style={{ backgroundColor: tintColor(type.color), border: '1px solid rgba(30,28,26,0.12)' }}
+              >
+                {type.icon ? (
+                  <AppIcon name={type.icon} size={20} color="#1E1C1A" />
+                ) : (
+                  <span className="text-[15px] font-bold text-[#1E1C1A]">{type.label.charAt(0)}</span>
+                )}
+                <span className="text-[14px] font-bold text-[#1E1C1A] truncate">{type.label}</span>
+              </button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

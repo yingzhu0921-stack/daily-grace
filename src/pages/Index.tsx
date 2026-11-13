@@ -2,8 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { routes } from '@/config/routes';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { Leaf, Plus, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
+import { LineIcon } from '@/components/ui/LineIcon';
+import { tintColor } from '@/utils/tintColor';
+import { getAllCards, type VerseCard } from '@/utils/verseCardDB';
 import { BottomNav } from '@/components/BottomNav';
 import { CategoryManager } from '@/components/CategoryManager';
 import { UserMenu } from '@/components/UserMenu';
@@ -53,9 +56,29 @@ const normalizeCategoryColor = (color?: string) => {
   return LEGACY_COLOR_MAP[upper] || color;
 };
 
+/** 말씀 첫 줄(카드 칸 미리보기용). 사용자가 쓴 글자를 그대로 쓴다. */
+const firstLine = (text?: string) => (text || '').split('\n').map((l) => l.trim()).find(Boolean) || '말씀카드';
+
+const relativeDay = (iso: string) => {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const days = Math.round((new Date(toLocal(new Date())).getTime() - new Date(toLocal(d)).getTime()) / 86400000);
+  if (days <= 0) return '오늘';
+  if (days === 1) return '어제';
+  return `${d.getMonth() + 1}월 ${d.getDate()}일`;
+};
+
 const IndexNew = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  // 홈 말씀카드 칸 아래 '최근에 만든 카드' 한 장(2026-11-13 UI 개편). 없으면 줄을 그리지 않는다.
+  const [latestCard, setLatestCard] = useState<VerseCard | null>(null);
+  useEffect(() => {
+    let alive = true;
+    getAllCards().then((cards) => { if (alive) setLatestCard(cards[0] ?? null); }).catch(() => { /* 카드가 없어도 홈은 그린다 */ });
+    return () => { alive = false; };
+  }, []);
 
   const [customCategories, setCustomCategories] = useState<any[]>([]);
   // 커스텀 카테고리는 서버에서 늦게 온다. 그동안 칸이 4개였다가 6개로 늘며 화면이 밀렸다.
@@ -129,8 +152,8 @@ const IndexNew = () => {
   // 기본 카테고리
   const defaultCategories = [
     { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, description: '말씀을 묵상하며 은혜를 나눠요', path: '/meditation/new', listPath: '/meditation' },
-    { id: '2', name: '기도', color: '#A57DB8', icon: 'heart' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
-    { id: '3', name: '감사', color: '#E8C87D', icon: 'star' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
+    { id: '2', name: '기도', color: '#A57DB8', icon: 'hands' as IconName, description: '하루의 기도를 적어보세요', path: '/prayer/new', listPath: '/prayer' },
+    { id: '3', name: '감사', color: '#E8C87D', icon: 'sun' as IconName, description: '감사했던 순간을 떠올려보세요', path: '/gratitude/new', listPath: '/gratitude' },
     { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, description: '오늘의 마음을 기록해보세요', path: '/diary/new', listPath: '/diary' },
   ];
 
@@ -283,76 +306,84 @@ const IndexNew = () => {
   const allCategories = [...defaultCategories, ...customCategories];
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] pb-nav">
+    <div className="min-h-screen bg-[#F6F3EC] pb-nav">
       {/* 헤더 */}
       {/* 스크롤하면 같이 올라간다(2026-11-10 사용자 결정). 완료·연속·프로필은 들어올 때 한 번 보면 되는 정보라,
           고정해 두면 홈 화면 앱에서 시계 줄·하단 바와 함께 기록 볼 공간만 좁혔다. */}
-      <header className="bg-[#FAFAF9] border-b border-[#EDEDED]">
-        <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Goal Progress */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#7DB87D40' }}>
-              <Leaf className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#7DB87D' }} strokeWidth={1.5} />
-              <span className="text-[12px] font-medium" style={{ color: '#7DB87D' }}>{goalProgress.completed}/{goalProgress.total} 완료</span>
-            </div>
-
-            {/* Streak Counter */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border bg-white" style={{ borderColor: '#E8C87D40' }}>
-              <Flame className="w-3.5 h-3.5 flex-shrink-0" style={{ color: '#E8C87D' }} strokeWidth={1.5} />
-              <span className="text-[12px] font-medium" style={{ color: '#C49A3D' }}>{streakDays}일 연속</span>
-            </div>
+      {/* 2026-11-13 UI 개편(시안 3): 흰 칸 + 옅은 선, 기록 종류 색은 루틴 칸에만. 흐름·기능은 그대로. */}
+      <header>
+        <div className="max-w-[480px] mx-auto px-6 pt-4 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="text-[14px] font-bold text-[#1E1C1A] mr-1">하루은혜</span>
+            {/* 오늘 완료·연속 — 숫자만 차분하게 */}
+            <span className="h-7 px-2.5 rounded-full bg-white border border-[rgba(30,28,26,0.12)] text-[11.5px] font-semibold text-[#2A2723] inline-flex items-center whitespace-nowrap">
+              {goalProgress.completed}/{goalProgress.total} 완료
+            </span>
+            <span className="h-7 px-2.5 rounded-full bg-white border border-[rgba(30,28,26,0.12)] text-[11.5px] font-semibold text-[#2A2723] inline-flex items-center whitespace-nowrap">
+              {streakDays}일 연속
+            </span>
           </div>
-
           <UserMenu />
         </div>
       </header>
 
       <main className="max-w-[480px] mx-auto px-6">
         {/* 캘린더 섹션 */}
-        <section className="py-6">
-          {/* 날짜 헤더 */}
-          <div className="flex items-end gap-3 mb-4">
-            <h2 className="text-[32px] font-semibold text-[#2E2E2E] leading-none tracking-tight">
-              {selectedDate.getDate()}
-            </h2>
-            <span className="text-[15px] text-[#8B8B8B] pb-1">
-              {selectedDate.getFullYear()}년 {selectedDate.getMonth() + 1}월
-            </span>
-          </div>
-
-          {/* 캘린더 컨트롤 */}
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={handleToday}
-              className="px-3 py-1.5 rounded-full border border-[#E8E7E5] bg-white text-[12px] font-medium text-[#6B6B6B] hover:bg-[#F9F8F6] transition-colors"
-            >
-              오늘로 이동
-            </button>
-            <div className="flex gap-2">
+        <section className="pt-5 pb-5">
+          {/* 날짜 + 추천 문구 */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <h2 className="text-[26px] font-bold text-[#1E1C1A] leading-tight tracking-[-0.03em]">
+                {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일
+              </h2>
+              {(() => {
+                const rec = getRecommendation();
+                const day = ['일', '월', '화', '수', '목', '금', '토'][selectedDate.getDay()];
+                return rec.path ? (
+                  <button
+                    onClick={() => navigate(rec.path!)}
+                    className="mt-1 flex items-center gap-0.5 text-[13px] text-[#6E675E] hover:text-[#1E1C1A] text-left"
+                  >
+                    {day}요일 · {rec.text}
+                    <ChevronRight className="w-3.5 h-3.5 text-[#B3AB9F] flex-shrink-0" />
+                  </button>
+                ) : (
+                  <p className="mt-1 text-[13px] text-[#6E675E]">{day}요일 · {rec.text}</p>
+                );
+              })()}
+            </div>
+            <div className="flex items-center gap-1 pt-1 flex-shrink-0">
+              <button
+                onClick={handleToday}
+                className="h-7 px-2.5 rounded-full border border-[rgba(30,28,26,0.12)] bg-white text-[11.5px] font-semibold text-[#2A2723]"
+              >
+                오늘
+              </button>
               <button
                 onClick={handlePrevWeek}
-                className="w-8 h-8 rounded-full border border-[#E8E7E5] bg-white flex items-center justify-center hover:bg-[#F9F8F6] transition-colors"
+                aria-label="지난주"
+                className="w-7 h-7 rounded-full border border-[rgba(30,28,26,0.12)] bg-white flex items-center justify-center"
               >
-                <ChevronLeft className="w-4 h-4 text-[#6B6B6B]" />
+                <ChevronLeft className="w-3.5 h-3.5 text-[#2A2723]" />
               </button>
               <button
                 onClick={handleNextWeek}
-                className="w-8 h-8 rounded-full border border-[#E8E7E5] bg-white flex items-center justify-center hover:bg-[#F9F8F6] transition-colors"
+                aria-label="다음 주"
+                className="w-7 h-7 rounded-full border border-[rgba(30,28,26,0.12)] bg-white flex items-center justify-center"
               >
-                <ChevronRight className="w-4 h-4 text-[#6B6B6B]" />
+                <ChevronRight className="w-3.5 h-3.5 text-[#2A2723]" />
               </button>
             </div>
           </div>
 
           {/* 주간 캘린더 */}
-          <div className="flex gap-2">
+          <div className="flex justify-between mt-4">
             {weekDays.map((date, index) => {
               const selected = isSelected(date);
-              const todayDate = isToday(date);
               const dateStr = toLocalDateString(date);
               const hasRecord = hasRecordOnDate(dateStr);
-              const dayOfWeek = date.getDay();
-              const dayLabel = ['일', '월', '화', '수', '목', '금', '토'][dayOfWeek];
+              const dayLabel = ['일', '월', '화', '수', '목', '금', '토'][date.getDay()];
+              const future = date > today && !isToday(date);
 
               return (
                 <button
@@ -362,83 +393,81 @@ const IndexNew = () => {
                     // 항상 캘린더 페이지로 이동하도록 수정
                     navigate(`/calendar?date=${dateStr}`);
                   }}
-                  className={`flex-1 min-w-0 h-16 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
-                    selected && hasRecord
-                      ? 'bg-[#1F1F1F] shadow-sm scale-105'
-                      : selected
-                      ? 'border-2 border-[#1F1F1F] bg-white'
-                      : 'border border-[#EDEDED] bg-white hover:bg-[#F5F5F5]'
-                  }`}
+                  className="flex-1 min-w-0 flex flex-col items-center gap-1 py-1"
                 >
-                  <span className={`text-[10px] ${selected ? 'text-[#7A7A7A]' : 'text-[#ACACAC]'} ${selected && hasRecord ? '!text-white/70' : ''}`}>
-                    {dayLabel}
-                  </span>
-                  <span className={`text-base font-medium ${selected && hasRecord ? 'text-white font-semibold' : 'text-[#1F1F1F]'}`}>
+                  <span className={`text-[11.5px] ${selected ? 'text-[#1E1C1A] font-bold' : 'text-[#9A9288]'}`}>{dayLabel}</span>
+                  <span
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[13px] ${
+                      selected ? 'bg-[#1E1C1A] text-white font-bold' : future ? 'text-[#C9C2B8]' : 'text-[#2A2723] font-medium'
+                    }`}
+                  >
                     {date.getDate()}
                   </span>
-                  {hasRecord && (
-                    <div className={`w-1 h-1 rounded-full ${selected && hasRecord ? 'bg-white/60' : 'bg-[#1F1F1F]/30'}`} />
-                  )}
+                  <span className={`w-1 h-1 rounded-full ${hasRecord ? 'bg-[#2A2723]' : 'bg-transparent'}`} />
                 </button>
               );
             })}
           </div>
         </section>
 
-        {/* 구분선 */}
-        <div className="h-px bg-[#EDEDED] mb-6" />
-
-        {/* 추천 메시지 */}
-        <div className="pb-4">
-          {(() => {
-            const rec = getRecommendation();
-            return rec.path ? (
-              <button
-                onClick={() => navigate(rec.path!)}
-                className="flex items-center gap-1 text-[15px] text-[#4A4845] font-medium hover:text-[#1F1F1F]"
-              >
-                {rec.text}
-                <ChevronRight className="w-4 h-4 text-[#ACACAC]" />
-              </button>
-            ) : (
-              <p className="text-[15px] text-[#7C7C7C] font-medium">{rec.text}</p>
-            );
-          })()}
-        </div>
-
-        {/* 말씀카드 배너 */}
+        {/* 말씀카드 — 홈의 주인공. 흰 칸, 아래에 최근에 만든 카드 한 장 */}
         <div
-          className="rounded-2xl p-5 mb-6 cursor-pointer transition-all flex items-center justify-between active:scale-[0.99] bg-white"
-          style={{ border: '1px solid #EFEFEF' }}
+          className="rounded-[22px] bg-white border border-[rgba(30,28,26,0.12)] px-[18px] pt-4 pb-3.5 mb-6 cursor-pointer active:scale-[0.99] transition-transform"
           onClick={() => navigate('/cards/designer')}
         >
-          <div>
-            <p className="text-[11px] font-medium text-[#7DB87D] mb-1 tracking-wide">카드 만들기</p>
-            <h3 className="text-[15px] font-semibold text-[#1F1F1F] mb-1">오늘의 말씀, 카드로 남겨볼까요?</h3>
-            <p className="text-[12px] text-[#7A7A7A]">AI 자동 완성 · 직접 꾸미기</p>
+          <div className="flex items-center gap-1.5 text-[12px] font-bold text-[#6E675E]">
+            <LineIcon name="card" size={15} />
+            오늘의 말씀카드
           </div>
-          <ChevronRight className="w-4 h-4 text-[#ACACAC] flex-shrink-0" />
+          <h3 className="mt-1.5 text-[16px] font-bold leading-[1.45] tracking-[-0.02em] text-[#1E1C1A]">
+            오늘의 말씀,<br />카드로 남겨볼까요?
+          </h3>
+          <span className="mt-3 inline-flex h-9 px-4 rounded-full bg-[#1E1C1A] text-white text-[13px] font-semibold items-center">
+            만들기 →
+          </span>
+          {latestCard?.imageDataUrl && (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); navigate(routes.cardsVault); }}
+              className="mt-3.5 pt-3 w-full border-t border-[rgba(30,28,26,0.10)] flex items-center gap-2.5 text-left"
+            >
+              <img src={latestCard.imageDataUrl} alt="" className="w-[34px] h-[42px] rounded-[7px] object-cover border border-[rgba(30,28,26,0.12)] flex-shrink-0" />
+              <span className="flex-1 min-w-0">
+                <span className="block text-[11.5px] text-[#8A8278]">최근에 만든 카드 · {relativeDay(latestCard.createdAt)}</span>
+                <span className="block text-[13px] font-semibold text-[#1E1C1A] truncate">{firstLine(latestCard.text)}</span>
+              </span>
+              <span className="text-[12px] font-semibold text-[#2A2723]">보기</span>
+            </button>
+          )}
         </div>
 
-        {/* 루틴 섹션 - 2열 그리드 */}
+        {/* 루틴 섹션 — 4개 이하는 색 칸, 5개 이상은 작은 목록(색은 아이콘 칸에만) */}
         <section className="mb-8">
-          <div className="flex items-baseline justify-between mb-4">
-            <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide">
+          <div className="flex items-baseline justify-between mb-2">
+            <h2 className="text-[13px] font-bold text-[#1E1C1A]">
               나의 루틴
             </h2>
             {/* 길게 누르기는 눈에 안 보이는 동작이라, 직접 만든 카테고리가 있을 때 처음 한 번만 알려 준다. */}
-            {!hintSeen && customCategories.length > 0 && (
-              <span className="text-[11px] text-[#ACACAC]">카드를 길게 누르면 수정·삭제</span>
+            {!hintSeen && customCategories.length > 0 ? (
+              <span className="text-[11px] text-[#9A9288]">길게 누르면 수정·삭제</span>
+            ) : (
+              <span className="text-[12px] text-[#8A8278]">오늘 {goalProgress.completed} / {goalProgress.total}</span>
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="grid grid-cols-2 gap-2 mb-3">
             {allCategories.map((category) => {
               const isDone =
                 category.id === '1' ? todayCounts.meditation > 0 :
                 category.id === '2' ? todayCounts.prayer > 0 :
                 category.id === '3' ? todayCounts.gratitude > 0 :
                 category.id === '4' ? todayCounts.diary > 0 : false;
+              const compact = allCategories.length > 4;
+              const icon = category.icon ? (
+                <AppIcon name={category.icon} size={compact ? 16 : 20} color="#1E1C1A" />
+              ) : (
+                <span className="text-[13px] font-bold text-[#1E1C1A]">{category.name.charAt(0)}</span>
+              );
               return (
                 <button
                   key={category.id}
@@ -453,46 +482,21 @@ const IndexNew = () => {
                   onPointerLeave={cancelPress}
                   onPointerCancel={cancelPress}
                   onContextMenu={(e) => e.preventDefault()}
-                  className="relative h-[120px] rounded-[24px] p-4 flex flex-col justify-between transition-all active:scale-[0.97] overflow-hidden bg-white text-left select-none"
+                  className={`relative flex items-center text-left select-none transition-transform active:scale-[0.97] border border-[rgba(30,28,26,0.12)] ${
+                    compact ? 'h-[46px] rounded-[14px] px-2.5 gap-2.5 bg-white' : 'h-16 rounded-2xl px-3.5 gap-2.5'
+                  }`}
                   // 아이폰에서 길게 누르면 뜨는 기본 메뉴(복사 등)를 막는다.
-                  style={{ border: '1px solid #EFEFEF', WebkitTouchCallout: 'none' }}
+                  style={{ WebkitTouchCallout: 'none', ...(compact ? {} : { backgroundColor: tintColor(category.color) }) }}
                 >
-                  {/* 상단 Accent Line */}
-                  <div
-                    className="absolute top-0 left-0 right-0 h-[4px]"
-                    style={{ backgroundColor: isDone ? category.color : `${category.color}60`, borderRadius: '24px 24px 0 0' }}
-                  />
-                  {/* 완료 체크 */}
-                  {isDone && (
-                    <div className="absolute top-3 right-3">
-                      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                        <circle cx="8" cy="8" r="7" stroke={category.color} strokeWidth="1.2"/>
-                        <path d="M5 8L7 10L11 6" stroke={category.color} strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                      </svg>
-                    </div>
-                  )}
-                  {/* 아이콘 */}
-                  <div
-                    className="w-9 h-9 rounded-xl flex items-center justify-center"
-                    style={{ backgroundColor: `${category.color}28` }}
-                  >
-                    {category.icon ? (
-                      <AppIcon name={category.icon} size={17} color={category.color} strokeWidth={1.5} />
-                    ) : (
-                      <span style={{ color: category.color }} className="text-[13px] font-semibold">
-                        {category.name.charAt(0)}
-                      </span>
-                    )}
-                  </div>
-                  {/* 텍스트 */}
-                  <div>
-                    <h3 className="text-[14px] font-semibold text-[#1F1F1F] leading-tight">
-                      {category.name}
-                    </h3>
-                    <p className="text-[11px] text-[#7A7A7A] mt-0.5 line-clamp-1">
-                      {isDone ? '오늘 완료' : (category.description || `${category.name}을 기록하세요`)}
-                    </p>
-                  </div>
+                  {compact ? (
+                    <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ backgroundColor: tintColor(category.color) }}>
+                      {icon}
+                    </span>
+                  ) : icon}
+                  <span className={`flex-1 min-w-0 truncate font-bold text-[#1E1C1A] ${compact ? 'text-[13.5px]' : 'text-[14px]'}`}>
+                    {category.name}
+                  </span>
+                  {isDone && <LineIcon name="check" size={16} color="#2A2723" />}
                 </button>
               );
             })}
@@ -501,8 +505,7 @@ const IndexNew = () => {
                 <div
                   key={`routine-skeleton-${i}`}
                   aria-hidden
-                  className="h-[120px] rounded-[24px] bg-white animate-pulse"
-                  style={{ border: '1px solid #EFEFEF' }}
+                  className="h-[46px] rounded-[14px] bg-white animate-pulse border border-[rgba(30,28,26,0.12)]"
                 />
               ))}
           </div>
@@ -510,7 +513,7 @@ const IndexNew = () => {
           {/* 카테고리 추가 버튼 */}
           <button
             onClick={() => setShowCategoryManager(true)}
-            className="w-full py-3 rounded-[20px] border border-dashed border-[#DCDCDC] text-[13px] font-medium text-[#ACACAC] flex items-center justify-center gap-2 transition-all hover:bg-white hover:border-[#ACACAC] active:scale-95"
+            className="w-full h-11 rounded-[14px] border border-dashed border-[rgba(30,28,26,0.25)] text-[13px] font-medium text-[#6E675E] flex items-center justify-center gap-1.5 transition-all hover:bg-white active:scale-95"
           >
             <Plus className="w-4 h-4" strokeWidth={2} />
             카테고리 추가
@@ -520,15 +523,15 @@ const IndexNew = () => {
         {/* 최신 기록 섹션 */}
         {recentRecords.length > 0 && (
           <section className="mb-8">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-[13px] font-bold text-[#1E1C1A]">
                 최근 기록
               </h2>
               <button
                 onClick={() => navigate('/records')}
-                className="text-[12px] text-[#7A7A7A] font-medium"
+                className="text-[12px] text-[#8A8278] font-medium"
               >
-                전체보기 →
+                전체 보기
               </button>
             </div>
 

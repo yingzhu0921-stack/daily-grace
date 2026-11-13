@@ -12,7 +12,7 @@ export const OnboardingComplete: React.FC = () => {
   };
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 py-8 bg-[#FAFAF9]">
+    <div className="relative flex flex-col items-center justify-center h-full px-6 py-8 bg-[#F6F3EC]">
       <div className="flex-1 flex flex-col items-center justify-center">
         <div className="relative mb-12 flex items-center justify-center">
           <div className="w-24 h-24 rounded-[28px] flex items-center justify-center bg-[#1F1F1F]">

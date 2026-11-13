@@ -15,7 +15,7 @@ export const OnboardingWelcome: React.FC<OnboardingWelcomeProps> = ({ onNext }) 
   ];
 
   return (
-    <div className="relative flex flex-col items-center justify-center h-full px-6 py-8 overflow-hidden bg-[#FAFAF9]">
+    <div className="relative flex flex-col items-center justify-center h-full px-6 py-8 overflow-hidden bg-[#F6F3EC]">
       <div className="flex-1 flex flex-col items-center justify-center relative z-10">
         {/* Icon Grid */}
         <div className="relative mb-12 animate-float">

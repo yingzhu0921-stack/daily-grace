@@ -70,7 +70,7 @@ const ProfileEdit: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#FAFAF9] flex items-center justify-center">
+      <div className="min-h-screen bg-[#F6F3EC] flex items-center justify-center">
         <p className="text-[#7E7C78]">로그인이 필요합니다</p>
       </div>
     );
@@ -79,9 +79,9 @@ const ProfileEdit: React.FC = () => {
   const userInitial = (displayName || user.email?.split('@')[0] || 'U')[0].toUpperCase();
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-[#F6F3EC]">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#F6F3EC] border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"

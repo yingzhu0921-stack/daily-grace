@@ -6,8 +6,8 @@ const Legal: React.FC = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
+    <div className="min-h-screen bg-[#F6F3EC]">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#F6F3EC] border-b border-[#EDEDED]">
         <button
           type="button"
           onClick={() => navigate('/settings')}

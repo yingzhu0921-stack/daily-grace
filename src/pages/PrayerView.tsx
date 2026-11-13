@@ -114,7 +114,7 @@ export default function PrayerView() {
 
   return (
     <>
-      <div className="min-h-screen bg-[#FAFAF9]">
+      <div className="min-h-screen bg-[#F6F3EC]">
       <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 
           onClick={() => navigate('/prayer')}
@@ -200,7 +200,7 @@ export default function PrayerView() {
 
       {/* 응답 기록 모달 */}
       <Dialog open={isAnsweredDialogOpen} onOpenChange={setIsAnsweredDialogOpen}>
-        <DialogContent className="sm:max-w-[500px] bg-[#FAFAF9]">
+        <DialogContent className="sm:max-w-[500px] bg-[#F6F3EC]">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-[#2E2E2E]">응답 기록하기</DialogTitle>
             <DialogDescription className="text-sm text-[#8B8B8B]">

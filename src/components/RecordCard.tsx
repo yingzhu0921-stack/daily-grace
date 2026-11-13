@@ -22,8 +22,8 @@ type RecordCardProps = {
 // 전에는 진한 색 배경에 흰 아이콘, 감사는 반짝이 아이콘이라 홈과 다른 앱처럼 보였다.
 const typeConfig: Record<RecordType, { icon: IconName; color: string; label: string; route: string }> = {
   meditation: { icon: 'bookOpen', color: '#7DB87D', label: 'Q.T', route: routes.qt },
-  prayer: { icon: 'heart', color: '#A57DB8', label: '기도', route: routes.prayer },
-  gratitude: { icon: 'star', color: '#E8C87D', label: '감사', route: routes.thanks },
+  prayer: { icon: 'hands', color: '#A57DB8', label: '기도', route: routes.prayer },
+  gratitude: { icon: 'sun', color: '#E8C87D', label: '감사', route: routes.thanks },
   diary: { icon: 'pencilLine', color: '#DD957D', label: '일기', route: routes.diary },
 };
 

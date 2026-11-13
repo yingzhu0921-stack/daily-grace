@@ -34,7 +34,7 @@ import {
   Archive,
   LucideIcon,
 } from 'lucide-react';
-import { PrayingHandsIcon } from './PrayingHandsIcon';
+import { LineIcon, isLineIconName, type LineIconName } from './LineIcon';
 
 export type IconName =
   | 'home'
@@ -69,11 +69,28 @@ export type IconName =
   | 'hand'
   | 'arrowRight'
   | 'archive'
-  | 'prayingHands';
+  | 'prayingHands'
+  | LineIconName;
 
-type LucideIconName = Exclude<IconName, 'prayingHands'>;
 
-const iconMap: Record<LucideIconName, LucideIcon> = {
+/**
+ * 2026-11-13 UI 개편: 앱 아이콘을 하루은혜 선 아이콘(LineIcon)으로 바꾼다.
+ * 저장된 카테고리 아이콘 이름(bookOpen 등)은 그대로 두고, 그림만 새 선 아이콘으로 이어 준다.
+ */
+const LEGACY_TO_LINE: Partial<Record<string, LineIconName>> = {
+  bookOpen: 'book',
+  book: 'bible',
+  sparkles: 'sparkle',
+  pencilLine: 'pencil',
+  upload: 'share',
+  lightbulb: 'bulb',
+  award: 'trophy',
+  hand: 'hands',
+  prayingHands: 'hands',
+  archive: 'box',
+};
+
+const iconMap: Partial<Record<string, LucideIcon>> = {
   home: Home,
   sun: Sun,
   calendar: Calendar,
@@ -121,32 +138,15 @@ export const AppIcon: React.FC<AppIconProps> = ({
   size = 24,
   className = '',
   color = 'currentColor',
-  strokeWidth = 1.75,
 }) => {
-  // Handle custom icon
-  if (name === 'prayingHands') {
-    return (
-      <PrayingHandsIcon
-        size={size}
-        className={className}
-        color={color}
-        strokeWidth={strokeWidth}
-      />
-    );
+  const line = LEGACY_TO_LINE[name] ?? (isLineIconName(name) ? name : undefined);
+  if (line) {
+    return <LineIcon name={line} size={size} className={className} color={color} />;
   }
 
   const Icon = iconMap[name];
-
   if (!Icon) {
     return null;
   }
-
-  return (
-    <Icon
-      size={size}
-      className={className}
-      color={color}
-      strokeWidth={strokeWidth}
-    />
-  );
+  return <Icon size={size} className={className} color={color} strokeWidth={2} />;
 };

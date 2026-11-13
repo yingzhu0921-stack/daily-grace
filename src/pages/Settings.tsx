@@ -92,9 +92,9 @@ const Settings: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] pb-nav">
+    <div className="min-h-screen bg-[#F6F3EC] pb-nav">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#FAFAF9] border-b border-[#EDEDED]">
+      <header className="sticky top-0 z-10 flex items-center justify-between px-5 py-4 bg-[#F6F3EC] border-b border-[#EDEDED]">
         <button
           onClick={() => navigate('/')}
           className="p-2 -ml-2"

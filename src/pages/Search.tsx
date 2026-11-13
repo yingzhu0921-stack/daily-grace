@@ -52,7 +52,7 @@ const Search: React.FC = () => {
 
   const typeFilters = [
     { type: 'meditation' as const, label: 'Q.T', color: 'rgba(125,184,125,1)', icon: 'bookOpen' as IconName },
-    { type: 'prayer' as const, label: '기도', color: 'rgba(165,125,184,1)', icon: 'heart' as IconName },
+    { type: 'prayer' as const, label: '기도', color: 'rgba(165,125,184,1)', icon: 'hands' as IconName },
     { type: 'gratitude' as const, label: '감사', color: 'rgba(232,200,125,1)', icon: 'sparkles' as IconName },
     { type: 'diary' as const, label: '일기', color: 'rgba(221,149,125,1)', icon: 'pencilLine' as IconName },
   ];

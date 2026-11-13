@@ -36,8 +36,8 @@ const RECORD_FIELDS = [
 // 기본 카테고리 (하드코딩, 삭제 불가)
 const DEFAULT_CATEGORIES: Category[] = [
   { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen', includeInGoal: true, description: '말씀을 묵상하며 은혜를 나눠요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '2', name: '기도', color: '#A57DB8', icon: 'heart', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-  { id: '3', name: '감사', color: '#E8C87D', icon: 'star', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '2', name: '기도', color: '#A57DB8', icon: 'hands', includeInGoal: true, description: '하루의 기도를 적어보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+  { id: '3', name: '감사', color: '#E8C87D', icon: 'sun', includeInGoal: true, description: '감사했던 순간을 떠올려보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
   { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine', includeInGoal: true, description: '오늘의 마음을 기록해보세요', activeDays: [0, 1, 2, 3, 4, 5, 6], fields: ['title', 'content'], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
 ];
 
@@ -354,7 +354,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 return (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white hover:bg-[#FAFAF9] border border-[#EFEFEF] transition-colors cursor-pointer group"
+                    className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white hover:bg-[#F6F3EC] border border-[#EFEFEF] transition-colors cursor-pointer group"
                     onClick={() => handleSelectCategory(category)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
@@ -468,7 +468,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="예: 간증, 성경메모, 찬양노트"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleCreateCategory();
                 }}
@@ -484,7 +484,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{newName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -523,7 +523,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`w-12 h-12 rounded-xl flex items-center justify-center transition-all ${
                       newIcon === iconName 
                         ? 'bg-[#2E2E2E] text-white scale-105' 
-                        : 'bg-[#FAFAF9] text-[#7E7C78] hover:bg-[#F5F5F5] hover:scale-105'
+                        : 'bg-[#F6F3EC] text-[#7E7C78] hover:bg-[#F5F5F5] hover:scale-105'
                     }`}
                   >
                     <AppIcon name={iconName} size={20} strokeWidth={2} />
@@ -541,7 +541,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 {RECORD_FIELDS.map(field => (
                   <label
                     key={field.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFAF9] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F6F3EC] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -619,7 +619,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       activeDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#FAFAF9] text-[#ACACAC] hover:bg-[#F5F5F5]'
+                        : 'bg-[#F6F3EC] text-[#ACACAC] hover:bg-[#F5F5F5]'
                     }`}
                   >
                     {label}
@@ -694,7 +694,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="카테고리 이름을 입력하세요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
               />
             </div>
 
@@ -707,7 +707,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#FAFAF9]"
+                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{editName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -723,7 +723,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 {RECORD_FIELDS.map(field => (
                   <label
                     key={field.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#FAFAF9] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F6F3EC] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -804,7 +804,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       editActiveDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#FAFAF9] text-[#ACACAC] hover:bg-[#F5F5F5]'
+                        : 'bg-[#F6F3EC] text-[#ACACAC] hover:bg-[#F5F5F5]'
                     }`}
                   >
                     {label}

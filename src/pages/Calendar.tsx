@@ -74,8 +74,8 @@ const Calendar: React.FC = () => {
   // 기본 카테고리
   const defaultCategories = [
     { id: '1', name: 'Q.T', color: '#7DB87D', icon: 'bookOpen' as IconName, path: '/meditation/new', type: 'meditation' as const },
-    { id: '2', name: '기도', color: '#A57DB8', icon: 'heart' as IconName, path: '/prayer/new', type: 'prayer' as const },
-    { id: '3', name: '감사', color: '#E8C87D', icon: 'star' as IconName, path: '/gratitude/new', type: 'gratitude' as const },
+    { id: '2', name: '기도', color: '#A57DB8', icon: 'hands' as IconName, path: '/prayer/new', type: 'prayer' as const },
+    { id: '3', name: '감사', color: '#E8C87D', icon: 'sun' as IconName, path: '/gratitude/new', type: 'gratitude' as const },
     { id: '4', name: '일기', color: '#DD957D', icon: 'pencilLine' as IconName, path: '/diary/new', type: 'diary' as const },
   ];
 
@@ -136,9 +136,9 @@ const Calendar: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] pb-nav">
+    <div className="min-h-screen bg-[#F6F3EC] pb-nav">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#EDEDED]">
+      <header className="sticky top-0 z-40 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#EDEDED]">
         <div className="max-w-[480px] mx-auto px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}

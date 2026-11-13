@@ -36,7 +36,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
   return (
     // 1·3단계처럼 가운데 폭을 제한한다. 제한이 없으면 데스크톱(약 1024px)에서
     // 카드와 '다음' 버튼이 화면 끝까지 늘어나 오른쪽이 잘린 것처럼 보인다.
-    <div className="flex flex-col h-full px-6 py-6 bg-[#FAFAF9] items-center">
+    <div className="flex flex-col h-full px-6 py-6 bg-[#F6F3EC] items-center">
       <div className="flex-1 w-full max-w-[420px] overflow-y-auto">
         <div className="mb-6">
           <h2 className="text-[24px] font-bold leading-[32px] text-[#1F1F1F] mb-2">

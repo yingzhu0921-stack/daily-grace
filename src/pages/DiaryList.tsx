@@ -25,7 +25,7 @@ export default function DiaryList() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9]">
+    <div className="min-h-screen bg-[#F6F3EC]">
       {/* 헤더 */}
       <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
         <button 

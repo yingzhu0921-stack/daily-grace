@@ -379,9 +379,9 @@ const CustomRecordNew = () => {
         description="클라우드에 저장하고 언제 어디서나 확인하세요."
       />
       
-      <div className="flex min-h-screen flex-col bg-[#FAFAF9]">
+      <div className="flex min-h-screen flex-col bg-[#F6F3EC]">
         {/* 헤더 */}
-        <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#EDEDED] bg-[#FAFAF9] px-5 py-4">
+        <header className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-[#EDEDED] bg-[#F6F3EC] px-5 py-4">
           <button
             onClick={handleBack}
             className="p-2 -ml-2"

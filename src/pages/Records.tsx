@@ -65,8 +65,8 @@ const Records: React.FC = () => {
   // 예전에는 '1'~'4' 라서 어떤 기록과도 맞지 않아 필터가 항상 빈 화면이었다.
   const defaultCategories = [
     { id: 'meditation', label: 'Q.T', icon: 'bookOpen', route: routes.qt, color: '#7DB87D', desc: '오늘의 말씀을 나눠보세요' },
-    { id: 'prayer', label: '기도', icon: 'heart', route: routes.prayer, color: '#A57DB8', desc: '하루의 기도를 적어보세요' },
-    { id: 'gratitude', label: '감사', icon: 'star', route: routes.thanks, color: '#E8C87D', desc: '감사했던 순간을 떠올려보세요' },
+    { id: 'prayer', label: '기도', icon: 'hands', route: routes.prayer, color: '#A57DB8', desc: '하루의 기도를 적어보세요' },
+    { id: 'gratitude', label: '감사', icon: 'sun', route: routes.thanks, color: '#E8C87D', desc: '감사했던 순간을 떠올려보세요' },
     { id: 'diary', label: '일기', icon: 'pencilLine', route: routes.diary, color: '#DD957D', desc: '오늘의 마음을 기록해보세요' },
   ];
 
@@ -148,9 +148,9 @@ const Records: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] pb-nav">
+    <div className="min-h-screen bg-[#F6F3EC] pb-nav">
       {/* 헤더 */}
-      <header className="sticky top-0 z-40 bg-[#FAFAF9]/95 backdrop-blur-sm border-b border-[#EDEDED]">
+      <header className="sticky top-0 z-40 bg-[#F6F3EC]/95 backdrop-blur-sm border-b border-[#EDEDED]">
         <div className="max-w-[480px] mx-auto px-6 h-14 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}

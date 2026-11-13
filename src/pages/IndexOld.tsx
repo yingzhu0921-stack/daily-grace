@@ -179,7 +179,7 @@ const Index = () => {
     path: '/diary/new',
     listPath: '/diary'
   }];
-  return <div className="min-h-screen bg-[#FAFAF9]">
+  return <div className="min-h-screen bg-[#F6F3EC]">
       <div className="max-w-[480px] mx-auto">
         {/* Header */}
         <header className="flex items-center justify-between px-5 py-4 border-b border-[#EDEDED]">
