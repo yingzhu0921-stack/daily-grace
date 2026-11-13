@@ -1815,7 +1815,7 @@ export default function Designer() {
     tone: 'ai' | 'instant'; thumb: string | null;
   }[] = [
     { id: 'T01', name: '캐릭터 일러스트', desc: '보송한 캐릭터 그림에 손글씨 말씀을 담아요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: '/template-previews/T01.jpg' },
-    { id: 'T02', name: '미니멀 일러스트', desc: '고요한 색면 그림 위에 단정한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T02.jpg' },
+    { id: 'T02', name: '미니멀 일러스트', desc: '고요한 색면 그림 위에 단정한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T02.jpg?v=2' },
     { id: 'T03', name: '소프트 그라데이션', desc: '은은하게 번진 색 위에 차분한 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: '/template-previews/T03.jpg' },
     { id: 'T04', name: '감성 사진',     desc: '필름 느낌 일상 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T04.jpg' },
   ];
