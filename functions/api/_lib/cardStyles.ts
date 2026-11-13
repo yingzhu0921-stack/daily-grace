@@ -56,7 +56,7 @@ export const T01_ACCENT_COLOURS = 'BRIGHT, SUNNY, saturated colours inside the p
 export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine woolly grain inside the colour areas. The texture never makes the colours dull. ';
 
 /** 피할 것. */
-export const T01_NOT = 'Only people and animals have faces — clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
+export const T01_NOT = 'Only people and animals have faces — globes, the earth, clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
   + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
   + 'NOT a storybook scene: no landscape scenery behind the characters. NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
   + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises or rolling hills. '

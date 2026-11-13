@@ -656,6 +656,13 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
     const sceneSource = (verse?.trim() || sourceText || '').slice(0, 1500);
     let t02DeepScene = '';
     // 미니멀(T02)은 성경 속 사건이어도 깊게 읽는다(2026-11-12 사용자: 아브라함이 나와야 한다, 성경 장면을 미니멀하게 잘 시각화).
+    const REGEN_ANGLES = [
+      'the GIVER\'S side — show who gives or acts in the message (God, Jesus) and how, e.g. Jesus doing that act for people.',
+      'the WHOLE WORLD — many different ordinary people (different ages and places) together receiving or sharing what the message speaks of.',
+      'ONE PERSON\'S MOMENT — a single grown-up or teenager in an ordinary place at the exact moment of believing, trusting or receiving.',
+      'BEFORE AND AFTER — the change the message promises (from darkness to light, from lost to found, from weary to restored) shown in one scene.',
+      'a well-known BIBLE PICTURE that carries the same truth (e.g. the lost sheep found, the prodigal son welcomed home, Jesus with the children), drawn simply.',
+    ];
     // 2026-11-13 사용자: 성경 장면이 정해진 구절은 '다시 생성'해도 같은 인물·구도만 나왔다(그 순간만 그리게 해서).
     // 다시 생성일 때는 T01 도 깊게 읽고, 같은 순간을 다른 시점으로 또는 말씀 내용 자체를 그리게 한다.
     const regenWithMoment = !!regenerate && !!analysis.situation?.trim();
@@ -676,14 +683,14 @@ BANNED: "beautiful nature", "warm light", "serene landscape", and defaulting to 
             content: sceneSource
               + (analysis.situation?.trim()
                 ? (regenWithMoment
-                  // 다시 생성을 번갈아: 홀수 번째는 순간의 인물·장소 없이 말씀 내용 자체, 짝수 번째는 같은 순간을 다른 시점으로.
-                  ? (prevSubjects.length % 2 === 1
-                    ? `\n\nThis is a REGENERATION. The previous pictures showed the moment "${analysis.situation}". This time do NOT draw that moment, its people or its place at all — draw what the words themselves say as a fresh scene (for example who is loved, what is given, what is received), with Jesus only if the words are about what he does.`
-                    : `\n\nThis message belongs to the moment: ${analysis.situation}. This is a REGENERATION: show that same moment from a clearly different viewpoint, distance, time detail or action, never repeating the previous composition.`)
+                  // 2026-11-13 사용자: 번갈아 쓰니 다시 생성 4번 중 1번만 달랐다 → 다시 생성은 늘 순간 장면을 벗어나 말씀 내용으로 새로 고른다.
+                  ? `\n\nThis is a REGENERATION. Earlier pictures showed the moment "${analysis.situation}". Do NOT draw that moment, its people or its place again. Draw what the words themselves say as a completely fresh scene, with Jesus only if the words are about what he does.`
                   : `\n\nTHE MOMENT THIS MESSAGE DESCRIBES (already settled — the scene must be this moment): ${analysis.situation}`)
                 : '')
               + (analysis.coreMeaning ? `\n\n(Earlier reading of the meaning, for reference only: ${analysis.coreMeaning})` : '')
-              + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.` : '')
+              + (prevSubjects.length ? `\n\nDo NOT reuse these scenes already used for this message: ${prevSubjects.join('; ')}.${regenerate ? ' The new picture must differ from EVERY one of them in its main character, its setting AND its main object — someone looking at them side by side should see a clearly different idea, not a variation.' : ''}` : '')
+              // 2026-11-13: '다르게'만 요구하면 비슷한 생각(선물 받는 아이)으로 돌아갔다 → 다시 생성마다 바라보는 관점을 정해 준다.
+              + (regenerate ? `\n\nVIEWPOINT FOR THIS REGENERATION (follow it): ${REGEN_ANGLES[(prevSubjects.length + Math.abs(templateIndex)) % REGEN_ANGLES.length]}` : '')
               + extra,
           },
         ], 500, 'gpt-4o'))?.scene || '';
