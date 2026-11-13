@@ -2,6 +2,7 @@ import { renderT02Poster } from '@/utils/t02Poster';
 import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/AppIcon';
+import { fillCssBackground } from '@/utils/canvasCssBackground';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -660,7 +661,18 @@ export default function Designer() {
   // 배경 선택 안내가 떠 있는 상태. 이때는 글씨 상자의 점선·핸들·힌트를 숨겨 안내와 겹치지 않게 한다.
   // 기본 문구('텍스트를 입력하세요.')도 빈 것으로 본다 — 그래야 첫 진입부터 안내가 뜬다.
   // (isTextEmpty 가 아니라 !t.content.trim() 을 쓰던 때는 상자를 한 번 눌렀다 나와야만 떴다)
-  const showBgPrompt = !meta.bgImageUrl && isTextEmpty && !isEditing && !isBgEditMode;
+  // 2026-11-13 사용자: "첫 화면에 배경 먼저 만들라는 게 매번 떠 있어야 하는데 안 나온다".
+  // 글씨가 이미 들어 있으면(기록에서 가져오기·앞 단계에서 넘어온 문구) 안 떴다. 이제는 배경을 실제로
+  // 고르기 전까지 뜬다. 저장된 카드를 다시 편집할 때(isEditMode)는 이미 배경이 있으니 띄우지 않는다.
+  const [bgPicked, setBgPicked] = useState(false);
+  const bgColorAtEntryRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (flowStep !== 'edit') { bgColorAtEntryRef.current = null; return; }
+    if (bgColorAtEntryRef.current === null) { bgColorAtEntryRef.current = meta.bgColor; return; }
+    if (meta.bgColor !== bgColorAtEntryRef.current) setBgPicked(true); // 단색을 고른 것
+  }, [flowStep, meta.bgColor]);
+  // 단색·그라데이션은 bgImageUrl 이 없어서, 전에는 골라도 글씨가 비어 있으면 안내가 계속 덮여 있었다.
+  const showBgPrompt = !meta.bgImageUrl && !bgPicked && !isEditMode && !isEditing && !isBgEditMode;
 
   /**
    * AI 배경의 잘리기 전 원본. 전에는 만든 직후 그때 비율로 잘라 저장하고 원본을 버려서,
@@ -860,6 +872,7 @@ export default function Designer() {
         return;
       }
       if (track === 'manual') {
+        setBgPicked(false);
         setFlowStep('edit');
         setIsPanelCollapsed(false);
         return;
@@ -920,6 +933,24 @@ export default function Designer() {
   }, [meta.bgImageUrl, meta.bgColor]);
   const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br'; halfW?:number; halfH?:number }>();
   const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
+  /**
+   * 끌기 중 상태 반영은 화면 한 프레임에 한 번만(2026-11-13 사용자 "편집이 버벅인다").
+   * 손가락이 움직일 때마다(초당 60~120번) 이 큰 화면 전체를 다시 그려서 아이폰에서 끌기가 끊겼다.
+   * 같은 프레임 안의 여러 이동은 마지막 것만 남긴다.
+   */
+  const frameJobRef = useRef<(() => void) | null>(null);
+  const frameIdRef = useRef<number | null>(null);
+  const inNextFrame = useCallback((job: () => void) => {
+    frameJobRef.current = job;
+    if (frameIdRef.current != null) return;
+    frameIdRef.current = requestAnimationFrame(() => {
+      frameIdRef.current = null;
+      const run = frameJobRef.current;
+      frameJobRef.current = null;
+      run?.();
+    });
+  }, []);
+  useEffect(() => () => { if (frameIdRef.current != null) cancelAnimationFrame(frameIdRef.current); }, []);
 
   // contentEditable을 비제어 컴포넌트로 관리
   useEffect(() => {
@@ -1069,7 +1100,7 @@ export default function Designer() {
       if (Math.abs(newX - 50) < snapThreshold) newX = 50;
       if (Math.abs(newY - 50) < snapThreshold) newY = 50;
       
-      setT(s => ({ ...s, x: newX, y: newY }));
+      inNextFrame(() => setT(s => ({ ...s, x: newX, y: newY })));
     } else {
       // 리사이즈 모드
       let newW = currentDrag.sw;
@@ -1091,7 +1122,7 @@ export default function Designer() {
         newH = clamp(currentDrag.sh + dy * 2, 20, 80);
       }
       
-      setT(s => ({ ...s, w: newW, h: newH, x: newX, y: newY }));
+      inNextFrame(() => setT(s => ({ ...s, w: newW, h: newH, x: newX, y: newY })));
     }
   };
   
@@ -1113,11 +1144,11 @@ export default function Designer() {
     // ref 값을 미리 저장하여 상태 업데이트 중 undefined 방지
     const startPosX = bgDragRef.current.startPosX;
     const startPosY = bgDragRef.current.startPosY;
-    setMeta(m => ({
+    inNextFrame(() => setMeta(m => ({
       ...m,
       bgPositionX: clamp(startPosX + dx, 0, 100),
       bgPositionY: clamp(startPosY + dy, 0, 100),
-    }));
+    })));
   };
 
   const onBgTouchDragging = (e: TouchEvent) => {
@@ -1136,7 +1167,7 @@ export default function Designer() {
       if (bgDragRef.current.pinchStartDistance) {
         const scaleChange = (currentDistance / bgDragRef.current.pinchStartDistance) * 100;
         const newScale = clamp(bgDragRef.current.startScale * (scaleChange / 100), 50, 400);
-        setMeta(m => ({ ...m, bgScale: newScale }));
+        inNextFrame(() => setMeta(m => ({ ...m, bgScale: newScale })));
       }
       return;
     }
@@ -1147,11 +1178,11 @@ export default function Designer() {
     const dy = ((e.touches[0].clientY - bgDragRef.current.startY) / rect.height) * 100;
     const startPosX = bgDragRef.current.startPosX;
     const startPosY = bgDragRef.current.startPosY;
-    setMeta(m => ({
+    inNextFrame(() => setMeta(m => ({
       ...m,
       bgPositionX: clamp(startPosX + dx, 0, 100),
       bgPositionY: clamp(startPosY + dy, 0, 100),
-    }));
+    })));
   };
 
   const onBgDragEnd = (e: MouseEvent | TouchEvent) => {
@@ -3550,8 +3581,8 @@ export default function Designer() {
                   }
                   
                   // ===== STEP 1: Draw Background Color =====
-                  ctx.fillStyle = meta.bgColor;
-                  ctx.fillRect(0, 0, width, height);
+                  // 그라데이션 배경도 화면과 같게 칠한다(전에는 fillStyle 이 무시돼 저장본이 새까맸다).
+                  fillCssBackground(ctx, meta.bgColor, width, height);
                   // ===== STEP 2: Draw Background Image =====
                   if (meta.bgImageUrl) {
                     const img = new Image();
