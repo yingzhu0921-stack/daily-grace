@@ -217,20 +217,36 @@ const collapseSpaces = (s: string) => s.replace(/\s+/g, ' ').trim();
 const stripLeadMarks = (s: string) => s.replace(/^[\s\-–—>•·*]+/, '').trim();
 
 // 추천 세 종류(2026-11-13 사용자: 원래처럼 세 가지로). 말투를 바꿀 수 없으니 고르는 기준으로 나눈다.
-const CONDENSE_KINDS = ['짧은 한 줄', '이어진 두 문장', '마음이 담긴 문장'] as const;
+// 3번은 문장 끝까지가 아니라 원문 문장의 한 부분(명사로 끝나는 구절) — 예전 명사형 추천 자리(2026-11-13 사용자 "다 문장형으로 나와").
+const CONDENSE_KINDS = ['짧은 한 줄', '이어진 두 문장', '핵심 구절'] as const;
 
 /** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. 이름표는 원래 자리(종류)를 따른다. */
 function pickVerbatim(source: string, candidates: string[]): { text: string; label: string }[] {
   const hay = collapseSpaces(source);
   const out: { text: string; label: string }[] = [];
   candidates.slice(0, CONDENSE_KINDS.length).forEach((c, i) => {
-    const cand = stripLeadMarks(collapseSpaces(String(c).replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
-    if (cand.replace(/\s/g, '').length < 6) return;
+    let cand = stripLeadMarks(collapseSpaces(String(c).replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
+    if (i === 2) cand = toNounPhrase(cand);
+    if (!cand || cand.replace(/\s/g, '').length < 6) return;
     if (!hay.includes(cand)) return; // 원문에 없는 말이 한 글자라도 섞이면 버린다
-    if (out.some((o) => o.text === cand)) return;
+    // 문장 두 개가 서로 겹치면(한쪽이 다른 쪽을 품으면) 고를 거리가 줄어든다. 구절(3번)은 문장 속 일부라 예외.
+    if (out.some((o) => o.text === cand || (i < 2 && (o.text.includes(cand) || cand.includes(o.text))))) return;
     out.push({ text: cand, label: CONDENSE_KINDS[i] });
   });
   return out;
+}
+
+/**
+ * 핵심 구절은 명사로 끝나야 한다. "온전한 대제사장이시다"처럼 '~이다' 류로 끝나면 그 꼬리만 떼어
+ * "온전한 대제사장"으로 만든다(앞부분 글자는 원문 그대로라 여전히 원문 안에 있다). 다른 서술어로 끝나면 버린다.
+ */
+function toNounPhrase(s: string): string {
+  const t = s.replace(/[.!?。…~\s]+$/, '');
+  const copula = /(이시니라|이니라|이십니다|입니다|이시다|이에요|이예요|예요|이다|이라|이요)$/;
+  if (copula.test(t)) return t.replace(copula, '').trim();
+  // 서술어·연결어미("~않으면", "~하고")나 조사("~을", "~에")로 끝나면 명사 구절이 아니다.
+  if (/(다|요|자|라|소서|까|네|지|면|고|서|며|데|게|니|는데|지만|을|를|은|는|가|에|의|와|과|로|도|만|께)$/.test(t)) return '';
+  return t;
 }
 
 /** AI 를 못 쓰거나 고른 게 모두 버려졌을 때: 원문 문장에서 직접 고른다. [성경 인용] 줄보다 사용자 자신의 문장을 먼저. */
@@ -309,13 +325,14 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
           content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 세 종류로 하나씩, 모두 3개를 고른다.
 
 규칙(엄수):
-1. 사용자 글에 있는 문장을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 줄이거나 말투를 고치거나 이어 붙이지 않는다.
+1. 사용자 글을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 빼거나 말투를 고치거나 떨어진 부분을 이어 붙이지 않는다. (3번 핵심 구절만 문장의 연속된 한 부분을 잘라 낼 수 있다.)
 2. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
 3. 사용자가 직접 쓴 생각·고백·다짐 문장을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
 4. 세 종류(순서 그대로, 서로 다른 문장):
    · 1번 짧은 한 줄 — 원문의 한 문장, 15~35자 정도로 짧고 또렷한 것
-   · 2번 이어진 두 문장 — 원문에서 바로 이어 붙어 있는 두 문장을 그대로, 35~80자 정도
-   · 3번 마음이 담긴 문장 — 고백·다짐·바람이 가장 잘 드러나는 원문 한 문장
+   · 2번 이어진 두 문장 — 원문에서 바로 이어 붙어 있는 두 문장을 그대로, 35~80자 정도. 1번 문장을 포함하지 않는 다른 부분에서 고른다.
+   · 3번 핵심 구절 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 반드시 명사(또는 명사구)로 끝나야 하고 "~다", "~요", "~자" 같은 서술어로 끝나면 안 된다. 8~30자. 잘라 낸 부분 안의 글자는 원문과 똑같아야 한다.
+     예: 원문 "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
 5. 원문이 짧아 해당 종류를 고를 수 없으면 그 자리는 빈 문자열 "" 로 둔다.
 6. JSON 문자열 배열 3개만 출력한다.`,
         },

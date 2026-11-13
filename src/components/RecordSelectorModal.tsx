@@ -339,7 +339,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
             </div>
           </div>
         ) : (
-          <div className="flex-1 min-h-0 flex flex-col gap-3 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-3">
             {selectedRecord && (
               <button
                 type="button"
@@ -426,7 +426,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
               value={confirmedText}
               onChange={(e) => setConfirmedText(e.target.value)}
               placeholder="카드에 담을 문구를 확인해주세요"
-              className="min-h-[160px] shrink-0 resize-y rounded-xl border border-[#E3E2E0] bg-[#F6F3EC] p-3 text-[14px] leading-6 text-[#2E2E2E] focus:outline-none focus:ring-2 focus:ring-[#4F8A5B]/20"
+              className="block w-full min-h-[160px] resize-y rounded-xl border border-[#E3E2E0] bg-[#F6F3EC] p-3 text-[14px] leading-6 text-[#2E2E2E] focus:outline-none focus:ring-2 focus:ring-[#4F8A5B]/20"
             />
             <p className="text-[11px] leading-4 text-[#9A9894]">
               필요한 부분만 남기거나 줄바꿈을 정리해도 원본 기록은 바뀌지 않습니다.
