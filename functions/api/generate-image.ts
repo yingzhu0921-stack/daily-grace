@@ -223,16 +223,26 @@ const CONDENSE_KINDS = ['짧은 한 줄', '이어진 두 문장', '핵심 구절
 /** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. 이름표는 원래 자리(종류)를 따른다. */
 function pickVerbatim(source: string, candidates: string[]): { text: string; label: string }[] {
   const hay = collapseSpaces(source);
+  const clean = (c: unknown) => stripLeadMarks(collapseSpaces(String(c ?? '').replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
   const out: { text: string; label: string }[] = [];
-  candidates.slice(0, CONDENSE_KINDS.length).forEach((c, i) => {
-    let cand = stripLeadMarks(collapseSpaces(String(c).replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
-    if (i === 2) cand = toNounPhrase(cand);
+  // 1번 짧은 한 줄, 2번 이어진 두 문장
+  [0, 1].forEach((i) => {
+    const cand = clean(candidates[i]);
     if (!cand || cand.replace(/\s/g, '').length < 6) return;
     if (!hay.includes(cand)) return; // 원문에 없는 말이 한 글자라도 섞이면 버린다
-    // 문장 두 개가 서로 겹치면(한쪽이 다른 쪽을 품으면) 고를 거리가 줄어든다. 구절(3번)은 문장 속 일부라 예외.
-    if (out.some((o) => o.text === cand || (i < 2 && (o.text.includes(cand) || cand.includes(o.text))))) return;
+    // 문장 두 개가 서로 겹치면(한쪽이 다른 쪽을 품으면) 고를 거리가 줄어든다.
+    if (out.some((o) => o.text === cand || o.text.includes(cand) || cand.includes(o.text))) return;
     out.push({ text: cand, label: CONDENSE_KINDS[i] });
   });
+  // 3번 핵심 구절: 후보 여러 개(3번째 자리부터) 중 명사로 끝나고 원문에 그대로 있는 첫 번째.
+  // 2026-11-13 사용자 "명사형 내용이 안 나와": 후보가 하나뿐이라 서술어로 끝나 버려지면 통째로 빠졌다.
+  for (const c of candidates.slice(2)) {
+    const cand = toNounPhrase(clean(c));
+    if (!cand || cand.replace(/\s/g, '').length < 5) continue;
+    if (!hay.includes(cand) || out.some((o) => o.text === cand)) continue;
+    out.push({ text: cand, label: CONDENSE_KINDS[2] });
+    break;
+  }
   return out;
 }
 
@@ -326,19 +336,22 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 세 종류로 하나씩, 모두 3개를 고른다.
+          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 짧은 한 줄·이어진 두 문장·핵심 구절을 고른다.
 
 규칙(엄수):
 1. 사용자 글을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 빼거나 말투를 고치거나 떨어진 부분을 이어 붙이지 않는다. (3번 핵심 구절만 문장의 연속된 한 부분을 잘라 낼 수 있다.)
 2. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
 3. 사용자가 직접 쓴 생각·고백·다짐 문장을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
-4. 세 종류(순서 그대로, 서로 다른 문장):
+4. 순서 그대로:
    · 1번 짧은 한 줄 — 원문의 한 문장, 15~35자 정도로 짧고 또렷한 것
    · 2번 이어진 두 문장 — 원문에서 바로 이어 붙어 있는 두 문장을 그대로, 35~80자 정도. 1번 문장을 포함하지 않는 다른 부분에서 고른다.
-   · 3번 핵심 구절 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 반드시 명사(또는 명사구)로 끝나야 하고 "~다", "~요", "~자" 같은 서술어로 끝나면 안 된다. 8~30자. 잘라 낸 부분 안의 글자는 원문과 똑같아야 한다.
+   · 3·4·5번 핵심 구절 후보 3개 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 서로 다른 곳에서 고른다.
+     반드시 명사(또는 명사구)로 끝나야 한다. "~다", "~요", "~자", "~면", "~고", "~야" 같은 서술어·연결어미나 "~을", "~에" 같은 조사로 끝나면 안 된다. 6~30자.
+     잘라 낸 부분 안의 글자는 원문과 똑같아야 한다. 문장 끝의 "~이다/~이시다"만 떼는 것도 좋다.
      예: 원문 "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
+     예: 원문 "예수님은 온전한 대제사장이시다" → "온전한 대제사장"
 5. 원문이 짧아 해당 종류를 고를 수 없으면 그 자리는 빈 문자열 "" 로 둔다.
-6. JSON 문자열 배열 3개만 출력한다.`,
+6. JSON 문자열 배열 5개만 출력한다: [1번, 2번, 3번, 4번, 5번]`,
         },
         { role: 'user', content: source },
       ], 700, 'gpt-4o');

@@ -83,6 +83,12 @@ const getRecommendSource = (record: Record) => {
   return base;
 };
 
+/** 고르는 줄의 미리보기. 줄바꿈을 펴고 앞부분만 보여 준다. */
+const previewOf = (text: string, max = 64) => {
+  const flat = text.replace(/\s+/g, ' ').trim();
+  return flat.length > max ? `${flat.slice(0, max)}…` : flat;
+};
+
 export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefetch, purpose = 'text', initialRecordId }: RecordSelectorModalProps) {
   const [selectedRecord, setSelectedRecord] = useState<Record | null>(null);
   const [confirmedText, setConfirmedText] = useState('');
@@ -408,8 +414,9 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                       }`}
                     >
                       <span className="block text-[12px] font-bold text-[#1E1C1A]">{choice.label}</span>
-                      {/* block 을 같이 주면 line-clamp 의 display 를 덮어써서 두 줄로 안 잘렸다. */}
-                      <span className="mt-0.5 text-[13px] leading-5 text-[#6E675E] line-clamp-2">{choice.text}</span>
+                      {/* 2026-11-13 아이폰: line-clamp(두 줄 말줄임)로 자르면 사파리가 칸 높이를 자르기 전 전체 길이로 잡아
+                          아래에 큰 빈칸이 생기고 AI 상자가 밀려 잘렸다. 미리보기 글자를 직접 짧게 자른다(원문은 그대로 쓰인다). */}
+                      <span className="mt-0.5 block text-[13px] leading-5 text-[#6E675E]">{previewOf(choice.text)}</span>
                     </button>
                   );
                 })}
