@@ -240,6 +240,7 @@ function pickThree(source: string, groups: { short: unknown[]; heart: unknown[];
       const t = phrase ? toNounPhrase(cleanPick(c)) : cleanPick(c);
       if (!t || nonSpaceLen(t) < (phrase ? 4 : 6)) continue;
       if (!hay.includes(t)) continue; // 원문에 없는 말이 한 글자라도 섞이면 버린다
+      if (phrase && flipsMeaning(hay, t)) continue; // 잘라 낸 뒤에 부정이 오면 뜻이 뒤집힌다
       // 구절은 문장 속 일부라 겹쳐도 되지만, 완전히 같은 건 안 된다.
       if (phrase ? used.includes(t) : !isNew(t)) continue;
       return t;
@@ -271,6 +272,22 @@ function toNounPhrase(s: string): string {
   // 서술어·연결어미("~않으면", "~하고")나 조사("~을", "~에")로 끝나면 명사 구절이 아니다.
   if (/(다|요|자|라|야|소서|까|네|지|면|고|서|며|데|게|니|는데|지만|을|를|은|는|가|에|의|와|과|로|도|만|께)$/.test(t)) return '';
   return t;
+}
+
+/**
+ * 2026-11-13 사용자 "핵심 구절 내용이 잘려": "…결부시키지 않으면 아무런 유익(이 없다)"처럼 잘라 낸 바로 뒤가
+ * 부정(없다·않다·못하다·아니다)이면 구절만 읽을 때 뜻이 반대가 된다. 그런 자르기는 쓰지 않는다.
+ * 원문에서 이 구절이 나오는 모든 자리를 보고, 그 문장의 남은 부분에 부정이 있으면 버린다.
+ */
+function flipsMeaning(hay: string, phrase: string): boolean {
+  let from = 0;
+  for (;;) {
+    const at = hay.indexOf(phrase, from);
+    if (at < 0) return false;
+    const rest = hay.slice(at + phrase.length).split(/[.!?。\n]/)[0];
+    if (/(없|않|못|아니|안 )/.test(rest)) return true;
+    from = at + 1;
+  }
 }
 
 /** AI 없이 원문 문장에서 명사구 후보를 잘라 낸다: "하나님의 약속은 반드시 …" → "하나님의 약속". 글자는 원문 그대로. */
@@ -373,6 +390,8 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
    · phrase 핵심 구절 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 반드시 명사(또는 명사구)로 끝나야 한다.
      "~다", "~요", "~자", "~면", "~고", "~야" 같은 서술어·연결어미나 "~을", "~에" 같은 조사로 끝나면 안 된다. 4~30자.
      문장 끝의 "~이다/~이시다"만 떼는 것도 좋다.
+     **구절만 읽어도 뜻이 온전해야 한다.** 잘라 낸 바로 뒤에 "없다·않다·못하다·아니다"가 오면 뜻이 뒤집히니 그런 구절은 고르지 않는다.
+       나쁜 예: "…결부시키지 않으면 아무런 유익이 없다" → "…않으면 아무런 유익" (뜻이 반대가 됨)
      예: "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
      예: "예수님은 온전한 대제사장이시다" → "온전한 대제사장"
 5. JSON 객체 하나만 출력한다: {"short":["…","…","…"],"heart":["…","…","…"],"phrase":["…","…","…"]}`,
