@@ -841,8 +841,9 @@ function drawHeroText(
   // 핵심 구절 크기: A 는 아주 크게, C 는 조금 크게. 길면 줄인다.
   const fs = fontScale(spec.font);
   const boldW = fontBoldWeight(spec.font, bodyWeight(spec));
-  let keyPx = Math.round(width * (centered ? 0.072 : 0.100) * fs);
-  const minKeyPx = Math.round(width * (centered ? 0.05 : 0.062) * fs);
+  // 2026-11-13 사용자: "강조 텍스트가 너무 커" — 왼쪽·오른쪽 배치는 나머지 글씨의 2.5배였다 → 약 2배로(0.100→0.078, 가운데 0.072→0.062).
+  let keyPx = Math.round(width * (centered ? 0.062 : 0.078) * fs);
+  const minKeyPx = Math.round(width * (centered ? 0.046 : 0.052) * fs);
   const hasLoneWord = (ls: string[]) => ls.length > 1 && ls.some((l) => l.trim().split(/\s+/).length === 1 && [...l.trim()].length <= 3);
   let keyLines: string[] = [];
   while (keyPx >= minKeyPx) {
