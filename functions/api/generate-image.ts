@@ -245,7 +245,7 @@ function toNounPhrase(s: string): string {
   const copula = /(이시니라|이니라|이십니다|입니다|이시다|이에요|이예요|예요|이다|이라|이요)$/;
   if (copula.test(t)) return t.replace(copula, '').trim();
   // 서술어·연결어미("~않으면", "~하고")나 조사("~을", "~에")로 끝나면 명사 구절이 아니다.
-  if (/(다|요|자|라|소서|까|네|지|면|고|서|며|데|게|니|는데|지만|을|를|은|는|가|에|의|와|과|로|도|만|께)$/.test(t)) return '';
+  if (/(다|요|자|라|야|소서|까|네|지|면|고|서|며|데|게|니|는데|지만|을|를|은|는|가|에|의|와|과|로|도|만|께)$/.test(t)) return '';
   return t;
 }
 
@@ -253,11 +253,15 @@ function toNounPhrase(s: string): string {
 function fallbackSentences(source: string): string[] {
   const lines = source.split('\n').map((l) => stripLeadMarks(l)).filter(Boolean);
   const own = lines.filter((l) => !/^\[[^\]]*\]/.test(l));
-  const pool = (own.length ? own : lines)
-    .flatMap((l) => l.split(/(?<=[.!?。])\s+/))
-    .map((s) => s.trim())
-    .filter((s) => { const n = s.replace(/\s/g, '').length; return n >= 8 && n <= 70; });
-  return [...new Set(pool)].slice(0, 3);
+  const fits = (s: string) => { const n = s.replace(/\s/g, '').length; return n >= 8 && n <= 90; };
+  const pick = (src: string[]) => {
+    const sentences = src.flatMap((l) => l.split(/(?<=[.!?。])\s+/)).map((s) => s.trim()).filter(Boolean);
+    // 마침표 없이 길게 이어 쓴 글은 쉼표 단위 마디로도 본다(글자는 원문 그대로).
+    const pool = sentences.flatMap((s) => (fits(s) ? [s] : s.split(/(?<=,)\s+/).map((c) => c.trim())));
+    return [...new Set(pool.filter(fits))];
+  };
+  const found = pick(own);
+  return (found.length ? found : pick(lines)).slice(0, 3);
 }
 
 async function gpt(apiKey: string, messages: any[], maxTokens = 500, model = 'gpt-4o-mini'): Promise<string> {

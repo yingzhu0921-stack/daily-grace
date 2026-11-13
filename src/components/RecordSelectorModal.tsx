@@ -143,12 +143,27 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
     const timeout = window.setTimeout(() => controller.abort(), 30000);
     let active = true;
     (async () => {
+      // 2026-11-13 사용자 "ai 추천을 불러오지 못한대": 실패 이유가 한 문장으로 뭉뚱그려져 있었다.
+      // 한도(429)는 서버 안내를 그대로 보여 주고, 일시적인 실패는 한 번 자동으로 다시 시도한다.
+      const ask = () => fetch('/api/generate-image', {
+        method: 'POST', credentials: 'include', signal: controller.signal,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'condense', text: raw }),
+      });
       try {
-        const response = await fetch('/api/generate-image', {
-          method: 'POST', credentials: 'include', signal: controller.signal,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'condense', text: raw }),
-        });
+        let response: Response;
+        try {
+          response = await ask();
+          if (response.status >= 500) response = await ask(); // 서버 쪽 일시 오류면 한 번 더
+        } catch (e) {
+          if (controller.signal.aborted) throw e; // 창을 닫았거나 30초가 지났다
+          response = await ask(); // 연결이 잠깐 끊긴 경우 한 번 더
+        }
+        if (response.status === 429) {
+          const body = await response.json().catch(() => ({}));
+          if (active) setRecommendationError(typeof body?.error === 'string' && body.error ? body.error : '오늘 추천을 많이 받아서 잠시 쉬어야 해요. 원문을 그대로 사용하거나 수정할 수 있어요.');
+          return;
+        }
         if (!response.ok) throw new Error('Recommendation failed');
         const data = await response.json();
         const candidates: unknown[] = Array.isArray(data.options) ? data.options : [data.text];
@@ -160,10 +175,14 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
           if (text === raw.trim() || picks.some((p) => p.text === text)) return;
           picks.push({ text, label: typeof labels[i] === 'string' && labels[i] ? (labels[i] as string) : `추천 ${picks.length + 1}` });
         });
-        if (!picks.length) throw new Error('Empty recommendation');
+        if (!picks.length) {
+          // 원문이 짧거나 문장이 길게 이어져 따로 뽑을 문장이 없는 경우다. 실패가 아니다.
+          if (active) setRecommendationError('이 기록에서는 따로 골라낼 문장을 찾지 못했어요. 위에서 원문을 고르고 필요한 부분만 남겨 주세요.');
+          return;
+        }
         if (active) setOptions(picks.slice(0, 3));
       } catch {
-        if (active) setRecommendationError('추천을 불러오지 못했어요. 원문을 그대로 사용하거나 수정할 수 있어요.');
+        if (active) setRecommendationError('추천을 불러오지 못했어요. 잠시 후 "다시 고르기"를 눌러 주세요. 원문을 그대로 사용해도 돼요.');
       } finally {
         window.clearTimeout(timeout);
         if (active) setRecommending(false);
