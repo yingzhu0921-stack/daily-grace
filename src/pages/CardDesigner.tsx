@@ -4356,7 +4356,8 @@ export default function Designer() {
                  <section>
                   <div className="flex items-center justify-between mb-1.5">
                     <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
-                      3. 배경에 담을 분위기나 내용을 적어주세요
+                      {/* 2026-11-13 사용자: 말씀을 그대로 넣어도 되는데 제목만 봐서는 그게 안 보였다. */}
+                      3. 원하는 장면이나 말씀을 적어주세요
                     </h2>
                     <button
                       type="button"
@@ -4375,11 +4376,11 @@ export default function Designer() {
                       setBgPrompt(e.target.value);
                       setExpandedPrompt('');
                     }}
-                    placeholder="예: 비 오는 창밖, 노을 지는 바다, 푸른 밤하늘"
-                    className="w-full h-20 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#1F1F1F] focus:ring-2 focus:ring-[#1F1F1F]/20"
+                    placeholder={"장면: 비 오는 창밖, 노을 지는 바다, 푸른 밤하늘\n말씀: 오늘 묵상한 구절을 그대로 붙여 넣어도 돼요"}
+                    className="w-full h-24 px-3 py-2.5 rounded-lg border border-[#E8E7E5] bg-white text-[#2E2E2E] text-[13px] resize-none focus:outline-none focus:border-[#1F1F1F] focus:ring-2 focus:ring-[#1F1F1F]/20"
                   />
                   <p className="mt-1.5 text-[11px] leading-4 text-[#9B9B9B]">
-                    짧게 적어도 AI가 장면을 유지하며 고른 스타일에 맞게 다듬어줘요. 기록이나 카드 글씨 없이도 만들 수 있어요. 개인정보는 입력하지 마세요.
+                    장면을 짧게 적어도 되고, 말씀이나 기도를 넣으면 AI가 내용을 읽고 어울리는 장면을 그려요. 넣은 글은 배경에만 쓰이고 카드 글씨로 들어가지 않아요. 개인정보는 입력하지 마세요.
                   </p>
                 </section>
 
