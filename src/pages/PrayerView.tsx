@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { MakeCardFromRecordButton } from '@/components/MakeCardFromRecordButton';
 
 export default function PrayerView() {
   const navigate = useNavigate();
@@ -193,6 +194,7 @@ export default function PrayerView() {
             </button>
           </div>
         </div>
+        <MakeCardFromRecordButton text={note.content?.trim() || note.title || ''} />
       </div>
     </div>
 

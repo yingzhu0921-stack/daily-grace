@@ -952,6 +952,20 @@ export default function Designer() {
     }
   }, []);
 
+  // 기록 화면의 '이 기록으로 카드 만들기'에서 넘어온 문구(2026-11-13 사용성 점검: 기록과 카드가 따로 놀았다).
+  // 완전 자동의 '카드 내용 입력' 단계에 미리 채워 두고, 사용자가 확인·수정한 뒤 스타일로 넘어간다.
+  useEffect(() => {
+    const prefill = sessionStorage.getItem('card_prefill_text');
+    if (!prefill) return;
+    sessionStorage.removeItem('card_prefill_text');
+    const phrase = stripVerseNumbers(prefill).trim();
+    if (!phrase) return;
+    setActiveTrack('auto');
+    setVerseInput(phrase);
+    setT(s => ({ ...s, content: phrase }));
+    setFlowStep('record');
+  }, []);
+
   // 하단 패널 스와이프 제스처
   const panelSwipeRef = useRef<{ startY: number; didSwipe: boolean }>();
 
@@ -1732,10 +1746,10 @@ export default function Designer() {
     id: string; name: string; desc: string; badge: string;
     tone: 'ai' | 'instant'; thumb: string | null;
   }[] = [
-    { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: null },
-    { id: 'T02', name: '미니멀 감성',   desc: '깊은 색면 풍경 위에 차분한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: null },
-    { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: null },
-    { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: null },
+    { id: 'T01', name: '귀여운 그림',   desc: 'AI가 귀여운 그림과 손글씨 말씀을 함께 그려요', badge: 'AI 그림 · 오탈자 확인', tone: 'ai',      thumb: '/template-previews/T01.jpg' },
+    { id: 'T02', name: '미니멀 감성',   desc: '깊은 색면 풍경 위에 차분한 글씨',            badge: 'AI 배경 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T02.jpg' },
+    { id: 'T03', name: '은은한 색감',   desc: '번진 색 위에 단정한 명조 글씨',                badge: '바로 생성 · 철자 정확', tone: 'instant', thumb: '/template-previews/T03.jpg' },
+    { id: 'T04', name: '감성 사진',     desc: 'AI 풍경 사진 위에 하얀 글씨',                  badge: 'AI 사진 · 철자 정확',   tone: 'ai',      thumb: '/template-previews/T04.jpg' },
   ];
 
   // 비율 칩에 쓰는 이름과, 비율 모양을 보여 줄 작은 틀의 크기(px)
@@ -1801,7 +1815,7 @@ export default function Designer() {
     return (
       <div className="flex-1 min-h-0 flex flex-col p-4 sm:p-5 bg-white gap-4 overflow-y-auto">
         <div>
-          <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">템플릿 선택</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-[#2E2E2E]">스타일 선택</h2>
           <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">분위기에 가까운 스타일을 고르면 AI가 배경과 구도를 만듭니다.</p>
         </div>
         <div>
@@ -1848,8 +1862,8 @@ export default function Designer() {
                   {/* 샘플 이미지가 들어갈 자리. 비율은 고른 비율과 무관하게 항상 4:5 로 고정한다 —
                       여기서 보여주는 건 '어떤 스타일인지'지 '어떤 비율인지'가 아니다(사용자 결정 2026-10-27,
                       시안 A 의 "고른 비율대로" 지시를 대체).
-                      샘플 이미지는 아직 없다 — 사용자가 개역한글 본문으로 만들어 준다.
-                      성경 본문을 샘플로 내장하지 않는다(CLAUDE.md 11장). */}
+                      2026-11-13 견본 4장은 사용자가 직접 만들어 준 카드다(요3:16, 개역한글 — 저작권 만료).
+                      앱이 성경 본문을 만들어 넣지 않는다는 원칙(CLAUDE.md 11장)은 그대로다: 견본은 사용자가 준 이미지 파일일 뿐이다. */}
                   <div className="relative w-full aspect-[4/5] overflow-hidden rounded-xl bg-[#F3F2F1]">
                     {thumb ? (
                       <img src={thumb} alt="" className="h-full w-full object-cover" />

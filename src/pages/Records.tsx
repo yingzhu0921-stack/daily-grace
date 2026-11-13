@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, Search } from 'lucide-react';
+import { VaultTabs } from '@/components/VaultTabs';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { routes } from '@/config/routes';
 import { BottomNav } from '@/components/BottomNav';
@@ -160,9 +161,12 @@ const Records: React.FC = () => {
 
           <h1 className="text-base font-medium text-[#2E2E2E]">보관함</h1>
 
-          <div className="w-10" />
+          {/* 검색 화면은 있었는데 들어가는 버튼이 없었다(2026-11-13 사용성 점검). */}
+          <button onClick={() => navigate(routes.search)} className="p-2 -mr-2" aria-label="기록 검색">
+            <Search className="w-5 h-5 text-[#2E2E2E]" />
+          </button>
         </div>
-
+        <VaultTabs active="records" />
       </header>
 
       <main className="max-w-[480px] mx-auto px-6 pb-8">

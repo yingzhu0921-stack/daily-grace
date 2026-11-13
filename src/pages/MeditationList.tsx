@@ -98,17 +98,26 @@ const MeditationList = () => {
                 className="w-full text-left rounded-2xl bg-white border border-[#EDEDED] shadow-sm px-4 py-4 hover:shadow-md transition-all duration-300"
               >
                 <div className="flex flex-col gap-1">
-                  <div className="text-[16px] font-semibold text-[#2E2E2E] truncate">
-                    {n.title || '제목 없음'}
-                  </div>
-                  <div className="text-[14px] text-[#5A5A5A] line-clamp-2 whitespace-pre-wrap">
-                    {n.passage || '본문 없음'}
-                  </div>
-                  {n.content && (
-                    <div className="text-[13px] text-[#777] line-clamp-1 whitespace-pre-wrap">
-                      {n.content}
-                    </div>
-                  )}
+                  {/* 2026-11-13 사용성 점검: 제목을 비워 두면 카드마다 '제목 없음'이 크게 떠서 구분이 안 됐다.
+                      제목이 없으면 본문(보통 '히 7장' 같은 성경 주소)의 첫 줄을, 그것도 없으면 내용 첫 줄을 제목 자리에 쓴다. */}
+                  {(() => {
+                    const passageLine = (n.passage || '').split(/\r?\n/)[0].trim();
+                    const contentLine = (n.content || '').split(/\r?\n/)[0].trim();
+                    const heading = n.title?.trim() || passageLine || contentLine || 'Q.T';
+                    const showPassage = !!n.passage?.trim() && heading !== passageLine;
+                    const showContent = !!n.content?.trim() && heading !== contentLine;
+                    return (
+                      <>
+                        <div className="text-[16px] font-semibold text-[#2E2E2E] truncate">{heading}</div>
+                        {showPassage && (
+                          <div className="text-[14px] text-[#5A5A5A] line-clamp-2 whitespace-pre-wrap">{n.passage}</div>
+                        )}
+                        {showContent && (
+                          <div className="text-[13px] text-[#777] line-clamp-2 whitespace-pre-wrap">{n.content}</div>
+                        )}
+                      </>
+                    );
+                  })()}
                   {/* 적용 항목들 */}
                   {(n.applications && n.applications.length > 0 ? n.applications : n.application ? [{ text: n.application, checked: n.applyChecked || false }] : []).length > 0 && (
                     <div className="mt-2 space-y-1.5">

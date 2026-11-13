@@ -4,6 +4,7 @@ import { get, remove, type Diary } from "@/utils/diaryStorage";
 import { ChevronLeft, Share2, Edit2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
+import { MakeCardFromRecordButton } from '@/components/MakeCardFromRecordButton';
 
 export default function DiaryView() {
   const navigate = useNavigate();
@@ -100,6 +101,7 @@ export default function DiaryView() {
             </button>
           </div>
         </div>
+        <MakeCardFromRecordButton text={diary.content || ''} />
       </div>
       <DeleteRecordDialog
         open={showDeleteDialog}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, Check, Download, Share2, Home, Plus } from 'lucide-react';
+import { X, Check, Download, Share2, Home, Archive } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -17,14 +17,14 @@ type CardSaveSuccessModalProps = {
     imageDataUrl: string;
     text: string;
   };
-  onCreateNew: () => void;
+  /** 예전 '새 카드 만들기' 버튼용. 버튼은 뺐지만 부르는 쪽 호환을 위해 남겨 둔다. */
+  onCreateNew?: () => void;
 };
 
 export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
   open,
   onClose,
   cardData,
-  onCreateNew,
 }) => {
   const navigate = useNavigate();
   // 공유 버튼 클릭 직후 호출할 수 있도록 파일은 미리 준비합니다.
@@ -83,9 +83,9 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
             <div className="w-11 h-11 rounded-full bg-[#1F1F1F] flex items-center justify-center">
               <Check className="w-5 h-5 text-white" strokeWidth={2.5} />
             </div>
-            <h2 className="mt-3 text-[17px] font-semibold text-[#2E2E2E]">카드를 저장했어요</h2>
+            <h2 className="mt-3 text-[17px] font-semibold text-[#2E2E2E]">보관함에 저장했어요</h2>
             <p className="mt-1 text-[13px] leading-5 text-[#7E7C78]">
-              보관함에 담았어요. 휴대폰에도 남기려면 기기에 저장을 눌러주세요.
+              언제든 보관함 › 말씀카드에서 다시 볼 수 있어요.
             </p>
           </div>
 
@@ -104,7 +104,7 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
               className="h-12 rounded-xl bg-[#1F1F1F] hover:bg-[#333333] text-white text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
               <Download className="w-4 h-4" />
-              기기에 저장
+              휴대폰에 저장
             </Button>
             <Button
               onClick={() => share()}
@@ -116,9 +116,21 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
             </Button>
           </div>
 
-          {/* 다음에 갈 곳. 전에는 '홈으로'가 맨 아래 작은 회색 글씨라 안 보였고, 창을 닫으면 미리보기로
-              돌아가 단계를 하나씩 거꾸로 밟아야 홈이었다. */}
+          {/* 다음에 갈 곳. 2026-11-13 사용성 점검: 버튼이 6개(기기에 저장·공유·홈·새 카드·보관함·파일 다운로드)라
+              헷갈렸다. '기기에 저장'과 '파일로 다운로드'는 같은 일이라 하나로 합쳤고(공유를 못 쓰면 다운로드로 넘어간다),
+              '새 카드 만들기'는 하단 탭에 있어 뺐다. */}
           <div className="mt-2 grid grid-cols-2 gap-2">
+            <Button
+              onClick={() => {
+                onClose();
+                navigate(routes.cardsVault);
+              }}
+              variant="outline"
+              className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
+            >
+              <Archive className="w-4 h-4" />
+              보관함에서 보기
+            </Button>
             <Button
               onClick={() => {
                 onClose();
@@ -130,34 +142,6 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
               <Home className="w-4 h-4" />
               홈으로
             </Button>
-            <Button
-              onClick={() => {
-                onClose();
-                onCreateNew();
-              }}
-              variant="outline"
-              className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
-            >
-              <Plus className="w-4 h-4" />
-              새 카드 만들기
-            </Button>
-          </div>
-
-          <div className="mt-3 flex items-center justify-center gap-3 text-[12px] text-[#7E7C78]">
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                navigate(routes.cardsVault);
-              }}
-              className="underline underline-offset-2 hover:text-[#2E2E2E]"
-            >
-              보관함에서 보기
-            </button>
-            <span className="text-[#D9D8D5]">|</span>
-            <button type="button" onClick={download} className="underline underline-offset-2 hover:text-[#2E2E2E]">
-              파일로 다운로드
-            </button>
           </div>
         </div>
       </DialogContent>

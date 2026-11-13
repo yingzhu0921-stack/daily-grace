@@ -61,6 +61,11 @@ const getRecordText = (record: Record) => {
   if (record.type === 'gratitude' && record.items?.length) {
     return record.items.join('\n');
   }
+  // 2026-11-13 사용성 점검: Q.T 를 가져오면 말씀(본문)이 아니라 묵상 내용만 들어갔다.
+  // 말씀 카드를 만드는 경우가 많으니 Q.T 는 본문을 먼저 넣는다(아래에서 묵상 내용으로 바꿀 수 있다).
+  if (record.type === 'meditation' && record.passage?.trim()) {
+    return record.passage;
+  }
   return record.content || record.passage || record.title || '';
 };
 
@@ -328,7 +333,14 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
             {purpose === 'text' && selectedRecord && (
               <div className="space-y-2">
                 <div className="flex flex-wrap gap-2">
-                  <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
+                  {selectedRecord.type === 'meditation' && selectedRecord.passage?.trim() && selectedRecord.content?.trim() ? (
+                    <>
+                      <Button variant="outline" onClick={() => setConfirmedText(selectedRecord.passage || '')}>본문(말씀) 사용</Button>
+                      <Button variant="outline" onClick={() => setConfirmedText(selectedRecord.content || '')}>묵상 내용 사용</Button>
+                    </>
+                  ) : (
+                    <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
+                  )}
                   {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
                   {getRecordText(selectedRecord).replace(/\s/g, '').length > 22 && (
                     <Button

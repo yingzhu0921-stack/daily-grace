@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { routes } from '@/config/routes';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { Leaf, Plus, ChevronLeft, ChevronRight, Flame } from 'lucide-react';
@@ -208,19 +209,22 @@ const IndexNew = () => {
     return () => window.removeEventListener('categoriesUpdated', handleCategoriesUpdated);
   }, []);
 
-  // 추천 메시지 생성
-  const getRecommendationMessage = () => {
+  // 추천 메시지. 2026-11-13 사용성 점검: 문구("감사를 먼저 기록해볼까요?") 바로 아래가 늘 '카드 만들기' 배너라
+  // 문구를 따라 누르면 엉뚱한 곳으로 갔다. 이제 문구 자체가 그 기록 쓰기로 가는 버튼이다.
+  // 또 화면이 다시 그려질 때마다 문구가 바뀌어서, 들어올 때 한 번만 고른다.
+  const [recommendationPick] = useState(() => Math.floor(Math.random() * 4));
+  const getRecommendation = (): { text: string; path?: string } => {
     // 다 채운 날에는 "시작해보세요" 가 어색하다. 완료 상태에 맞는 말을 한다.
     if (goalProgress.total > 0 && goalProgress.completed >= goalProgress.total) {
-      return '오늘의 기록을 모두 남겼어요';
+      return { text: '오늘의 기록을 모두 남겼어요' };
     }
     const messages = [
-      '오늘은 감사를 먼저 기록해볼까요?',
-      '하루를 Q.T로 시작해보세요',
-      '기도 제목을 적어볼까요?',
-      '오늘의 마음을 일기로 남겨보세요',
+      { text: '오늘은 감사를 먼저 기록해볼까요?', path: routes.gratitudeNew },
+      { text: '하루를 Q.T로 시작해보세요', path: routes.meditationNew },
+      { text: '기도 제목을 적어볼까요?', path: routes.prayerNew },
+      { text: '오늘의 마음을 일기로 남겨보세요', path: routes.diaryNew },
     ];
-    return messages[Math.floor(Math.random() * messages.length)];
+    return messages[recommendationPick];
   };
 
   // 카테고리 카드 클릭 핸들러 - 보관함/상세 페이지로 이동
@@ -386,9 +390,20 @@ const IndexNew = () => {
 
         {/* 추천 메시지 */}
         <div className="pb-4">
-          <p className="text-[15px] text-[#7C7C7C] font-medium">
-            {getRecommendationMessage()}
-          </p>
+          {(() => {
+            const rec = getRecommendation();
+            return rec.path ? (
+              <button
+                onClick={() => navigate(rec.path!)}
+                className="flex items-center gap-1 text-[15px] text-[#4A4845] font-medium hover:text-[#1F1F1F]"
+              >
+                {rec.text}
+                <ChevronRight className="w-4 h-4 text-[#ACACAC]" />
+              </button>
+            ) : (
+              <p className="text-[15px] text-[#7C7C7C] font-medium">{rec.text}</p>
+            );
+          })()}
         </div>
 
         {/* 말씀카드 배너 */}
@@ -409,7 +424,7 @@ const IndexNew = () => {
         <section className="mb-8">
           <div className="flex items-baseline justify-between mb-4">
             <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide">
-              MY ROUTINE
+              나의 루틴
             </h2>
             {/* 길게 누르기는 눈에 안 보이는 동작이라, 직접 만든 카테고리가 있을 때 처음 한 번만 알려 준다. */}
             {!hintSeen && customCategories.length > 0 && (
@@ -507,7 +522,7 @@ const IndexNew = () => {
           <section className="mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-[13px] font-semibold text-[#ACACAC] tracking-wide">
-                RECENT RECORDS
+                최근 기록
               </h2>
               <button
                 onClick={() => navigate('/records')}

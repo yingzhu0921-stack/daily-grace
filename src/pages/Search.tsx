@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from '@/components/Header';
+import { useNavigate } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
 import { RecordCard } from '@/components/RecordCard';
 import { searchRecords, RecordType } from '@/utils/recordsQuery';
@@ -14,6 +15,7 @@ type Category = {
 };
 
 const Search: React.FC = () => {
+  const navigate = useNavigate();
   const [query, setQuery] = useState('');
   const [selectedTypes, setSelectedTypes] = useState<RecordType[]>([]);
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
@@ -57,16 +59,17 @@ const Search: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[rgba(249,248,246,1)]">
-      <Header />
-      <main className="max-w-5xl mx-auto px-5 pb-8">
-        {/* 헤더 */}
-        <div className="pt-4 pb-3">
-          <div className="flex items-center gap-2 mb-2">
-            <AppIcon name="search" size={18} className="text-[#7C7C7C]" />
-            <span className="text-[13px] font-medium text-[#7C7C7C]">검색</span>
-          </div>
-          <h1 className="text-[24px] font-semibold text-[#2E2E2E]">기록 검색</h1>
+      {/* 2026-11-13: 보관함의 검색 버튼으로 들어오므로 다른 화면처럼 뒤로가기 머리말을 쓴다(예전 햄버거 머리말 대신). */}
+      <header className="sticky top-0 z-40 bg-[rgba(249,248,246,0.95)] backdrop-blur-sm border-b border-[#EDEDED]">
+        <div className="max-w-[480px] mx-auto px-6 h-14 flex items-center justify-between">
+          <button onClick={() => navigate(-1)} className="p-2 -ml-2" aria-label="뒤로">
+            <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
+          </button>
+          <h1 className="text-base font-medium text-[#2E2E2E]">기록 검색</h1>
+          <div className="w-10" />
         </div>
+      </header>
+      <main className="max-w-5xl mx-auto px-5 pb-8 pt-4">
 
         {/* 검색바 */}
         <div className="mb-4">

@@ -6,6 +6,7 @@ import { withAuth } from '@/components/auth/withAuth';
 import { routes } from '@/config/routes';
 import { toast } from 'sonner';
 import { BottomNav } from '@/components/BottomNav';
+import { VaultTabs } from '@/components/VaultTabs';
 import {
   Dialog,
   DialogContent,
@@ -167,10 +168,11 @@ const CardsVault: React.FC = () => {
             <ChevronLeft className="w-6 h-6 text-[#2E2E2E]" />
           </button>
 
-          <h1 className="text-base font-medium text-[#2E2E2E]">말씀카드 보관함</h1>
+          <h1 className="text-base font-medium text-[#2E2E2E]">보관함</h1>
 
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
+        <VaultTabs active="cards" />
       </header>
 
       <main className="max-w-5xl mx-auto px-4 pb-8 pt-4">

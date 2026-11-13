@@ -35,7 +35,8 @@ export default function GratitudeList() {
 
         <button 
           onClick={() => navigate('/gratitude/new')}
-          className="h-9 px-5 rounded-full bg-[#E8C87D] hover:bg-[#d8b86d] text-white text-sm font-medium transition-colors"
+          // 연노랑 위 흰 글씨는 잘 안 읽혀서(사용성 점검) 짙은 갈색 글씨로 바꿨다.
+          className="h-9 px-5 rounded-full bg-[#E8C87D] hover:bg-[#d8b86d] text-[#5A4520] text-sm font-semibold transition-colors"
         >
           새로 작성
         </button>

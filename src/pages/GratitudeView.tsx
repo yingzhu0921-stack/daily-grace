@@ -5,6 +5,7 @@ import { DeleteRecordDialog } from '@/components/DeleteRecordDialog';
 import type { GratitudeNote } from '@/types/gratitude';
 import { ChevronLeft, Share2, Trash2, Edit2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MakeCardFromRecordButton } from '@/components/MakeCardFromRecordButton';
 
 export default function GratitudeView() {
   const navigate = useNavigate();
@@ -108,6 +109,7 @@ export default function GratitudeView() {
             </button>
           </div>
         </div>
+        <MakeCardFromRecordButton text={note.items.filter((it) => it.trim()).join('\n')} />
       </div>
       <DeleteRecordDialog
         open={showDeleteDialog}

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { ChevronLeft, Edit2, Share2, Trash2, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MeditationViewContent } from '@/components/MeditationViewContent';
+import { MakeCardFromRecordButton } from '@/components/MakeCardFromRecordButton';
 import { get, update, remove } from '@/utils/meditationStorage';
 import { MeditationNote } from '@/types/meditation';
 import { toast } from '@/hooks/use-toast';
@@ -138,6 +139,9 @@ const MeditationView = () => {
       {/* 본문 */}
       <main className="flex-1 overflow-auto px-5 py-6 pb-24">
         <MeditationViewContent note={note} onCheckChange={handleCheckChange} />
+
+        {/* Q.T 는 말씀 카드를 만드는 경우가 많아 본문(말씀)을 먼저 넘긴다. 본문이 없으면 묵상 내용. */}
+        <MakeCardFromRecordButton text={note.passage?.trim() || note.content || ''} />
 
         {/* 버튼 영역 */}
         <div className="flex gap-2 pt-6 mt-6 border-t border-[#EDEDED]">
