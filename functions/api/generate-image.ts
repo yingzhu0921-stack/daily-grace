@@ -488,7 +488,7 @@ WHERE TO LOOK FOR THE SUBJECT ON THIS CARD: ${t01SubjectDomain}. This only says 
       'T02': {
         // 배경만 만든다. 글자는 브라우저가 진짜 폰트로 얹는다(2026-11-11).
         backgroundPrompt: 'The BACKGROUND ARTWORK for a calm, minimal Christian verse card. Korean text will be printed on top LATER by code, so draw ABSOLUTELY NO text, letters, numbers, logos or signage. The exact style is given below as THE STYLE FOR THIS CARD; follow it exactly.',
-        styleLock: 'T02 = 미니멀 감성 배경: a calm gouache-style scene of large, rich colour areas with fine grain and one small point of interest, leaving a plain upper area for text. NO text of any kind.',
+        styleLock: 'T02 = 미니멀 감성 배경: a calm gouache-style scene of large, smooth, rich colour areas (only a faint paper texture, no heavy grain) and one small point of interest, leaving a plain upper area for text. NO text of any kind.',
         fonts: { primary: 'PaperBlack', secondary: 'PaperLight' },
       },
       // T03 — 감성 타이포 (감성 사진 + 초대형 히어로 타이포 / 에디토리얼)
@@ -1139,7 +1139,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       {
         key: 'minimal', usesScene: true, zone: 'upper',
         // 2026-11-12 사용자: 편집 미니멀처럼, 내용에 맞게. 위쪽 빈 자리가 늘 파란 하늘이 돼 카드가 다 비슷했다 → 색 분위기를 카드마다 돌린다.
-        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky) with only the fine grain — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away.`,
+        bg: `MINIMAL CARD BACKGROUND: ${MINIMAL_TECHNIQUE} Seen from a calm distance or from above. Put the scene and its one small point of interest in the LOWER part of the frame. The UPPER 45% must be one calm, plain, even area of colour (sky, water, fog or field — in this card's COLOURS, not always a blue sky), smooth with only a faint paper texture — no objects, birds or detail there — because the card text is printed on it. A person, if any, is one tiny faceless figure far away.`,
         // 글씨 색은 브라우저가 배경 밝기를 보고 정한다(ink 'auto').
         palettes: MINIMAL_COLOUR_MOODS.map((bgc) => ({ name: 'auto', bg: bgc, ink: 'auto', sub: 'auto', accent: 'auto' })),
       },
@@ -1203,7 +1203,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         ? 'T04 SPECIFIC: the STYLE is a calm aesthetic 35mm FILM scene — the SPECIFIC subject MUST be derived from THIS verse\'s own imagery and emotional movement (the scene concept above), NOT a generic pretty landscape. It is NOT limited to nature — choose whatever best expresses the verse: an everyday film-diary moment (a cafe window, a desk with an open book, a quiet corner of a room, a windowsill with warm light, a city street or window at dusk, hands, a small still-life of meaningful objects) OR a natural scene (a valley/path for a journey, a stream/spring for living water, a sheltering rock/shade for refuge, first light for hope, clearing sky after rain for peace, a harvest field for provision, a shoreline for being led). STRONGLY vary the subject, setting, time of day and mood — do NOT default to the same misty mountains / calm lake / peach sunset. Keep a calm low-contrast area so simple centered text stays perfectly legible; the PHOTO is the hero and the text is a small quiet whisper (never a big headline). LOOK: analog, aesthetic and INTIMATE (visible film grain, faded/muted Portra-Fuji tones, soft light, only a very subtle halation). The frame EDGES stay clean and evenly exposed — NO strong light leak, no bright orange/amber glow bleeding in from a corner or border. STRONGLY AVOID the grand majestic-landscape / calendar-wallpaper look (no sweeping panoramas, no dramatic sea sunsets, no postcard vistas) — it reads as old-fashioned. Young, film-diary emotional mood.'
         : '',
       selectedTemplate === 'T02'
-        ? 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO golden sunrise light rays, NO glowing gold-on-black, NO epic landscapes. Keep it minimal: large calm colour areas with fine grain, no grunge, no collage, no busy detail.'
+        ? 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO golden sunrise light rays, NO glowing gold-on-black, NO epic landscapes. Keep it minimal: large calm, smooth colour areas with only a faint paper texture (no heavy grain or speckle), no grunge, no collage, no busy detail.'
         : 'STRICTLY AVOID the cheesy AI-Christian-poster look: NO dramatic stormy skies, NO lone windblown tree, NO golden sunrise light rays, NO glowing gold-on-black, NO 3D extruded / beveled / drop-shadow letters, NO fake-epic landscape photos, NO heavy grunge texture, NO over-saturation. Keep it modern, refined and design-led; the typography stays the hero.',
     ].filter(Boolean).join('\n');
     // ── 글자 렌더링: T01/T02/T03은 AI가 직접 한 장의 포스터처럼 그림. 나머지는 폰트 오버레이 ──
