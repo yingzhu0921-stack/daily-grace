@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { routes } from '@/config/routes';
-import { toast } from 'sonner';
+import { prepareCardFile, saveCardFile, shareCardFile, saveImageLabel } from '@/utils/cardImageActions';
 
 type CardSaveSuccessModalProps = {
   open: boolean;
@@ -27,41 +27,13 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
   cardData,
 }) => {
   const navigate = useNavigate();
-  // 공유 버튼 클릭 직후 호출할 수 있도록 파일은 미리 준비합니다.
-  const imageFile = React.useMemo(() => {
-    try {
-      const [header, encoded] = cardData.imageDataUrl.split(',');
-      const mime = header.match(/^data:(image\/[a-zA-Z0-9.+-]+);base64$/)?.[1];
-      if (!mime || !encoded) return null;
-      const bytes = Uint8Array.from(atob(encoded), char => char.charCodeAt(0));
-      const extension = mime === 'image/jpeg' ? 'jpg' : mime === 'image/webp' ? 'webp' : 'png';
-      return new File([bytes], `card-${Date.now()}.${extension}`, { type: mime });
-    } catch { return null; }
+  // 공유 버튼 클릭 직후 호출할 수 있도록 파일은 미리 준비한다. 저장·공유 방식은 보관함과 같은 공용 함수(cardImageActions).
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+  React.useEffect(() => {
+    let alive = true;
+    prepareCardFile(cardData.imageDataUrl).then((f) => { if (alive) setImageFile(f); });
+    return () => { alive = false; };
   }, [cardData.imageDataUrl]);
-
-  const download = () => {
-    const link = document.createElement('a');
-    link.download = imageFile?.name || `card-${Date.now()}.png`;
-    link.href = cardData.imageDataUrl;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    toast.info('다운로드를 요청했어요. 기기의 다운로드 목록을 확인해주세요.');
-  };
-
-  const share = async (saveToDevice = false) => {
-    if (!imageFile || !navigator.canShare?.({ files: [imageFile] })) {
-      if (saveToDevice) download();
-      else toast.info('이 브라우저는 이미지 공유를 지원하지 않아요. 기기에 다운로드한 뒤 공유해주세요.');
-      return;
-    }
-    try {
-      await navigator.share({ files: [imageFile], title: '말씀카드' });
-    } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return;
-      toast.error('공유 창을 열지 못했어요. 다운로드를 이용해주세요.');
-    }
-  };
 
   return (
     <Dialog open={open} onOpenChange={isOpen => { if (!isOpen) onClose(); }}>
@@ -100,14 +72,14 @@ export const CardSaveSuccessModal: React.FC<CardSaveSuccessModalProps> = ({
           {/* 이 카드로 할 일 */}
           <div className="mt-4 grid grid-cols-2 gap-2">
             <Button
-              onClick={() => share(true)}
+              onClick={() => saveCardFile(imageFile)}
               className="h-12 rounded-xl bg-[#1F1F1F] hover:bg-[#333333] text-white text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
               <Download className="w-4 h-4" />
-              휴대폰에 저장
+              {saveImageLabel()}
             </Button>
             <Button
-              onClick={() => share()}
+              onClick={() => shareCardFile(imageFile)}
               variant="outline"
               className="h-12 rounded-xl border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] text-[#2E2E2E] text-[14px] font-medium flex items-center justify-center gap-1.5"
             >
