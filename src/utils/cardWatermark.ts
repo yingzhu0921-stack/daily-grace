@@ -94,12 +94,15 @@ export async function drawCardWatermark(canvas: HTMLCanvasElement): Promise<void
   const spots = [(W - total) / 2, margin, W - margin - total];
   let best = spots[0];
   let bestStats = regionStats(ctx, spots[0], yc - icon, total, icon * 2);
-  for (const x of spots.slice(1)) {
-    const st = regionStats(ctx, x, yc - icon, total, icon * 2);
-    // 가운데를 조금 더 선호하고, 확실히 덜 복잡할 때만 옮긴다
-    if (st.variance < bestStats.variance * 0.6) {
-      best = x;
-      bestStats = st;
+  // 2026-11-13 사용자: 표시가 거의 다 좌우로 갔다(알갱이 질감도 '복잡함'으로 잡혔다) → 기본은 가운데.
+  // 가운데가 그림으로 꽉 차서 확실히 복잡할 때만, 그리고 옆이 훨씬 비어 있을 때만 옮긴다.
+  if (bestStats.variance > 0.012) {
+    for (const x of spots.slice(1)) {
+      const st = regionStats(ctx, x, yc - icon, total, icon * 2);
+      if (st.variance < bestStats.variance * 0.4) {
+        best = x;
+        bestStats = st;
+      }
     }
   }
   const light = bestStats.mean < 0.55;
@@ -107,7 +110,7 @@ export async function drawCardWatermark(canvas: HTMLCanvasElement): Promise<void
   ctx.fillStyle = colour;
   ctx.strokeStyle = colour;
   // 그래도 복잡한 자리(그림이 꽉 찬 카드)면 아주 옅은 둥근 받침을 깐다
-  if (bestStats.variance > 0.02) {
+  if (bestStats.variance > 0.025) {
     ctx.save();
     ctx.fillStyle = light ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.55)';
     const padX = base * 0.014;
