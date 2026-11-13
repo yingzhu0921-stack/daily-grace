@@ -91,15 +91,29 @@ const CardsVault: React.FC = () => {
     try {
       const response = await fetch(card.imageDataUrl);
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      // 이미지는 JPEG 인데 이름이 .png 라 아이폰에서 'verse-card-….png.jpeg' 로 저장됐다. 실제 형식으로 이름을 단다.
+      const ext = blob.type === 'image/jpeg' ? 'jpg' : blob.type === 'image/webp' ? 'webp' : 'png';
+      const file = new File([blob], `하루은혜-말씀카드-${card.id.slice(0, 8)}.${ext}`, { type: blob.type || 'image/png' });
+      // 2026-11-13 사용자: 아이폰에서 '저장'이 파일 다운로드 화면으로 떠서 사진첩에 안 들어갔다.
+      // 휴대폰은 공유 창(→ '이미지 저장')으로 사진첩에 넣고, 공유를 못 쓰는 PC 에서만 파일로 내려받는다.
+      if (navigator.share && navigator.canShare?.({ files: [file] }) && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+        try {
+          await navigator.share({ files: [file], title: '말씀카드' });
+        } catch (e) {
+          if (e instanceof Error && e.name === 'AbortError') return;
+          throw e;
+        }
+        return;
+      }
+      const url = URL.createObjectURL(file);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `verse-card-${card.id}.png`;
+      a.download = file.name;
       a.click();
       URL.revokeObjectURL(url);
-      toast.success('카드를 다운로드했어요!');
+      toast.success('카드를 내려받았어요');
     } catch (error) {
-      toast.error('다운로드에 실패했어요');
+      toast.error('저장에 실패했어요');
     }
   };
 
@@ -244,25 +258,28 @@ const CardsVault: React.FC = () => {
 
       {/* Detail View Modal */}
       <Dialog open={!!selectedCard} onOpenChange={(open) => !open && setSelectedCard(null)}>
-        <DialogContent hideCloseButton className="max-w-[90vw] max-h-[85vh] overflow-y-auto overscroll-contain p-0 bg-transparent border-none shadow-none">
+        {/* 2026-11-13: 카드와 버튼이 어두운 배경 위에 떠 있어 저장 완료 창과 결이 달랐다 → 같은 흰 창으로 감싼다. */}
+        <DialogContent hideCloseButton className="w-[calc(100%-32px)] max-w-md max-h-[90vh] overflow-y-auto overscroll-contain p-0 bg-white border-none shadow-2xl rounded-3xl">
           <DialogTitle className="sr-only">말씀카드</DialogTitle>
           {selectedCard && (
-            <div className="relative">
+            <div className="relative px-5 pb-4 pt-12">
               {/* Close Button */}
               <button
                 onClick={() => setSelectedCard(null)}
-                className="absolute top-2 right-2 p-2 bg-white/90 hover:bg-white rounded-full transition-colors z-10 shadow"
+                aria-label="닫기"
+                className="absolute top-3 right-3 p-2 rounded-full hover:bg-[#F4F3F1] transition-colors z-10"
               >
-                <X className="w-5 h-5 text-[#2E2E2E]" />
+                <X className="w-5 h-5 text-[#7E7C78]" />
               </button>
 
               {/* Card Image */}
-              <div className="bg-white rounded-2xl overflow-hidden shadow-2xl">
+              {/* 2026-11-13: 흰 상자를 꽉 채운 채 높이만 제한해 세로 카드 좌우에 흰 여백이 생겼다 → 상자를 이미지에 맞춘다. */}
+              <div className="flex justify-center rounded-2xl bg-[#F4F3F1]">
                 {selectedCard.imageDataUrl ? (
-                  <img 
-                    src={selectedCard.imageDataUrl} 
+                  <img
+                    src={selectedCard.imageDataUrl}
                     alt={selectedCard.text}
-                    className="w-full h-auto max-h-[52vh] object-contain"
+                    className="block w-auto max-w-full h-auto max-h-[58vh] rounded-2xl shadow-sm"
                   />
                 ) : (
                   <div
@@ -284,23 +301,24 @@ const CardsVault: React.FC = () => {
               {/* 주된 동작 셋. 삭제는 여기 끼우지 않는다 — 되돌릴 수 없는 동작이라
                   같은 크기로 나란히 두면 잘못 눌린다. */}
               <div className="grid grid-cols-3 gap-2 mt-4">
-                <button
-                  onClick={() => handleShare(selectedCard)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl text-sm font-medium transition-colors"
-                >
-                  <Share2 className="w-4 h-4" />
-                  공유
-                </button>
+                {/* 2026-11-13: 버튼 색이 검정·회청·금색으로 제각각이었다 → 저장만 진하게, 나머지는 흰 버튼(저장 완료 창과 같은 톤). */}
                 <button
                   onClick={() => handleDownload(selectedCard)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#7B9AAC] hover:bg-[#6A8A9C] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#1F1F1F] hover:bg-[#333] text-white rounded-xl text-sm font-medium transition-colors"
                 >
                   <Download className="w-4 h-4" />
                   저장
                 </button>
                 <button
+                  onClick={() => handleShare(selectedCard)}
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-white hover:bg-[#F9F8F6] border border-[#E8E7E5] text-[#2E2E2E] rounded-xl text-sm font-medium transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  공유
+                </button>
+                <button
                   onClick={() => handleEdit(selectedCard)}
-                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-[#C89B3C] hover:bg-[#b88b2c] text-white rounded-xl text-sm font-medium transition-colors"
+                  className="flex items-center justify-center gap-1.5 px-3 py-3 bg-white hover:bg-[#F9F8F6] border border-[#E8E7E5] text-[#2E2E2E] rounded-xl text-sm font-medium transition-colors"
                 >
                   <Edit3 className="w-4 h-4" />
                   편집
