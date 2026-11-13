@@ -216,17 +216,20 @@ const collapseSpaces = (s: string) => s.replace(/\s+/g, ' ').trim();
 // 사용자가 줄 앞에 붙인 '->', '-', '•' 같은 표시만 떼어 낸다(글자 자체는 바꾸지 않는다).
 const stripLeadMarks = (s: string) => s.replace(/^[\s\-–—>•·*]+/, '').trim();
 
-/** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. */
-function pickVerbatim(source: string, candidates: string[]): string[] {
+// 추천 세 종류(2026-11-13 사용자: 원래처럼 세 가지로). 말투를 바꿀 수 없으니 고르는 기준으로 나눈다.
+const CONDENSE_KINDS = ['짧은 한 줄', '이어진 두 문장', '마음이 담긴 문장'] as const;
+
+/** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. 이름표는 원래 자리(종류)를 따른다. */
+function pickVerbatim(source: string, candidates: string[]): { text: string; label: string }[] {
   const hay = collapseSpaces(source);
-  const out: string[] = [];
-  for (const c of candidates) {
+  const out: { text: string; label: string }[] = [];
+  candidates.slice(0, CONDENSE_KINDS.length).forEach((c, i) => {
     const cand = stripLeadMarks(collapseSpaces(String(c).replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
-    if (cand.replace(/\s/g, '').length < 6) continue;
-    if (!hay.includes(cand)) continue; // 원문에 없는 말이 한 글자라도 섞이면 버린다
-    if (!out.includes(cand)) out.push(cand);
-    if (out.length >= 3) break;
-  }
+    if (cand.replace(/\s/g, '').length < 6) return;
+    if (!hay.includes(cand)) return; // 원문에 없는 말이 한 글자라도 섞이면 버린다
+    if (out.some((o) => o.text === cand)) return;
+    out.push({ text: cand, label: CONDENSE_KINDS[i] });
+  });
   return out;
 }
 
@@ -293,20 +296,28 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
     if (source.replace(/\s/g, '').length <= 22) return Response.json({ text: source, options: [source] });
     const quotaDenied = await spendAiQuota();
     if (quotaDenied) return quotaDenied;
-    const verbatim = (candidates: string[]) => pickVerbatim(source, candidates);
+    const reply = (picks: { text: string; label: string }[]) =>
+      Response.json({ text: picks[0].text, options: picks.map((p) => p.text), labels: picks.map((p) => p.label) });
+    const fromSource = () => {
+      const s = fallbackSentences(source);
+      return s.length ? s.map((t) => ({ text: t, label: '원문 문장' })) : [{ text: source, label: '원문 그대로' }];
+    };
     try {
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 후보 3개를 고른다.
+          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 세 종류로 하나씩, 모두 3개를 고른다.
 
 규칙(엄수):
 1. 사용자 글에 있는 문장을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 줄이거나 말투를 고치거나 이어 붙이지 않는다.
-2. 후보 하나는 원문에서 연속된 한 문장 또는 이어진 두 문장이다. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
+2. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
 3. 사용자가 직접 쓴 생각·고백·다짐 문장을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
-4. 카드에 담길 분량: 15~70자 정도. 마음이 잘 드러나는 문장을 고른다.
-5. 서로 다른 문장 3개를 고른다. 원문이 짧아 3개가 안 되면 있는 만큼만.
-6. JSON 문자열 배열만 출력한다.`,
+4. 세 종류(순서 그대로, 서로 다른 문장):
+   · 1번 짧은 한 줄 — 원문의 한 문장, 15~35자 정도로 짧고 또렷한 것
+   · 2번 이어진 두 문장 — 원문에서 바로 이어 붙어 있는 두 문장을 그대로, 35~80자 정도
+   · 3번 마음이 담긴 문장 — 고백·다짐·바람이 가장 잘 드러나는 원문 한 문장
+5. 원문이 짧아 해당 종류를 고를 수 없으면 그 자리는 빈 문자열 "" 로 둔다.
+6. JSON 문자열 배열 3개만 출력한다.`,
         },
         { role: 'user', content: source },
       ], 700, 'gpt-4o');
@@ -314,19 +325,16 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       try {
         const m = (raw || '').match(/\[[\s\S]*\]/);
         const arr = JSON.parse(m ? m[0] : raw);
-        if (Array.isArray(arr)) picked = arr.map((s: any) => String(s));
+        if (Array.isArray(arr)) picked = arr.map((s: any) => String(s ?? ''));
       } catch {
         picked = (raw || '').split('\n');
       }
-      let options = verbatim(picked);
+      const picks = pickVerbatim(source, picked);
       // AI 가 원문에 없는 말을 섞었으면 버려진다. 하나도 안 남으면 원문 문장에서 직접 고른다.
-      if (!options.length) options = fallbackSentences(source);
-      if (!options.length) options = [source];
-      return Response.json({ text: options[0], options });
+      return reply(picks.length ? picks : fromSource());
     } catch (e: any) {
       // 실패 시 원문 문장에서 직접 고르고, 그것도 안 되면 원문 그대로 (사용자가 편집)
-      const options = fallbackSentences(source);
-      return Response.json({ text: options[0] || source, options: options.length ? options : [source] });
+      return reply(fromSource());
     }
   }
 

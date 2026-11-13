@@ -88,7 +88,8 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
   const [activeType, setActiveType] = useState<'all' | RecordType | string>('all');
   const [query, setQuery] = useState('');
   const [visibleCount, setVisibleCount] = useState(12);
-  const [options, setOptions] = useState<string[]>([]);
+  // AI 가 원문에서 그대로 고른 문장과 그 종류 이름표(짧은 한 줄·이어진 두 문장·마음이 담긴 문장).
+  const [options, setOptions] = useState<{ text: string; label: string }[]>([]);
 
   // 키보드가 올라오면 보이는 화면이 줄어든다. vh 는 그대로라 창이 화면 밖으로 밀려
   // 아래쪽(분류 버튼)이 가려졌다. 실제로 보이는 높이를 따라간다.
@@ -148,10 +149,17 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
         });
         if (!response.ok) throw new Error('Recommendation failed');
         const data = await response.json();
-        const candidates = Array.isArray(data.options) ? data.options : [data.text];
-        const phrases = [...new Set<string>(candidates.filter((value: unknown): value is string => typeof value === 'string' && !!value.trim()).map((value: string) => value.trim()))].filter(value => value !== raw).slice(0, 3);
-        if (!phrases.length) throw new Error('Empty recommendation');
-        if (active) setOptions(phrases);
+        const candidates: unknown[] = Array.isArray(data.options) ? data.options : [data.text];
+        const labels: unknown[] = Array.isArray(data.labels) ? data.labels : [];
+        const picks: { text: string; label: string }[] = [];
+        candidates.forEach((value, i) => {
+          if (typeof value !== 'string' || !value.trim()) return;
+          const text = value.trim();
+          if (text === raw.trim() || picks.some((p) => p.text === text)) return;
+          picks.push({ text, label: typeof labels[i] === 'string' && labels[i] ? (labels[i] as string) : `추천 ${picks.length + 1}` });
+        });
+        if (!picks.length) throw new Error('Empty recommendation');
+        if (active) setOptions(picks.slice(0, 3));
       } catch {
         if (active) setRecommendationError('추천을 불러오지 못했어요. 원문을 그대로 사용하거나 수정할 수 있어요.');
       } finally {
@@ -343,35 +351,74 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
               </button>
             )}
             {purpose === 'text' && selectedRecord && (
+              /* 2026-11-13 사용자: '본문 사용·묵상 사용·AI 추천' 버튼이 나란히 있어 애매했다.
+                 → "어떤 문구로 만들까요?" 아래 고르는 줄로. 각 줄에 미리보기, 고른 줄은 검은 테두리.
+                 AI 는 버튼을 눌렀을 때만 기록을 보낸다(전송 안내 유지). AI 도 원문 문장을 그대로 고른다. */
               <div className="space-y-2">
-                <div className="flex flex-wrap gap-2">
-                  {selectedRecord.type === 'meditation' && selectedRecord.passage?.trim() && selectedRecord.content?.trim() ? (
-                    <>
-                      <Button variant="outline" onClick={() => setConfirmedText(selectedRecord.passage || '')}>본문(말씀) 사용</Button>
-                      <Button variant="outline" onClick={() => setConfirmedText(selectedRecord.content || '')}>묵상 내용 사용</Button>
-                    </>
-                  ) : (
-                    <Button variant="outline" onClick={() => setConfirmedText(getRecordText(selectedRecord))}>원문 그대로 사용</Button>
-                  )}
-                  {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
-                  {getRecommendSource(selectedRecord).replace(/\s/g, '').length > 22 && (
-                    <Button
-                      variant="outline"
-                      disabled={recommending}
-                      onClick={() => setRecommendCount((n) => n + 1)}
+                <p className="text-[12px] font-bold text-[#6E675E]">어떤 문구로 만들까요?</p>
+                {(selectedRecord.type === 'meditation' && selectedRecord.passage?.trim() && selectedRecord.content?.trim()
+                  ? [
+                      { label: '말씀(본문) 그대로', text: selectedRecord.passage || '' },
+                      { label: '묵상 내용 그대로', text: selectedRecord.content || '' },
+                    ]
+                  : [{ label: '원문 그대로', text: getRecordText(selectedRecord) }]
+                ).map((choice) => {
+                  const on = confirmedText === choice.text;
+                  return (
+                    <button
+                      key={choice.label}
+                      type="button"
+                      onClick={() => setConfirmedText(choice.text)}
+                      className={`w-full rounded-[14px] border bg-white px-3.5 py-2.5 text-left transition-colors ${
+                        on ? 'border-[#1E1C1A] border-2' : 'border-[rgba(30,28,26,0.14)]'
+                      }`}
                     >
-                      {recommending ? '추천 받는 중…' : recommendationRequested ? '다시 추천 받기' : 'AI 추천 받기'}
-                    </Button>
-                  )}
-                </div>
-                <p role="status" className="text-xs text-muted-foreground">
-                  {recommending
-                    ? 'AI 추천 문구를 준비 중이에요. 기다리지 않고 원문을 사용해도 돼요.'
-                    : recommendationError || (recommendationRequested
-                      ? '추천을 위해 선택한 기록을 AI에 전송했어요.'
-                      : 'AI 추천을 누르면 선택한 기록이 AI에 전송됩니다. 원문은 바뀌지 않아요.')}
-                </p>
-                {options.map((option, index) => <button key={option} onClick={() => setConfirmedText(option)} className="w-full rounded-lg border p-3 text-left text-sm hover:bg-gray-50"><span className="block text-xs text-muted-foreground">AI 추천 {index + 1}</span>{option}</button>)}
+                      <span className="block text-[12px] font-bold text-[#1E1C1A]">{choice.label}</span>
+                      {/* block 을 같이 주면 line-clamp 의 display 를 덮어써서 두 줄로 안 잘렸다. */}
+                      <span className="mt-0.5 text-[13px] leading-5 text-[#6E675E] line-clamp-2">{choice.text}</span>
+                    </button>
+                  );
+                })}
+
+                {getRecommendSource(selectedRecord).replace(/\s/g, '').length > 22 && (
+                  <div className="rounded-[14px] border border-dashed border-[rgba(30,28,26,0.25)] p-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[12px] font-bold text-[#1E1C1A]">AI가 원문에서 고른 문장</span>
+                      {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
+                      <button
+                        type="button"
+                        disabled={recommending}
+                        onClick={() => setRecommendCount((n) => n + 1)}
+                        className="h-8 shrink-0 rounded-full bg-[#1E1C1A] px-3 text-[12px] font-semibold text-white disabled:opacity-50"
+                      >
+                        {recommending ? '고르는 중…' : recommendationRequested ? '다시 고르기' : 'AI 추천 받기'}
+                      </button>
+                    </div>
+                    <p role="status" className="text-[11.5px] leading-4 text-[#8A8278]">
+                      {recommending
+                        ? '원문에서 문장을 고르는 중이에요. 기다리지 않고 위에서 골라도 돼요.'
+                        : recommendationError || (recommendationRequested
+                          ? '추천을 위해 선택한 기록을 AI에 전송했어요. 문장은 원문 그대로예요.'
+                          : '누르면 선택한 기록이 AI에 전송돼요. 원문 문장을 그대로 골라 줘요.')}
+                    </p>
+                    {options.map((option) => {
+                      const on = confirmedText === option.text;
+                      return (
+                        <button
+                          key={option.text}
+                          type="button"
+                          onClick={() => setConfirmedText(option.text)}
+                          className={`w-full rounded-[12px] border bg-white px-3 py-2.5 text-left ${
+                            on ? 'border-[#1E1C1A] border-2' : 'border-[rgba(30,28,26,0.14)]'
+                          }`}
+                        >
+                          <span className="block text-[11.5px] font-bold text-[#6E675E]">{option.label}</span>
+                          <span className="mt-0.5 block text-[13.5px] leading-5 text-[#1E1C1A]">{option.text}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             )}
             <textarea
