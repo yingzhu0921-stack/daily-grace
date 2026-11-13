@@ -36,7 +36,8 @@ export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATU
   + 'FACE FEATURES sit around the MIDDLE of the face with normal, balanced proportions; the hair comes down naturally over the forehead (a fringe or hairline close to the eyes) — never a huge bare forehead. '
   // 이어서 사용자 참고(스티커 캐릭터 세트)의 일반 기법만: 흰자위 있는 동그란 눈을 붙여 두고 눈동자 방향으로 표정. 그 캐릭터의 모양은 따라 하지 않는다.
   // 이어서 "사시로 나오면 안 돼" → 눈동자가 서로를 보거나 따로 놀지 않게, 두 눈동자는 늘 같은 방향.
-  + 'EYES: two round WHITE eyes with black pupils, set close together and touching or nearly touching. BOTH pupils always look in the SAME direction together (both up, both to one side, or both straight ahead) — NEVER cross-eyed, never looking at each other, never looking in different directions. For a blissful moment, two closed curved lines instead. '
+  // 2026-11-13 사용자: 정면을 빤히 보는 눈은 무섭다 → 살짝 위나 옆(상대·물건 쪽)을 보게.
+  + 'EYES: two round WHITE eyes with black pupils, set close together and touching or nearly touching. BOTH pupils always look in the SAME direction together, glancing slightly UP or to ONE SIDE (toward the other character or the object they care about) — NEVER staring straight out at the viewer with centred pupils (that looks scary), never cross-eyed, never in different directions, and both pupils the same dark colour. For a blissful moment, two closed curved lines instead. '
   // 이어서 "입이 아래로 뾰족한 건 별로" → ㅅ 입이 V 자로 그려졌다. 한글 자모 입을 빼고, 사용자가 좋아한 아브라함처럼 작고 동그란 입.
   + 'MOUTH: TINY and soft — a small round "o", a tiny short line, or a small open mouth when excited. NEVER a pointed V or ^ shape, never a big U smile. '
   + 'EYEBROWS: usually none; add two tiny dashes only for a strong moment (surprise, effort). '
@@ -59,4 +60,6 @@ export const T01_NOT = 'Only people and animals have faces — clouds, suns, bal
   + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
   + 'NOT a storybook scene: no landscape scenery behind the characters. NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
   + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises or rolling hills. '
+  // 2026-11-13 사용자: 인물 주변 빛줄기 짝대기가 너무 많이 나온다 → 막는다.
+  + 'NO radiating rays, glow dashes, sunburst lines, motion lines or emphasis marks around people or objects — the picture stays calm and uncluttered. '
   + 'No crayon scribbles, pencil, watercolour, halftone dots, sparkles, floating hearts or rainbows, and no English words in the picture; the only word allowed inside the picture is one short Korean label copied exactly from the verse when the scene asks for it (e.g. a bag labelled 염려).';
