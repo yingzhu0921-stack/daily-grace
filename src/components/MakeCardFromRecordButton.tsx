@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Palette } from 'lucide-react';
+import { LineIcon } from '@/components/ui/LineIcon';
 import { routes } from '@/config/routes';
 
 /**
@@ -25,9 +25,10 @@ export function MakeCardFromRecordButton({ text, recordId }: { text: string; rec
         else sessionStorage.removeItem('card_prefill_record');
         navigate(routes.cardDesigner);
       }}
-      className="w-full mt-6 py-3 rounded-xl text-[15px] font-semibold text-white bg-[#1F1F1F] hover:bg-[#333333] transition-colors flex items-center justify-center gap-2"
+      className="w-full mt-6 py-3 rounded-full text-[15px] font-semibold text-white bg-[#1E1C1A] hover:bg-[#333333] transition-colors flex items-center justify-center gap-2"
     >
-      <Palette className="w-4 h-4" />
+      {/* 하단 메뉴 '카드 만들기'와 같은 새싹 카드 아이콘(2026-11-13 사용자: 아이콘 통일) */}
+      <LineIcon name="card" size={18} color="#FFFFFF" />
       이 기록으로 카드 만들기
     </button>
   );

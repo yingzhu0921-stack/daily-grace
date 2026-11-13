@@ -343,8 +343,8 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-[380px] rounded-3xl p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED]">
+        <DialogContent className="max-w-[380px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] shrink-0">
             <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
               카테고리 관리
             </DialogTitle>
@@ -353,7 +353,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-6 py-4 max-h-[400px] overflow-y-auto">
+          <div className="px-6 py-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <div className="space-y-2">
               {categories.map(category => {
                 const isDefaultCategory = ['1', '2', '3', '4'].includes(category.id);
@@ -421,7 +421,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED]">
+          <div className="px-6 py-4 border-t border-[#F0EFED] shrink-0">
             <Button
               onClick={() => {
                 requireAuth(() => {
@@ -439,8 +439,8 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
       {/* 새 카테고리 생성 다이얼로그 */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent className="max-w-[420px] rounded-3xl p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative">
+        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative shrink-0">
             <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
               카테고리 추가
             </DialogTitle>
@@ -464,7 +464,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </button>
           </DialogHeader>
           
-          <div className="px-6 py-5 space-y-5 max-h-[60vh] overflow-y-auto">
+          <div className="px-6 py-5 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {/* 카테고리 이름 */}
             <div>
               <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
@@ -521,7 +521,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
                 카테고리 아이콘
               </label>
-              <div className="grid grid-cols-6 gap-2 max-h-[260px] overflow-y-auto p-1">
+              <div className="grid grid-cols-6 gap-2 p-1">
                 {AVAILABLE_ICONS.map(iconName => (
                   <button
                     key={iconName}
@@ -635,7 +635,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3">
+          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3 shrink-0">
             <Button
               onClick={() => {
                 setShowNewDialog(false);
@@ -665,8 +665,8 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
       {/* 카테고리 수정 다이얼로그 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-[420px] rounded-3xl p-0 gap-0">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative">
+        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative shrink-0">
             <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
               카테고리 수정
             </DialogTitle>
@@ -690,7 +690,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </button>
           </DialogHeader>
           
-          <div className="px-6 py-5 space-y-4">
+          <div className="px-6 py-5 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {/* 카테고리 이름 */}
             <div>
               <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
@@ -820,7 +820,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3">
+          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3 shrink-0">
             <Button
               onClick={() => {
                 setShowEditDialog(false);

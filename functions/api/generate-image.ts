@@ -216,33 +216,47 @@ const collapseSpaces = (s: string) => s.replace(/\s+/g, ' ').trim();
 // 사용자가 줄 앞에 붙인 '->', '-', '•' 같은 표시만 떼어 낸다(글자 자체는 바꾸지 않는다).
 const stripLeadMarks = (s: string) => s.replace(/^[\s\-–—>•·*]+/, '').trim();
 
-// 추천 세 종류(2026-11-13 사용자: 원래처럼 세 가지로). 말투를 바꿀 수 없으니 고르는 기준으로 나눈다.
-// 3번은 문장 끝까지가 아니라 원문 문장의 한 부분(명사로 끝나는 구절) — 예전 명사형 추천 자리(2026-11-13 사용자 "다 문장형으로 나와").
-const CONDENSE_KINDS = ['짧은 한 줄', '이어진 두 문장', '핵심 구절'] as const;
+// 추천 세 종류(2026-11-13 사용자). 말투를 바꿀 수 없으니 고르는 기준으로 나눈다. 모두 원문 그대로.
+//  · 짧은 한 줄 / 마음이 담긴 문장 / 핵심 구절(명사로 끝나는 원문 일부)
+// '이어진 두 문장'은 사용자가 별로라고 해서 '마음이 담긴 문장'으로 바꿨다. 항상 세 개를 채운다(사용자 요청).
+const CONDENSE_KINDS = ['짧은 한 줄', '마음이 담긴 문장', '핵심 구절'] as const;
+type CondenseKind = typeof CONDENSE_KINDS[number];
+type Pick = { text: string; label: CondenseKind };
 
-/** AI 가 고른 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 것만 남긴다. 이름표는 원래 자리(종류)를 따른다. */
-function pickVerbatim(source: string, candidates: string[]): { text: string; label: string }[] {
+const cleanPick = (c: unknown) =>
+  stripLeadMarks(collapseSpaces(String(c ?? '').replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
+const nonSpaceLen = (s: string) => s.replace(/\s/g, '').length;
+
+/**
+ * 종류별 후보 중 원문에 띄어쓰기·줄바꿈만 빼고 그대로 들어 있는 첫 번째를 고른다.
+ * 비면 원문 문장에서 직접 채워 늘 세 개가 되게 한다(원문이 너무 짧아 정말 없을 때만 모자란다).
+ */
+function pickThree(source: string, groups: { short: unknown[]; heart: unknown[]; phrase: unknown[] }): Pick[] {
   const hay = collapseSpaces(source);
-  const clean = (c: unknown) => stripLeadMarks(collapseSpaces(String(c ?? '').replace(/^\s*\d+[.)]\s*/, '').replace(/^["'“”‘’]+|["'“”‘’]+$/g, '')));
-  const out: { text: string; label: string }[] = [];
-  // 1번 짧은 한 줄, 2번 이어진 두 문장
-  [0, 1].forEach((i) => {
-    const cand = clean(candidates[i]);
-    if (!cand || cand.replace(/\s/g, '').length < 6) return;
-    if (!hay.includes(cand)) return; // 원문에 없는 말이 한 글자라도 섞이면 버린다
-    // 문장 두 개가 서로 겹치면(한쪽이 다른 쪽을 품으면) 고를 거리가 줄어든다.
-    if (out.some((o) => o.text === cand || o.text.includes(cand) || cand.includes(o.text))) return;
-    out.push({ text: cand, label: CONDENSE_KINDS[i] });
-  });
-  // 3번 핵심 구절: 후보 여러 개(3번째 자리부터) 중 명사로 끝나고 원문에 그대로 있는 첫 번째.
-  // 2026-11-13 사용자 "명사형 내용이 안 나와": 후보가 하나뿐이라 서술어로 끝나 버려지면 통째로 빠졌다.
-  for (const c of candidates.slice(2)) {
-    const cand = toNounPhrase(clean(c));
-    if (!cand || cand.replace(/\s/g, '').length < 5) continue;
-    if (!hay.includes(cand) || out.some((o) => o.text === cand)) continue;
-    out.push({ text: cand, label: CONDENSE_KINDS[2] });
-    break;
-  }
+  const used: string[] = [];
+  const isNew = (t: string) => !used.some((u) => u === t || u.includes(t) || t.includes(u));
+  const take = (cands: unknown[], phrase: boolean): string => {
+    for (const c of cands) {
+      const t = phrase ? toNounPhrase(cleanPick(c)) : cleanPick(c);
+      if (!t || nonSpaceLen(t) < (phrase ? 4 : 6)) continue;
+      if (!hay.includes(t)) continue; // 원문에 없는 말이 한 글자라도 섞이면 버린다
+      // 구절은 문장 속 일부라 겹쳐도 되지만, 완전히 같은 건 안 된다.
+      if (phrase ? used.includes(t) : !isNew(t)) continue;
+      return t;
+    }
+    return '';
+  };
+  const sentences = fallbackSentences(source, 12);
+  const out: Pick[] = [];
+  const add = (label: CondenseKind, t: string) => { if (t) { used.push(t); out.push({ text: t, label }); } };
+
+  // 짧은 한 줄: AI 후보 → 원문에서 짧은 문장 순
+  add('짧은 한 줄', take(groups.short, false) || take([...sentences].sort((x, y) => nonSpaceLen(x) - nonSpaceLen(y)), false));
+  // 마음이 담긴 문장: AI 후보 → 고백·다짐·바람 말끝을 가진 원문 문장 → 남은 문장
+  const heartish = sentences.filter((x) => /(감사|기도|원|소망|바라|싶|하자|겠|드립니다|합니다|소서|주세요|주님)/.test(x));
+  add('마음이 담긴 문장', take(groups.heart, false) || take(heartish, false) || take(sentences, false));
+  // 핵심 구절: AI 후보 → 원문 문장에서 명사구를 잘라 낸 것
+  add('핵심 구절', take(groups.phrase, true) || take(sentences.flatMap(nounPhrasesOf), true));
   return out;
 }
 
@@ -259,11 +273,22 @@ function toNounPhrase(s: string): string {
   return t;
 }
 
-/** AI 를 못 쓰거나 고른 게 모두 버려졌을 때: 원문 문장에서 직접 고른다. [성경 인용] 줄보다 사용자 자신의 문장을 먼저. */
-function fallbackSentences(source: string): string[] {
+/** AI 없이 원문 문장에서 명사구 후보를 잘라 낸다: "하나님의 약속은 반드시 …" → "하나님의 약속". 글자는 원문 그대로. */
+function nounPhrasesOf(sentence: string): string[] {
+  const out: string[] = [];
+  const t = sentence.replace(/[.!?。…~\s]+$/, '');
+  const whole = toNounPhrase(t);
+  if (whole && nonSpaceLen(whole) <= 30) out.push(whole);
+  const m = /^(.{3,28}?)(은|는|이|가|을|를|으로|로|에게|에서) /.exec(t);
+  if (m && /\S\s\S/.test(m[1]) && toNounPhrase(m[1]) === m[1]) out.push(m[1]);
+  return out;
+}
+
+/** AI 를 못 쓰거나 고른 게 버려졌을 때: 원문 문장에서 직접 고른다. [성경 인용] 줄보다 사용자 자신의 문장을 먼저. */
+function fallbackSentences(source: string, limit = 3): string[] {
   const lines = source.split('\n').map((l) => stripLeadMarks(l)).filter(Boolean);
   const own = lines.filter((l) => !/^\[[^\]]*\]/.test(l));
-  const fits = (s: string) => { const n = s.replace(/\s/g, '').length; return n >= 8 && n <= 90; };
+  const fits = (s: string) => { const n = nonSpaceLen(s); return n >= 8 && n <= 90; };
   const pick = (src: string[]) => {
     const sentences = src.flatMap((l) => l.split(/(?<=[.!?。])\s+/)).map((s) => s.trim()).filter(Boolean);
     // 마침표 없이 길게 이어 쓴 글은 쉼표 단위 마디로도 본다(글자는 원문 그대로).
@@ -271,7 +296,7 @@ function fallbackSentences(source: string): string[] {
     return [...new Set(pool.filter(fits))];
   };
   const found = pick(own);
-  return (found.length ? found : pick(lines)).slice(0, 3);
+  return (found.length ? found : pick(lines)).slice(0, limit);
 }
 
 async function gpt(apiKey: string, messages: any[], maxTokens = 500, model = 'gpt-4o-mini'): Promise<string> {
@@ -336,39 +361,41 @@ export const onRequestPost: PagesFunction<ExtendedEnv> = async ({ request, env }
       const raw = await gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
-          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/일기 기록 가운데 "말씀카드에 올리기 좋은 문장"을 골라 주는 도우미다. 짧은 한 줄·이어진 두 문장·핵심 구절을 고른다.
+          content: `너는 Daily Grace 앱에서 사용자가 쓴 묵상/기도/감사/일기 기록 가운데 "말씀카드에 올리기 좋은 부분"을 골라 주는 도우미다.
 
 규칙(엄수):
-1. 사용자 글을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 빼거나 말투를 고치거나 떨어진 부분을 이어 붙이지 않는다. (3번 핵심 구절만 문장의 연속된 한 부분을 잘라 낼 수 있다.)
+1. 사용자 글을 **한 글자도 바꾸지 않고 그대로** 옮긴다. 단어를 바꾸거나 빼거나 말투를 고치거나 떨어진 부분을 이어 붙이지 않는다.
 2. 원문에 없는 글자(따옴표·말줄임표·문장부호 포함)를 넣지 않는다.
-3. 사용자가 직접 쓴 생각·고백·다짐 문장을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
-4. 순서 그대로:
-   · 1번 짧은 한 줄 — 원문의 한 문장, 15~35자 정도로 짧고 또렷한 것
-   · 2번 이어진 두 문장 — 원문에서 바로 이어 붙어 있는 두 문장을 그대로, 35~80자 정도. 1번 문장을 포함하지 않는 다른 부분에서 고른다.
-   · 3·4·5번 핵심 구절 후보 3개 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 서로 다른 곳에서 고른다.
-     반드시 명사(또는 명사구)로 끝나야 한다. "~다", "~요", "~자", "~면", "~고", "~야" 같은 서술어·연결어미나 "~을", "~에" 같은 조사로 끝나면 안 된다. 6~30자.
-     잘라 낸 부분 안의 글자는 원문과 똑같아야 한다. 문장 끝의 "~이다/~이시다"만 떼는 것도 좋다.
-     예: 원문 "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
-     예: 원문 "예수님은 온전한 대제사장이시다" → "온전한 대제사장"
-5. 원문이 짧아 해당 종류를 고를 수 없으면 그 자리는 빈 문자열 "" 로 둔다.
-6. JSON 문자열 배열 5개만 출력한다: [1번, 2번, 3번, 4번, 5번]`,
+3. 사용자가 직접 쓴 생각·고백·다짐을 우선 고른다. [ ] 로 표시된 성경 인용처럼 옮겨 적은 본문보다 사용자 자신의 말이 먼저다.
+4. 세 종류를 고르고, 종류마다 서로 다른 후보를 3개씩 낸다(좋은 순서대로):
+   · short 짧은 한 줄 — 원문의 한 문장, 10~35자 정도로 짧고 또렷한 것
+   · heart 마음이 담긴 문장 — 고백·다짐·감사·바람이 가장 잘 드러나는 원문 한 문장(15~70자). short 와 다른 문장.
+   · phrase 핵심 구절 — 문장이 아니라 원문 문장 속의 **연속된 한 부분**을 그대로 잘라 낸 구절. 반드시 명사(또는 명사구)로 끝나야 한다.
+     "~다", "~요", "~자", "~면", "~고", "~야" 같은 서술어·연결어미나 "~을", "~에" 같은 조사로 끝나면 안 된다. 4~30자.
+     문장 끝의 "~이다/~이시다"만 떼는 것도 좋다.
+     예: "우리 안의 어두움 죄의 문제들이 다 드러나게 된다." → "우리 안의 어두움 죄의 문제들"
+     예: "예수님은 온전한 대제사장이시다" → "온전한 대제사장"
+5. JSON 객체 하나만 출력한다: {"short":["…","…","…"],"heart":["…","…","…"],"phrase":["…","…","…"]}`,
         },
         { role: 'user', content: source },
-      ], 700, 'gpt-4o');
-      let picked: string[] = [];
+      ], 900, 'gpt-4o');
+      let groups = { short: [] as unknown[], heart: [] as unknown[], phrase: [] as unknown[] };
       try {
-        const m = (raw || '').match(/\[[\s\S]*\]/);
-        const arr = JSON.parse(m ? m[0] : raw);
-        if (Array.isArray(arr)) picked = arr.map((s: any) => String(s ?? ''));
-      } catch {
-        picked = (raw || '').split('\n');
-      }
-      const picks = pickVerbatim(source, picked);
-      // AI 가 원문에 없는 말을 섞었으면 버려진다. 하나도 안 남으면 원문 문장에서 직접 고른다.
+        const m = (raw || '').match(/\{[\s\S]*\}/);
+        const obj = JSON.parse(m ? m[0] : raw);
+        groups = {
+          short: Array.isArray(obj?.short) ? obj.short : [],
+          heart: Array.isArray(obj?.heart) ? obj.heart : [],
+          phrase: Array.isArray(obj?.phrase) ? obj.phrase : [],
+        };
+      } catch { /* 형식이 어긋나면 원문에서 직접 채운다 */ }
+      const picks = pickThree(source, groups);
+      // AI 가 원문에 없는 말을 섞었으면 그 후보는 버려지고, 빈 자리는 원문 문장에서 채운다.
       return reply(picks.length ? picks : fromSource());
     } catch (e: any) {
-      // 실패 시 원문 문장에서 직접 고르고, 그것도 안 되면 원문 그대로 (사용자가 편집)
-      return reply(fromSource());
+      // AI 가 실패하면 원문 문장에서 직접 세 종류를 고르고, 그것도 안 되면 원문 그대로 (사용자가 편집)
+      const picks = pickThree(source, { short: [], heart: [], phrase: [] });
+      return reply(picks.length ? picks : fromSource());
     }
   }
 

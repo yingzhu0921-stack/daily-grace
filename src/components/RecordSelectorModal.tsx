@@ -76,11 +76,12 @@ const getRecordText = (record: Record) => {
  * (2026-11-13 사용자 "ai 추천이 안떠"). 본문이 짧으면 묵상 내용으로 추천한다.
  */
 const getRecommendSource = (record: Record) => {
-  const base = getRecordText(record);
-  if (record.type === 'meditation' && base.replace(/\s/g, '').length <= 22 && record.content?.trim()) {
-    return record.content;
+  // Q.T 는 본문(옮겨 적은 성경 구절)과 묵상(내가 쓴 글)을 함께 보낸다. 본문만 보내면 고를 문장이 거의 없어
+  // 추천이 하나만 나왔다(2026-11-13 사용자 "항상 세 개"). 서버는 내가 쓴 문장을 먼저 고른다.
+  if (record.type === 'meditation' && record.content?.trim()) {
+    return record.passage?.trim() ? `${record.passage.trim()}\n${record.content.trim()}` : record.content;
   }
-  return base;
+  return getRecordText(record);
 };
 
 /** 고르는 줄의 미리보기. 줄바꿈을 펴고 앞부분만 보여 준다. */
@@ -424,7 +425,7 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                 {getRecommendSource(selectedRecord).replace(/\s/g, '').length > 22 && (
                   <div className="rounded-[14px] border border-dashed border-[rgba(30,28,26,0.25)] p-3 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <span className="text-[12px] font-bold text-[#1E1C1A]">AI가 원문에서 고른 문장</span>
+                      <span className="text-[12px] font-bold text-[#1E1C1A]">AI가 골라 준 문장</span>
                       {/* 추천을 받은 뒤에도 버튼을 남긴다. 사라지면 다시 받을 길이 없어 어색하다. */}
                       <button
                         type="button"
@@ -439,8 +440,8 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
                       {recommending
                         ? '원문에서 문장을 고르는 중이에요. 기다리지 않고 위에서 골라도 돼요.'
                         : recommendationError || (recommendationRequested
-                          ? '추천을 위해 선택한 기록을 AI에 전송했어요. 문장은 원문 그대로예요.'
-                          : '누르면 선택한 기록이 AI에 전송돼요. 원문 문장을 그대로 골라 줘요.')}
+                          ? '기록을 AI에 보내, 내가 쓴 기록에서 그대로 골라 왔어요.'
+                          : '누르면 이 기록이 AI에 전송돼요. 내가 쓴 문장 중에서 골라 줘요.')}
                     </p>
                     {options.map((option) => {
                       const on = confirmedText === option.text;
