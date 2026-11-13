@@ -35,9 +35,9 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, compact
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className={`${compact ? 'h-10 px-3 text-[15px]' : 'w-full h-14 text-base'} rounded-xl bg-[#F7F6F4] hover:bg-[#E8E7E5] text-[#2E2E2E] border border-[#E8E7E5] flex items-center justify-center gap-2`}
+          className={`${compact ? 'h-10 px-3 text-[15px]' : 'w-full h-14 text-base'} rounded-xl bg-[#F6F3EC] hover:bg-[#EFEAE0] text-[#1E1C1A] border border-[rgba(30,28,26,0.12)] flex items-center justify-center gap-2`}
         >
-          <Clock size={compact ? 16 : 18} className="text-[#7DB87D]" />
+          <Clock size={compact ? 16 : 18} className="text-[#6E675E]" />
           <span className="font-medium">{displayTime}</span>
         </Button>
       </PopoverTrigger>
@@ -60,7 +60,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, compact
               <select
                 value={hour}
                 onChange={(e) => setHour(e.target.value)}
-                className="w-20 h-12 p-3 text-base rounded-lg border-2 border-[#E8E7E5] bg-[#F7F6F4] text-[#2E2E2E] text-center focus:outline-none focus:ring-2 focus:ring-[#7DB87D] cursor-pointer"
+                className="w-20 h-12 p-3 text-base rounded-lg border-2 border-[#E8E7E5] bg-[#F7F6F4] text-[#2E2E2E] text-center focus:outline-none focus:ring-2 focus:ring-[#1E1C1A]/20 cursor-pointer"
               >
                 {hours.map((h) => (
                   <option key={h} value={h}>
@@ -75,7 +75,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, compact
               <select
                 value={minute}
                 onChange={(e) => setMinute(e.target.value)}
-                className="w-20 h-12 p-3 text-base rounded-lg border-2 border-[#E8E7E5] bg-[#F7F6F4] text-[#2E2E2E] text-center focus:outline-none focus:ring-2 focus:ring-[#7DB87D] cursor-pointer"
+                className="w-20 h-12 p-3 text-base rounded-lg border-2 border-[#E8E7E5] bg-[#F7F6F4] text-[#2E2E2E] text-center focus:outline-none focus:ring-2 focus:ring-[#1E1C1A]/20 cursor-pointer"
               >
                 {minutes.map((m) => (
                   <option key={m} value={m}>
@@ -87,7 +87,7 @@ export const TimePicker: React.FC<TimePickerProps> = ({ value, onChange, compact
           </div>
           <Button
             onClick={handleConfirm}
-            className="w-full h-12 bg-[#7DB87D] hover:bg-[#6da76d] text-white text-base font-medium"
+            className="w-full h-12 rounded-full bg-[#1E1C1A] hover:bg-[#333] text-white text-base font-semibold"
           >
             확인
           </Button>

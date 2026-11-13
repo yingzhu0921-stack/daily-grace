@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { TimePicker } from './TimePicker';
-import { BookOpen, Heart, Star } from 'lucide-react';
+import { AppIcon, type IconName } from '@/components/ui/AppIcon';
+import { tintColor } from '@/utils/tintColor';
 
 interface OnboardingTimeSetupProps {
   onNext: () => void;
@@ -28,9 +29,9 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
 
   // 색은 홈·기록 메뉴의 기본 카테고리 색과 같게 둔다(Index.tsx·Records.tsx·CategoryManager.tsx).
   const categories = [
-    { icon: BookOpen, color: '#7DB87D', name: 'Q.T', desc: '오늘의 말씀을 나눠보세요', time: qtTime, setTime: setQtTime },
-    { icon: Heart, color: '#A57DB8', name: '기도', desc: '하루의 기도를 적어보세요', time: prayerTime, setTime: setPrayerTime },
-    { icon: Star, color: '#E8C87D', name: '감사', desc: '감사했던 순간을 떠올려보세요', time: gratitudeTime, setTime: setGratitudeTime },
+    { icon: 'bookOpen' as IconName, color: '#7DB87D', name: 'Q.T', desc: '오늘의 말씀을 나눠보세요', time: qtTime, setTime: setQtTime },
+    { icon: 'hands' as IconName, color: '#A57DB8', name: '기도', desc: '하루의 기도를 적어보세요', time: prayerTime, setTime: setPrayerTime },
+    { icon: 'sun' as IconName, color: '#E8C87D', name: '감사', desc: '감사했던 순간을 떠올려보세요', time: gratitudeTime, setTime: setGratitudeTime },
   ];
 
   return (
@@ -39,36 +40,33 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
     <div className="flex flex-col h-full px-6 py-6 bg-[#F6F3EC] items-center">
       <div className="flex-1 w-full max-w-[420px] overflow-y-auto">
         <div className="mb-6">
-          <h2 className="text-[24px] font-bold leading-[32px] text-[#1F1F1F] mb-2">
+          <h2 className="text-[22px] font-bold leading-[30px] tracking-[-0.02em] text-[#1E1C1A] mb-1.5">
             하루를 어떻게<br />하나님과 함께하고 싶나요?
           </h2>
-          <p className="text-[14px] text-[#7A7A7A]">
+          <p className="text-[13.5px] text-[#6E675E]">
             알림 받을 시간을 선택하세요
           </p>
         </div>
 
         <div className="space-y-3">
-          {categories.map(({ icon: Icon, color, name, desc, time, setTime }) => (
+          {categories.map(({ icon, color, name, desc, time, setTime }) => (
             // 한 줄 카드. 전에는 시간 버튼이 카드마다 큰 한 줄을 차지해서 세 장이 한 화면에 안 들어갔다
             // (아이폰 14 사파리에서 감사 카드가 잘리고, SE 에선 두 장만 보였다).
             <div
               key={name}
-              className="relative rounded-2xl bg-white overflow-hidden px-4 py-3.5 flex items-center gap-3"
-              style={{ border: '1px solid #EFEFEF' }}
+              className="relative rounded-2xl bg-white px-4 py-3.5 flex items-center gap-3 border border-[rgba(30,28,26,0.12)]"
             >
-              {/* Accent line */}
-              <div className="absolute top-0 left-0 right-0 h-[4px]" style={{ backgroundColor: color }} />
-              {/* Icon */}
+              {/* 기록 종류 색은 아이콘 칸에만(홈 루틴과 같게) */}
               <div
                 className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ backgroundColor: `${color}20` }}
+                style={{ backgroundColor: tintColor(color) }}
               >
-                <Icon className="w-5 h-5" style={{ color }} strokeWidth={1.5} />
+                <AppIcon name={icon} size={20} color="#1E1C1A" />
               </div>
               {/* Content */}
               <div className="flex-1 min-w-0">
-                <h3 className="text-[15px] font-semibold text-[#1F1F1F] mb-0.5">{name}</h3>
-                <p className="text-[12px] text-[#7A7A7A] truncate">{desc}</p>
+                <h3 className="text-[15px] font-bold text-[#1E1C1A] mb-0.5">{name}</h3>
+                <p className="text-[12px] text-[#8A8278] truncate">{desc}</p>
               </div>
               <div className="shrink-0">
                 <TimePicker value={time} onChange={setTime} compact />
@@ -81,7 +79,7 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
       <div className="pt-4 w-full max-w-[420px]">
         <Button
           onClick={handleNext}
-          className="w-full h-12 rounded-full bg-[#1F1F1F] hover:bg-[#333] text-white text-[15px] font-semibold"
+          className="w-full h-12 rounded-full bg-[#1E1C1A] hover:bg-[#333] text-white text-[15px] font-semibold"
         >
           다음
         </Button>
