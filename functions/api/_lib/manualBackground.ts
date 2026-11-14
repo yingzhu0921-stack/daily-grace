@@ -252,9 +252,9 @@ export const MINIMAL_COLOUR_MOODS = [
 ];
 
 // 2026-11-14 사용자: 캐릭터 일러스트는 인물이 크게 그려져 위쪽 여백(글씨 자리)이 너무 적었다. 장면 전체를 작게, 아래 40% 안에.
-// 이어서 "구름·해·새 정도는 들어가도 될 듯" → 위쪽에 작고 드문 하늘 소품은 허용.
+// 이어서 "구름·해·새 같은 요소는 들어가도 될 듯(그것만은 아니고)" → 위쪽에 작고 드문 장면 소품은 허용.
 const CHARACTER_COMPOSITION = `
-COMPOSITION FOR THIS STYLE (stronger than the line above): draw the whole picture — characters and objects together — SMALLER, so it sits entirely in the LOWER 40% of the frame. The UPPER 60% stays mostly the plain light background colour — at most a few small, simple sky touches there (a small cloud or two, a little sun, a couple of birds), kept light and sparse so text can sit on top; nothing large or busy. Characters stay readable, but modest in size (a standing figure about a third of the frame height at most).`;
+COMPOSITION FOR THIS STYLE (stronger than the line above): draw the whole picture — characters and objects together — SMALLER, so it sits entirely in the LOWER 40% of the frame. The UPPER 60% stays mostly the plain light background colour — a few small, simple accents that suit the scene are welcome there — for example clouds, a sun or moon, stars, birds, butterflies, drifting leaves or petals, a small rainbow — kept light and sparse so text can sit on top; nothing large or busy. Characters stay readable, but modest in size (a standing figure about a third of the frame height at most).`;
 
 export function buildManualBackgroundPrompt(scene: string, style?: string, cropNote = ''): string {
   const resolved = resolveStyle(style);
