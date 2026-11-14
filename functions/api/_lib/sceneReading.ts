@@ -39,6 +39,16 @@ export const PHOTO_SCENE_REGISTERS = [
   'A NATURAL PLACE AT HUMAN SCALE — a field edge, a stream bank, a grove, a hillside path seen from where a person would stand, never a grand vista.',
 ]
 
+/** 직접 편집 감성 사진 장면 갈래. 2026-11-14 핀터레스트 '말씀 배경화면 감성' 레퍼런스. 길이 6. */
+export const PHOTO_NATURE_REGISTERS = [
+  'FLOWERS SHOT LOW AND CLOSE — wildflowers or a flowering plant in the foreground, the open sky above them.',
+  'SKY AND CLOUDS — big soft clouds or a clear pastel sky, with leaves, a branch or blossoms at one edge.',
+  'A GREEN HILL, MEADOW OR FIELD under a wide sky, seen from where a person would stand.',
+  'STILL OR GENTLE WATER — a lake reflecting the sky, a calm shore, a soft sea horizon.',
+  'A PARTICULAR HOUR OR WEATHER in nature — first light, soft morning mist lifting, a pastel dusk, clearing after rain.',
+  'GROWING THINGS UP CLOSE — tall grass in the wind, a blossoming branch, new leaves in the light, a field of flowers seen from inside it.',
+];
+
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
 // 2026-11-12 고후12:9(약한 데서 온전해지는 능력)가 매번 '비 오는 날 우산'이 됐다 → 은혜·보호를 뜻하는 흔한 그림으로 막는다.
 export const SCENE_STOCK = 'an umbrella in the rain, a person sheltering from rain, climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
@@ -61,6 +71,8 @@ export interface DeepSceneOptions {
   flat?: boolean;
   /** 편집 화면: 입력이 이미 장면 묘사인지·성경 사건인지 먼저 가린다(kind). */
   classify?: boolean;
+  /** 흔한 그림(바다·초원·꽃밭) 금지를 끈다. 감성 사진은 자연이 본령이라 갈래로만 다양하게 한다. */
+  allowStock?: boolean;
   /** 사진: 물건에 낱말 이름표를 붙이지 않는다. */
   noLabels?: boolean;
 }
@@ -100,7 +112,7 @@ REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it y
 If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed. A person the message does not name is a teenager or a young adult (a child only when the message is about a child) — never a baby, a toddler, an elderly person or a grandparent — and about half the time a woman. Bible figures the message names or the moment contains are welcome and drawn as they are. Animals the message names or uses as a direct biblical image (sheep with a shepherd, a lamb, a dove for the Spirit, an eagle, a lion) are welcome too.` : ''}
 Only people and animals have faces: never a face on a globe, the earth, a cloud, sun, balloon, seed, plant, heart or object. Do not add a pet or any animal the message does not name.
 WORDS IN THE PICTURE: ${o.noLabels ? 'no words or letters anywhere in the picture (a photograph has no labels). ' : ''}no English words and no letters spelled out by clouds or stars. ${o.noLabels ? '' : `When an invisible thing from the message (worry, grace, sin, hope) is shown as an object, it is nice to put ONE short Korean NOUN from the message on it as a small label (e.g. a bag labelled 염려, a heart labelled 사랑) — a plain noun only, never a word with a particle or verb ending such as 독생자를 or 사랑하사; at most one such label.`}
-STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.
+${o.allowStock ? 'Nature subjects (flowers, sky, fields, water) are welcome here; vary them by the REGISTER, and avoid any generic journey, ascent or "new beginning" metaphor such as a path into the distance or a mountaintop.' : `STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.`}
 The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`;
 }
 
