@@ -29,6 +29,16 @@ export const MINIMAL_SCENE_REGISTERS = [
   'A TINY PERSON DOING THE MESSAGE\'S ACTION in a wide simple landscape — small, but clearly doing it.',
 ];
 
+/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 5. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
+// 2026-11-14 사용자 "말씀과 안 맞음": 장소를 무작위 후보에서 뽑아 '무거운 짐'에 시골 버스 정류장이 나왔다.
+export const PHOTO_SCENE_REGISTERS = [
+  'A THING LEFT OR SET DOWN — one or two real objects resting somewhere outdoors, whose state tells the message (put down, left behind, waiting, kept, mended).',
+  'A THRESHOLD OR PASSAGE — a gate, steps, a bridge, a corridor or a turning in a lane, somewhere between one place and the next.',
+  'A PARTICULAR HOUR OR WEATHER on an ordinary place — first light, noon shade, dusk, after rain, frost — where the light itself carries the message.',
+  'AN EVERYDAY HUMAN PLACE with no one in it — a yard, a rooftop, a stairwell, a doorstep, a quiet street corner — with one detail that tells the message.',
+  'A CLOSE SMALL THING in the light — a shadow falling across a wall, light on a step, something growing in a crack, a lit window seen from outside.',
+];
+
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
 // 2026-11-12 고후12:9(약한 데서 온전해지는 능력)가 매번 '비 오는 날 우산'이 됐다 → 은혜·보호를 뜻하는 흔한 그림으로 막는다.
 export const SCENE_STOCK = 'an umbrella in the rain, a person sheltering from rain, climbing to a summit or standing on a mountaintop, a person walking a path or road into the distance, watering a plant, a lone sprout or seedling, a dove, a sun rising over water, the open sea or ocean horizon, a meadow or grassland, rolling green hills, a lone tree on a hill, a river or stream, rocks, an open door, a lighthouse, a small boat on calm water, a field of flowers, rays of light through clouds';
