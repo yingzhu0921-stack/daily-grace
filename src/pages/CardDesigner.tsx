@@ -30,8 +30,8 @@ const MANUAL_STYLE_PREVIEWS: { style: string; file: string }[] = [
   { style: '맑은 수채화', file: 'watercolor' },
   { style: '플랫 일러스트', file: 'character' },
   { style: '심플 낙서', file: 'doodle' },
-  { style: '감성 사진', file: 'photo' },
   { style: '미니멀 감성', file: 'minimal' },
+  { style: '감성 사진', file: 'photo' },
   { style: '빈티지 필름', file: 'film' },
 ];
 
