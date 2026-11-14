@@ -29,15 +29,15 @@ export const MINIMAL_SCENE_REGISTERS = [
   'A TINY PERSON DOING THE MESSAGE\'S ACTION in a wide simple landscape — small, but clearly doing it.',
 ];
 
-/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 5. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
+/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 4. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
 // 2026-11-14 사용자 "말씀과 안 맞음": 장소를 무작위 후보에서 뽑아 '무거운 짐'에 시골 버스 정류장이 나왔다.
+// 이어서 "가방만 띡 나오는 게 좀 그렇다": 물건 하나를 내려놓은 정물 갈래를 빼고, 장소와 빛으로만 옮긴다.
 export const PHOTO_SCENE_REGISTERS = [
-  'A THING LEFT OR SET DOWN — one or two real objects resting somewhere outdoors, whose state tells the message (put down, left behind, waiting, kept, mended).',
-  'A THRESHOLD OR PASSAGE — a gate, steps, a bridge, a corridor or a turning in a lane, somewhere between one place and the next.',
-  'A PARTICULAR HOUR OR WEATHER on an ordinary place — first light, noon shade, dusk, after rain, frost — where the light itself carries the message.',
-  'AN EVERYDAY HUMAN PLACE with no one in it — a yard, a rooftop, a stairwell, a doorstep, a quiet street corner — with one detail that tells the message.',
-  'A CLOSE SMALL THING in the light — a shadow falling across a wall, light on a step, something growing in a crack, a lit window seen from outside.',
-];
+  'A THRESHOLD OR PASSAGE — a gate, steps, a bridge, a lane turning a corner, somewhere between one place and the next.',
+  'A PARTICULAR HOUR OR WEATHER on an ordinary place — first light, noon shade, dusk, after rain, mist lifting, frost — where the light itself carries the message.',
+  'AN EVERYDAY HUMAN PLACE with no one in it — a yard, a rooftop with laundry, a stairwell, a doorstep, a quiet street corner, a village lane.',
+  'A NATURAL PLACE AT HUMAN SCALE — a field edge, a stream bank, a grove, a hillside path seen from where a person would stand, never a grand vista.',
+]
 
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
 // 2026-11-12 고후12:9(약한 데서 온전해지는 능력)가 매번 '비 오는 날 우산'이 됐다 → 은혜·보호를 뜻하는 흔한 그림으로 막는다.
@@ -61,6 +61,8 @@ export interface DeepSceneOptions {
   flat?: boolean;
   /** 편집 화면: 입력이 이미 장면 묘사인지·성경 사건인지 먼저 가린다(kind). */
   classify?: boolean;
+  /** 사진: 물건에 낱말 이름표를 붙이지 않는다. */
+  noLabels?: boolean;
 }
 
 /**
@@ -97,7 +99,7 @@ THIS CARD'S STYLE: ${o.cardBrief}
 REGISTER FOR THIS CARD: ${o.register} The register only says where to look; it yields to the message. If the message names a concrete thing, draw that thing whatever the register says.${o.flat ? `
 If the message is about what people do to or for one another, the subject is two small figures doing exactly that to each other. A cute animal the message never mentions is NOT allowed. A person the message does not name is a teenager or a young adult (a child only when the message is about a child) — never a baby, a toddler, an elderly person or a grandparent — and about half the time a woman. Bible figures the message names or the moment contains are welcome and drawn as they are. Animals the message names or uses as a direct biblical image (sheep with a shepherd, a lamb, a dove for the Spirit, an eagle, a lion) are welcome too.` : ''}
 Only people and animals have faces: never a face on a globe, the earth, a cloud, sun, balloon, seed, plant, heart or object. Do not add a pet or any animal the message does not name.
-WORDS IN THE PICTURE: no English words and no letters spelled out by clouds or stars. When an invisible thing from the message (worry, grace, sin, hope) is shown as an object, it is nice to put ONE short Korean NOUN from the message on it as a small label (e.g. a bag labelled 염려, a heart labelled 사랑) — a plain noun only, never a word with a particle or verb ending such as 독생자를 or 사랑하사; at most one such label.
+WORDS IN THE PICTURE: ${o.noLabels ? 'no words or letters anywhere in the picture (a photograph has no labels). ' : ''}no English words and no letters spelled out by clouds or stars. ${o.noLabels ? '' : `When an invisible thing from the message (worry, grace, sin, hope) is shown as an object, it is nice to put ONE short Korean NOUN from the message on it as a small label (e.g. a bag labelled 염려, a heart labelled 사랑) — a plain noun only, never a word with a particle or verb ending such as 독생자를 or 사랑하사; at most one such label.`}
 STOCK PICTURES — these became the answer to almost every abstract card, so do NOT use any of them unless the message's own words name it: ${SCENE_STOCK}${o.flat ? `, ${FLAT_STOCK}` : ''}. Also avoid any generic journey, ascent or "new beginning" metaphor.
 The reader should be able to look at the picture and say which words of the message it came from. English for every field except quoted Korean phrases.`;
 }
