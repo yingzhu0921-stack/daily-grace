@@ -821,7 +821,7 @@ export default function Designer() {
         <button
           type="button"
           onClick={() => setCardPolicyExpanded(value => !value)}
-          className="shrink-0 pt-0.5 text-[11px] font-semibold text-[#4F8A5B] underline underline-offset-2"
+          className="shrink-0 pt-0.5 text-[11px] font-semibold text-[#4A453F] underline underline-offset-2"
         >
           {cardPolicyExpanded ? '접기' : '콘텐츠 이용 안내 보기'}
         </button>
@@ -1613,7 +1613,7 @@ export default function Designer() {
   const renderEntry = () => (
     <div className="flex-1 min-h-0 flex flex-col bg-[#F6F3EC] overflow-y-auto">
       <div className="w-full max-w-md mx-auto px-5 pt-10 pb-6">
-        <h2 className="text-[26px] font-semibold leading-tight text-[#2E2E2E]">말씀카드 만들기</h2>
+        <h2 className="text-[24px] font-bold leading-tight tracking-[-0.02em] text-[#1E1C1A]">말씀카드 만들기</h2>
         <p className="mt-2 text-[14px] leading-6 text-[#7E7C78]">원하는 방식으로 오늘의 기록을 카드로 남겨보세요.</p>
       </div>
 
@@ -1624,29 +1624,29 @@ export default function Designer() {
 
         <button
           onClick={() => startCardFlow('auto')}
-          className="relative w-full flex items-center gap-4 p-4 pr-16 border border-[#1F1F1F] bg-[#1F1F1F] text-white rounded-lg text-left transition-colors hover:bg-[#333333]"
+          className="relative w-full flex items-center gap-4 p-4 pr-16 border border-[#1E1C1A] bg-[#1E1C1A] text-white rounded-2xl text-left transition-colors hover:bg-[#333333]"
         >
           <span className="absolute right-3 top-3 text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-white/16 text-white/86">
             추천
           </span>
-          <div className="h-10 w-10 rounded-lg bg-white/12 flex items-center justify-center shrink-0">
+          <div className="h-10 w-10 rounded-xl bg-white/12 flex items-center justify-center shrink-0">
             <Wand2 className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold">완전 자동</p>
+            <p className="font-bold">완전 자동</p>
             <p className="mt-1 text-[12px] leading-5 text-white/72">입력한 문구를 분석해 타이포그래피와 배경까지 자동으로 완성합니다.</p>
           </div>
         </button>
 
         <button
           onClick={() => startCardFlow('manual')}
-          className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
+          className="w-full flex items-center gap-4 p-4 border border-[rgba(30,28,26,0.12)] bg-white rounded-2xl text-left transition-colors hover:border-[#1F1F1F]"
         >
-          <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
-            <Type className="w-5 h-5 text-[#1F1F1F]" />
+          <div className="h-10 w-10 rounded-xl bg-[#F1EDE5] flex items-center justify-center shrink-0">
+            <Type className="w-5 h-5 text-[#1E1C1A]" />
           </div>
           <div className="min-w-0">
-            <p className="font-semibold text-[#2E2E2E]">직접 편집</p>
+            <p className="font-bold text-[#1E1C1A]">직접 편집</p>
             <p className="mt-1 text-[12px] leading-5 text-[#7E7C78]">AI 배경·내 사진·단색 위에 글씨를 자유롭게 더해요. 배경부터 시작해도 좋아요.</p>
           </div>
         </button>
@@ -1654,9 +1654,9 @@ export default function Designer() {
         {showPhotoAiFlow && (
           <button
             onClick={() => startCardFlow('photo')}
-            className="w-full flex items-center gap-4 p-4 border border-[#E3E2E0] bg-white rounded-lg text-left transition-colors hover:border-[#1F1F1F]"
+            className="w-full flex items-center gap-4 p-4 border border-[rgba(30,28,26,0.12)] bg-white rounded-2xl text-left transition-colors hover:border-[#1F1F1F]"
           >
-            <div className="h-10 w-10 rounded-lg bg-[#F3F2F1] flex items-center justify-center shrink-0">
+            <div className="h-10 w-10 rounded-xl bg-[#F1EDE5] flex items-center justify-center shrink-0">
               <ImageIcon className="w-5 h-5 text-[#1F1F1F]" />
             </div>
             <div className="min-w-0">

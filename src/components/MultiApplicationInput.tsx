@@ -1,5 +1,6 @@
 import React, { useRef, useEffect } from 'react';
-import { Plus, X } from 'lucide-react';
+import { X } from 'lucide-react';
+import { LineIcon } from '@/components/ui/LineIcon';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -99,11 +100,8 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
                 <Checkbox
                   checked={item.checked}
                   onCheckedChange={(checked) => handleCheckChange(index, checked as boolean)}
-                  className="w-5 h-5 rounded-md"
-                  style={{
-                    borderColor: item.checked ? categoryColor : undefined,
-                    backgroundColor: item.checked ? categoryColor : undefined,
-                  }}
+                  // 2026-11-14 사용자: 남색 체크박스가 앱 톤과 안 맞았다 → 옅은 선, 체크하면 앱의 검정.
+                  className="w-5 h-5 rounded-md border-[rgba(30,28,26,0.3)] data-[state=checked]:bg-[#1E1C1A] data-[state=checked]:border-[#1E1C1A]"
                 />
               </div>
             )}
@@ -143,15 +141,15 @@ export const MultiApplicationInput: React.FC<MultiApplicationInputProps> = ({
       <button
         type="button"
         onClick={handleAddNew}
-        className="mt-3 flex items-center gap-2 px-4 py-2 rounded-full border border-[#E8E7E5] bg-white hover:bg-[#F9F8F6] transition-colors text-sm text-[#7C7C7C]"
-        style={{ borderColor: `${categoryColor}40` }}
+        className="mt-3 flex items-center gap-1.5 h-9 px-4 rounded-full border border-[rgba(30,28,26,0.14)] bg-white hover:bg-[#F9F8F6] transition-colors text-[13px] font-semibold text-[#4A453F]"
       >
-        <Plus className="w-4 h-4" style={{ color: categoryColor }} />
+        <LineIcon name="plus" size={15} color="#4A453F" />
         <span>적용점 추가하기</span>
       </button>
 
-      <p className="mt-2 text-xs text-[#ACACAC]">
-        💡 Enter 키를 누르면 새로운 적용점을 추가할 수 있어요
+      <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-[#9A9288]">
+        <LineIcon name="bulb" size={13} color="#9A9288" />
+        줄을 바꾸면(엔터) 새 적용점이 추가돼요
       </p>
     </section>
   );

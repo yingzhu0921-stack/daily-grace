@@ -1,4 +1,5 @@
 import React, { useRef, useEffect } from 'react';
+import { LineIcon } from '@/components/ui/LineIcon';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 
@@ -54,22 +55,19 @@ export const AnsweredDetailInput: React.FC<AnsweredDetailInputProps> = ({
       <label className="mb-3 block text-sm text-[#9B9B9B]">{label}</label>
 
       {/* 응답/완료 체크박스 */}
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[#E8E7E5] bg-[#FAFAFA] p-4 transition-colors hover:bg-[#F5F5F5]">
+      <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[rgba(30,28,26,0.12)] bg-white p-4 transition-colors hover:bg-[#F9F8F6]">
         <Checkbox
           id="answered"
           checked={answered}
           onCheckedChange={(checked) => onAnsweredChange(checked as boolean)}
-          className="mt-0.5"
-          style={answered ? {
-            borderColor: categoryColor,
-            backgroundColor: categoryColor
-          } : {}}
+          // 2026-11-14 사용자: 체크박스·이모지가 앱 톤과 안 맞았다 → 옅은 선, 체크하면 검정.
+          className="mt-0.5 border-[rgba(30,28,26,0.3)] data-[state=checked]:bg-[#1E1C1A] data-[state=checked]:border-[#1E1C1A]"
         />
         <div className="flex-1">
-          <div className="text-sm font-medium text-[#2E2E2E]">
+          <div className="text-sm font-bold text-[#1E1C1A]">
             {categoryName} {checkboxLabel}
           </div>
-          <div className="mt-1 text-xs text-[#7E7C78]">
+          <div className="mt-1 text-xs text-[#8A8278]">
             완료한 항목을 체크하여 관리하세요.
           </div>
         </div>
@@ -81,7 +79,7 @@ export const AnsweredDetailInput: React.FC<AnsweredDetailInputProps> = ({
           <label className="mb-2 block text-sm font-medium text-[#2E2E2E]">
             {detailLabel}
           </label>
-          <div className="rounded-xl border border-[#E8E7E5] bg-white p-4">
+          <div className="rounded-2xl border border-[rgba(30,28,26,0.12)] bg-white p-4">
             <Textarea
               ref={textareaRef}
               value={answeredDetail}
@@ -96,8 +94,9 @@ export const AnsweredDetailInput: React.FC<AnsweredDetailInputProps> = ({
               style={{ overflowY: 'hidden' }}
             />
           </div>
-          <p className="mt-2 text-xs text-[#ACACAC]">
-            📝 응답받은 내용이나 감사한 일을 기록해보세요
+          <p className="mt-2 flex items-center gap-1.5 text-[11.5px] text-[#9A9288]">
+            <LineIcon name="pencil" size={13} color="#9A9288" />
+            응답받은 내용이나 감사한 일을 기록해 보세요
           </p>
         </div>
       )}
