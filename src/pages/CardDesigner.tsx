@@ -433,6 +433,68 @@ const TEXT_BOX_PADDING = 20;
  */
 const TEXT_BASE_CARD_WIDTH = 360;
 
+/**
+ * 그림이 카드보다 넓을 때(2:3 → 9:16) 좌우를 자르지 않고, 위쪽에 바탕을 이어 붙여 길이를 맞춘다.
+ * 2026-11-14 사용자: T01 완전 자동에서 AI 가 그린 긴 글줄의 양 끝이 잘렸다. 지시문으로 여백을 요구해도
+ * 계속 끝까지 써서, 아예 자르지 않게 했다. T01 은 위쪽이 늘 민무늬 바탕색이라 그 띠를 거울처럼 이어 붙이면
+ * 질감까지 자연스럽다. 맨 위 띠에 그림·글씨가 걸려 있으면(얼룩이 크면) 기존처럼 가운데를 자른다.
+ */
+async function extendTopToRatio(imageDataUrl: string, ratio: Ratio): Promise<string> {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const el = new Image();
+    el.onload = () => resolve(el);
+    el.onerror = () => reject(new Error('Failed to load image'));
+    el.src = imageDataUrl;
+  });
+  const [rw, rh] = ratio.split(':').map(Number);
+  const target = rw / rh;
+  if (img.width / img.height <= target + 0.01) return cropImageToRatio(imageDataUrl, ratio);
+  const w = img.width;
+  const h = Math.round(w / target);
+  const extra = h - img.height;
+  const strip = Math.max(16, Math.round(img.height * 0.03));
+
+  // 맨 위 띠가 정말 민무늬인지 본다(밝기 표준편차).
+  const probe = document.createElement('canvas');
+  probe.width = w; probe.height = strip;
+  const pctx = probe.getContext('2d');
+  if (!pctx) return cropImageToRatio(imageDataUrl, ratio);
+  pctx.drawImage(img, 0, 0, w, strip, 0, 0, w, strip);
+  const d = pctx.getImageData(0, 0, w, strip).data;
+  let sum = 0, sq = 0, n = 0;
+  for (let i = 0; i < d.length; i += 16) {
+    const l = 0.2126 * d[i] + 0.7152 * d[i + 1] + 0.0722 * d[i + 2];
+    sum += l; sq += l * l; n++;
+  }
+  const mean = sum / n;
+  const sd = Math.sqrt(Math.max(0, sq / n - mean * mean));
+  if (sd > 14) return cropImageToRatio(imageDataUrl, ratio);
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return cropImageToRatio(imageDataUrl, ratio);
+  ctx.drawImage(img, 0, extra);
+  // 위로 올라가며 띠를 번갈아 뒤집어 붙인다(이음매가 맞닿게).
+  let y = extra;
+  let flip = true;
+  while (y > 0) {
+    const hgt = Math.min(strip, y);
+    y -= hgt;
+    if (flip) {
+      ctx.save();
+      ctx.translate(0, y + hgt);
+      ctx.scale(1, -1);
+      ctx.drawImage(img, 0, 0, w, hgt, 0, 0, w, hgt);
+      ctx.restore();
+    } else {
+      ctx.drawImage(img, 0, strip - hgt, w, hgt, 0, y, w, hgt);
+    }
+    flip = !flip;
+  }
+  return canvas.toDataURL('image/png');
+}
+
 async function cropImageToRatio(imageDataUrl: string, ratio: Ratio): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -2403,7 +2465,11 @@ export default function Designer() {
     // autoResult.image 자체를 실제 비율(예: 9:16)로 만든다. (미리보기/저장/다운로드/클라우드 모두 일치)
     let image = data?.image;
     if (image) {
-      try { image = await cropImageToRatio(image, resultRatio); } catch { image = data.image; }
+      // T01 을 AI 가 글씨까지 그린 경우엔 좌우를 자르지 않는다(위 extendTopToRatio).
+      const t01AiLetters = template === 'T01' && !data?.t02;
+      try {
+        image = t01AiLetters ? await extendTopToRatio(image, resultRatio) : await cropImageToRatio(image, resultRatio);
+      } catch { image = data.image; }
     }
 
     // T02: AI 는 배경만 만들었다. 사용자가 쓴 줄을 진짜 폰트로 구워 넣는다(src/utils/t02Poster.ts).
