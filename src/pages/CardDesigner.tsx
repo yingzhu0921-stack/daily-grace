@@ -581,6 +581,10 @@ export default function Designer() {
   const [fontPickerOpen, setFontPickerOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  // 2026-11-14 사용자 영상: 글씨를 쓰려고 키보드를 올리면 카드가 남은 칸에 맞춰 손톱만 해져서 뭘 쓰는지 안 보였다.
+  // 키보드가 올라오기 직전의 카드 너비를 기억해 두고, 키보드가 떠 있는 동안은 그 크기 그대로 두고 칸을 스크롤한다.
+  const [frozenCardWidth, setFrozenCardWidth] = useState<number | null>(null);
+  const canvasAreaRef = useRef<HTMLDivElement | null>(null);
   const [generationProgress, setGenerationProgress] = useState<{
     key: GenerationKey;
     startedAt: number;
@@ -592,8 +596,17 @@ export default function Designer() {
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return;
+    let prevKh = 0;
     const handler = () => {
       const kh = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      if (kh > 0 && prevKh === 0) {
+        // 아직 칸이 줄기 전(아래 여백을 넣기 전)이라 지금 너비가 평소 카드 크기다.
+        const w = document.getElementById('card-preview')?.getBoundingClientRect().width;
+        setFrozenCardWidth(w && w > 0 ? w : null);
+      } else if (kh === 0) {
+        setFrozenCardWidth(null);
+      }
+      prevKh = kh;
       setKeyboardHeight(kh);
     };
     handler();
@@ -689,6 +702,33 @@ export default function Designer() {
   }, [flowStep, meta.bgColor]);
   // 단색·그라데이션은 bgImageUrl 이 없어서, 전에는 골라도 글씨가 비어 있으면 안내가 계속 덮여 있었다.
   const showBgPrompt = !meta.bgImageUrl && !bgPicked && !isEditMode && !isEditing && !isBgEditMode;
+  // 카드 위 글씨를 키보드로 쓰는 중
+  const typingOnCard = isEditing && keyboardHeight > 0;
+
+  // 글씨를 쓰는 동안 칸이 스크롤되므로, 쓰는 글씨 박스가 보이게 맞춘다(키보드가 올라온 직후 한 번).
+  useEffect(() => {
+    if (!typingOnCard) return;
+    const id = requestAnimationFrame(() => {
+      const area = canvasAreaRef.current;
+      const box = textRef.current;
+      if (!area || !box) return;
+      const a = area.getBoundingClientRect();
+      const b = box.getBoundingClientRect();
+      if (b.top < a.top + 8 || b.top > a.bottom - 40) {
+        area.scrollTop += b.top - a.top - 12;
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [typingOnCard, frozenCardWidth]);
+
+  // 배경 조정 안내는 잠깐만 띄운다. 전에는 조정하는 내내 글씨 위를 가렸다(2026-11-14 사용자 영상).
+  const [bgEditHintVisible, setBgEditHintVisible] = useState(false);
+  useEffect(() => {
+    if (!isBgEditMode) { setBgEditHintVisible(false); return; }
+    setBgEditHintVisible(true);
+    const t = window.setTimeout(() => setBgEditHintVisible(false), 2500);
+    return () => window.clearTimeout(t);
+  }, [isBgEditMode]);
 
   // 카드 만들기 첫 안내(2026-11-14 사용자 승인 시안 ①②). 첫 화면에 들어오면 세션마다 한 번, '다시 보지 않기' 전까지.
   const [cardGuideOpen, setCardGuideOpen] = useState(false);
@@ -3952,13 +3992,13 @@ export default function Designer() {
         </div>
       </header>
 
-      {activeTrack && (
+      {activeTrack && !typingOnCard && (
         <div className="flex-none border-b border-[#EDEDED]">
           {renderFlowProgress(flowStep)}
         </div>
       )}
 
-      {bgRatioMismatch && meta.bgImageUrl && bgSourceRef.current?.croppedUrl === meta.bgImageUrl && (
+      {!typingOnCard && bgRatioMismatch && meta.bgImageUrl && bgSourceRef.current?.croppedUrl === meta.bgImageUrl && (
         <div className="flex-none flex items-center gap-2 px-4 py-2 bg-[#FFF8EC] border-b border-[#F1E3C8] text-[12px] text-[#6B5426]">
           <span className="flex-1 min-w-0">
             배경이 {ORIENTATION_LABEL[imageOrientation(bgSourceRef.current.width, bgSourceRef.current.height)]} 모양으로 만들어져서 {ORIENTATION_LABEL[ratioOrientation(meta.ratio)]} 카드에선 많이 잘려요.
@@ -3975,7 +4015,10 @@ export default function Designer() {
 
       {/* 2. Canvas Area (Middle) - FILLS ALL REMAINING SPACE */}
       <div
-        className="flex-1 min-h-[180px] flex items-center justify-center px-4 bg-gray-200 overflow-hidden"
+        ref={canvasAreaRef}
+        className={`flex-1 min-h-[180px] flex justify-center px-4 bg-gray-200 ${
+          typingOnCard ? 'items-start overflow-y-auto overscroll-contain py-3' : 'items-center overflow-hidden'
+        }`}
         style={{ containerType: 'size' }}
       >
         {/* 카드 틀은 남은 칸의 너비·높이 중 좁은 쪽에 맞춘다. 전에는 세로 비율이면 '높이 100%, 너비는 최대 100%'라,
@@ -3986,6 +4029,8 @@ export default function Designer() {
           className="shadow-2xl"
           style={(() => {
             const [w, h] = meta.ratio.split(':').map(Number);
+            // 글씨를 쓰는 동안엔 키보드 뜨기 전 크기 그대로(칸은 스크롤된다). flex 안에서 줄어들지 않게 shrink 0.
+            if (typingOnCard && frozenCardWidth) return { width: `${frozenCardWidth}px`, height: 'auto', flexShrink: 0 };
             return { width: `min(100cqw, calc(100cqh * ${w} / ${h}))`, height: 'auto' };
           })()}
         >
@@ -4093,8 +4138,8 @@ export default function Designer() {
                 )}
                 
                 {/* 배경 편집 모드 안내 */}
-                {isBgEditMode && meta.bgImageUrl && (
-                  <div className="absolute top-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-black/70 text-white text-xs rounded-full z-10">
+                {isBgEditMode && meta.bgImageUrl && bgEditHintVisible && (
+                  <div className="absolute bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap px-4 py-2 bg-black/70 text-white text-xs rounded-full z-10 pointer-events-none">
                     드래그로 이동 • 핀치로 확대/축소
                   </div>
                 )}
