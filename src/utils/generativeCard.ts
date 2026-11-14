@@ -829,7 +829,10 @@ function drawHeroText(
 ): TextBand {
   const pal = spec.grainPal!;
   const centered = layout.align === 'center';
-  const maxW = width * (layout.measure ?? GRAIN_MEASURE);
+  // 2026-11-14 사용자: 가로형(16:9)에서 글자가 너무 컸다. 크기를 카드 폭 기준으로 잡아서
+  // 가로 카드는 높이에 비해 글자가 1.8배가 됐다 → 크기·여백은 짧은 변 기준, 줄 폭도 너무 길지 않게.
+  const unit = Math.min(width, height);
+  const maxW = Math.min(width * (layout.measure ?? GRAIN_MEASURE), unit * 1.3);
   const x = centered ? width / 2 : layout.align === 'right' ? width * 0.89 : width * 0.11;
   const parts = emphasisParts(text, spec.emphasis);
   const key = parts?.key ?? text;
@@ -842,8 +845,8 @@ function drawHeroText(
   const fs = fontScale(spec.font);
   const boldW = fontBoldWeight(spec.font, bodyWeight(spec));
   // 2026-11-13 사용자: "강조 텍스트가 너무 커" — 왼쪽·오른쪽 배치는 나머지 글씨의 2.5배였다 → 약 2배로(0.100→0.078, 가운데 0.072→0.062).
-  let keyPx = Math.round(width * (centered ? 0.062 : 0.078) * fs);
-  const minKeyPx = Math.round(width * (centered ? 0.046 : 0.052) * fs);
+  let keyPx = Math.round(unit * (centered ? 0.062 : 0.078) * fs);
+  const minKeyPx = Math.round(unit * (centered ? 0.046 : 0.052) * fs);
   const hasLoneWord = (ls: string[]) => ls.length > 1 && ls.some((l) => l.trim().split(/\s+/).length === 1 && [...l.trim()].length <= 3);
   let keyLines: string[] = [];
   while (keyPx >= minKeyPx) {
@@ -851,10 +854,10 @@ function drawHeroText(
     keyLines = balancedLines(ctx, key, maxW);
     // 짧은 어절이 한 줄에 혼자 남으면 한 단계 줄여 다시 묶는다
     if (keyLines.length <= (centered ? 2 : 3) && !hasLoneWord(keyLines)) break;
-    keyPx -= Math.max(1, Math.round(width * 0.004));
+    keyPx -= Math.max(1, Math.round(unit * 0.004));
   }
 
-  let restPx2 = Math.round(width * (centered ? 0.046 : 0.040) * fs);
+  let restPx2 = Math.round(unit * (centered ? 0.046 : 0.040) * fs);
   ctx.font = `${bodyWeight(spec)} ${restPx2}px ${spec.font}`;
   const beforeLines = beforeSegs.flatMap((r) => balancedLines(ctx, r, maxW));
   const afterLines = afterSegs.flatMap((r) => balancedLines(ctx, r, maxW));
@@ -862,16 +865,16 @@ function drawHeroText(
 
   let keyLH = keyPx * 1.22;
   let restLH = restPx2 * 1.49;
-  const refPx = Math.round(width * 0.027);
-  const gap = width * 0.03;
+  const refPx = Math.round(unit * 0.027);
+  const gap = unit * 0.03;
   /**
    * 강조 줄 앞뒤 여백. 앞뒤가 요구가 다르다.
    * 앞 — 큰 줄을 그리기 전에 이미 keyLH(= keyPx * 1.22) 만큼 내려가므로 여백이 거의 필요 없다.
    *      전에는 여기에 gap 을 또 더해서, 작은 줄과 큰 줄 사이만 휑하게 떴다.
    * 뒤 — 큰 글자 아래에 작은 줄이 붙는데 그쪽 restLH 는 작아서, 받쳐 줄 여백이 필요하다.
    */
-  const gapBefore = width * 0.006;
-  const gapAfter = width * 0.018;
+  const gapBefore = unit * 0.006;
+  const gapAfter = unit * 0.018;
   const blockGaps = (beforeLines.length ? gapBefore : 0) + (afterLines.length ? gapAfter : 0);
   // 십자 표시를 그리는 배치는 표시 몫으로 gap 을 한 번 더 쓴다. 전에는 이걸 totalH 에
   // 안 넣어서, 실제로 그려지는 글자 뭉치가 잰 높이보다 gap 만큼 길었다.
@@ -951,10 +954,10 @@ function drawHeroText(
     ctx.save();
     ctx.globalAlpha = 0.35;
     ctx.strokeStyle = pal.ink;
-    ctx.lineWidth = Math.max(1, width * 0.0016);
-    const arm = width * 0.055;
+    ctx.lineWidth = Math.max(1, unit * 0.0016);
+    const arm = unit * 0.055;
     ctx.beginPath(); ctx.moveTo(x - arm, y); ctx.lineTo(x + arm, y); ctx.stroke();
-    ctx.beginPath(); ctx.moveTo(x, y - width * 0.016); ctx.lineTo(x, y + width * 0.016); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x, y - unit * 0.016); ctx.lineTo(x, y + unit * 0.016); ctx.stroke();
     ctx.restore();
   }
 
@@ -982,16 +985,17 @@ function renderGrainCard(
     drawHeroText(ctx, width, height, text, reference, spec, layout);
     return canvas.toDataURL('image/png');
   }
-  const maxW = width * (layout.measure ?? GRAIN_MEASURE);
-  const minPx = Math.round(width * 0.045 * fontScale(spec.font));
-  const step = Math.max(1, Math.round(width * 0.003));
+  const unit = Math.min(width, height);
+  const maxW = Math.min(width * (layout.measure ?? GRAIN_MEASURE), unit * 1.3);
+  const minPx = Math.round(unit * 0.045 * fontScale(spec.font));
+  const step = Math.max(1, Math.round(unit * 0.003));
   const vFits = (px: number, count: number) =>
     count * px * GRAIN_LH + (reference ? px * 0.6 * 1.9 : 0) <= height * 0.84;
 
   // 사용자가 Enter로 넣은 줄바꿈이 있으면 그 배치를 그대로 존중한다(편집 안내의 약속).
   // 줄바꿈이 없을 때만 스펙대로 1→4줄 균형 분할을 시도한다.
   const hasUserBreaks = text.includes('\n');
-  let fontPx = Math.round(width * 0.065 * fontScale(spec.font));
+  let fontPx = Math.round(unit * 0.065 * fontScale(spec.font));
   let lines: string[] | null = null;
   while (fontPx >= minPx && !lines) {
     ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
@@ -1014,7 +1018,7 @@ function renderGrainCard(
     if (!hasUserBreaks) for (let n = 5; n <= 12 && !lines; n++) lines = wrapKeepAll(ctx, text, maxW, n);
     if (!lines) lines = forceWrap(ctx, text, maxW);
     // 줄 수가 아주 많아도 카드 밖으로 나가지 않도록 끝까지 줄인다(원문 보존 우선).
-    while (!vFits(fontPx, lines.length) && fontPx > width * 0.014) {
+    while (!vFits(fontPx, lines.length) && fontPx > unit * 0.014) {
       fontPx -= step;
       ctx.font = `${bodyWeight(spec)} ${fontPx}px ${spec.font}`;
       lines = forceWrap(ctx, text, maxW);

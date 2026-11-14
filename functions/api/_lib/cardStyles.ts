@@ -59,7 +59,7 @@ export const T01_SURFACE = 'Fuzzy felt-like edges on every shape and a fine wool
 export const T01_NOT = 'Only people and animals have faces — globes, the earth, clouds, suns, balloons, plants, seeds, hearts and objects have NO eyes or mouth. '
   + 'No animal unless the scene names one (an animal the scene names, such as a sheep or a lamb, is drawn plainly and simply). '
   + 'NOT a storybook scene: no landscape scenery behind the characters. NOT outlined, NOT a sweet children\'s storybook, NOT a workbook or church-bulletin clip art, NOT kawaii, NOT busy, NOT photo-realistic. '
-  + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises or rolling hills. '
+  + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises, rolling hills or park benches. '
   // 2026-11-13 사용자: 인물 주변 빛줄기 짝대기가 너무 많이 나온다 → 막는다.
   + 'NO radiating rays, glow dashes, sunburst lines, motion lines or emphasis marks around people or objects — the picture stays calm and uncluttered. '
   // 2026-11-14 사용자: 하트 주변에 점·짧은 선이 둘러 나온다 → 하트만이 아니라 강조 표시 전부를 막는다.
