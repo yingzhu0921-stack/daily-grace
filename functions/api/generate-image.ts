@@ -1504,13 +1504,13 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 사진 스타일은 장면이 정해지지 않았을 때 쓸 장소 후보를 매번 무작위로 몇 개 건넨다.
     const PHOTO_PLACES = ['비 갠 골목', '버스 정류장', '돌계단', '빨래 널린 옥상', '기찻길 옆', '강가 둑길', '작은 항구', '숲길', '들판 사이 길', '시골 버스길', '담장 너머 마당', '다리 위', '바닷가 방파제', '시장 골목 끝', '학교 운동장', '산책로 갈림길', '골목 계단', '오래된 대문 앞', '논두렁', '호숫가 선착장'];
     const photoHint = (style === '감성 사진' || style === '빈티지 필름')
-      ? `\n\n[이번 장소 — 꼭 지키세요] 입력에 구체적인 장소가 없으면(감정·말씀·기도만 있으면) 장면의 장소를 반드시 다음 중 하나로 정하세요: ${[...PHOTO_PLACES].sort(() => Math.random() - 0.5).slice(0, 3).join(', ')}. 말씀·기록의 정서에 가장 맞는 하나를 고르세요. 공원, 벤치, 책상, 컵, 창가는 입력에 있을 때만 쓰세요.`
+      ? `\n\n[이번 장소 — 꼭 지키세요] 입력에 구체적인 장소가 없으면(감정·말씀·기도만 있으면) 장면의 장소를 반드시 다음 중 하나로 정하세요: ${[...PHOTO_PLACES].sort(() => Math.random() - 0.5).slice(0, 3).join(', ')}. 말씀·기록의 정서에 가장 맞는 하나를 고르세요. 공원, 벤치, 의자, 책상, 컵, 창가는 입력에 있을 때만 쓰세요 — 쉼·기다림 같은 말이 있어도 벤치나 의자를 소품으로 넣지 마세요. 쉼은 빛·시간대·빈 공간으로 보여 주세요.`
       : '';
     const decidedNote = decidedScene
       ? `\n\n이번 입력은 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
       : '';
     try {
-      const expanded = await gpt(env.OPENAI_API_KEY, [
+      const ask = () => gpt(env.OPENAI_API_KEY, [
         {
           role: 'system',
           content: backgroundExpansionInstructions(style) + decidedNote + photoHint,
@@ -1518,6 +1518,16 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
         { role: 'user', content: scene },
       // 작은 모델은 말씀 맥락을 못 읽고 영어 낱말이 섞였다('evoking합니다'). 2026-11-10 사용자 승인으로 상향.
       ], 600, 'gpt-4o');
+      let expanded = await ask();
+      // 사진 스타일: 입력에 없는 벤치·의자를 소품으로 넣었으면 한 번 다시 받는다(2026-11-14 사용자 "또 벤치").
+      const BANNED_PROPS = /벤치|의자/;
+      // 장면 대신 해설로 시작하는 경우('…을 담은 장면으로 … 상상해 보세요')도 한 번 다시 받는다.
+      const COMMENTARY = /상상해|담은 (자연스러운 )?장면으로|담고 있습니다/;
+      const bad = (t: string) => COMMENTARY.test(t) || (!!photoHint && BANNED_PROPS.test(t) && !BANNED_PROPS.test(scene));
+      if (bad(expanded)) {
+        const retry = await ask().catch(() => '');
+        if (retry && !bad(retry)) expanded = retry;
+      }
       return Response.json({ expandedPrompt: expanded });
     } catch (e) {
       // 전에는 여기서 던진 오류가 그대로 올라가 Cloudflare 오류 페이지(500)가 갔다.
