@@ -41,7 +41,7 @@ export const T01_FIGURE_LOOK = 'Every person is drawn as this app\'s own SIGNATU
   // 이어서 "입이 아래로 뾰족한 건 별로" → ㅅ 입이 V 자로 그려졌다. 한글 자모 입을 빼고, 사용자가 좋아한 아브라함처럼 작고 동그란 입.
   + 'MOUTH: TINY and soft — a small round "o", a tiny short line, or a small open mouth when excited. NEVER a pointed V or ^ shape, never a big U smile. '
   + 'EYEBROWS: usually none; add two tiny dashes only for a strong moment (surprise, effort). '
-  + 'NEVER a U-shaped smile or a curved grin, NO nose — not even on bearded or older figures such as Jesus or Abraham: no nose line, no nose dot, no nose bump, the skin between the eyes and the mouth or beard stays plain — NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
+  + 'NEVER a U-shaped smile or a curved grin, NO nose, NO rosy cheek circles, NO sparkly eyes, NO sweet storybook face. '
   + 'BODY: soft and chunky with slightly odd proportions, simple arms with mitten hands and two short legs with little feet clearly visible. '
   + 'The character shows feeling with HAND GESTURES too — thumbs up, arms crossed, hands on cheeks, a little wave, hugging something. The charm comes from the character\'s expression and pose while doing the scene\'s sincere action — never from turning the scene into a gag. '
   + 'A teenager or young adult in feel (a child only when the scene is about a child; never a baby or an elderly person); clothes are one flat colour. Never a bald featureless egg. '
