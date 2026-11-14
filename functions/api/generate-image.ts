@@ -1480,7 +1480,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 2026-11-14 감성 사진을 자연으로 바꿨더니 6장이 모두 '파란 하늘 + 들꽃 풀밭'이었다 → 소재 갈래와 시간·색을 매번 정해 준다.
     const NATURE_MOODS = [
       'soft pastel dusk: blush pink, lilac and pale peach sky, low gentle light',
-      'misty early morning: milky white air, pale sage green, dew',
+      'clear early morning: pale gold first light, fresh sage green, dew',
       'clear bright noon: clean sky blue, fresh leaf green, white clouds',
       'just after rain: silvery soft light, wet deep green, pale grey-blue sky',
       'soft late afternoon: warm cream and pale honey light, long gentle shadows (never orange)',
@@ -1489,9 +1489,9 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       'early autumn: soft beige, dried-grass gold and faded rose, clear pale sky',
     ];
     const FILM_MOODS = [
-      'faded summer afternoon: olive green, warm beige, soft haze',
+      'faded summer afternoon: olive green, warm beige, clear air',
       'pink dusk: dusty rose and lilac sky, soft dark blue below',
-      'misty morning: milky grey-green, cool and quiet',
+      'cool clear morning: pale grey-green and soft blue, quiet',
       'golden late light: soft honey and moss green, long gentle shadows',
       'overcast day: muted teal, sage and soft grey',
       'early evening: deep teal sky, first warm lights far away',
@@ -1524,7 +1524,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
               cardBrief: style === '감성 사진'
                 ? 'a soft, airy, bright pastel 35mm film photograph of NATURE like an aesthetic Pinterest verse wallpaper — flowers shot low against the sky, clouds, a green hill or meadow, still water, blossoms or leaves in the light — with a large calm area of sky or soft blur at the top. NO people, no buildings, streets or interiors, no Bible re-enactment or religious symbol, and never one loose object placed as the subject. The meaning is carried by which part of nature is shown, its state (blooming, after rain, first light) and the light.'
                 : deepStyle === 'photo'
-                ? 'a nostalgic 90s 35mm film snapshot — faded olive, teal and beige, soft grain and vignette, often seen through a train or car window or past soft foreground leaves: a river glinting in the sun, a misty field, birds over trees, dappled shade under a big tree, a town river at pink dusk. people only when this card asks for them, and then small, far away and faceless; no Bible re-enactment or religious symbol, never one loose object placed as the subject. The meaning is carried by the place, its weather and the light of that hour.'
+                ? 'a nostalgic 90s 35mm film snapshot — faded olive, teal and beige, soft grain and vignette, often seen through a train or car window or past soft foreground leaves: a river glinting in the sun, a field in morning light, birds over trees, dappled shade under a big tree, a town river at pink dusk. people only when this card asks for them, and then small, far away and faceless; no Bible re-enactment or religious symbol, never one loose object placed as the subject. The meaning is carried by the place, its weather and the light of that hour.'
                 : isFlat
                 ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
                 : 'a calm, minimal gouache picture seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. NO indoor rooms, NO tabletop objects, NO close-ups. ONE coherent, believable place — NO giant hands from the sky, NO floating globes or planets, NO symbolic objects hovering in the air, NO collage of scales (a whole earth plus a person standing on it). When the message names a Bible person or a Bible moment, SHOW it in this minimal way: the people of that moment tiny and far away but recognisable by the clothing of their time (a long robe, a head cloth, a staff) in their known setting — e.g. Abraham small before his tents under a sky full of stars, a shepherd with a few sheep on a hillside. When the message is about what the Lord does as a shepherd, a tiny shepherd with his sheep.',
@@ -1545,7 +1545,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     // 사진 스타일은 장면이 정해지지 않았을 때 쓸 장소 후보를 매번 무작위로 몇 개 건넨다.
     const PHOTO_PLACES = ['비 갠 골목', '버스 정류장', '돌계단', '빨래 널린 옥상', '기찻길 옆', '강가 둑길', '작은 항구', '숲길', '들판 사이 길', '시골 버스길', '담장 너머 마당', '다리 위', '바닷가 방파제', '시장 골목 끝', '학교 운동장', '산책로 갈림길', '골목 계단', '오래된 대문 앞', '논두렁', '호숫가 선착장'];
     // 깊게 읽은 장면이 있으면 장소 후보를 주지 않는다(후보가 뜻을 이겨 '무거운 짐'에 버스 정류장이 나왔다).
-    const PHOTO_NATURE_PLACES = ['하늘 아래 낮게 찍은 들꽃', '뭉게구름 뜬 파란 하늘과 나뭇잎', '초록 언덕', '하늘이 비친 호수', '잔잔한 바닷가', '바람에 흔들리는 키 큰 풀', '꽃이 핀 나뭇가지', '코스모스 밭', '안개 걷히는 아침 들판', '연한 노을이 진 낮은 지평선', '데이지 핀 풀밭', '비 갠 뒤 젖은 잎'];
+    const PHOTO_NATURE_PLACES = ['하늘 아래 낮게 찍은 들꽃', '뭉게구름 뜬 파란 하늘과 나뭇잎', '초록 언덕', '하늘이 비친 호수', '잔잔한 바닷가', '바람에 흔들리는 키 큰 풀', '꽃이 핀 나뭇가지', '코스모스 밭', '이슬 맺힌 아침 들판', '연한 노을이 진 낮은 지평선', '데이지 핀 풀밭', '비 갠 뒤 젖은 잎'];
     const photoHint = (style === '감성 사진' || style === '빈티지 필름')
       ? `${style === '감성 사진' ? `\n\n[이번 사진 — 꼭 지키세요] 빛과 색: ${natureMood}. 이 시간대와 색으로 쓰세요. 들꽃 풀밭 + 파란 하늘로 돌아가지 마세요.` : `\n\n[이번 사진 — 꼭 지키세요] 소재: ${filmRegister} / 빛과 색: ${filmMood}. 이 소재와 시간대·색으로 쓰세요.${filmIsWater ? '' : ' 강·호수·물가 풍경으로 돌아가지 마세요.'} ${filmPeople ? '사람: 요즘 사람 한~세 명을 멀리 작게, 뒤나 옆모습으로 얼굴이 안 보이게 넣으세요.' : '사람: 이번에는 넣지 마세요.'}`}\n\n[장소] ${decidedScene ? '장소는 위에서 정한 장면을 그대로 따르세요.' : `입력에 구체적인 장소가 없으면, 말씀·기록의 뜻이 보이는 장소를 고르세요. 뜻에 맞을 때만 다음 후보를 참고하세요: ${[...(style === '감성 사진' ? PHOTO_NATURE_PLACES : PHOTO_PLACES)].sort(() => Math.random() - 0.5).slice(0, 3).join(', ')}.`}${style === '감성 사진' ? ' 사람은 넣지 마세요.' : ''} 공원, 벤치, 의자, 책상, 컵, 창가는 입력에 있을 때만 쓰세요 — 쉼·기다림 같은 말이 있어도 벤치나 의자를 소품으로 넣지 마세요. 쉼은 빛·시간대·빈 공간으로 보여 주세요.`
       : '';

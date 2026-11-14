@@ -36,7 +36,7 @@ export const MINIMAL_SCENE_REGISTERS = [
 export const PHOTO_SCENE_REGISTERS = [
   'SEEN THROUGH A WINDOW — a landscape or town passing outside a train, bus or car window, the frame soft and dark at the edges.',
   'WATER IN THE LIGHT — sun glints sparkling on a river, lake or sea, or a river at dusk with a distant bridge or town.',
-  'A FIELD OR MEADOW IN WEATHER — morning mist over a field (animals such as horses or sheep far away are fine), tall grass, a hillside after rain.',
+  'A FIELD OR MEADOW IN WEATHER — a field in clear morning light (animals such as horses or sheep far away are fine), tall grass, a hillside after rain.',
   'SKY AND BIRDS — a flock of birds or a single bird crossing a soft sky above trees or water.',
   'UNDER A BIG TREE — dappled light and shade on a lawn or path, the tree crown framing the sky.',
   'CLOSE IN NATURE — daisies, grass or leaves in soft focus with light behind them, seen from low down.',
@@ -49,7 +49,7 @@ export const PHOTO_NATURE_REGISTERS = [
   'SKY AND CLOUDS — big soft clouds or a clear pastel sky, with leaves, a branch or blossoms at one edge.',
   'A GREEN HILL, MEADOW OR FIELD under a wide sky, seen from where a person would stand.',
   'STILL OR GENTLE WATER — a lake reflecting the sky, a calm shore, a soft sea horizon.',
-  'A PARTICULAR HOUR OR WEATHER in nature — first light, soft morning mist lifting, a pastel dusk, clearing after rain.',
+  'A PARTICULAR HOUR OR WEATHER in nature — first light, dew in clear morning air, a pastel dusk, clearing after rain.',
   'GROWING THINGS UP CLOSE — tall grass in the wind, a blossoming branch, new leaves in the light, a field of flowers seen from inside it.',
 ];
 
