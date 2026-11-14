@@ -221,7 +221,9 @@ export function RecordSelectorModal({ open, onClose, records, onConfirm, onRefet
 
   const handleSelectRecord = (record: Record) => {
     setSelectedRecord(record);
-    setConfirmedText(getRecordText(record));
+    // 2026-11-14 사용자: 배경 참고로 Q.T 를 불러오면 본문("히 10")만 들어갔다. 배경은 장면을 그려야 하니
+    // 본문과 묵상 내용을 함께 넣는다(카드 문구용은 지금처럼 본문 먼저).
+    setConfirmedText(purpose === 'background' ? getRecommendSource(record) : getRecordText(record));
     setOptions([]);
     setRecommendCount(0);
     setRecommendationError('');
