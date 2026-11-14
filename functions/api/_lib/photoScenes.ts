@@ -46,6 +46,25 @@ export const NATURE_PHOTO_SCENES = [
   'ivy and small flowers on an old stone wall in the sun',
   'climbing roses on a white garden fence',
   'moss and tiny wildflowers growing between stones',
+  // 2026-11-14 후보를 6개로 늘리며 더했다.
+  'a magnolia tree in full white bloom against the sky',
+  'forsythia bushes bright yellow along a stone wall',
+  'pink azaleas covering a hillside',
+  'a field of white buckwheat flowers',
+  'purple morning glories climbing a fence in the morning',
+  'camellia flowers with red petals fallen on green moss',
+  'a persimmon tree with orange fruit against a clear autumn sky',
+  'sun shining through translucent new green leaves, seen from below',
+  'a meadow of yellow buttercups and tall grass',
+  'a wheat-coloured field of barley with a single path line',
+  'plum blossoms on a dark branch in early spring',
+  'soft pink muhly grass glowing in the light',
+  'a quiet pine grove with sunlight on the needles',
+  'a hillside of green terraced fields',
+  'a lone bare tree in fresh snow under a pale blue sky',
+  'raindrops on a big green leaf, close up',
+  'a cotton-candy sky of pink and blue clouds',
+  'a field of tall white daisies under a soft overcast sky',
 ];
 
 /** 빈티지 필름 — 바랜 90s 필름, 장소·동네·자연. 사람은 별도 규칙으로 가끔 작게. */
@@ -83,6 +102,23 @@ export const FILM_PHOTO_SCENES = [
   'a quiet winter beach',
   'an old greenhouse full of plants',
   'a small harbour with a few fishing boats',
+  // 2026-11-14 후보를 6개로 늘리며 더했다.
+  'an old bus stop on a country road with fields behind',
+  'a quiet campus lawn with old brick buildings',
+  'a riverside cycling path lined with trees',
+  'a hanok roof and courtyard in soft light',
+  'stone steps climbing up through a hillside village',
+  'a sunlit kitchen window seen from the garden outside',
+  'a fence covered in roses beside a quiet country lane',
+  'a persimmon tree hanging over an old village wall',
+  'a small bridge over a stream in a village',
+  'telephone wires and a sky above low rooftops',
+  'a convenience store and an empty crosswalk at dusk',
+  'a field of cosmos beside a railway',
+  'a bookshop doorway with plants on a quiet street',
+  'an orchard row with fruit on the trees',
+  'a snowy park path with lamp posts',
+  'a seaside cliff path with wildflowers',
 ];
 
 /** 목록에서 서로 다른 n개를 무작위로 고른다. */

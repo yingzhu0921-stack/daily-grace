@@ -1502,11 +1502,11 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       'early evening: deep teal sky, first warm lights far away',
     ];
     const filmMood = FILM_MOODS[Math.floor(Math.random() * FILM_MOODS.length)];
-    // 2026-11-14 사용자 "장면은 진짜 다양하게" → 갈래 대신 구체적인 장면 후보(photoScenes.ts)에서 매번 셋을 건네 하나를 고르게 한다.
+    // 2026-11-14 사용자 "장면은 진짜 다양하게" → 갈래 대신 구체적인 장면 후보(photoScenes.ts)에서 매번 여섯을 건네 하나를 고르게 한다(처음 셋 → 사용자 "더 많이").
     // 후보에 물 장면이 하나라도 끼면 모델이 그걸 골라 12장 중 7장이 물이었다 → 물 장면은 다섯 번에 한 번만 후보에 넣는다.
     const sceneList = style === '감성 사진' ? NATURE_PHOTO_SCENES : FILM_PHOTO_SCENES;
     const allowWater = Math.random() < 0.2;
-    const photoOptions = pickScenes(sceneList.filter((o) => allowWater || !SCENE_IS_WATER.test(o)), 3);
+    const photoOptions = pickScenes(sceneList.filter((o) => allowWater || !SCENE_IS_WATER.test(o)), 6);
     const photoOptionsEn = photoOptions.map((o, i) => `(${i + 1}) ${o}`).join('  ');
     const filmIsWater = photoOptions.some((o) => SCENE_IS_WATER.test(o));
     // 절반쯤 멀리 작은 사람을 넣는다(레퍼런스: 강가에 앉은 사람, 풀밭 소풍). 창 너머 장면에는 넣지 않는다.
@@ -1536,7 +1536,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
                 ? 'a flat, outline-free indie picture-book illustration on one bold ground colour: one cute, goofy character doing something a bit funny, the main object, and two or three big supporting things from the same place — no scattered tiny decorations.'
                 : 'a calm, minimal gouache picture seen from a distance or from above: a few LARGE areas of colour (land, water, sky, fog) and ONE small point of interest that carries the meaning — a tiny far-away person doing the action, a small boat, a lit window, a few white birds, a single tree. NO indoor rooms, NO tabletop objects, NO close-ups. ONE coherent, believable place — NO giant hands from the sky, NO floating globes or planets, NO symbolic objects hovering in the air, NO collage of scales (a whole earth plus a person standing on it). When the message names a Bible person or a Bible moment, SHOW it in this minimal way: the people of that moment tiny and far away but recognisable by the clothing of their time (a long robe, a head cloth, a staff) in their known setting — e.g. Abraham small before his tents under a sky full of stars, a shepherd with a few sheep on a hillside. When the message is about what the Lord does as a shepherd, a tiny shepherd with his sheep.',
               register: isFlat ? pickRegister(FLAT_SUBJECT_DOMAINS, seed, 1, 0) : deepStyle === 'photo'
-                ? `CHOOSE EXACTLY ONE of these three scenes — the one whose feeling best fits the message — and build the picture from it: ${photoOptionsEn}. Use another scene only when the message itself names a concrete thing (e.g. sheep, the sea, a vine). LIGHT AND COLOUR FOR THIS CARD: ${style === '감성 사진' ? natureMood : filmMood} (if it clashes with the chosen scene's season or weather, keep the scene and adapt the light). No sunset or sunrise and no sun disc in the sky unless that light says dusk.${filmIsWater ? '' : ' NO river, lake, sea, stream, pond or any water in this picture.'}${style === '감성 사진' ? '' : ` ${filmPeopleNote}`}`
+                ? `CHOOSE EXACTLY ONE of these six scenes — the one whose feeling best fits the message — and build the picture from it: ${photoOptionsEn}. Use another scene only when the message itself names a concrete thing (e.g. sheep, the sea, a vine). LIGHT AND COLOUR FOR THIS CARD: ${style === '감성 사진' ? natureMood : filmMood} (if it clashes with the chosen scene's season or weather, keep the scene and adapt the light). No sunset or sunrise and no sun disc in the sky unless that light says dusk.${filmIsWater ? '' : ' NO river, lake, sea, stream, pond or any water in this picture.'}${style === '감성 사진' ? '' : ` ${filmPeopleNote}`}`
                 : pickRegister(MINIMAL_SCENE_REGISTERS, seed, 1, 0),
               outputShape: isFlat
                 ? `"<the main subject in English> — from '<the Korean word or phrase it comes from>'; with <two or three big supporting things from the same place>"`
@@ -1551,10 +1551,10 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       } catch { /* 실패하면 원래 규칙대로 늘린다 */ }
     }
     // 2026-11-14 사용자 "감성 사진이 계속 책상·컵·창문" → 고쳤더니 이번엔 공원 벤치로 쏠렸다.
-    // 사진 스타일은 장면 후보(photoScenes.ts) 셋을 매번 건넨다.
+    // 사진 스타일은 장면 후보(photoScenes.ts) 여섯을 매번 건넨다.
     // 깊게 읽은 장면이 있으면 장소 후보를 주지 않는다(후보가 뜻을 이겨 '무거운 짐'에 버스 정류장이 나왔다).
     const photoHint = (style === '감성 사진' || style === '빈티지 필름')
-      ? `\n\n[이번 사진 — 꼭 지키세요] 장면 후보: ${photoOptionsEn} — ${decidedScene ? '위에서 정한 장면을 따르세요.' : '이 셋 중 말씀·기록에 가장 맞는 하나로 쓰세요(입력이 구체적인 장면을 말하면 그 장면).'} 빛과 색: ${style === '감성 사진' ? natureMood : filmMood}. 노을·해돋이는 이 빛이 저녁일 때만. ${style === '감성 사진' ? '사람은 넣지 마세요.' : filmPeople ? '사람: 요즘 사람 한~세 명을 멀리 작게, 뒤나 옆모습으로 얼굴이 안 보이게 넣으세요.' : '사람: 이번에는 넣지 마세요.'}${filmIsWater ? '' : ' 강·호수·바다로 돌아가지 마세요.'}`
+      ? `\n\n[이번 사진 — 꼭 지키세요] 장면 후보: ${photoOptionsEn} — ${decidedScene ? '위에서 정한 장면을 따르세요.' : '이 여섯 중 말씀·기록에 가장 맞는 하나로 쓰세요(입력이 구체적인 장면을 말하면 그 장면).'} 빛과 색: ${style === '감성 사진' ? natureMood : filmMood}. 노을·해돋이는 이 빛이 저녁일 때만. ${style === '감성 사진' ? '사람은 넣지 마세요.' : filmPeople ? '사람: 요즘 사람 한~세 명을 멀리 작게, 뒤나 옆모습으로 얼굴이 안 보이게 넣으세요.' : '사람: 이번에는 넣지 마세요.'}${filmIsWater ? '' : ' 강·호수·바다로 돌아가지 마세요.'}`
       : '';
     const decidedNote = decidedScene
       ? `\n\n이번 입력은 말씀·기록이라, 그릴 장면을 말씀을 깊게 읽고 이미 정했습니다: ${decidedScene}\n이 장면은 사용자가 지정한 장면으로 칩니다. 규칙 1-2, 1-3, 3, 5보다 이 장면이 먼저이고, 이 장면에 나오는 사람·사물·장소는 임의로 더한 것이 아닙니다. 이 장면을 표현 기법과 규칙 2, 4, 6, 7, 8에 맞게 한국어로 설명하세요. 장면을 다른 것으로 바꾸거나 흔한 풍경(초원, 바다, 산 정상, 새싹, 비둘기)으로 돌리지 마세요. 장면 뒤의 '— from' 출처 표시는 옮기지 말고 장면만 쓰세요.`
