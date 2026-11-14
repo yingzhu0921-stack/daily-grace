@@ -62,4 +62,6 @@ export const T01_NOT = 'Only people and animals have faces — globes, the earth
   + 'Unless the scene names them: no sprouts or seedlings, watering cans, streams, lily pads, sunrises or rolling hills. '
   // 2026-11-13 사용자: 인물 주변 빛줄기 짝대기가 너무 많이 나온다 → 막는다.
   + 'NO radiating rays, glow dashes, sunburst lines, motion lines or emphasis marks around people or objects — the picture stays calm and uncluttered. '
+  // 2026-11-14 사용자: 하트 주변에 점·짧은 선이 둘러 나온다 → 하트를 콕 집어 막는다.
+  + 'A HEART is always drawn on its own: NO little dots, dashes, ticks, rays or sparkle marks around a heart (or around anything held up, such as a gift or a book) — empty background right up to its edge. '
   + 'No crayon scribbles, pencil, watercolour, halftone dots, sparkles, floating hearts or rainbows, and no English words in the picture; the only word allowed inside the picture is one short Korean label copied exactly from the verse when the scene asks for it (e.g. a bag labelled 염려).';
