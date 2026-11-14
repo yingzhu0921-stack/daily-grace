@@ -1441,10 +1441,10 @@ export default function Designer() {
       }
 
       const data = await response.json();
-      if (!data.expandedPrompt?.trim()) throw new Error('배경 설명을 만들지 못했어요. 다시 시도해주세요.');
+      if (!data.expandedPrompt?.trim()) throw new Error('이미지 프롬프트를 만들지 못했어요. 다시 시도해주세요.');
       setExpandedPrompt(data.expandedPrompt);
       if (generateAfter) await generateBackground(data.expandedPrompt);
-      else toast.success('배경 설명을 준비했어요. 필요하면 수정하세요.');
+      else toast.success('이미지 프롬프트를 준비했어요. 필요하면 고쳐서 만드세요.');
     } catch (error) {
       console.error('❌ Expand prompt error:', error);
       toast.error(error instanceof Error ? error.message : '프롬프트 확장에 실패했습니다.');
@@ -4502,7 +4502,7 @@ export default function Designer() {
                   <button onClick={() => expandPrompt(false)}
                     disabled={isGenerating || isExpandingPrompt || !selectedStyle}
                     className="text-sm underline disabled:opacity-40">
-                    그리기 전에 배경 설명 보기·고치기
+                    그리기 전에 이미지 프롬프트 보기·고치기
                   </button>
                 )}
                 {/* 확장된 프롬프트 확인 */}
@@ -4510,7 +4510,7 @@ export default function Designer() {
                   <section>
                     <div className="flex items-center justify-between mb-1.5">
                       <h2 className="text-[13px] font-semibold text-[#2E2E2E]">
-                        배경 설명 (고쳐서 만들 수 있어요)
+                        이미지 프롬프트 (고쳐서 만들 수 있어요)
                       </h2>
                       <button
                         onClick={() => setExpandedPrompt('')}
@@ -4525,7 +4525,7 @@ export default function Designer() {
                         value={expandedPrompt}
                         disabled={isGenerating || isExpandingPrompt}
                         onChange={(e) => setExpandedPrompt(e.target.value)}
-                        placeholder="배경 설명을 자유롭게 수정하세요..."
+                        placeholder="이미지 프롬프트를 자유롭게 고치세요..."
                         className="w-full h-24 bg-transparent text-[#2E2E2E] text-[13px] leading-relaxed resize-none focus:outline-none placeholder:text-[#ACACAC]"
                       />
                     </div>

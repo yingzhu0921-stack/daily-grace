@@ -1532,7 +1532,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
     } catch (e) {
       // 전에는 여기서 던진 오류가 그대로 올라가 Cloudflare 오류 페이지(500)가 갔다.
       console.error('[expand-prompt] failed:', e instanceof Error ? e.message : String(e));
-      return Response.json({ error: '배경 설명을 만들지 못했어요. 잠시 후 다시 시도해 주세요.', detail: e instanceof Error ? e.message.slice(0, 200) : '' }, { status: 502 });
+      return Response.json({ error: '이미지 프롬프트를 만들지 못했어요. 잠시 후 다시 시도해 주세요.', detail: e instanceof Error ? e.message.slice(0, 200) : '' }, { status: 502 });
     }
   }
 
