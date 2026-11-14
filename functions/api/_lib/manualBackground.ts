@@ -102,8 +102,10 @@ export const manualBackgroundStyles: Record<string, BackgroundStyle> = {
   '빈티지 필름': {
     // 2026-11-14 사용자 "감성 사진과 톤이 비슷, 필름 사진도 검색해 봐" → 핀터레스트 '필름 감성 말씀 배경화면'·'film photography bible verse':
     // 기차·차 창문 너머 풍경, 앞에 걸친 흐린 잎, 비네팅, 반짝이는 강물, 분홍 노을의 강과 다리, 안개 들판의 말, 새 떼, 큰 나무 그늘.
-    // 바랜 올리브·청록·베이지, 새까만 그림자는 아님. 사람은 사용자 결정으로 계속 뺀다.
-    technique: 'A real 35mm film snapshot with a nostalgic 90s analog look, like the film photos on Pinterest verse wallpapers: visible film grain, faded and slightly warm colour, muted olive and moss greens, soft teal and dusty blue, beige and faded rose; lifted soft blacks (never deep black shadows), gentle halation on highlights, a soft natural vignette darkening the corners, a little softness or light motion blur. It feels caught in passing by someone holding a film camera: often seen THROUGH something — a train or car window frame, a gap between leaves, out-of-focus grass or branches in the foreground — or a slightly imperfect, casual framing (vary it: not every photo has grass in the foreground). Photograph EXACTLY the subject, hour and weather given in the scene description. NO PEOPLE at all: no person, figure, silhouette or hands. NOT a still life: never a single loose object (a bag, a cup, a ball) placed as the subject. Avoid: crisp HDR digital sharpness, vivid punchy colour, bright clean pastel blue sky, orange sunset cast, text or watermarks.',
+    // 바랜 올리브·청록·베이지, 새까만 그림자는 아님.
+    // 이어서 사용자 "사람 나오게, 멀리·얼굴 안 나오게" → 절반쯤 멀리 작게, 뒤·옆모습만(넣을지는 generate-image 가 정한다).
+    candidPeople: true,
+    technique: 'A real 35mm film snapshot with a nostalgic 90s analog look, like the film photos on Pinterest verse wallpapers: visible film grain, faded and slightly warm colour, muted olive and moss greens, soft teal and dusty blue, beige and faded rose; lifted soft blacks (never deep black shadows), gentle halation on highlights, a soft natural vignette darkening the corners, a little softness or light motion blur. It feels caught in passing by someone holding a film camera: often seen THROUGH something — a train or car window frame, a gap between leaves, out-of-focus grass or branches in the foreground — or a slightly imperfect, casual framing (vary it: not every photo has grass in the foreground). Photograph EXACTLY the subject, hour and weather given in the scene description; show a river, lake or sea ONLY when the scene description names water. PEOPLE: only when the scene description includes them — then they are SMALL and FAR AWAY in the landscape (one to three people, a few percent of the frame), seen from behind or the side so NO FACE is visible, doing something ordinary (sitting by the water, a picnic on the grass, walking along a path, lying on a lawn); never close-up, never posing, never looking at the camera, and no Bible costume. When the scene description has no people, add none. NOT a still life: never a single loose object (a bag, a cup, a ball) placed as the subject. Avoid: crisp HDR digital sharpness, vivid punchy colour, bright clean pastel blue sky, orange sunset cast, text or watermarks.',
     medium: 'photo',
   },
 
@@ -171,7 +173,7 @@ const BIBLE_FIGURES_RULE = `1-1-2. 그 순간이 성경 속 사건이고 그 자
 
 /** 거리 사진처럼 평범한 사람의 일상 순간을 허용하는 사진 그림체(빈티지 필름)용 규칙 3. */
 const CANDID_PEOPLE_RULE = `3. 지정하지 않은 동물, 꽃, 컵, 종교 상징, 장소를 임의로 추가하지 마세요.
-3-1. 사람은 예외입니다. 장면에 어울리면 평범한 요즘 사람 한 명(많아야 두 명)이 일상적인 일을 하는 순간을 넣어도 됩니다 — 벤치에서 책을 읽거나, 길을 걷거나, 자전거를 타거나, 창가에 앉아 있는 모습. 카메라를 보지 않고, 옆이나 뒤에서 조금 떨어져 몰래 찍은 듯이 두세요. 장면만으로 충분하면 넣지 마세요. 성경 인물의 분장이나 연출 장면은 절대 만들지 마세요.`;
+3-1. 사람은 예외입니다. 아래 [이번 사진]에서 사람을 넣으라고 하면, 평범한 요즘 사람 한~세 명을 멀리 작게(화면의 몇 퍼센트) 넣으세요 — 물가에 앉아 있거나, 풀밭에서 소풍하거나, 길을 걷거나, 잔디에 누워 있는 모습. 뒤나 옆에서 찍혀 얼굴이 보이지 않고, 카메라를 보지 않습니다. 가까이 크게 찍힌 사람은 안 됩니다. 넣으라는 말이 없으면 사람을 넣지 마세요. 성경 인물의 분장이나 연출 장면은 절대 만들지 마세요.`;
 
 /** 사람을 '멀리 아주 작게'만 허용하는 그림체(미니멀 감성)용 규칙 3. */
 const TINY_PEOPLE_RULE = `3. 지정하지 않은 동물, 꽃, 책, 컵, 종교 상징, 장소를 임의로 추가하지 마세요. 자연스럽게 필요한 최소한의 주변 표현만 허용합니다.
