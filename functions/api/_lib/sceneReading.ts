@@ -29,29 +29,7 @@ export const MINIMAL_SCENE_REGISTERS = [
   'A TINY PERSON DOING THE MESSAGE\'S ACTION in a wide simple landscape — small, but clearly doing it.',
 ];
 
-/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 7. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
-// 2026-11-14 사용자 "말씀과 안 맞음": 장소를 무작위 후보에서 뽑아 '무거운 짐'에 시골 버스 정류장이 나왔다.
-// 이어서 "가방만 띡 나오는 게 좀 그렇다": 물건 하나를 내려놓은 정물 갈래를 빼고, 장소와 빛으로만 옮긴다.
-// 이어서 필름 레퍼런스(핀터레스트)에 맞춰 다시: 창 너머 풍경·물빛·안개·새·나무 그늘·노을 강.
-export const PHOTO_SCENE_REGISTERS = [
-  'SEEN THROUGH A WINDOW — a landscape or town passing outside a train, bus or car window, the frame soft and dark at the edges.',
-  'WATER IN THE LIGHT — sun glints sparkling on a river, lake or sea, or a river at dusk with a distant bridge or town.',
-  'A FIELD OR MEADOW IN WEATHER — a field in clear morning light (animals such as horses or sheep far away are fine), tall grass, a hillside after rain.',
-  'SKY AND BIRDS — a flock of birds or a single bird crossing a soft sky above trees or water.',
-  'UNDER A BIG TREE — dappled light and shade on a lawn or path, the tree crown framing the sky.',
-  'CLOSE IN NATURE — daisies, grass or leaves in soft focus with light behind them, seen from low down.',
-  'AN EVERYDAY PLACE WITH NO ONE IN IT — a quiet lane, a doorstep, laundry on a rooftop, a small station platform.',
-];
-
-/** 직접 편집 감성 사진 장면 갈래. 2026-11-14 핀터레스트 '말씀 배경화면 감성' 레퍼런스. 길이 6. */
-export const PHOTO_NATURE_REGISTERS = [
-  'FLOWERS SHOT LOW AND CLOSE — wildflowers or a flowering plant in the foreground, the open sky above them.',
-  'SKY AND CLOUDS — big soft clouds or a clear pastel sky, with leaves, a branch or blossoms at one edge.',
-  'A GREEN HILL, MEADOW OR FIELD under a wide sky, seen from where a person would stand.',
-  'STILL OR GENTLE WATER — a lake reflecting the sky, a calm shore, a soft sea horizon.',
-  'A PARTICULAR HOUR OR WEATHER in nature — first light, dew in clear morning air, a pastel dusk, clearing after rain.',
-  'GROWING THINGS UP CLOSE — tall grass in the wind, a blossoming branch, new leaves in the light, a field of flowers seen from inside it.',
-];
+// 사진 그림체(감성 사진·빈티지 필름)의 장면 후보는 photoScenes.ts 에 있다(2026-11-14 갈래 → 구체적인 장면 목록).
 
 /** 추상적인 말씀이 매번 받던 그림. 말씀이 직접 그 낱말을 말할 때만 허용한다. */
 // 2026-11-12 고후12:9(약한 데서 온전해지는 능력)가 매번 '비 오는 날 우산'이 됐다 → 은혜·보호를 뜻하는 흔한 그림으로 막는다.
