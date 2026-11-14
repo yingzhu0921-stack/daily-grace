@@ -46,6 +46,10 @@ export const OnboardingTimeSetup: React.FC<OnboardingTimeSetupProps> = ({ onNext
           <p className="text-[13.5px] text-[#6E675E]">
             알림 받을 시간을 선택하세요
           </p>
+          {/* 2026-11-14 사용자: 알림 기능은 현재 준비 중(앱을 열어 둔 동안에만 온다)이라고 미리 알린다. */}
+          <p className="mt-3 rounded-xl bg-white border border-[rgba(30,28,26,0.12)] px-3.5 py-2.5 text-[12.5px] leading-5 text-[#6E675E]">
+            <span className="font-bold text-[#1E1C1A]">알림 기능은 현재 준비 중이에요.</span> 지금은 앱을 열어 둔 동안에만 알림이 와요.
+          </p>
         </div>
 
         <div className="space-y-3">

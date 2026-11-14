@@ -172,6 +172,13 @@ export default function NotificationSettings() {
       </header>
 
       <div className="px-5 py-6 space-y-6">
+        {/* 2026-11-14 사용자: 앱 밖 알림(푸시)이 아직 없다는 걸 알려 둔다. 지금은 앱을 열어 둔 동안에만 온다. */}
+        <div className="rounded-2xl border border-[rgba(30,28,26,0.12)] bg-white px-4 py-3.5">
+          <p className="text-[14px] font-bold text-[#1E1C1A]">알림 기능은 현재 준비 중이에요</p>
+          <p className="mt-1 text-[12.5px] leading-5 text-[#6E675E]">
+            지금은 앱을 열어 둔 동안에만 알림이 와요. 앱을 닫아도 오는 알림은 곧 준비할게요.
+          </p>
+        </div>
         {!notificationSupported && (
           <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
             <p className="text-sm text-amber-800">
