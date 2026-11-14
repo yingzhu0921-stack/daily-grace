@@ -2640,14 +2640,14 @@ export default function Designer() {
 
     const getPreviewDimensions = () => {
       switch (previewRatio) {
-        case '9:16': return { width: 900, height: 1600 };
-        case '16:9': return { width: 1600, height: 900 };
+        case '9:16': return { width: 1080, height: 1920 };
+        case '16:9': return { width: 1920, height: 1080 };
         case '1:1': return { width: 1200, height: 1200 };
-        case '4:3': return { width: 1200, height: 900 };
-        case '4:5': return { width: 1000, height: 1250 };
-        case '3:4': return { width: 900, height: 1200 };
-        case '2:3': return { width: 900, height: 1350 };
-        default: return { width: 1000, height: 1250 };
+        case '4:3': return { width: 1440, height: 1080 };
+        case '4:5': return { width: 1080, height: 1350 };
+        case '3:4': return { width: 1080, height: 1440 };
+        case '2:3': return { width: 1080, height: 1620 };
+        default: return { width: 1080, height: 1350 };
       }
     };
 
@@ -3758,14 +3758,14 @@ export default function Designer() {
                   // Get canvas dimensions based on ratio (optimized for faster save)
                   const getDimensions = () => {
                     switch(meta.ratio) {
-                      case '9:16': return { width: 900, height: 1600 };
-                      case '16:9': return { width: 1600, height: 900 };
+                      case '9:16': return { width: 1080, height: 1920 };
+                      case '16:9': return { width: 1920, height: 1080 };
                       case '1:1': return { width: 1200, height: 1200 };
-                      case '4:3': return { width: 1200, height: 900 };
-                      case '4:5': return { width: 1000, height: 1250 };
-                      case '3:4': return { width: 900, height: 1200 };
-                      case '2:3': return { width: 900, height: 1350 };
-                      default: return { width: 900, height: 1600 };
+                      case '4:3': return { width: 1440, height: 1080 };
+                      case '4:5': return { width: 1080, height: 1350 };
+                      case '3:4': return { width: 1080, height: 1440 };
+                      case '2:3': return { width: 1080, height: 1620 };
+                      default: return { width: 1080, height: 1920 };
                     }
                   };
                   

@@ -346,13 +346,13 @@ export interface GenerativePalette {
 
 // 아우라 그레인 그라데이션 / 단색 팔레트 (T03) — 우아한 세리프 감성. 색 다양.
 const RATIO_DIMS: Record<string, { width: number; height: number }> = {
-  '9:16': { width: 900, height: 1600 },
-  '16:9': { width: 1600, height: 900 },
+  '9:16': { width: 1080, height: 1920 },
+  '16:9': { width: 1920, height: 1080 },
   '1:1': { width: 1200, height: 1200 },
-  '4:3': { width: 1200, height: 900 },
-  '4:5': { width: 1000, height: 1250 },
-  '3:4': { width: 900, height: 1200 },
-  '2:3': { width: 900, height: 1350 },
+  '4:3': { width: 1440, height: 1080 },
+  '4:5': { width: 1080, height: 1350 },
+  '3:4': { width: 1080, height: 1440 },
+  '2:3': { width: 1080, height: 1620 },
 };
 
 export function genDims(ratio: string) {
