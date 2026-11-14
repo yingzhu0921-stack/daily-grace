@@ -1008,8 +1008,9 @@ export default function Designer() {
     }
     return () => { cancelled = true; };
   }, [meta.bgImageUrl, meta.bgColor]);
-  const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br'; halfW?:number; halfH?:number }>();
-  const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number }>();
+  const dragRef = useRef<{ startX:number; startY:number; sx:number; sy:number; sw:number; sh:number; mode:'move'|'resize-tl'|'resize-tr'|'resize-bl'|'resize-br'; halfW?:number; halfH?:number; pending?: { x:number; y:number; w?:number; h?:number } }>();
+  const [isDraggingText, setIsDraggingText] = useState(false);
+  const bgDragRef = useRef<{ startX:number; startY:number; startScale:number; startPosX:number; startPosY:number; pinchStartDistance?:number; pending?: { bgPositionX?:number; bgPositionY?:number; bgScale?:number } }>();
   /**
    * 끌기 중 상태 반영은 화면 한 프레임에 한 번만(2026-11-13 사용자 "편집이 버벅인다").
    * 손가락이 움직일 때마다(초당 60~120번) 이 큰 화면 전체를 다시 그려서 아이폰에서 끌기가 끊겼다.
@@ -1155,6 +1156,7 @@ export default function Designer() {
       startX: clientX, startY: clientY,
       sx: t.x, sy: t.y, sw: t.w, sh: t.h, mode, halfW, halfH
     };
+    if (meta.safeGuide) setIsDraggingText(true);
     
     const doc = (e.currentTarget as HTMLElement).ownerDocument;
     doc.addEventListener('mousemove', onDragging);
@@ -1196,7 +1198,13 @@ export default function Designer() {
       if (Math.abs(newX - 50) < snapThreshold) newX = 50;
       if (Math.abs(newY - 50) < snapThreshold) newY = 50;
       
-      inNextFrame(() => setT(s => ({ ...s, x: newX, y: newY })));
+      // 2026-11-14 사용자 "버벅임": 프레임마다 setT 로 이 큰 화면 전체를 다시 그리면 아이폰에서 끊긴다.
+      // 끄는 동안은 글상자 DOM 만 바로 옮기고, 손을 뗄 때 한 번만 상태에 넣는다.
+      currentDrag.pending = { x: newX, y: newY };
+      inNextFrame(() => {
+        const el = document.getElementById('text-container');
+        if (el) { el.style.left = `${newX}%`; el.style.top = `${newY}%`; }
+      });
     } else {
       // 리사이즈 모드
       let newW = currentDrag.sw;
@@ -1218,7 +1226,11 @@ export default function Designer() {
         newH = clamp(currentDrag.sh + dy * 2, 20, 80);
       }
       
-      inNextFrame(() => setT(s => ({ ...s, w: newW, h: newH, x: newX, y: newY })));
+      currentDrag.pending = { w: newW, h: newH, x: newX, y: newY };
+      inNextFrame(() => {
+        const el = document.getElementById('text-container');
+        if (el) el.style.width = `${newW}%`;
+      });
     }
   };
   
@@ -1228,7 +1240,25 @@ export default function Designer() {
     doc.removeEventListener('mouseup', onDragEnd);
     doc.removeEventListener('touchmove', onTouchDragging);
     doc.removeEventListener('touchend', onDragEnd);
+    const pending = dragRef.current?.pending;
     dragRef.current = undefined;
+    if (frameIdRef.current != null) { cancelAnimationFrame(frameIdRef.current); frameIdRef.current = null; frameJobRef.current = null; }
+    if (pending) setT(s => ({ ...s, ...pending }));
+    setIsDraggingText(false);
+  };
+
+  /** 배경 끌기·확대: 끄는 동안은 배경 층 DOM 만 바꾸고, 손을 뗄 때 한 번 상태에 넣는다(위 글상자와 같은 이유). */
+  const moveBgLayer = (next: { bgPositionX?: number; bgPositionY?: number; bgScale?: number }) => {
+    const drag = bgDragRef.current;
+    if (!drag) return;
+    drag.pending = { ...drag.pending, ...next };
+    const p = drag.pending;
+    inNextFrame(() => {
+      const el = document.getElementById('bg-image-layer');
+      if (!el) return;
+      if (p.bgPositionX != null && p.bgPositionY != null) el.style.backgroundPosition = `${p.bgPositionX}% ${p.bgPositionY}%`;
+      if (p.bgScale != null) el.style.backgroundSize = `${p.bgScale}%`;
+    });
   };
 
   /** 배경 이미지 드래그 */
@@ -1240,11 +1270,7 @@ export default function Designer() {
     // ref 값을 미리 저장하여 상태 업데이트 중 undefined 방지
     const startPosX = bgDragRef.current.startPosX;
     const startPosY = bgDragRef.current.startPosY;
-    inNextFrame(() => setMeta(m => ({
-      ...m,
-      bgPositionX: clamp(startPosX + dx, 0, 100),
-      bgPositionY: clamp(startPosY + dy, 0, 100),
-    })));
+    moveBgLayer({ bgPositionX: clamp(startPosX + dx, 0, 100), bgPositionY: clamp(startPosY + dy, 0, 100) });
   };
 
   const onBgTouchDragging = (e: TouchEvent) => {
@@ -1263,7 +1289,7 @@ export default function Designer() {
       if (bgDragRef.current.pinchStartDistance) {
         const scaleChange = (currentDistance / bgDragRef.current.pinchStartDistance) * 100;
         const newScale = clamp(bgDragRef.current.startScale * (scaleChange / 100), 50, 400);
-        inNextFrame(() => setMeta(m => ({ ...m, bgScale: newScale })));
+        moveBgLayer({ bgScale: newScale });
       }
       return;
     }
@@ -1274,11 +1300,7 @@ export default function Designer() {
     const dy = ((e.touches[0].clientY - bgDragRef.current.startY) / rect.height) * 100;
     const startPosX = bgDragRef.current.startPosX;
     const startPosY = bgDragRef.current.startPosY;
-    inNextFrame(() => setMeta(m => ({
-      ...m,
-      bgPositionX: clamp(startPosX + dx, 0, 100),
-      bgPositionY: clamp(startPosY + dy, 0, 100),
-    })));
+    moveBgLayer({ bgPositionX: clamp(startPosX + dx, 0, 100), bgPositionY: clamp(startPosY + dy, 0, 100) });
   };
 
   const onBgDragEnd = (e: MouseEvent | TouchEvent) => {
@@ -1287,7 +1309,10 @@ export default function Designer() {
     doc.removeEventListener('mouseup', onBgDragEnd);
     doc.removeEventListener('touchmove', onBgTouchDragging);
     doc.removeEventListener('touchend', onBgDragEnd);
+    const pending = bgDragRef.current?.pending;
     bgDragRef.current = undefined;
+    if (frameIdRef.current != null) { cancelAnimationFrame(frameIdRef.current); frameIdRef.current = null; frameJobRef.current = null; }
+    if (pending) setMeta(m => ({ ...m, ...pending }));
   };
 
   /** 스타일 계산 */
@@ -4045,6 +4070,7 @@ export default function Designer() {
                 {/* 배경 이미지 레이어 */}
                 {meta.bgImageUrl && (
                   <div
+                    id="bg-image-layer"
                     className={`absolute inset-0 rounded-[28px] overflow-hidden ${isBgEditMode ? 'cursor-move' : ''}`}
                     style={{
                       backgroundImage: `url(${meta.bgImageUrl})`,
@@ -4082,13 +4108,16 @@ export default function Designer() {
                           touch2.clientX - touch1.clientX,
                           touch2.clientY - touch1.clientY
                         );
+                        // 한 손가락으로 끌던 중이면 아직 상태에 안 넣은 위치·크기를 이어받는다(안 그러면 튀어 돌아간다).
+                        const prev = bgDragRef.current?.pending;
                         bgDragRef.current = {
                           startX: 0,
                           startY: 0,
-                          startScale: meta.bgScale,
-                          startPosX: meta.bgPositionX,
-                          startPosY: meta.bgPositionY,
+                          startScale: prev?.bgScale ?? meta.bgScale,
+                          startPosX: prev?.bgPositionX ?? meta.bgPositionX,
+                          startPosY: prev?.bgPositionY ?? meta.bgPositionY,
                           pinchStartDistance: distance,
+                          pending: prev,
                         };
                       } else if (e.touches.length === 1) {
                         // Single-finger drag
@@ -4180,7 +4209,7 @@ export default function Designer() {
                 )}
                 
                 {/* 세이프 가이드 - 드래그 중일 때만 표시 */}
-                {meta.safeGuide && !isEditing && !!dragRef.current && (
+                {meta.safeGuide && !isEditing && isDraggingText && (
                   <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute inset-[6%] rounded-[22px] border-2 border-white/35"/>
                     <div className="absolute top-1/2 left-0 right-0 border-t border-white/25"/>
@@ -5203,7 +5232,25 @@ function Toolbar({
 /** ─────────────────────────────────────────────────────────
  * 공용 UI
  * ───────────────────────────────────────────────────────── */
-function LabeledSlider({label,min,max,step,value,onChange,dark}:{label:string;min:number;max:number;step:number;value:number;onChange:(v:number)=>void;dark?:boolean}){
+function LabeledSlider({label,min,max,step,value:propValue,onChange:propOnChange,dark}:{label:string;min:number;max:number;step:number;value:number;onChange:(v:number)=>void;dark?:boolean}){
+  // 2026-11-14 사용자 "버벅임": 슬라이더를 밀 때마다 편집 화면 전체를 다시 그렸다.
+  // 손잡이는 바로 따라오게 이 칸 안에서만 값을 들고, 화면 반영은 한 프레임에 한 번만 한다.
+  const [value, setValue] = useState(propValue);
+  const frameRef = useRef<number | null>(null);
+  const latestRef = useRef(propValue);
+  const onChangeRef = useRef(propOnChange);
+  onChangeRef.current = propOnChange;
+  useEffect(() => { if (frameRef.current == null) setValue(propValue); }, [propValue]);
+  useEffect(() => () => { if (frameRef.current != null) cancelAnimationFrame(frameRef.current); }, []);
+  const onChange = (v: number) => {
+    setValue(v);
+    latestRef.current = v;
+    if (frameRef.current != null) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      onChangeRef.current(latestRef.current);
+    });
+  };
   return (
     <div>
       <div className={`text-xs text-[#7E7C78] mb-1.5 flex items-center justify-between ${dark?'text-white':''}`}>
