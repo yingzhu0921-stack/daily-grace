@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, X, Edit2 } from 'lucide-react';
+import { X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { AppIcon, IconName } from '@/components/ui/AppIcon';
+import { LineIcon } from '@/components/ui/LineIcon';
+import { tintColor } from '@/utils/tintColor';
 import * as categoryStorage from '@/utils/categoryStorage';
 import { toast } from 'sonner';
 import { useAuth } from '@/hooks/useAuth';
@@ -343,9 +345,10 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
   return (
     <>
       <Dialog open={open} onOpenChange={onClose}>
-        <DialogContent className="max-w-[380px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] shrink-0">
-            <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
+        {/* 2026-11-14 사용자: 톤앤매너가 안 맞는다 → 홈과 같게(옅은 바탕, 연한 색 칸 + 검은 선 아이콘, 옅은 선, 둥근 검은 버튼). */}
+        <DialogContent className="max-w-[380px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden bg-[#F6F3EC] border-[rgba(30,28,26,0.12)]">
+          <DialogHeader className="px-5 pt-5 pb-3 shrink-0 text-left">
+            <DialogTitle className="text-[17px] font-bold tracking-[-0.02em] text-[#1E1C1A]">
               카테고리 관리
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -353,32 +356,32 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </DialogDescription>
           </DialogHeader>
           
-          <div className="px-6 py-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
+          <div className="px-5 pb-3 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             <div className="space-y-2">
               {categories.map(category => {
                 const isDefaultCategory = ['1', '2', '3', '4'].includes(category.id);
                 return (
                   <div
                     key={category.id}
-                    className="flex items-center justify-between py-2.5 px-3 rounded-xl bg-white hover:bg-[#F6F3EC] border border-[#EFEFEF] transition-colors cursor-pointer group"
+                    className="flex items-center justify-between py-2.5 pl-2.5 pr-1.5 rounded-2xl bg-white border border-[rgba(30,28,26,0.12)] transition-colors cursor-pointer group"
                     onClick={() => handleSelectCategory(category)}
                   >
                     <div className="flex items-center gap-3 flex-1 min-w-0">
                       {/* 모양·선 굵기를 홈 카테고리 카드와 같게 둔다. 전에는 원 + 굵은 선이라 다른 아이콘처럼 보였다. */}
                       <div
                         className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                        style={{ backgroundColor: `${normalizeCategoryColor(category.color)}28` }}
+                        style={{ backgroundColor: tintColor(normalizeCategoryColor(category.color)) }}
                       >
                         {category.icon ? (
-                          <AppIcon name={category.icon as IconName} size={20} color={normalizeCategoryColor(category.color)} strokeWidth={1.5} />
+                          <AppIcon name={category.icon as IconName} size={20} color="#1E1C1A" />
                         ) : (
-                          <span className="text-[14px] font-medium" style={{ color: normalizeCategoryColor(category.color) }}>
+                          <span className="text-[14px] font-bold text-[#1E1C1A]">
                             {category.name.charAt(0)}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center flex-1 min-w-0">
-                        <span className="text-[15px] font-semibold text-[#2E2E2E]">
+                        <span className="text-[14.5px] font-semibold text-[#1E1C1A]">
                           {category.name}
                         </span>
                       </div>
@@ -392,20 +395,22 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                             e.stopPropagation();
                             handleStartEdit(category);
                           }}
-                          className="p-2 hover:bg-[#E8E7E5] rounded-lg transition-colors"
+                          className="p-2 rounded-full hover:bg-[#F1EDE5] transition-colors"
                           title="수정"
+                          aria-label="수정"
                         >
-                          <Edit2 className="w-4 h-4 text-[#7C7C7C]" />
+                          <LineIcon name="pencil" size={17} color="#6E675E" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteCategory(category.id);
                           }}
-                          className="p-2 hover:bg-[#E8E7E5] rounded-lg transition-colors"
+                          className="p-2 rounded-full hover:bg-[#F1EDE5] transition-colors"
                           title="삭제"
+                          aria-label="삭제"
                         >
-                          <X className="w-4 h-4 text-[#D1D0CE]" />
+                          <LineIcon name="trash" size={17} color="#9A9288" />
                         </button>
                       </div>
                     )}
@@ -414,23 +419,23 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
               })}
             </div>
             
-            <div className="mt-4 text-center">
-              <p className="text-[13px] text-[#8A8A8A]">
+            <div className="mt-3 text-center">
+              <p className="text-[12px] text-[#8A8278]">
                 {categories.length}/10개 사용 중
               </p>
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED] shrink-0">
+          <div className="px-5 pt-1 pb-5 shrink-0">
             <Button
               onClick={() => {
                 requireAuth(() => {
                   setShowNewDialog(true);
                 });
               }}
-              className="w-full h-11 bg-[#2E2E2E] hover:bg-[#1E1E1E] text-white rounded-xl"
+              className="w-full h-12 bg-[#1E1C1A] hover:bg-[#333] text-white rounded-full text-[14px] font-semibold"
             >
-              <Plus className="w-4 h-4 mr-2" />
+              <LineIcon name="plus" size={16} color="#FFFFFF" />
               카테고리 추가
             </Button>
           </div>
@@ -439,9 +444,9 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
       {/* 새 카테고리 생성 다이얼로그 */}
       <Dialog open={showNewDialog} onOpenChange={setShowNewDialog}>
-        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative shrink-0">
-            <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
+        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden bg-[#F6F3EC] border-[rgba(30,28,26,0.12)]">
+          <DialogHeader className="px-5 pt-5 pb-3 relative shrink-0 text-left">
+            <DialogTitle className="text-[17px] font-bold tracking-[-0.02em] text-[#1E1C1A]">
               카테고리 추가
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -467,14 +472,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
           <div className="px-6 py-5 space-y-5 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {/* 카테고리 이름 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-2 block">
                 카테고리 이름 *
               </label>
               <Input
                 value={newName}
                 onChange={(e) => setNewName(e.target.value)}
                 placeholder="예: 간증, 성경메모, 찬양노트"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
+                className="h-12 text-[14px] rounded-xl border-[rgba(30,28,26,0.12)] bg-white"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.nativeEvent.isComposing) handleCreateCategory();
                 }}
@@ -483,14 +488,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 카테고리 설명 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-2 block">
                 설명 (선택 사항)
               </label>
               <Input
                 value={newDescription}
                 onChange={(e) => setNewDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
+                className="h-12 text-[14px] rounded-xl border-[rgba(30,28,26,0.12)] bg-white"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{newName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -499,7 +504,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 카테고리 색상 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 카테고리 색상
               </label>
               <div className="flex flex-wrap gap-2.5">
@@ -518,7 +523,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 카테고리 아이콘 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 카테고리 아이콘
               </label>
               <div className="grid grid-cols-6 gap-2 p-1">
@@ -540,14 +545,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 포함할 필드 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 포함할 필드 * (최소 1개)
               </label>
               <div className="space-y-2">
                 {RECORD_FIELDS.map(field => (
                   <label
                     key={field.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F6F3EC] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[rgba(30,28,26,0.12)] cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -562,7 +567,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                       className="w-5 h-5 rounded border-[#EDEDED] accent-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
                     />
                     <div className="flex-1">
-                      <div className="text-[14px] font-medium text-[#2E2E2E] mb-0.5">
+                      <div className="text-[13.5px] font-semibold text-[#1E1C1A] mb-0.5">
                         {field.label}
                       </div>
                       <div className="text-[13px] text-[#8A8A8A]">
@@ -584,7 +589,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   className="w-5 h-5 rounded border-[#EDEDED] accent-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
-                  <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
+                  <div className="text-[13.5px] font-semibold text-[#1E1C1A] mb-1">
                     오늘의 목표에 포함하기
                   </div>
                   <div className="text-[13px] text-[#8A8A8A] leading-relaxed">
@@ -596,7 +601,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 반복 요일 설정 */}
             <div className="pt-2">
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 반복 요일 설정
               </label>
               <p className="text-[13px] text-[#8A8A8A] mb-3">
@@ -625,7 +630,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       activeDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#F6F3EC] text-[#ACACAC] hover:bg-[#F5F5F5]'
+                        : 'bg-white border border-[rgba(30,28,26,0.12)] text-[#9A9288]'
                     }`}
                   >
                     {label}
@@ -635,7 +640,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3 shrink-0">
+          <div className="px-5 pt-3 pb-5 border-t border-[rgba(30,28,26,0.08)] flex gap-2 shrink-0">
             <Button
               onClick={() => {
                 setShowNewDialog(false);
@@ -648,14 +653,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setActiveDays([0, 1, 2, 3, 4, 5, 6]);
               }}
               variant="outline"
-              className="flex-1 h-12 border-[#EDEDED] text-[#7E7C78] hover:bg-[#F5F5F5] rounded-xl text-[15px]"
+              className="flex-1 h-12 bg-white border-[rgba(30,28,26,0.14)] text-[#6E675E] hover:bg-[#F1EDE5] rounded-full text-[14px] font-semibold"
             >
               취소
             </Button>
             <Button
               onClick={handleCreateCategory}
               disabled={!newName.trim() || selectedFields.length === 0}
-              className="flex-1 h-12 bg-[#2E2E2E] hover:bg-[#1E1E1E] text-white disabled:bg-[#E8E7E5] disabled:text-[#ACACAC] rounded-xl text-[15px] font-medium"
+              className="flex-1 h-12 bg-[#1E1C1A] hover:bg-[#333] text-white disabled:bg-[#E8E4DC] disabled:text-[#A9A196] rounded-full text-[14px] font-semibold"
             >
               만들기
             </Button>
@@ -665,9 +670,9 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
       {/* 카테고리 수정 다이얼로그 */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden">
-          <DialogHeader className="px-6 pt-6 pb-4 border-b border-[#F0EFED] relative shrink-0">
-            <DialogTitle className="text-[18px] font-semibold text-[#2E2E2E]">
+        <DialogContent hideCloseButton className="max-w-[420px] rounded-3xl p-0 gap-0 flex flex-col max-h-[90dvh] overflow-hidden bg-[#F6F3EC] border-[rgba(30,28,26,0.12)]">
+          <DialogHeader className="px-5 pt-5 pb-3 relative shrink-0 text-left">
+            <DialogTitle className="text-[17px] font-bold tracking-[-0.02em] text-[#1E1C1A]">
               카테고리 수정
             </DialogTitle>
             <DialogDescription className="sr-only">
@@ -693,27 +698,27 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
           <div className="px-6 py-5 space-y-4 flex-1 min-h-0 overflow-y-auto overscroll-contain">
             {/* 카테고리 이름 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-2 block">
                 카테고리 이름 *
               </label>
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="카테고리 이름을 입력하세요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
+                className="h-12 text-[14px] rounded-xl border-[rgba(30,28,26,0.12)] bg-white"
               />
             </div>
 
             {/* 카테고리 설명 */}
             <div>
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-2 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-2 block">
                 설명 (선택 사항)
               </label>
               <Input
                 value={editDescription}
                 onChange={(e) => setEditDescription(e.target.value)}
                 placeholder="예: 말씀을 묵상하며 은혜를 나눠요"
-                className="h-12 text-[14px] border-[#EDEDED] bg-[#F6F3EC]"
+                className="h-12 text-[14px] rounded-xl border-[rgba(30,28,26,0.12)] bg-white"
               />
               <p className="text-[12px] text-[#8A8A8A] mt-1.5">
                 비워두면 "{editName.trim() || '카테고리 이름'}에 대해 기록해보세요"로 자동 생성됩니다
@@ -722,14 +727,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 포함할 필드 — 만들 때와 같은 목록 */}
             <div className="pt-2 border-t border-[#F0EFED]">
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 포함할 필드 * (최소 1개)
               </label>
               <div className="space-y-2">
                 {RECORD_FIELDS.map(field => (
                   <label
                     key={field.id}
-                    className="flex items-start gap-3 p-3 rounded-xl bg-[#F6F3EC] hover:bg-[#F5F5F5] cursor-pointer transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-2xl bg-white border border-[rgba(30,28,26,0.12)] cursor-pointer transition-colors"
                   >
                     <input
                       type="checkbox"
@@ -744,7 +749,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                       className="w-5 h-5 rounded border-[#EDEDED] accent-[#2E2E2E] focus:ring-[#2E2E2E] mt-0.5"
                     />
                     <div className="flex-1">
-                      <div className="text-[14px] font-medium text-[#2E2E2E] mb-0.5">
+                      <div className="text-[13.5px] font-semibold text-[#1E1C1A] mb-0.5">
                         {field.label}
                       </div>
                       <div className="text-[13px] text-[#8A8A8A] leading-relaxed">
@@ -769,7 +774,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                   className="w-5 h-5 rounded border-[#EDEDED] accent-[#1F1F1F] focus:ring-[#1F1F1F] mt-0.5"
                 />
                 <div className="flex-1">
-                  <div className="text-[14px] font-medium text-[#2E2E2E] mb-1">
+                  <div className="text-[13.5px] font-semibold text-[#1E1C1A] mb-1">
                     오늘의 목표에 포함하기
                   </div>
                   <div className="text-[13px] text-[#8A8A8A] leading-relaxed">
@@ -781,7 +786,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
 
             {/* 반복 요일 설정 */}
             <div className="pt-2">
-              <label className="text-[14px] font-medium text-[#2E2E2E] mb-3 block">
+              <label className="text-[13.5px] font-semibold text-[#1E1C1A] mb-3 block">
                 반복 요일 설정
               </label>
               <p className="text-[13px] text-[#8A8A8A] mb-3">
@@ -810,7 +815,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                     className={`flex-1 h-11 rounded-full text-[14px] font-medium transition-all ${
                       editActiveDays.includes(day)
                         ? 'bg-[#1F1F1F] text-white shadow-sm scale-105'
-                        : 'bg-[#F6F3EC] text-[#ACACAC] hover:bg-[#F5F5F5]'
+                        : 'bg-white border border-[rgba(30,28,26,0.12)] text-[#9A9288]'
                     }`}
                   >
                     {label}
@@ -820,7 +825,7 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-[#F0EFED] flex gap-3 shrink-0">
+          <div className="px-5 pt-3 pb-5 border-t border-[rgba(30,28,26,0.08)] flex gap-2 shrink-0">
             <Button
               onClick={() => {
                 setShowEditDialog(false);
@@ -833,14 +838,14 @@ export const CategoryManager: React.FC<Props> = ({ open, onClose, onSelectCatego
                 setEditFields(['title', 'content']);
               }}
               variant="outline"
-              className="flex-1 h-12 border-[#EDEDED] text-[#7E7C78] hover:bg-[#F5F5F5] rounded-xl text-[15px]"
+              className="flex-1 h-12 bg-white border-[rgba(30,28,26,0.14)] text-[#6E675E] hover:bg-[#F1EDE5] rounded-full text-[14px] font-semibold"
             >
               취소
             </Button>
             <Button
               onClick={handleSaveEdit}
               disabled={!editName.trim() || editFields.length === 0}
-              className="flex-1 h-12 bg-[#2E2E2E] hover:bg-[#1E1E1E] text-white disabled:bg-[#E8E7E5] disabled:text-[#ACACAC] rounded-xl text-[15px] font-medium"
+              className="flex-1 h-12 bg-[#1E1C1A] hover:bg-[#333] text-white disabled:bg-[#E8E4DC] disabled:text-[#A9A196] rounded-full text-[14px] font-semibold"
             >
               저장
             </Button>
