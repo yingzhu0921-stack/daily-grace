@@ -3,6 +3,8 @@ import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
 import { AppIcon } from '@/components/ui/AppIcon';
 import { fillCssBackground } from '@/utils/canvasCssBackground';
+import { CardGuideSheet, shouldAutoShowCardGuide, markCardGuideShownThisSession } from '@/components/CardGuideSheet';
+import { LineIcon } from '@/components/ui/LineIcon';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChevronLeft, Wand2, Upload, ImageIcon, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify, Type, Paintbrush, Ruler, Palette, Check, Sparkles } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -687,6 +689,27 @@ export default function Designer() {
   }, [flowStep, meta.bgColor]);
   // 단색·그라데이션은 bgImageUrl 이 없어서, 전에는 골라도 글씨가 비어 있으면 안내가 계속 덮여 있었다.
   const showBgPrompt = !meta.bgImageUrl && !bgPicked && !isEditMode && !isEditing && !isBgEditMode;
+
+  // 카드 만들기 첫 안내(2026-11-14 사용자 승인 시안 ①②). 첫 화면에 들어오면 세션마다 한 번, '다시 보지 않기' 전까지.
+  const [cardGuideOpen, setCardGuideOpen] = useState(false);
+  useEffect(() => {
+    if (flowStep !== 'entry' || !shouldAutoShowCardGuide()) return;
+    markCardGuideShownThisSession();
+    const id = window.setTimeout(() => setCardGuideOpen(true), 350);
+    return () => window.clearTimeout(id);
+  }, [flowStep]);
+
+  // 직접 편집: 배경을 처음 고른 순간 '이제 글씨를 넣어요' 한 줄(시안 ③). 처음 한 번만, 몇 초 뒤 사라진다.
+  const [editTextHint, setEditTextHint] = useState(false);
+  const hasBackground = !!meta.bgImageUrl || bgPicked;
+  useEffect(() => {
+    if (flowStep !== 'edit' || isEditMode || !hasBackground || !isTextEmpty) return;
+    try { if (localStorage.getItem('edit_text_hint_seen') === '1') return; localStorage.setItem('edit_text_hint_seen', '1'); } catch { return; }
+    setEditTextHint(true);
+    const id = window.setTimeout(() => setEditTextHint(false), 7000);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flowStep, hasBackground]);
 
   /**
    * AI 배경의 잘리기 전 원본. 전에는 만든 직후 그때 비율로 잘라 저장하고 원본을 버려서,
@@ -3494,7 +3517,19 @@ export default function Designer() {
                  flowStep === 'photo-upload' ? '사진 + AI 텍스트' : ''}
               </h1>
             </div>
-            <div className="w-12" />
+            {/* 첫 화면에서만: 카드 만들기 안내 다시 보기(2026-11-14) */}
+            {flowStep === 'entry' ? (
+              <button
+                type="button"
+                onClick={() => setCardGuideOpen(true)}
+                aria-label="카드 만들기 안내"
+                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full border border-[rgba(30,28,26,0.14)] bg-white text-[15px] font-bold text-[#1E1C1A]"
+              >
+                ?
+              </button>
+            ) : (
+              <div className="w-12" />
+            )}
           </header>
           {flowStep !== 'entry' && renderFlowProgress(flowStep)}
           {flowStep === 'entry' && renderEntry()}
@@ -3504,6 +3539,7 @@ export default function Designer() {
           {flowStep === 'auto-preview' && renderAutoPreview()}
         </div>
         {renderLoginModal()}
+        <CardGuideSheet open={cardGuideOpen} onClose={() => setCardGuideOpen(false)} />
         {renderSaveSuccessModal()}
         <RecordSelectorModal
           open={recordSelectorOpen}
@@ -4800,6 +4836,16 @@ export default function Designer() {
         onChange={handleImageUpload}
       />
 
+      {/* 직접 편집: 배경을 처음 고른 직후 한 번(2026-11-14 시안 ③) */}
+      {editTextHint && (
+        <div className="fixed left-3 right-3 top-[60px] z-[60] mx-auto flex max-w-[456px] items-start gap-2 rounded-2xl border border-[rgba(30,28,26,0.14)] bg-white px-3.5 py-3 text-[12.5px] leading-[1.55] text-[#4A453F] shadow-[0_6px_18px_rgba(30,28,26,0.10)]">
+          <LineIcon name="pencil" size={16} color="#1E1C1A" className="mt-0.5" />
+          <span className="flex-1"><b className="text-[#1E1C1A]">이제 글씨를 넣어요.</b> 가운데 상자를 눌러 문구를 쓰고, 끌어서 옮길 수 있어요. 다 되면 오른쪽 위 <b className="text-[#1E1C1A]">저장</b>.</span>
+          <button type="button" aria-label="안내 닫기" onClick={() => setEditTextHint(false)} className="-mr-1 p-1 text-[#9A9288]">
+            <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" /></svg>
+          </button>
+        </div>
+      )}
       {renderLoginModal()}
 
       {/* Record Selector Modal */}
