@@ -1551,7 +1551,7 @@ HAIR SHAPE (generic everyday figures only, never a figure the passage names): un
       : 'beautiful peaceful scene';
 
     const size = ratio ? ratioToSize[ratio] || '1024x1024' : '1024x1024';
-    const finalPrompt = buildManualBackgroundPrompt(translated, style, cropSafeNote(size, ratio));
+    const finalPrompt = buildManualBackgroundPrompt(translated, style, cropSafeNote(size, ratio), typeof ratio === 'string' ? ratio : '');
 
     const imgRes = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
