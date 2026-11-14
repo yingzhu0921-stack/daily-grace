@@ -29,15 +29,19 @@ export const MINIMAL_SCENE_REGISTERS = [
   'A TINY PERSON DOING THE MESSAGE\'S ACTION in a wide simple landscape — small, but clearly doing it.',
 ];
 
-/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 4. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
+/** 직접 편집 사진 그림체(감성 사진·빈티지 필름) 장면 갈래. 길이 7. 사람 없이 장소·사물·빛으로 뜻을 옮긴다. */
 // 2026-11-14 사용자 "말씀과 안 맞음": 장소를 무작위 후보에서 뽑아 '무거운 짐'에 시골 버스 정류장이 나왔다.
 // 이어서 "가방만 띡 나오는 게 좀 그렇다": 물건 하나를 내려놓은 정물 갈래를 빼고, 장소와 빛으로만 옮긴다.
+// 이어서 필름 레퍼런스(핀터레스트)에 맞춰 다시: 창 너머 풍경·물빛·안개·새·나무 그늘·노을 강.
 export const PHOTO_SCENE_REGISTERS = [
-  'A THRESHOLD OR PASSAGE — a gate, steps, a bridge, a lane turning a corner, somewhere between one place and the next.',
-  'A PARTICULAR HOUR OR WEATHER on an ordinary place — first light, noon shade, dusk, after rain, mist lifting, frost — where the light itself carries the message.',
-  'AN EVERYDAY HUMAN PLACE with no one in it — a yard, a rooftop with laundry, a stairwell, a doorstep, a quiet street corner, a village lane.',
-  'A NATURAL PLACE AT HUMAN SCALE — a field edge, a stream bank, a grove, a hillside path seen from where a person would stand, never a grand vista.',
-]
+  'SEEN THROUGH A WINDOW — a landscape or town passing outside a train, bus or car window, the frame soft and dark at the edges.',
+  'WATER IN THE LIGHT — sun glints sparkling on a river, lake or sea, or a river at dusk with a distant bridge or town.',
+  'A FIELD OR MEADOW IN WEATHER — morning mist over a field (animals such as horses or sheep far away are fine), tall grass, a hillside after rain.',
+  'SKY AND BIRDS — a flock of birds or a single bird crossing a soft sky above trees or water.',
+  'UNDER A BIG TREE — dappled light and shade on a lawn or path, the tree crown framing the sky.',
+  'CLOSE IN NATURE — daisies, grass or leaves in soft focus with light behind them, seen from low down.',
+  'AN EVERYDAY PLACE WITH NO ONE IN IT — a quiet lane, a doorstep, laundry on a rooftop, a small station platform.',
+];
 
 /** 직접 편집 감성 사진 장면 갈래. 2026-11-14 핀터레스트 '말씀 배경화면 감성' 레퍼런스. 길이 6. */
 export const PHOTO_NATURE_REGISTERS = [
