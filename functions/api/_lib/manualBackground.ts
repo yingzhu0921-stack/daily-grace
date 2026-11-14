@@ -253,8 +253,9 @@ export const MINIMAL_COLOUR_MOODS = [
 
 // 2026-11-14 사용자: 캐릭터 일러스트는 인물이 크게 그려져 위쪽 여백(글씨 자리)이 너무 적었다. 장면 전체를 작게, 아래 40% 안에.
 // 이어서 "구름·해·새 같은 요소는 들어가도 될 듯(그것만은 아니고)" → 위쪽에 작고 드문 장면 소품은 허용.
+// 이어서 "그림체가 약간 바뀐 듯, 요소가 매번 나온다" → 크기 축소 지시를 빼고(위치만 바꾼다), 소품은 '가끔·필요할 때만'.
 const CHARACTER_COMPOSITION = `
-COMPOSITION FOR THIS STYLE (stronger than the line above): draw the whole picture — characters and objects together — SMALLER, so it sits entirely in the LOWER 40% of the frame. The UPPER 60% stays mostly the plain light background colour — a few small, simple accents that suit the scene are welcome there — for example clouds, a sun or moon, stars, birds, butterflies, drifting leaves or petals, a small rainbow — kept light and sparse so text can sit on top; nothing large or busy. Characters stay readable, but modest in size (a standing figure about a third of the frame height at most).`;
+COMPOSITION FOR THIS STYLE: keep the drawing style, line, texture and level of detail EXACTLY as described above — only the PLACEMENT changes. Group the characters and objects together in the LOWER part of the frame (roughly the lower 45%), with the ground near the bottom edge. Leave the UPPER part (roughly the top 55%) as the plain light background colour for the text. By default keep it empty; only now and then, when the scene really calls for it, one small light accent may sit there (such as a small cloud, a sun or moon, a few birds, falling petals) — never every time, never large or busy.`;
 
 export function buildManualBackgroundPrompt(scene: string, style?: string, cropNote = ''): string {
   const resolved = resolveStyle(style);
